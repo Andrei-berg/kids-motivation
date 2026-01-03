@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api'
+import { updateStreaks } from '@/lib/streaks'
+import { checkAndAwardBadges } from '@/lib/badges'
 import { normalizeDate, getGradeColor, getGradeEmoji } from '@/utils/helpers'
+import { triggerConfetti } from '@/utils/confetti'
 
 type Tab = 'study' | 'room' | 'day' | 'sport'
 
@@ -170,6 +173,16 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
       }
 
       setStatus('Готово! ✅')
+      
+      // Обновить стрики
+      await updateStreaks(childId, date)
+      
+      // Проверить бейджи
+      const badges = await checkAndAwardBadges(childId, date)
+      if (badges.length > 0) {
+        triggerConfetti()
+        setStatus(`Готово! ✅ Получен бейдж! 🏆`)
+      }
       
       if (onSave) onSave()
       

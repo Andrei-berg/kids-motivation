@@ -15,10 +15,8 @@
     "@supabase/supabase-js": "^2.39.0",
     "chart.js": "^4.4.0",
     "react-chartjs-2": "^5.2.0",
-    "framer-motion": "^10.16.16",
     "canvas-confetti": "^1.9.2",
-    "date-fns": "^3.0.6",
-    "clsx": "^2.1.0"
+    "date-fns": "^3.0.6"
   },
   "devDependencies": {
     "@types/node": "^20.10.5",

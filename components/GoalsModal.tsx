@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { api, Goal } from '@/lib/api'
 import { formatMoney, calculatePercentage, verifyPin } from '@/utils/helpers'
+import { triggerGoalConfetti } from '@/utils/confetti'
 
 interface GoalsModalProps {
   isOpen: boolean
@@ -32,6 +33,13 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
       loadGoals()
     }
   }, [isOpen, childId])
+
+  useEffect(() => {
+    // Показать confetti если цель достигнута
+    if (goals.active && calculatePercentage(goals.active.current, goals.active.target) >= 100) {
+      setTimeout(() => triggerGoalConfetti(), 500)
+    }
+  }, [goals.active])
 
   async function loadGoals() {
     setLoading(true)

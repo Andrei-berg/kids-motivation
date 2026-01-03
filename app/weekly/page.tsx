@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react'
 import NavBar from '@/components/NavBar'
 import { api } from '@/lib/api'
+import { getStreakBonuses } from '@/lib/streaks'
+import { checkPerfectWeek } from '@/lib/badges'
+import { triggerConfetti } from '@/utils/confetti'
 import { 
   normalizeDate, 
   getWeekRange, 
@@ -33,6 +36,8 @@ export default function WeeklyReview() {
   const [penaltiesManual, setPenaltiesManual] = useState(0)
   const [noteParent, setNoteParent] = useState('')
 
+  const [calc, setCalc] = useState<any>(null)
+
   useEffect(() => {
     const saved = localStorage.getItem('v4_selected_kid')
     if (saved) setChildId(saved)
@@ -43,6 +48,12 @@ export default function WeeklyReview() {
       loadData()
     }
   }, [childId, weekStart])
+
+  useEffect(() => {
+    if (weekData && settings) {
+      calculateWeek().then(setCalc)
+    }
+  }, [weekData, settings, all5Mode, extraBonus, penaltiesManual])
 
   async function loadData() {
     try {
@@ -83,7 +94,7 @@ export default function WeeklyReview() {
   }
 
   // Расчёты
-  function calculateWeek() {
+  async function calculateWeek() {
     if (!weekData || !settings) return null
     
     const week = getWeekRange(weekStart)
@@ -125,8 +136,8 @@ export default function WeeklyReview() {
     const diaryMissed = weekData.days.filter((d: any) => d.diary_not_done).length
     const diaryPenalty = diaryMissed * (settings.diaryPenalty || -50)
     
-    // Стрики (упрощенно)
-    const streakBonuses = 0 // TODO: calculate streaks
+    // Стрики (автоматический расчёт)
+    const streakBonuses = await getStreakBonuses(childId)
     
     // Итого
     const total = base + studyTotal + roomBonus + sportBonus + streakBonuses + extraBonus + diaryPenalty + penaltiesManual
@@ -152,7 +163,7 @@ export default function WeeklyReview() {
       return
     }
     
-    const calc = calculateWeek()
+    const calc = await calculateWeek()
     if (!calc) return
     
     try {
@@ -174,6 +185,14 @@ export default function WeeklyReview() {
           total: calc.total
         }
       })
+      
+      // Проверить бейдж "Идеальная неделя"
+      const gotBadge = await checkPerfectWeek(childId, weekStart, calc.diaryPenalty + penaltiesManual)
+      
+      // Показать confetti если хорошая неделя
+      if (calc.total > 500 || gotBadge) {
+        triggerConfetti()
+      }
       
       alert('Неделя закрыта! ✅')
       await loadData()
@@ -197,7 +216,6 @@ export default function WeeklyReview() {
     )
   }
 
-  const calc = calculateWeek()
   const week = getWeekRange(weekStart)
   const isFinalized = weekData?.weekRecord?.finalized || false
 
