@@ -2,8 +2,8 @@ import './globals.css'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Clean MAX v4 - Kids Motivation',
-  description: 'Система мотивации детей для Адама и Алима',
+  title: 'Clean MAX v4.2 - Kids Motivation',
+  description: 'Система мотивации детей - Silicon Valley Edition',
 }
 
 export default function RootLayout({
