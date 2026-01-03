@@ -59,7 +59,7 @@ export default function Analytics() {
       let weekStart = getWeekRange(new Date()).start
       
       for (let i = 0; i < 8; i++) {
-        const { data } = await api.getWeekData(childId, weekStart)
+        const data = await api.getWeekData(childId, weekStart)
         
         if (data.weekRecord && data.weekRecord.finalized) {
           weeksData.push({
