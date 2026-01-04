@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import NavBar from '@/components/NavBar'
 import { api, Child, Goal } from '@/lib/api'
 import { getChildBadges } from '@/lib/badges'
-import { formatMoney, calculatePercentage, getWeekRange, normalizeDate } from '@/utils/helpers'
+import { formatMoney, calculatePercentage, getWeekRange, normalizeDate, getGradeColor } from '@/utils/helpers'
 
 export default function Wallboard() {
   const [children, setChildren] = useState<Child[]>([])
@@ -12,6 +12,8 @@ export default function Wallboard() {
   const [badges, setBadges] = useState<{ [childId: string]: any[] }>({})
   const [weekProgress, setWeekProgress] = useState<{ [childId: string]: any }>({})
   const [streaks, setStreaks] = useState<{ [childId: string]: any[] }>({})
+  const [grades, setGrades] = useState<{ [childId: string]: any[] }>({})
+  const [settings, setSettings] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
 
@@ -41,11 +43,16 @@ export default function Wallboard() {
       const kids = await api.getChildren()
       setChildren(kids)
       
+      // Настройки
+      const sett = await api.getSettings()
+      setSettings(sett)
+      
       // Загрузить данные для каждого ребенка
       const goalsData: { [childId: string]: Goal | null } = {}
       const badgesData: { [childId: string]: any[] } = {}
       const weekData: { [childId: string]: any } = {}
       const streaksData: { [childId: string]: any[] } = {}
+      const gradesData: { [childId: string]: any[] } = {}
       
       for (const kid of kids) {
         // Цели
@@ -60,25 +67,45 @@ export default function Wallboard() {
         const today = normalizeDate(new Date())
         const week = await api.getWeekData(kid.id, today)
         const filledDays = week.days.length
-        const roomDays = week.days.filter(d => d.room_ok).length
+        const roomDays = week.days.filter((d: any) => d.room_ok).length
         const gradesCount = week.grades.length
+        
+        // Статистика оценок
+        const grades5 = week.grades.filter((g: any) => g.grade === 5).length
+        const grades4 = week.grades.filter((g: any) => g.grade === 4).length
+        const grades3 = week.grades.filter((g: any) => g.grade === 3).length
+        const grades2 = week.grades.filter((g: any) => g.grade === 2).length
+        const avgGrade = gradesCount > 0 
+          ? week.grades.reduce((sum: number, g: any) => sum + g.grade, 0) / gradesCount 
+          : 0
+        
+        // Последние 5 оценок
+        const recentGrades = week.grades.slice(-5).reverse()
         
         weekData[kid.id] = {
           filledDays,
           roomDays,
           gradesCount,
+          grades5,
+          grades4,
+          grades3,
+          grades2,
+          avgGrade,
           progress: Math.min(100, Math.round((filledDays / 7) * 100))
         }
         
+        gradesData[kid.id] = recentGrades
+        
         // Стрики
         const s = await api.getStreaks(kid.id)
-        streaksData[kid.id] = s.filter(x => x.current_count > 0).slice(0, 3)
+        streaksData[kid.id] = s.filter((x: any) => x.current_count > 0)
       }
       
       setGoals(goalsData)
       setBadges(badgesData)
       setWeekProgress(weekData)
       setStreaks(streaksData)
+      setGrades(gradesData)
       
     } catch (err) {
       console.error('Error loading wallboard:', err)
@@ -208,6 +235,7 @@ export default function Wallboard() {
           const childBadges = badges[child.id] || []
           const week = weekProgress[child.id]
           const childStreaks = streaks[child.id] || []
+          const childGrades = grades[child.id] || []
           const goalProgress = goal ? calculatePercentage(goal.current, goal.target) : 0
 
           return (
@@ -236,7 +264,7 @@ export default function Wallboard() {
                     Level {child.level} • {child.xp} XP
                   </div>
                 </div>
-                {child.id === leader.id && (
+                {child.id === leader?.id && (
                   <div style={{
                     fontSize: '72px',
                     animation: 'pulse 2s infinite'
@@ -322,7 +350,7 @@ export default function Wallboard() {
                 </div>
               )}
 
-              {/* Прогресс недели */}
+              {/* Прогресс недели с деталями */}
               {week && (
                 <div style={{
                   background: 'rgba(59, 130, 246, 0.2)',
@@ -332,9 +360,11 @@ export default function Wallboard() {
                   border: '2px solid rgba(59, 130, 246, 0.4)'
                 }}>
                   <div style={{ fontSize: '24px', fontWeight: 700, marginBottom: '16px' }}>
-                    📊 Неделя
+                    📊 Неделя • Прогноз: ~{formatMoney(child.base_weekly)}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                  
+                  {/* Основные метрики */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '20px' }}>
                     <div>
                       <div style={{ fontSize: '16px', opacity: 0.8 }}>Дней</div>
                       <div style={{ fontSize: '32px', fontWeight: 800 }}>{week.filledDays}/7</div>
@@ -348,10 +378,125 @@ export default function Wallboard() {
                       <div style={{ fontSize: '32px', fontWeight: 800 }}>{week.gradesCount}</div>
                     </div>
                   </div>
+
+                  {/* Статистика оценок */}
+                  {week.gradesCount > 0 && (
+                    <div style={{ 
+                      background: 'rgba(0,0,0,0.2)', 
+                      borderRadius: '12px', 
+                      padding: '16px',
+                      marginBottom: '16px'
+                    }}>
+                      <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '12px' }}>
+                        📚 Оценки этой недели
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px', marginBottom: '12px' }}>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '28px', fontWeight: 800, color: '#10b981' }}>{week.grades5}</div>
+                          <div style={{ fontSize: '14px', opacity: 0.8 }}>пятёрок</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '28px', fontWeight: 800, color: '#3b82f6' }}>{week.grades4}</div>
+                          <div style={{ fontSize: '14px', opacity: 0.8 }}>четвёрок</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '28px', fontWeight: 800, color: '#f59e0b' }}>{week.grades3}</div>
+                          <div style={{ fontSize: '14px', opacity: 0.8 }}>троек</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '28px', fontWeight: 800, color: '#ef4444' }}>{week.grades2}</div>
+                          <div style={{ fontSize: '14px', opacity: 0.8 }}>двоек</div>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '16px', textAlign: 'center', opacity: 0.9 }}>
+                        Средний балл: <strong style={{ fontSize: '20px' }}>{week.avgGrade.toFixed(1)}</strong>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Breakdown прогноза */}
+                  {settings && (
+                    <div style={{ 
+                      background: 'rgba(0,0,0,0.2)', 
+                      borderRadius: '12px', 
+                      padding: '16px'
+                    }}>
+                      <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>
+                        💰 Breakdown прогноза:
+                      </div>
+                      <div style={{ fontSize: '14px', display: 'grid', gap: '6px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>Базовая сумма</span>
+                          <strong>{formatMoney(settings.baseWeekly || 500)}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>За 5-ки ({week.grades5} × {settings.per5 || 50}₽)</span>
+                          <strong style={{ color: '#10b981' }}>+{formatMoney(week.grades5 * (settings.per5 || 50))}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span>За 4-ки ({week.grades4} × {settings.per4 || 10}₽)</span>
+                          <strong style={{ color: '#3b82f6' }}>+{formatMoney(week.grades4 * (settings.per4 || 10))}</strong>
+                        </div>
+                        {week.grades3 > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span>За 3-ки ({week.grades3} × {settings.pen3 || -50}₽)</span>
+                            <strong style={{ color: '#f59e0b' }}>{formatMoney(week.grades3 * (settings.pen3 || -50))}</strong>
+                          </div>
+                        )}
+                        {week.roomDays >= 5 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span>Бонус за комнату</span>
+                            <strong style={{ color: '#10b981' }}>
+                              +{formatMoney(week.roomDays === 7 ? (settings.room7of7 || 100) : (settings.room5of7 || 50))}
+                            </strong>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Активные стрики */}
+              {/* Последние оценки */}
+              {childGrades.length > 0 && (
+                <div style={{
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  borderRadius: '20px',
+                  padding: '24px',
+                  marginBottom: '30px',
+                  border: '2px solid rgba(16, 185, 129, 0.3)'
+                }}>
+                  <div style={{ fontSize: '24px', fontWeight: 700, marginBottom: '16px' }}>
+                    📝 Последние оценки
+                  </div>
+                  <div style={{ display: 'grid', gap: '10px' }}>
+                    {childGrades.map((grade: any, idx: number) => (
+                      <div key={idx} style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        background: 'rgba(0,0,0,0.2)',
+                        padding: '12px 20px',
+                        borderRadius: '12px',
+                        borderLeft: `4px solid ${getGradeColor(grade.grade)}`
+                      }}>
+                        <div style={{ fontSize: '18px', fontWeight: 600 }}>
+                          {grade.subject}
+                        </div>
+                        <div style={{ 
+                          fontSize: '28px', 
+                          fontWeight: 800,
+                          color: getGradeColor(grade.grade)
+                        }}>
+                          {grade.grade}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Активные стрики с деталями */}
               {childStreaks.length > 0 && (
                 <div style={{
                   background: 'rgba(239, 68, 68, 0.2)',
@@ -364,25 +509,46 @@ export default function Wallboard() {
                     🔥 Активные стрики
                   </div>
                   <div style={{ display: 'grid', gap: '12px' }}>
-                    {childStreaks.map(streak => (
-                      <div key={streak.id} style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        background: 'rgba(0,0,0,0.2)',
-                        padding: '12px 20px',
-                        borderRadius: '12px'
-                      }}>
-                        <div style={{ fontSize: '18px' }}>
-                          {streak.streak_type === 'room' && '🧹 Комната'}
-                          {streak.streak_type === 'study' && '📚 Учёба'}
-                          {streak.streak_type === 'sport' && '💪 Спорт'}
+                    {childStreaks.map((streak: any) => {
+                      // Определить бонус
+                      let bonus = 0
+                      let bonusText = ''
+                      if (streak.streak_type === 'room' && streak.current_count >= 7) {
+                        bonus = settings?.roomStreak7 || 100
+                        bonusText = '7 дней → +100₽'
+                      }
+                      if (streak.streak_type === 'study' && streak.current_count >= 14) {
+                        bonus = settings?.studyStreak14 || 100
+                        bonusText = '14 дней → +100₽'
+                      }
+                      if (streak.streak_type === 'sport' && streak.current_count >= 7) {
+                        bonus = settings?.sportStreak7 || 100
+                        bonusText = '7 дней → +100₽'
+                      }
+                      
+                      return (
+                        <div key={streak.id} style={{
+                          background: 'rgba(0,0,0,0.2)',
+                          padding: '16px 20px',
+                          borderRadius: '12px'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <div style={{ fontSize: '18px', fontWeight: 600 }}>
+                              {streak.streak_type === 'room' && '🧹 Комната убрана'}
+                              {streak.streak_type === 'study' && '📚 Учёба каждый день'}
+                              {streak.streak_type === 'sport' && '💪 Спорт каждый день'}
+                            </div>
+                            <div style={{ fontSize: '28px', fontWeight: 800 }}>
+                              {streak.current_count} 🔥
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', opacity: 0.9 }}>
+                            <span>Рекорд: {streak.best_count} дней</span>
+                            {bonusText && <span style={{ color: '#10b981', fontWeight: 600 }}>{bonusText}</span>}
+                          </div>
                         </div>
-                        <div style={{ fontSize: '28px', fontWeight: 800 }}>
-                          {streak.current_count} 🔥
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )}
@@ -390,25 +556,40 @@ export default function Wallboard() {
               {/* Последние бейджи */}
               {childBadges.length > 0 && (
                 <div style={{
-                  background: 'rgba(16, 185, 129, 0.2)',
+                  background: 'rgba(251, 191, 36, 0.2)',
                   borderRadius: '20px',
                   padding: '24px',
-                  border: '2px solid rgba(16, 185, 129, 0.4)'
+                  border: '2px solid rgba(251, 191, 36, 0.4)'
                 }}>
                   <div style={{ fontSize: '24px', fontWeight: 700, marginBottom: '16px' }}>
                     🏆 Последние достижения
                   </div>
-                  <div style={{ display: 'flex', gap: '16px' }}>
-                    {childBadges.map(badge => (
+                  <div style={{ display: 'grid', gap: '12px' }}>
+                    {childBadges.map((badge: any) => (
                       <div key={badge.id} style={{
-                        flex: 1,
-                        textAlign: 'center',
                         background: 'rgba(0,0,0,0.2)',
                         padding: '16px',
-                        borderRadius: '12px'
+                        borderRadius: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px'
                       }}>
-                        <div style={{ fontSize: '48px', marginBottom: '8px' }}>{badge.icon}</div>
-                        <div style={{ fontSize: '14px', fontWeight: 600 }}>{badge.title}</div>
+                        <div style={{ fontSize: '48px' }}>{badge.icon}</div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: '4px' }}>
+                            {badge.title}
+                          </div>
+                          <div style={{ fontSize: '14px', opacity: 0.8 }}>
+                            {badge.description}
+                          </div>
+                        </div>
+                        <div style={{ 
+                          fontSize: '20px', 
+                          fontWeight: 700,
+                          color: '#fbbf24'
+                        }}>
+                          +{badge.xp_reward} XP
+                        </div>
                       </div>
                     ))}
                   </div>
