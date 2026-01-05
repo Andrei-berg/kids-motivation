@@ -254,7 +254,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
           childId,
           date,
           subject: grade.subject,
-          subjectId: grade.subject_id,
+          subjectId: grade.subject_id || undefined,
           grade: grade.grade,
           note: grade.note
         })
