@@ -65,6 +65,9 @@ export default function NavBar() {
         <Link href="/records" className={`pill ${pathname === '/records' ? 'active' : ''}`}>
           🏆 Records
         </Link>
+        <Link href="/settings" className={`pill ${pathname === '/settings' ? 'active' : ''}`}>
+          ⚙️ Settings
+        </Link>
       </div>
     </div>
   )
