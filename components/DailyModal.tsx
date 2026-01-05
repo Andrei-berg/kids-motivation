@@ -13,7 +13,7 @@ type Tab = 'study' | 'room' | 'day' | 'sport'
 interface SubjectGrade {
   id?: string
   subject: string
-  subject_id?: string
+  subject_id?: string | null
   grade: number
   note: string
 }
