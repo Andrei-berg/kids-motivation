@@ -77,68 +77,114 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   async function loadData() {
     try {
       setLoading(true)
+      console.log('[DailyModal] Loading data for:', { childId, date })
       
       // Загрузить справочники
-      const [subjectsData, exerciseTypesData] = await Promise.all([
-        flexibleApi.getActiveSubjects(childId),
-        flexibleApi.getExerciseTypes()
-      ])
+      let subjectsData: Subject[] = []
+      let exerciseTypesData: ExerciseType[] = []
+      
+      try {
+        subjectsData = await flexibleApi.getActiveSubjects(childId)
+        console.log('[DailyModal] Subjects loaded:', subjectsData.length)
+      } catch (err) {
+        console.error('[DailyModal] Error loading subjects:', err)
+        subjectsData = []
+      }
+      
+      try {
+        exerciseTypesData = await flexibleApi.getExerciseTypes()
+        console.log('[DailyModal] Exercise types loaded:', exerciseTypesData.length)
+      } catch (err) {
+        console.error('[DailyModal] Error loading exercise types:', err)
+        exerciseTypesData = []
+      }
+      
       setSubjects(subjectsData)
       setExerciseTypes(exerciseTypesData)
       
-      // День недели для расписания
+      // Получить день недели для расписания
       const d = new Date(date)
       const dayOfWeek = d.getDay()
       const actualDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek
       
-      // Расписание (пн-пт)
+      // Загрузить расписание если будний день
       if (actualDayOfWeek >= 1 && actualDayOfWeek <= 5) {
-        const schedule = await flexibleApi.getScheduleForDay(childId, actualDayOfWeek)
-        setScheduleForToday(schedule)
+        try {
+          const schedule = await flexibleApi.getScheduleForDay(childId, actualDayOfWeek)
+          console.log('[DailyModal] Schedule loaded:', schedule.length, 'lessons')
+          setScheduleForToday(schedule)
+        } catch (err) {
+          console.error('[DailyModal] Error loading schedule:', err)
+          setScheduleForToday([])
+        }
       } else {
         setScheduleForToday([])
       }
 
-      // Существующие оценки
-      const existingGrades = await api.getSubjectGradesForDate(childId, date)
-      setGrades(existingGrades.map(g => ({
-        id: g.id,
-        subject: g.subject,
-        subject_id: g.subject_id,
-        grade: g.grade,
-        note: g.note || ''
-      })))
-
-      // Существующие упражнения
-      const homeExercises = await flexibleApi.getHomeExercises(childId, date)
-      setExercises(homeExercises.map(ex => ({
-        exercise_type_id: ex.exercise_type_id,
-        exercise_name: ex.exercise_type?.name || '',
-        quantity: ex.quantity,
-        unit: ex.exercise_type?.unit || 'раз'
-      })))
-
-      // День
-      const dayData = await api.getDay(childId, date)
-      if (dayData) {
-        setRoomBed(dayData.room_bed)
-        setRoomFloor(dayData.room_floor)
-        setRoomDesk(dayData.room_desk)
-        setRoomCloset(dayData.room_closet)
-        setRoomTrash(dayData.room_trash)
-        setGoodBehavior(dayData.good_behavior)
-        setDiaryNotDone(dayData.diary_not_done)
-        setDayNote(dayData.note_child || '')
+      // Загрузить существующие оценки
+      try {
+        const existingGrades = await api.getSubjectGradesForDate(childId, date)
+        console.log('[DailyModal] Existing grades:', existingGrades.length)
+        setGrades(existingGrades.map(g => ({
+          id: g.id,
+          subject: g.subject,
+          subject_id: g.subject_id,
+          grade: g.grade,
+          note: g.note || ''
+        })))
+      } catch (err) {
+        console.error('[DailyModal] Error loading grades:', err)
+        setGrades([])
       }
 
-      // Спорт (заметка)
-      const sport = await api.getHomeSportForDate(childId, date)
-      if (sport) {
-        setSportNote(sport.note || '')
+      // Загрузить существующие упражнения
+      try {
+        const homeExercises = await flexibleApi.getHomeExercises(childId, date)
+        console.log('[DailyModal] Home exercises:', homeExercises.length)
+        setExercises(homeExercises.map(ex => ({
+          exercise_type_id: ex.exercise_type_id,
+          exercise_name: ex.exercise_type?.name || '',
+          quantity: ex.quantity,
+          unit: ex.exercise_type?.unit || 'раз'
+        })))
+      } catch (err) {
+        console.error('[DailyModal] Error loading home exercises:', err)
+        setExercises([])
       }
 
+      // Загрузить день
+      try {
+        const dayData = await api.getDay(childId, date)
+        console.log('[DailyModal] Day data:', dayData ? 'loaded' : 'not found')
+        if (dayData) {
+          setRoomBed(dayData.room_bed)
+          setRoomFloor(dayData.room_floor)
+          setRoomDesk(dayData.room_desk)
+          setRoomCloset(dayData.room_closet)
+          setRoomTrash(dayData.room_trash)
+          setGoodBehavior(dayData.good_behavior)
+          setDiaryNotDone(dayData.diary_not_done)
+          setDayNote(dayData.note_child || '')
+        }
+      } catch (err) {
+        console.error('[DailyModal] Error loading day:', err)
+        // Продолжаем с дефолтными значениями
+      }
+
+      // Загрузить спорт (заметка)
+      try {
+        const sport = await api.getHomeSportForDate(childId, date)
+        if (sport) {
+          setSportNote(sport.note || '')
+        }
+      } catch (err) {
+        console.error('[DailyModal] Error loading sport note:', err)
+      }
+
+      console.log('[DailyModal] Data loading complete')
     } catch (err) {
-      console.error('Error loading data:', err)
+      console.error('[DailyModal] Fatal error loading data:', err)
+      alert('Ошибка загрузки данных. Проверьте консоль.')
     } finally {
       setLoading(false)
     }
@@ -300,6 +346,8 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
   if (!isOpen) return null
 
+  console.log('[DailyModal] Rendering, loading:', loading)
+
   const roomScore = [roomBed, roomFloor, roomDesk, roomCloset, roomTrash].filter(Boolean).length
   const roomOk = roomScore >= 3
 
@@ -311,20 +359,28 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
           <button className="close" onClick={onClose}>×</button>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--gray-200)', padding: '0 20px' }}>
-          <button className={tab === 'study' ? 'btn-pill active' : 'btn-pill'} onClick={() => setTab('study')}>
-            📚 Учёба
-          </button>
-          <button className={tab === 'room' ? 'btn-pill active' : 'btn-pill'} onClick={() => setTab('room')}>
-            🏠 Комната
-          </button>
-          <button className={tab === 'day' ? 'btn-pill active' : 'btn-pill'} onClick={() => setTab('day')}>
-            📝 День
-          </button>
-          <button className={tab === 'sport' ? 'btn-pill active' : 'btn-pill'} onClick={() => setTab('sport')}>
-            💪 Спорт
-          </button>
-        </div>
+        {loading ? (
+          <div className="modalB" style={{ padding: '40px', textAlign: 'center' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>⏳</div>
+            <div style={{ fontSize: '18px', fontWeight: 600 }}>Загрузка...</div>
+            <div className="tip" style={{ marginTop: '8px' }}>Открываем консоль (F12) для деталей</div>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--gray-200)', padding: '0 20px' }}>
+              <button className={tab === 'study' ? 'btn-pill active' : 'btn-pill'} onClick={() => setTab('study')}>
+                📚 Учёба
+              </button>
+              <button className={tab === 'room' ? 'btn-pill active' : 'btn-pill'} onClick={() => setTab('room')}>
+                🏠 Комната
+              </button>
+              <button className={tab === 'day' ? 'btn-pill active' : 'btn-pill'} onClick={() => setTab('day')}>
+                📝 День
+              </button>
+              <button className={tab === 'sport' ? 'btn-pill active' : 'btn-pill'} onClick={() => setTab('sport')}>
+                💪 Спорт
+              </button>
+            </div>
 
         <div className="modalB">
           {tab === 'study' && (
@@ -560,6 +616,8 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
             </button>
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   )
