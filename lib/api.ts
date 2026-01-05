@@ -38,6 +38,7 @@ export type SubjectGrade = {
   child_id: string
   date: string
   subject: string
+  subject_id?: string | null
   grade: number
   note: string | null
 }
@@ -205,6 +206,7 @@ export async function addSubjectGrade(params: {
   childId: string
   date: string
   subject: string
+  subjectId?: string
   grade: number
   note?: string
 }) {
@@ -214,6 +216,7 @@ export async function addSubjectGrade(params: {
       child_id: params.childId,
       date: normalizeDate(params.date),
       subject: params.subject,
+      subject_id: params.subjectId || null,
       grade: params.grade,
       note: params.note || null
     })
@@ -226,6 +229,18 @@ export async function addSubjectGrade(params: {
   await updateSubjectCache(params.childId, params.subject, params.date)
   
   return data
+}
+
+// Алиас для DailyModal (saveSubjectGrade)
+export async function saveSubjectGrade(params: {
+  childId: string
+  date: string
+  subject: string
+  subjectId?: string
+  grade: number
+  note?: string
+}) {
+  return addSubjectGrade(params)
 }
 
 export async function getSubjectGradesForDate(childId: string, date: string) {
