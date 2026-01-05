@@ -143,7 +143,8 @@ export default function Settings() {
   }
   
   async function handlePinSubmit() {
-    if (verifyPin(pinInput)) {
+    const hash = process.env.NEXT_PUBLIC_PARENT_PIN_HASH || 'MTIzNA=='
+    if (verifyPin(pinInput, hash)) {
       setIsAuthenticated(true)
       setShowPinPrompt(false)
       setPinInput('')
