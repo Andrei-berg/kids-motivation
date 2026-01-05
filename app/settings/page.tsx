@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import NavBar from '@/components/NavBar'
+import ScheduleEditor from '@/components/ScheduleEditor'
 import { flexibleApi, Subject, ExerciseType } from '@/lib/flexible-api'
 import { verifyPin } from '@/utils/helpers'
 
@@ -277,10 +278,7 @@ export default function Settings() {
           {/* РАСПИСАНИЕ */}
           {activeTab === 'schedule' && (
             <div style={{ marginTop: '16px' }}>
-              <div className="h2">Расписание уроков</div>
-              <div className="tip" style={{ marginTop: '8px' }}>
-                Скоро здесь можно будет настроить расписание на каждый день недели
-              </div>
+              <ScheduleEditor childId={childId} />
             </div>
           )}
 

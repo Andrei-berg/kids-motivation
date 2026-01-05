@@ -2,17 +2,27 @@
 
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api'
+import { flexibleApi, Subject, ExerciseType } from '@/lib/flexible-api'
 import { updateStreaks } from '@/lib/streaks'
 import { checkAndAwardBadges } from '@/lib/badges'
-import { normalizeDate, getGradeColor, getGradeEmoji } from '@/utils/helpers'
+import { normalizeDate, getGradeColor } from '@/utils/helpers'
 import { triggerConfetti } from '@/utils/confetti'
 
 type Tab = 'study' | 'room' | 'day' | 'sport'
 
 interface SubjectGrade {
+  id?: string
   subject: string
+  subject_id?: string
   grade: number
   note: string
+}
+
+interface ExerciseEntry {
+  exercise_type_id: string
+  exercise_name: string
+  quantity: number | null
+  unit: string
 }
 
 interface DailyModalProps {
@@ -29,12 +39,16 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   const [status, setStatus] = useState('')
   const [error, setError] = useState(false)
 
+  // Справочники
+  const [subjects, setSubjects] = useState<Subject[]>([])
+  const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([])
+  const [scheduleForToday, setScheduleForToday] = useState<any[]>([])
+
   // УЧЁБА
-  const [subjects, setSubjects] = useState<SubjectGrade[]>([])
-  const [subjectInput, setSubjectInput] = useState('')
-  const [gradeSelected, setGradeSelected] = useState(4)
+  const [grades, setGrades] = useState<SubjectGrade[]>([])
+  const [selectedSubject, setSelectedSubject] = useState('')
+  const [gradeSelected, setGradeSelected] = useState(5)
   const [noteInput, setNoteInput] = useState('')
-  const [suggestions, setSuggestions] = useState<string[]>([])
 
   // КОМНАТА
   const [roomBed, setRoomBed] = useState(false)
@@ -49,148 +63,235 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   const [dayNote, setDayNote] = useState('')
 
   // СПОРТ
-  const [sportRunning, setSportRunning] = useState(false)
-  const [sportExercises, setSportExercises] = useState(false)
-  const [sportOutdoor, setSportOutdoor] = useState(false)
-  const [sportStretching, setSportStretching] = useState(false)
-  const [sportMinutes, setSportMinutes] = useState(0)
+  const [exercises, setExercises] = useState<ExerciseEntry[]>([])
   const [sportNote, setSportNote] = useState('')
 
-  // Загрузка данных при открытии
   useEffect(() => {
     if (isOpen) {
       loadData()
+    } else {
+      resetForm()
     }
   }, [isOpen, date, childId])
 
   async function loadData() {
     try {
-      // Загрузить оценки за день
-      const grades = await api.getSubjectGradesForDate(childId, date)
-      setSubjects(grades.map(g => ({
+      setLoading(true)
+      
+      // Загрузить справочники
+      const [subjectsData, exerciseTypesData] = await Promise.all([
+        flexibleApi.getActiveSubjects(childId),
+        flexibleApi.getExerciseTypes()
+      ])
+      setSubjects(subjectsData)
+      setExerciseTypes(exerciseTypesData)
+      
+      // День недели для расписания
+      const d = new Date(date)
+      const dayOfWeek = d.getDay()
+      const actualDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek
+      
+      // Расписание (пн-пт)
+      if (actualDayOfWeek >= 1 && actualDayOfWeek <= 5) {
+        const schedule = await flexibleApi.getScheduleForDay(childId, actualDayOfWeek)
+        setScheduleForToday(schedule)
+      } else {
+        setScheduleForToday([])
+      }
+
+      // Существующие оценки
+      const existingGrades = await api.getSubjectGradesForDate(childId, date)
+      setGrades(existingGrades.map(g => ({
+        id: g.id,
         subject: g.subject,
+        subject_id: g.subject_id,
         grade: g.grade,
         note: g.note || ''
       })))
 
-      // Загрузить спорт
+      // Существующие упражнения
+      const homeExercises = await flexibleApi.getHomeExercises(childId, date)
+      setExercises(homeExercises.map(ex => ({
+        exercise_type_id: ex.exercise_type_id,
+        exercise_name: ex.exercise_type?.name || '',
+        quantity: ex.quantity,
+        unit: ex.exercise_type?.unit || 'раз'
+      })))
+
+      // День
+      const dayData = await api.getDay(childId, date)
+      if (dayData) {
+        setRoomBed(dayData.room_bed)
+        setRoomFloor(dayData.room_floor)
+        setRoomDesk(dayData.room_desk)
+        setRoomCloset(dayData.room_closet)
+        setRoomTrash(dayData.room_trash)
+        setGoodBehavior(dayData.good_behavior)
+        setDiaryNotDone(dayData.diary_not_done)
+        setDayNote(dayData.note_child || '')
+      }
+
+      // Спорт (заметка)
       const sport = await api.getHomeSportForDate(childId, date)
       if (sport) {
-        setSportRunning(sport.running)
-        setSportExercises(sport.exercises)
-        setSportOutdoor(sport.outdoor_games)
-        setSportStretching(sport.stretching)
-        setSportMinutes(sport.total_minutes)
         setSportNote(sport.note || '')
       }
+
     } catch (err) {
       console.error('Error loading data:', err)
+    } finally {
+      setLoading(false)
     }
   }
 
-  // Автокомплит предметов
-  async function handleSubjectInput(value: string) {
-    setSubjectInput(value)
-    if (value.length > 1) {
-      const sugg = await api.getSubjectSuggestions(childId, value)
-      setSuggestions(sugg)
-    }
+  function resetForm() {
+    setTab('study')
+    setGrades([])
+    setSelectedSubject('')
+    setGradeSelected(5)
+    setNoteInput('')
+    setRoomBed(false)
+    setRoomFloor(false)
+    setRoomDesk(false)
+    setRoomCloset(false)
+    setRoomTrash(false)
+    setGoodBehavior(true)
+    setDiaryNotDone(false)
+    setDayNote('')
+    setExercises([])
+    setSportNote('')
+    setStatus('')
+    setError(false)
   }
 
-  // Добавить предмет
-  function addSubject() {
-    if (!subjectInput.trim()) {
-      alert('Введи предмет')
+  function addGrade() {
+    if (!selectedSubject) {
+      alert('Выберите предмет')
       return
     }
-
-    setSubjects([...subjects, {
-      subject: subjectInput.trim(),
+    
+    const subject = subjects.find(s => s.id === selectedSubject)
+    if (!subject) return
+    
+    setGrades([...grades, {
+      subject: subject.name,
+      subject_id: subject.id,
       grade: gradeSelected,
-      note: noteInput.trim()
+      note: noteInput
     }])
-
-    setSubjectInput('')
+    
     setNoteInput('')
+    setGradeSelected(5)
   }
 
-  // Удалить предмет
-  function removeSubject(index: number) {
-    setSubjects(subjects.filter((_, i) => i !== index))
+  function removeGrade(index: number) {
+    setGrades(grades.filter((_, i) => i !== index))
   }
 
-  // RoomScore
-  const roomScore = [roomBed, roomFloor, roomDesk, roomCloset, roomTrash].filter(Boolean).length
-  const roomOk = roomScore >= 3
+  function toggleExercise(exerciseTypeId: string) {
+    const exists = exercises.find(e => e.exercise_type_id === exerciseTypeId)
+    
+    if (exists) {
+      setExercises(exercises.filter(e => e.exercise_type_id !== exerciseTypeId))
+    } else {
+      const exerciseType = exerciseTypes.find(et => et.id === exerciseTypeId)
+      if (exerciseType) {
+        setExercises([...exercises, {
+          exercise_type_id: exerciseType.id,
+          exercise_name: exerciseType.name,
+          quantity: null,
+          unit: exerciseType.unit
+        }])
+      }
+    }
+  }
 
-  // Сохранить
-  async function save(closeAfter: boolean) {
+  function updateQuantity(exerciseTypeId: string, quantity: number | null) {
+    setExercises(exercises.map(e => 
+      e.exercise_type_id === exerciseTypeId ? { ...e, quantity } : e
+    ))
+  }
+
+  function autoFillFromSchedule() {
+    if (scheduleForToday.length === 0) {
+      alert('На этот день нет расписания')
+      return
+    }
+    
+    const newGrades: SubjectGrade[] = scheduleForToday.map(lesson => ({
+      subject: lesson.subject.name,
+      subject_id: lesson.subject.id,
+      grade: 5,
+      note: ''
+    }))
+    
+    setGrades(newGrades)
+  }
+
+  async function handleSave() {
     try {
       setLoading(true)
-      setStatus('Сохраняю...')
+      setStatus('Сохранение...')
       setError(false)
 
-      // 1. Сохранить оценки
-      for (const subj of subjects) {
-        await api.addSubjectGrade({
-          childId,
-          date,
-          subject: subj.subject,
-          grade: subj.grade,
-          note: subj.note
-        })
-      }
-
-      // 2. Сохранить день
+      // День
       await api.saveDay({
         childId,
         date,
-        roomData: {
-          bed: roomBed,
-          floor: roomFloor,
-          desk: roomDesk,
-          closet: roomCloset,
-          trash: roomTrash
-        },
+        roomBed,
+        roomFloor,
+        roomDesk,
+        roomCloset,
+        roomTrash,
         goodBehavior,
         diaryNotDone,
-        noteParent: dayNote
+        noteChild: dayNote
       })
 
-      // 3. Сохранить спорт
-      const hasAnySport = sportRunning || sportExercises || sportOutdoor || sportStretching
-      if (hasAnySport || sportMinutes > 0) {
-        await api.saveHomeSport({
+      // Оценки
+      for (const grade of grades) {
+        await api.saveSubjectGrade({
           childId,
           date,
-          running: sportRunning,
-          exercises: sportExercises,
-          outdoorGames: sportOutdoor,
-          stretching: sportStretching,
-          totalMinutes: sportMinutes,
-          note: sportNote
+          subject: grade.subject,
+          subjectId: grade.subject_id,
+          grade: grade.grade,
+          note: grade.note
         })
       }
 
-      setStatus('Готово! ✅')
-      
-      // Обновить стрики
+      // Упражнения
+      for (const exercise of exercises) {
+        await flexibleApi.saveHomeExercise(
+          childId,
+          date,
+          exercise.exercise_type_id,
+          exercise.quantity,
+          sportNote
+        )
+      }
+
+      // Стрики
       await updateStreaks(childId, date)
       
-      // Проверить бейджи
+      // Бейджи
       const badges = await checkAndAwardBadges(childId, date)
       if (badges.length > 0) {
         triggerConfetti()
         setStatus(`Готово! ✅ Получен бейдж! 🏆`)
+      } else {
+        setStatus('Готово! ✅')
       }
       
       if (onSave) onSave()
       
-      if (closeAfter) {
-        setTimeout(() => onClose(), 500)
-      }
-    } catch (err: any) {
-      setStatus('Ошибка: ' + err.message)
+      setTimeout(() => {
+        onClose()
+      }, 1000)
+
+    } catch (err) {
+      console.error('Save error:', err)
+      setStatus('Ошибка сохранения ❌')
       setError(true)
     } finally {
       setLoading(false)
@@ -199,297 +300,265 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
   if (!isOpen) return null
 
+  const roomScore = [roomBed, roomFloor, roomDesk, roomCloset, roomTrash].filter(Boolean).length
+  const roomOk = roomScore >= 3
+
   return (
-    <div className="backdrop show">
-      <div className="modal big">
-        {/* Header */}
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content daily-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modalH">
-          <div>
-            <div className="h">➕ Daily — ввод дня</div>
-            <div className="muted">Ребёнок: {childId} • Дата: {date}</div>
-          </div>
-          <button className="pill" onClick={onClose}>✕</button>
+          <div className="h">Заполнить день: {new Date(date).toLocaleDateString('ru-RU')}</div>
+          <button className="close" onClick={onClose}>×</button>
         </div>
 
-        {/* Tabs */}
-        <div className="row" style={{ gap: '8px', marginBottom: '16px' }}>
-          <button 
-            className={`pill ${tab === 'study' ? 'active' : ''}`}
-            onClick={() => setTab('study')}
-          >
+        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--gray-200)', padding: '0 20px' }}>
+          <button className={tab === 'study' ? 'btn-pill active' : 'btn-pill'} onClick={() => setTab('study')}>
             📚 Учёба
           </button>
-          <button 
-            className={`pill ${tab === 'room' ? 'active' : ''}`}
-            onClick={() => setTab('room')}
-          >
-            🧹 Комната
+          <button className={tab === 'room' ? 'btn-pill active' : 'btn-pill'} onClick={() => setTab('room')}>
+            🏠 Комната
           </button>
-          <button 
-            className={`pill ${tab === 'day' ? 'active' : ''}`}
-            onClick={() => setTab('day')}
-          >
-            😊 День
+          <button className={tab === 'day' ? 'btn-pill active' : 'btn-pill'} onClick={() => setTab('day')}>
+            📝 День
           </button>
-          <button 
-            className={`pill ${tab === 'sport' ? 'active' : ''}`}
-            onClick={() => setTab('sport')}
-          >
+          <button className={tab === 'sport' ? 'btn-pill active' : 'btn-pill'} onClick={() => setTab('sport')}>
             💪 Спорт
           </button>
         </div>
 
-        {/* УЧЁБА */}
-        {tab === 'study' && (
-          <div className="fade-in">
-            <div className="card">
-              <div className="cardH">
-                <div className="h">📚 Предметы за день</div>
-                <div className="muted">добавляй по одному</div>
-              </div>
-
-              {/* Форма добавления */}
-              <div className="row" style={{ gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                <div style={{ minWidth: '280px' }}>
-                  <div className="muted" style={{ fontSize: '13px', marginBottom: '6px' }}>Предмет</div>
-                  <input
-                    list="subjects-list"
-                    value={subjectInput}
-                    onChange={(e) => handleSubjectInput(e.target.value)}
-                    placeholder="Например: математика"
-                    style={{ width: '320px' }}
-                  />
-                  <datalist id="subjects-list">
-                    {suggestions.map(s => <option key={s} value={s} />)}
-                  </datalist>
+        <div className="modalB">
+          {tab === 'study' && (
+            <div>
+              <div className="h2">Оценки за день</div>
+              
+              {scheduleForToday.length > 0 && grades.length === 0 && (
+                <div style={{ marginTop: '12px' }}>
+                  <button className="btn primary" onClick={autoFillFromSchedule}>
+                    📅 Подставить из расписания ({scheduleForToday.length} {scheduleForToday.length === 1 ? 'урок' : 'уроков'})
+                  </button>
                 </div>
+              )}
 
-                <div>
-                  <div className="muted" style={{ fontSize: '13px', marginBottom: '6px' }}>Оценка</div>
-                  <div className="row" style={{ gap: '8px' }}>
-                    {[2, 3, 4, 5].map(g => (
-                      <button
-                        key={g}
-                        className={`pill ${gradeSelected === g ? 'active' : ''}`}
-                        onClick={() => setGradeSelected(g)}
-                        style={{ 
-                          borderColor: gradeSelected === g ? getGradeColor(g) : undefined,
-                          background: gradeSelected === g ? getGradeColor(g) : undefined,
-                          color: gradeSelected === g ? '#fff' : undefined
-                        }}
-                      >
-                        {g} {getGradeEmoji(g)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{ minWidth: '280px' }}>
-                  <div className="muted" style={{ fontSize: '13px', marginBottom: '6px' }}>Комментарий (опционально)</div>
-                  <input
-                    value={noteInput}
-                    onChange={(e) => setNoteInput(e.target.value)}
-                    placeholder="коротко"
-                    style={{ width: '320px' }}
-                  />
-                </div>
-
-                <button className="btn primary" onClick={addSubject}>
-                  ➕ Добавить
-                </button>
-              </div>
-
-              {/* Список предметов */}
-              {subjects.length > 0 && (
-                <div style={{ marginTop: '16px', display: 'grid', gap: '10px' }}>
-                  {subjects.map((s, i) => (
-                    <div key={i} className="mini">
-                      <div className="row" style={{ justifyContent: 'space-between' }}>
-                        <div className="h" style={{ color: getGradeColor(s.grade) }}>
-                          📚 {s.subject} — {s.grade} {getGradeEmoji(s.grade)}
+              {grades.length > 0 && (
+                <div style={{ marginTop: '16px', display: 'grid', gap: '8px' }}>
+                  {grades.map((g, idx) => (
+                    <div key={idx} className="card" style={{ padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, marginBottom: '4px' }}>{g.subject}</div>
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                          <span style={{ fontSize: '24px', fontWeight: 700, color: getGradeColor(g.grade) }}>
+                            {g.grade}
+                          </span>
+                          {g.note && <span className="tip">{g.note}</span>}
                         </div>
-                        <button className="pill" onClick={() => removeSubject(i)}>
-                          Удалить
-                        </button>
                       </div>
-                      {s.note && <div className="tip">{s.note}</div>}
+                      <button className="btn" onClick={() => removeGrade(idx)}>🗑️</button>
                     </div>
                   ))}
                 </div>
               )}
 
+              <div style={{ marginTop: '16px' }}>
+                <div className="h3">Добавить оценку</div>
+                <div style={{ marginTop: '12px', display: 'grid', gap: '12px' }}>
+                  <select 
+                    className="input"
+                    value={selectedSubject}
+                    onChange={(e) => setSelectedSubject(e.target.value)}
+                  >
+                    <option value="">Выберите предмет</option>
+                    {subjects.map(subject => (
+                      <option key={subject.id} value={subject.id}>{subject.name}</option>
+                    ))}
+                  </select>
+
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {[5, 4, 3, 2].map(grade => (
+                      <button
+                        key={grade}
+                        className={gradeSelected === grade ? 'btn primary' : 'btn'}
+                        onClick={() => setGradeSelected(grade)}
+                        style={{ flex: 1, fontSize: '18px', fontWeight: 700 }}
+                      >
+                        {grade}
+                      </button>
+                    ))}
+                  </div>
+
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Комментарий (опционально)"
+                    value={noteInput}
+                    onChange={(e) => setNoteInput(e.target.value)}
+                  />
+
+                  <button className="btn primary" onClick={addGrade}>
+                    + Добавить оценку
+                  </button>
+                </div>
+              </div>
+
               {subjects.length === 0 && (
-                <div className="tip" style={{ marginTop: '12px' }}>
-                  Добавь хотя бы один предмет
+                <div className="tip" style={{ marginTop: '16px' }}>
+                  Нет предметов. Добавьте предметы в Settings → Предметы
                 </div>
               )}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* КОМНАТА */}
-        {tab === 'room' && (
-          <div className="fade-in">
-            <div className="card">
-              <div className="cardH">
-                <div className="h">🧹 Чеклист комнаты</div>
-                <div className="muted">3 из 5 = день засчитан</div>
+          {tab === 'room' && (
+            <div>
+              <div className="h2">Комната</div>
+              <div className="tip" style={{ marginTop: '8px' }}>Отметь что сделал (минимум 3 из 5)</div>
+              
+              <div style={{ marginTop: '16px', display: 'grid', gap: '12px' }}>
+                {[
+                  { key: 'bed', label: '🛏️ Застелил кровать', value: roomBed, setter: setRoomBed },
+                  { key: 'floor', label: '🧹 Подмёл пол', value: roomFloor, setter: setRoomFloor },
+                  { key: 'desk', label: '🪑 Убрал стол', value: roomDesk, setter: setRoomDesk },
+                  { key: 'closet', label: '👕 Разложил одежду', value: roomCloset, setter: setRoomCloset },
+                  { key: 'trash', label: '🗑️ Вынес мусор', value: roomTrash, setter: setRoomTrash }
+                ].map(item => (
+                  <label key={item.key} className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={item.value}
+                      onChange={(e) => item.setter(e.target.checked)}
+                    />
+                    <span>{item.label}</span>
+                  </label>
+                ))}
               </div>
 
-              <div style={{ display: 'grid', gap: '10px' }}>
-                <label className="pill" style={{ display: 'flex', gap: '10px', alignItems: 'center', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={roomBed} onChange={(e) => setRoomBed(e.target.checked)} />
-                  🛏️ Кровать заправлена
-                </label>
-                <label className="pill" style={{ display: 'flex', gap: '10px', alignItems: 'center', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={roomFloor} onChange={(e) => setRoomFloor(e.target.checked)} />
-                  👕 Вещи/пол убраны
-                </label>
-                <label className="pill" style={{ display: 'flex', gap: '10px', alignItems: 'center', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={roomDesk} onChange={(e) => setRoomDesk(e.target.checked)} />
-                  📚 Стол чистый
-                </label>
-                <label className="pill" style={{ display: 'flex', gap: '10px', alignItems: 'center', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={roomCloset} onChange={(e) => setRoomCloset(e.target.checked)} />
-                  🚪 Шкаф/полки ок
-                </label>
-                <label className="pill" style={{ display: 'flex', gap: '10px', alignItems: 'center', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={roomTrash} onChange={(e) => setRoomTrash(e.target.checked)} />
-                  🗑️ Мусор вынесен
-                </label>
-              </div>
-
-              {/* Progress */}
-              <div style={{ marginTop: '16px' }}>
-                <div className="row" style={{ justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <div className="muted">RoomScore: {roomScore} / 5</div>
-                  <div className="muted">{roomOk ? '✅ Засчитано' : '❌ Не засчитано'}</div>
+              <div className="card" style={{ marginTop: '16px', textAlign: 'center', padding: '16px' }}>
+                <div style={{ fontSize: '32px', fontWeight: 800, color: roomOk ? 'var(--emerald-600)' : 'var(--gray-400)' }}>
+                  {roomScore} / 5
                 </div>
-                <div className="progress">
-                  <div 
-                    className="fill" 
-                    style={{ 
-                      width: `${(roomScore / 5) * 100}%`,
-                      background: roomOk ? 'var(--gradient-success)' : 'var(--warning)'
-                    }}
-                  />
+                <div className="tip" style={{ marginTop: '4px' }}>
+                  {roomOk ? '✅ Комната OK' : '⚠️ Нужно минимум 3'}
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* ДЕНЬ */}
-        {tab === 'day' && (
-          <div className="fade-in">
-            <div className="card">
-              <div className="cardH">
-                <div className="h">😊 День</div>
-                <div className="muted">без давления</div>
-              </div>
-
-              <div className="row" style={{ gap: '14px', flexWrap: 'wrap' }}>
-                <label className="pill" style={{ display: 'flex', gap: '10px', alignItems: 'center', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={goodBehavior} onChange={(e) => setGoodBehavior(e.target.checked)} />
-                  😊 Хорошее поведение
+          {tab === 'day' && (
+            <div>
+              <div className="h2">Поведение и дневник</div>
+              
+              <div style={{ marginTop: '16px', display: 'grid', gap: '12px' }}>
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={goodBehavior}
+                    onChange={(e) => setGoodBehavior(e.target.checked)}
+                  />
+                  <span>✅ Хорошо вёл себя</span>
                 </label>
 
-                <label className="pill" style={{ display: 'flex', gap: '10px', alignItems: 'center', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={diaryNotDone} onChange={(e) => setDiaryNotDone(e.target.checked)} />
-                  📓 Дневник не заполнен
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={diaryNotDone}
+                    onChange={(e) => setDiaryNotDone(e.target.checked)}
+                  />
+                  <span>⚠️ Не заполнил дневник</span>
                 </label>
               </div>
 
-              <div style={{ marginTop: '12px' }}>
-                <div className="h">Заметка (опционально)</div>
-                <input
-                  type="text"
+              <div style={{ marginTop: '16px' }}>
+                <div className="lab">Заметки о дне</div>
+                <textarea
+                  className="input"
+                  placeholder="Что интересного было сегодня?"
                   value={dayNote}
                   onChange={(e) => setDayNote(e.target.value)}
-                  placeholder="Коротко (например: сделал турник / помог дома)"
-                  style={{ width: 'min(900px, 95%)' }}
+                  rows={4}
+                  style={{ marginTop: '8px' }}
                 />
               </div>
-
-              <div className="tip" style={{ marginTop: '12px' }}>
-                Ошибки не обнуляют прогресс. Главное — вернуться.
-              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* СПОРТ */}
-        {tab === 'sport' && (
-          <div className="fade-in">
-            <div className="card">
-              <div className="cardH">
-                <div className="h">💪 Домашний спорт</div>
-                <div className="muted">отметь что делал</div>
+          {tab === 'sport' && (
+            <div>
+              <div className="h2">Домашний спорт</div>
+              <div className="tip" style={{ marginTop: '8px' }}>Отметь что делал и укажи количество</div>
+              
+              <div style={{ marginTop: '16px', display: 'grid', gap: '12px' }}>
+                {exerciseTypes.map(exerciseType => {
+                  const exercise = exercises.find(e => e.exercise_type_id === exerciseType.id)
+                  const isChecked = !!exercise
+                  
+                  return (
+                    <div key={exerciseType.id} className="card" style={{ padding: '12px' }}>
+                      <label className="checkbox-label" style={{ marginBottom: '8px' }}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleExercise(exerciseType.id)}
+                        />
+                        <span style={{ fontWeight: 600 }}>{exerciseType.name}</span>
+                      </label>
+                      
+                      {isChecked && (
+                        <div style={{ marginLeft: '28px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <input
+                            type="number"
+                            className="input"
+                            placeholder="Количество"
+                            value={exercise?.quantity || ''}
+                            onChange={(e) => updateQuantity(exerciseType.id, e.target.value ? parseInt(e.target.value) : null)}
+                            min="0"
+                            style={{ width: '100px' }}
+                          />
+                          <span className="tip">{exerciseType.unit}</span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
 
-              <div style={{ display: 'grid', gap: '10px' }}>
-                <label className="pill" style={{ display: 'flex', gap: '10px', alignItems: 'center', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={sportRunning} onChange={(e) => setSportRunning(e.target.checked)} />
-                  🏃 Пробежка
-                </label>
-                <label className="pill" style={{ display: 'flex', gap: '10px', alignItems: 'center', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={sportExercises} onChange={(e) => setSportExercises(e.target.checked)} />
-                  🏋️ Упражнения
-                </label>
-                <label className="pill" style={{ display: 'flex', gap: '10px', alignItems: 'center', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={sportOutdoor} onChange={(e) => setSportOutdoor(e.target.checked)} />
-                  ⚽ Игры на улице
-                </label>
-                <label className="pill" style={{ display: 'flex', gap: '10px', alignItems: 'center', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={sportStretching} onChange={(e) => setSportStretching(e.target.checked)} />
-                  🧘 Растяжка
-                </label>
-              </div>
+              {exerciseTypes.length === 0 && (
+                <div className="tip" style={{ marginTop: '16px' }}>
+                  Нет упражнений. Добавьте упражнения в Settings → Упражнения
+                </div>
+              )}
 
               <div style={{ marginTop: '16px' }}>
-                <div className="h">Сколько минут?</div>
-                <input
-                  type="number"
-                  value={sportMinutes}
-                  onChange={(e) => setSportMinutes(Number(e.target.value))}
-                  placeholder="30"
-                  style={{ width: '120px' }}
-                  min="0"
-                />
-              </div>
-
-              <div style={{ marginTop: '12px' }}>
-                <div className="h">Заметка (опционально)</div>
-                <input
-                  type="text"
+                <div className="lab">Заметки о спорте</div>
+                <textarea
+                  className="input"
+                  placeholder="Комментарий"
                   value={sportNote}
                   onChange={(e) => setSportNote(e.target.value)}
-                  placeholder="Что делал?"
-                  style={{ width: 'min(600px, 95%)' }}
+                  rows={3}
+                  style={{ marginTop: '8px' }}
                 />
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Status */}
-        {status && (
-          <div className={`status ${error ? 'err' : 'success'}`} style={{ marginTop: '16px' }}>
-            {status}
+        <div className="modalF">
+          {status && (
+            <div style={{ 
+              fontSize: '14px', 
+              fontWeight: 600,
+              color: error ? 'var(--red-600)' : 'var(--emerald-600)'
+            }}>
+              {status}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button className="btn" onClick={onClose} disabled={loading}>
+              Отмена
+            </button>
+            <button className="btn primary" onClick={handleSave} disabled={loading}>
+              {loading ? 'Сохранение...' : 'Сохранить день'}
+            </button>
           </div>
-        )}
-
-        {/* Footer */}
-        <div className="row" style={{ gap: '10px', marginTop: '20px', justifyContent: 'flex-end' }}>
-          <button className="btn ghost" onClick={onClose} disabled={loading}>
-            Отмена
-          </button>
-          <button className="btn ghost" onClick={() => save(false)} disabled={loading}>
-            Сохранить
-          </button>
-          <button className="btn primary" onClick={() => save(true)} disabled={loading}>
-            Сохранить и закрыть
-          </button>
         </div>
       </div>
     </div>
