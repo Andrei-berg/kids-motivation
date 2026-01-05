@@ -31,6 +31,7 @@ export type DayData = {
   good_behavior: boolean
   diary_not_done: boolean
   note_parent: string | null
+  note_child: string | null
 }
 
 export type SubjectGrade = {
@@ -162,30 +163,44 @@ export async function getSettings() {
 export async function saveDay(params: {
   childId: string
   date: string
-  roomData: {
+  roomBed?: boolean
+  roomFloor?: boolean
+  roomDesk?: boolean
+  roomCloset?: boolean
+  roomTrash?: boolean
+  roomData?: {
     bed: boolean
     floor: boolean
     desk: boolean
     closet: boolean
     trash: boolean
   }
-  goodBehavior: boolean
-  diaryNotDone: boolean
+  goodBehavior?: boolean
+  diaryNotDone?: boolean
   noteParent?: string
+  noteChild?: string
 }) {
-  const { childId, date, roomData, goodBehavior, diaryNotDone, noteParent } = params
+  const { childId, date, roomData, goodBehavior, diaryNotDone, noteParent, noteChild } = params
+  
+  // Поддержка двух форматов: новый (прямые поля) и старый (roomData)
+  const bed = params.roomBed ?? roomData?.bed ?? false
+  const floor = params.roomFloor ?? roomData?.floor ?? false
+  const desk = params.roomDesk ?? roomData?.desk ?? false
+  const closet = params.roomCloset ?? roomData?.closet ?? false
+  const trash = params.roomTrash ?? roomData?.trash ?? false
   
   const dayData = {
     child_id: childId,
     date: normalizeDate(date),
-    room_bed: roomData.bed,
-    room_floor: roomData.floor,
-    room_desk: roomData.desk,
-    room_closet: roomData.closet,
-    room_trash: roomData.trash,
-    good_behavior: goodBehavior,
-    diary_not_done: diaryNotDone,
-    note_parent: noteParent || null
+    room_bed: bed,
+    room_floor: floor,
+    room_desk: desk,
+    room_closet: closet,
+    room_trash: trash,
+    good_behavior: goodBehavior ?? true,
+    diary_not_done: diaryNotDone ?? false,
+    note_parent: noteParent || null,
+    note_child: noteChild || null
   }
   
   const { data, error } = await supabase
@@ -196,6 +211,21 @@ export async function saveDay(params: {
   
   if (error) throw error
   return data
+}
+
+export async function getDay(childId: string, date: string) {
+  const { data, error } = await supabase
+    .from('days')
+    .select('*')
+    .eq('child_id', childId)
+    .eq('date', normalizeDate(date))
+    .single()
+  
+  if (error) {
+    if (error.code === 'PGRST116') return null // Not found
+    throw error
+  }
+  return data as DayData
 }
 
 // ============================================================================
