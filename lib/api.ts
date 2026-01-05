@@ -687,9 +687,11 @@ export const api = {
   
   // Дни
   saveDay,
+  getDay,
   
   // Оценки
   addSubjectGrade,
+  saveSubjectGrade,
   getSubjectGradesForDate,
   deleteSubjectGrade,
   getSubjectSuggestions,
