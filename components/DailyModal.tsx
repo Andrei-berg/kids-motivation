@@ -47,9 +47,11 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
   // УЧЁБА
   const [grades, setGrades] = useState<SubjectGrade[]>([])
-  const [selectedSubject, setSelectedSubject] = useState('')
-  const [gradeSelected, setGradeSelected] = useState(5)
-  const [noteInput, setNoteInput] = useState('')
+  const [showSchedulePanel, setShowSchedulePanel] = useState(false)
+  const [scheduleGrades, setScheduleGrades] = useState<{[key: string]: number}>({})
+  const [showQuickAdd, setShowQuickAdd] = useState(false)
+  const [quickAddSubject, setQuickAddSubject] = useState('')
+  const [quickAddGrade, setQuickAddGrade] = useState(5)
 
   // КОМНАТА
   const [roomBed, setRoomBed] = useState(false)
@@ -136,21 +138,88 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   }
 
   function resetForm() {
-    setTab('study'); setGrades([]); setSelectedSubject(''); setGradeSelected(5); setNoteInput('')
-    setRoomBed(false); setRoomFloor(false); setRoomDesk(false); setRoomCloset(false); setRoomTrash(false)
-    setGoodBehavior(true); setDiaryNotDone(false); setDayNote(''); setExercises([]); setSportNote('')
-    setStatus(''); setError(false)
+    setTab('study')
+    setGrades([])
+    setShowSchedulePanel(false)
+    setScheduleGrades({})
+    setShowQuickAdd(false)
+    setQuickAddSubject('')
+    setQuickAddGrade(5)
+    setRoomBed(false)
+    setRoomFloor(false)
+    setRoomDesk(false)
+    setRoomCloset(false)
+    setRoomTrash(false)
+    setGoodBehavior(true)
+    setDiaryNotDone(false)
+    setDayNote('')
+    setExercises([])
+    setSportNote('')
+    setStatus('')
+    setError(false)
   }
 
-  function addGrade() {
-    if (!selectedSubject) { alert('Выберите предмет'); return }
-    const subject = subjects.find(s => s.id === selectedSubject)
+  function openSchedulePanel() {
+    if (scheduleForToday.length === 0) {
+      alert('На этот день нет расписания')
+      return
+    }
+    
+    // Инициализируем все оценки как 5
+    const initialGrades: {[key: string]: number} = {}
+    scheduleForToday.forEach(lesson => {
+      initialGrades[lesson.subject.id] = 5
+    })
+    setScheduleGrades(initialGrades)
+    setShowSchedulePanel(true)
+  }
+
+  function addFromSchedule() {
+    const newGrades: SubjectGrade[] = scheduleForToday.map(lesson => ({
+      subject: lesson.subject.name,
+      subject_id: lesson.subject.id,
+      grade: scheduleGrades[lesson.subject.id] || 5,
+      note: ''
+    }))
+    
+    setGrades([...grades, ...newGrades])
+    setShowSchedulePanel(false)
+    setScheduleGrades({})
+  }
+
+  function updateGradeInline(index: number, newGrade: number) {
+    const updated = [...grades]
+    updated[index].grade = newGrade
+    setGrades(updated)
+  }
+
+  function updateNoteInline(index: number, newNote: string) {
+    const updated = [...grades]
+    updated[index].note = newNote
+    setGrades(updated)
+  }
+
+  function removeGrade(index: number) {
+    setGrades(grades.filter((_, i) => i !== index))
+  }
+
+  function quickAddGrade() {
+    if (!quickAddSubject) return
+    
+    const subject = subjects.find(s => s.id === quickAddSubject)
     if (!subject) return
-    setGrades([...grades, { subject: subject.name, subject_id: subject.id, grade: gradeSelected, note: noteInput }])
-    setNoteInput(''); setGradeSelected(5)
+    
+    setGrades([...grades, {
+      subject: subject.name,
+      subject_id: subject.id,
+      grade: quickAddGrade,
+      note: ''
+    }])
+    
+    setQuickAddSubject('')
+    setQuickAddGrade(5)
+    setShowQuickAdd(false)
   }
-
-  function removeGrade(index: number) { setGrades(grades.filter((_, i) => i !== index)) }
 
   function toggleExercise(exerciseTypeId: string) {
     const exists = exercises.find(e => e.exercise_type_id === exerciseTypeId)
@@ -251,46 +320,142 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
             <div className="premium-modal-content">
               {tab === 'study' && (
                 <div className="premium-tab-content">
-                  {scheduleForToday.length > 0 && grades.length === 0 && (
-                    <button className="premium-btn-gradient" onClick={autoFillFromSchedule}>
-                      <span>📅</span><span>Подставить из расписания ({scheduleForToday.length})</span>
-                    </button>
+                  {/* Кнопки действий */}
+                  <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+                    {scheduleForToday.length > 0 && !showSchedulePanel && (
+                      <button className="premium-btn-gradient" onClick={openSchedulePanel} style={{ flex: 1 }}>
+                        <span>📅</span>
+                        <span>Подставить из расписания ({scheduleForToday.length})</span>
+                      </button>
+                    )}
+                    {!showQuickAdd && (
+                      <button 
+                        className="premium-btn-primary" 
+                        onClick={() => setShowQuickAdd(true)}
+                        style={{ flex: scheduleForToday.length === 0 ? 1 : undefined }}
+                      >
+                        <span>+ Добавить предмет</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* ПАНЕЛЬ ПОДСТАНОВКИ ИЗ РАСПИСАНИЯ */}
+                  {showSchedulePanel && (
+                    <div className="schedule-panel">
+                      <div className="schedule-panel-header">
+                        <div className="schedule-panel-title">📅 Выберите оценки</div>
+                        <button className="schedule-panel-close" onClick={() => setShowSchedulePanel(false)}>✕</button>
+                      </div>
+                      <div className="schedule-panel-content">
+                        {scheduleForToday.map((lesson, idx) => (
+                          <div key={idx} className="schedule-item">
+                            <div className="schedule-item-name">{lesson.subject.name}</div>
+                            <div className="schedule-item-grades">
+                              {[5, 4, 3, 2].map(grade => (
+                                <button
+                                  key={grade}
+                                  className={`grade-quick-btn ${scheduleGrades[lesson.subject.id] === grade ? 'active' : ''}`}
+                                  onClick={() => setScheduleGrades({...scheduleGrades, [lesson.subject.id]: grade})}
+                                  style={{ background: scheduleGrades[lesson.subject.id] === grade ? getGradeColor(grade) : undefined }}
+                                >
+                                  {grade}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="schedule-panel-footer">
+                        <button className="premium-btn-secondary" onClick={() => setShowSchedulePanel(false)}>
+                          Отмена
+                        </button>
+                        <button className="premium-btn-gradient" onClick={addFromSchedule}>
+                          ✓ Добавить все
+                        </button>
+                      </div>
+                    </div>
                   )}
 
+                  {/* ПАНЕЛЬ БЫСТРОГО ДОБАВЛЕНИЯ */}
+                  {showQuickAdd && (
+                    <div className="quick-add-panel">
+                      <div className="quick-add-header">
+                        <div className="quick-add-title">+ Добавить предмет</div>
+                        <button className="quick-add-close" onClick={() => setShowQuickAdd(false)}>✕</button>
+                      </div>
+                      <div className="quick-add-content">
+                        <select 
+                          className="premium-select" 
+                          value={quickAddSubject}
+                          onChange={(e) => setQuickAddSubject(e.target.value)}
+                        >
+                          <option value="">Выберите предмет</option>
+                          {subjects.filter(s => !grades.find(g => g.subject_id === s.id)).map(subject => (
+                            <option key={subject.id} value={subject.id}>{subject.name}</option>
+                          ))}
+                        </select>
+                        <div className="quick-add-grades">
+                          {[5, 4, 3, 2].map(grade => (
+                            <button
+                              key={grade}
+                              className={`grade-quick-btn ${quickAddGrade === grade ? 'active' : ''}`}
+                              onClick={() => setQuickAddGrade(grade)}
+                              style={{ background: quickAddGrade === grade ? getGradeColor(grade) : undefined }}
+                            >
+                              {grade}
+                            </button>
+                          ))}
+                        </div>
+                        <button 
+                          className="premium-btn-gradient" 
+                          onClick={quickAddGrade}
+                          disabled={!quickAddSubject}
+                          style={{ width: '100%' }}
+                        >
+                          ✓ Добавить
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* СПИСОК ОЦЕНОК - РЕДАКТИРУЕМЫЕ КАРТОЧКИ */}
                   {grades.length > 0 && (
                     <div className="premium-grades-list">
                       {grades.map((g, idx) => (
-                        <div key={idx} className="premium-grade-card">
-                          <div className="premium-grade-content">
-                            <div className="premium-grade-subject">{g.subject}</div>
-                            <div className="premium-grade-info">
-                              <span className="premium-grade-badge" style={{ background: getGradeColor(g.grade) }}>{g.grade}</span>
-                              {g.note && <span className="premium-grade-note">{g.note}</span>}
+                        <div key={idx} className="editable-grade-card">
+                          <div className="grade-card-main">
+                            <div className="grade-card-subject">{g.subject}</div>
+                            <div className="grade-card-controls">
+                              <div className="grade-card-grades">
+                                {[5, 4, 3, 2].map(grade => (
+                                  <button
+                                    key={grade}
+                                    className={`grade-edit-btn ${g.grade === grade ? 'active' : ''}`}
+                                    onClick={() => updateGradeInline(idx, grade)}
+                                    style={{ background: g.grade === grade ? getGradeColor(grade) : undefined }}
+                                  >
+                                    {grade}
+                                  </button>
+                                ))}
+                              </div>
+                              <button className="grade-card-delete" onClick={() => removeGrade(idx)}>
+                                🗑️
+                              </button>
                             </div>
                           </div>
-                          <button className="premium-delete-btn" onClick={() => removeGrade(idx)}>🗑️</button>
+                          <input
+                            type="text"
+                            className="grade-card-note"
+                            placeholder="Добавить комментарий..."
+                            value={g.note}
+                            onChange={(e) => updateNoteInline(idx, e.target.value)}
+                          />
                         </div>
                       ))}
                     </div>
                   )}
 
-                  <div className="premium-section">
-                    <div className="premium-section-title">Добавить оценку</div>
-                    <select className="premium-select" value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)}>
-                      <option value="">Выберите предмет</option>
-                      {subjects.map(subject => <option key={subject.id} value={subject.id}>{subject.name}</option>)}
-                    </select>
-
-                    <div className="premium-grade-buttons">
-                      {[5, 4, 3, 2].map(grade => (
-                        <button key={grade} className={`premium-grade-btn ${gradeSelected === grade ? 'active' : ''}`} onClick={() => setGradeSelected(grade)} style={{ background: gradeSelected === grade ? getGradeColor(grade) : undefined }}>{grade}</button>
-                      ))}
-                    </div>
-
-                    <input type="text" className="premium-input" placeholder="Комментарий (опционально)" value={noteInput} onChange={(e) => setNoteInput(e.target.value)}/>
-                    <button className="premium-btn-primary" onClick={addGrade}>+ Добавить оценку</button>
-                  </div>
-
+                  {/* ПУСТОЕ СОСТОЯНИЕ */}
                   {subjects.length === 0 && (
                     <div className="premium-empty">
                       <div className="premium-empty-icon">📚</div>

@@ -1438,3 +1438,309 @@ textarea::placeholder {
     flex: 1;
   }
 }
+
+/* ============================================================================
+   СУПЕР ВАРИАНТ - ПАНЕЛИ БЫСТРОГО ВЫБОРА
+   ============================================================================ */
+
+/* Schedule Panel (Подстановка из расписания) */
+.schedule-panel,
+.quick-add-panel {
+  background: linear-gradient(135deg, #f0f4ff 0%, white 100%);
+  border: 2px solid #667eea;
+  border-radius: 20px;
+  padding: 0;
+  margin-bottom: 24px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.schedule-panel-header,
+.quick-add-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+}
+
+.schedule-panel-title,
+.quick-add-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.schedule-panel-close,
+.quick-add-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.schedule-panel-close:hover,
+.quick-add-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.schedule-panel-content,
+.quick-add-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Schedule Item */
+.schedule-item {
+  background: white;
+  border: 2px solid var(--gray-100);
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.schedule-item:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+}
+
+.schedule-item-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.schedule-item-grades,
+.quick-add-grades {
+  display: flex;
+  gap: 8px;
+}
+
+/* Grade Quick Buttons */
+.grade-quick-btn {
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--gray-200);
+  border-radius: 12px;
+  font-size: 24px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+  color: var(--gray-400);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grade-quick-btn:hover {
+  border-color: var(--gray-300);
+  transform: scale(1.1);
+}
+
+.grade-quick-btn.active {
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transform: scale(1.05);
+}
+
+/* Schedule Panel Footer */
+.schedule-panel-footer {
+  padding: 20px 24px;
+  background: var(--gray-50);
+  border-top: 1px solid var(--gray-200);
+  display: flex;
+  gap: 12px;
+}
+
+.schedule-panel-footer button {
+  flex: 1;
+}
+
+/* Quick Add Panel */
+.quick-add-grades {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* Editable Grade Card */
+.editable-grade-card {
+  background: white;
+  border: 2px solid var(--gray-100);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.2s;
+  animation: cardFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.editable-grade-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+  transform: translateY(-2px);
+}
+
+.grade-card-main {
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.grade-card-subject {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.grade-card-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.grade-card-grades {
+  display: flex;
+  gap: 6px;
+}
+
+/* Grade Edit Buttons */
+.grade-edit-btn {
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--gray-200);
+  border-radius: 10px;
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+  color: var(--gray-400);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grade-edit-btn:hover {
+  border-color: var(--gray-300);
+  transform: scale(1.15);
+}
+
+.grade-edit-btn.active {
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: scale(1.1);
+}
+
+.grade-card-delete {
+  background: var(--gray-100);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grade-card-delete:hover {
+  background: #fee2e2;
+  transform: scale(1.15);
+}
+
+.grade-card-note {
+  width: 100%;
+  padding: 14px 20px;
+  border: none;
+  border-top: 1px solid var(--gray-100);
+  background: var(--gray-50);
+  font-size: 15px;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.grade-card-note:focus {
+  outline: none;
+  background: white;
+  border-top-color: #667eea;
+}
+
+.grade-card-note::placeholder {
+  color: var(--gray-400);
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .schedule-item {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .schedule-item-grades,
+  .quick-add-grades {
+    justify-content: stretch;
+  }
+
+  .grade-quick-btn,
+  .grade-edit-btn {
+    flex: 1;
+  }
+
+  .grade-card-main {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .grade-card-controls {
+    flex-direction: column;
+  }
+
+  .grade-card-grades {
+    justify-content: stretch;
+  }
+}
