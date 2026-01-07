@@ -203,7 +203,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
     setGrades(grades.filter((_, i) => i !== index))
   }
 
-  function quickAddGrade() {
+  function handleQuickAddGrade() {
     if (!quickAddSubject) return
     
     const subject = subjects.find(s => s.id === quickAddSubject)
@@ -408,7 +408,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                         </div>
                         <button 
                           className="premium-btn-gradient" 
-                          onClick={quickAddGrade}
+                          onClick={handleQuickAddGrade}
                           disabled={!quickAddSubject}
                           style={{ width: '100%' }}
                         >
