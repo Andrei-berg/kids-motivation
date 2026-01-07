@@ -522,13 +522,28 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                       const isChecked = !!exercise
                       return (
                         <div key={exerciseType.id} className={`premium-exercise-card ${isChecked ? 'active' : ''}`}>
-                          <label className="premium-exercise-header">
-                            <input type="checkbox" checked={isChecked} onChange={() => toggleExercise(exerciseType.id)}/>
+                          <label className="premium-exercise-header" onClick={(e) => {
+                            if (e.target instanceof HTMLInputElement) return
+                            toggleExercise(exerciseType.id)
+                          }}>
+                            <input 
+                              type="checkbox" 
+                              checked={isChecked} 
+                              onChange={() => toggleExercise(exerciseType.id)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <span className="premium-exercise-icon">💪</span>
                             <span className="premium-exercise-name">{exerciseType.name}</span>
                           </label>
                           {isChecked && (
                             <div className="premium-exercise-input">
-                              <input type="number" placeholder="0" value={exercise?.quantity || ''} onChange={(e) => updateQuantity(exerciseType.id, e.target.value ? parseInt(e.target.value) : null)} min="0"/>
+                              <input 
+                                type="number" 
+                                placeholder="0" 
+                                value={exercise?.quantity || ''} 
+                                onChange={(e) => updateQuantity(exerciseType.id, e.target.value ? parseInt(e.target.value) : null)} 
+                                min="0"
+                              />
                               <span className="premium-exercise-unit">{exerciseType.unit}</span>
                             </div>
                           )}
