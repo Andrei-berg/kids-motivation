@@ -4,9 +4,16 @@ import { useState, useEffect } from 'react'
 import NavBar from '@/components/NavBar'
 import ScheduleEditor from '@/components/ScheduleEditor'
 import { flexibleApi, Subject, ExerciseType } from '@/lib/flexible-api'
+import { 
+  getAllExpenseCategories, 
+  addExpenseCategory, 
+  toggleCategoryActive, 
+  deleteExpenseCategory,
+  ExpenseCategory 
+} from '@/lib/expenses-api'
 import { verifyPin } from '@/utils/helpers'
 
-type Tab = 'subjects' | 'schedule' | 'exercises'
+type Tab = 'subjects' | 'schedule' | 'exercises' | 'categories'
 
 export default function Settings() {
   const [childId, setChildId] = useState('adam')
@@ -28,6 +35,11 @@ export default function Settings() {
   const [newExerciseName, setNewExerciseName] = useState('')
   const [newExerciseUnit, setNewExerciseUnit] = useState('раз')
   
+  // Categories
+  const [categories, setCategories] = useState<ExpenseCategory[]>([])
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [newCategoryIcon, setNewCategoryIcon] = useState('💰')
+  
   useEffect(() => {
     const saved = localStorage.getItem('v4_selected_kid')
     if (saved) setChildId(saved)
@@ -38,6 +50,8 @@ export default function Settings() {
       loadSubjects()
     } else if (activeTab === 'exercises') {
       loadExercises()
+    } else if (activeTab === 'categories') {
+      loadCategories()
     }
   }, [childId, activeTab])
   
@@ -66,6 +80,56 @@ export default function Settings() {
       console.error('Error loading exercises:', err)
     } finally {
       setLoading(false)
+    }
+  }
+  
+  async function loadCategories() {
+    try {
+      setLoading(true)
+      const data = await getAllExpenseCategories()
+      setCategories(data)
+    } catch (err) {
+      console.error('Error loading categories:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  async function handleAddCategory() {
+    if (!newCategoryName.trim()) return
+    
+    try {
+      await addExpenseCategory(newCategoryName.trim(), newCategoryIcon)
+      setNewCategoryName('')
+      setNewCategoryIcon('💰')
+      await loadCategories()
+    } catch (err) {
+      alert('Ошибка добавления категории')
+    }
+  }
+  
+  async function handleToggleCategoryActive(id: string, isActive: boolean) {
+    try {
+      await toggleCategoryActive(id, !isActive)
+      await loadCategories()
+    } catch (err) {
+      alert('Ошибка изменения категории')
+    }
+  }
+  
+  async function handleDeleteCategory(id: string) {
+    if (!isAuthenticated) {
+      setShowPinPrompt(true)
+      return
+    }
+    
+    if (!confirm('Удалить категорию? Это можно сделать только если нет расходов с этой категорией.')) return
+    
+    try {
+      await deleteExpenseCategory(id)
+      await loadCategories()
+    } catch (err: any) {
+      alert(err.message || 'Ошибка удаления категории')
     }
   }
   
@@ -184,6 +248,12 @@ export default function Settings() {
               onClick={() => setActiveTab('exercises')}
             >
               💪 Упражнения
+            </button>
+            <button
+              className={activeTab === 'categories' ? 'btn-pill active' : 'btn-pill'}
+              onClick={() => setActiveTab('categories')}
+            >
+              💰 Категории расходов
             </button>
           </div>
 
@@ -341,6 +411,107 @@ export default function Settings() {
                       >
                         🗑️ Удалить
                       </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* КАТЕГОРИИ РАСХОДОВ */}
+          {activeTab === 'categories' && (
+            <div style={{ marginTop: '16px' }}>
+              <div className="h2">Категории расходов</div>
+              
+              {/* Добавить категорию */}
+              <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+                <select
+                  className="input"
+                  value={newCategoryIcon}
+                  onChange={(e) => setNewCategoryIcon(e.target.value)}
+                  style={{ width: '80px' }}
+                >
+                  <option value="💰">💰</option>
+                  <option value="🎓">🎓</option>
+                  <option value="🏃">🏃</option>
+                  <option value="🎨">🎨</option>
+                  <option value="👕">👕</option>
+                  <option value="🏥">🏥</option>
+                  <option value="🎮">🎮</option>
+                  <option value="🎒">🎒</option>
+                  <option value="📚">📚</option>
+                  <option value="💔">💔</option>
+                  <option value="🍎">🍎</option>
+                  <option value="🚗">🚗</option>
+                  <option value="🎸">🎸</option>
+                  <option value="⚽">⚽</option>
+                </select>
+                <input
+                  type="text"
+                  placeholder="Название категории"
+                  className="input"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+                  style={{ flex: 1 }}
+                />
+                <button className="btn primary" onClick={handleAddCategory}>
+                  + Добавить
+                </button>
+              </div>
+
+              {/* Список категорий */}
+              <div style={{ marginTop: '24px' }}>
+                <div className="h3" style={{ marginBottom: '12px' }}>Все категории</div>
+                <div className="tip" style={{ marginBottom: '12px' }}>
+                  Отключённые категории не показываются при добавлении расхода.
+                  Нельзя удалить категорию, если есть расходы с ней.
+                </div>
+                <div style={{ display: 'grid', gap: '8px' }}>
+                  {categories.map(category => (
+                    <div
+                      key={category.id}
+                      className="card"
+                      style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '12px 16px',
+                        opacity: category.is_active ? 1 : 0.5
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ fontSize: '24px' }}>{category.icon}</span>
+                        <div>
+                          <div style={{ fontWeight: 600 }}>{category.name}</div>
+                          {category.is_default && (
+                            <div className="tip" style={{ marginTop: '4px' }}>
+                              Предустановленная
+                            </div>
+                          )}
+                          {!category.is_active && (
+                            <div className="tip" style={{ marginTop: '4px', color: '#ef4444' }}>
+                              Отключена
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          className="btn"
+                          onClick={() => handleToggleCategoryActive(category.id, category.is_active)}
+                        >
+                          {category.is_active ? '⚪ Отключить' : '🟢 Включить'}
+                        </button>
+                        {!category.is_default && (
+                          <button
+                            className="btn"
+                            onClick={() => handleDeleteCategory(category.id)}
+                          >
+                            🗑️ Удалить
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

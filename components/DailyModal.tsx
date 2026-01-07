@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api'
 import { flexibleApi, Subject, ExerciseType } from '@/lib/flexible-api'
+import { getSectionsForDate, markSectionVisit, Section, SectionVisit } from '@/lib/expenses-api'
 import { updateStreaks } from '@/lib/streaks'
 import { checkAndAwardBadges } from '@/lib/badges'
 import { getGradeColor } from '@/utils/helpers'
 import { triggerConfetti } from '@/utils/confetti'
 
-type Tab = 'study' | 'room' | 'day' | 'sport'
+type Tab = 'study' | 'room' | 'day' | 'sport' | 'sections'
 
 interface SubjectGrade {
   id?: string
@@ -68,6 +69,10 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   // СПОРТ
   const [exercises, setExercises] = useState<ExerciseEntry[]>([])
   const [sportNote, setSportNote] = useState('')
+
+  // СЕКЦИИ
+  const [sections, setSections] = useState<(Section & { visit?: SectionVisit })[]>([])
+  const [sectionNotes, setSectionNotes] = useState<{[key: string]: {progress: string, feedback: string}}>({})
 
   useEffect(() => {
     if (isOpen) {
@@ -130,6 +135,27 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
         if (sport) { setSportNote(sport.note || '') }
       } catch (err) {}
 
+      // Загрузить секции
+      try {
+        const sectionsData = await getSectionsForDate(childId, date)
+        setSections(sectionsData)
+        
+        // Инициализировать заметки из существующих посещений
+        const notes: {[key: string]: {progress: string, feedback: string}} = {}
+        sectionsData.forEach(section => {
+          if (section.visit) {
+            notes[section.id] = {
+              progress: section.visit.progress_note || '',
+              feedback: section.visit.trainer_feedback || ''
+            }
+          }
+        })
+        setSectionNotes(notes)
+      } catch (err) { 
+        console.error('Error loading sections:', err)
+        setSections([]) 
+      }
+
     } catch (err) {
       console.error('[DailyModal] Error loading data:', err)
     } finally {
@@ -155,6 +181,8 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
     setDayNote('')
     setExercises([])
     setSportNote('')
+    setSections([])
+    setSectionNotes({})
     setStatus('')
     setError(false)
   }
@@ -237,6 +265,29 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
     setExercises(exercises.map(e => e.exercise_type_id === exerciseTypeId ? { ...e, quantity } : e))
   }
 
+  function toggleSectionAttended(sectionId: string) {
+    setSections(sections.map(section => {
+      if (section.id === sectionId) {
+        if (section.visit) {
+          return { ...section, visit: { ...section.visit, attended: !section.visit.attended } }
+        } else {
+          return { ...section, visit: { id: '', section_id: sectionId, date, attended: true, progress_note: null, trainer_feedback: null, created_at: '' } as SectionVisit }
+        }
+      }
+      return section
+    }))
+  }
+
+  function updateSectionNote(sectionId: string, field: 'progress' | 'feedback', value: string) {
+    setSectionNotes(prev => ({
+      ...prev,
+      [sectionId]: {
+        ...prev[sectionId],
+        [field]: value
+      }
+    }))
+  }
+
   function autoFillFromSchedule() {
     if (scheduleForToday.length === 0) { alert('На этот день нет расписания'); return }
     const newGrades: SubjectGrade[] = scheduleForToday.map(lesson => ({ subject: lesson.subject.name, subject_id: lesson.subject.id, grade: 5, note: '' }))
@@ -255,6 +306,20 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
       for (const exercise of exercises) {
         await flexibleApi.saveHomeExercise(childId, date, exercise.exercise_type_id, exercise.quantity, sportNote)
+      }
+
+      // Сохранить посещения секций
+      for (const section of sections) {
+        if (section.visit) {
+          const notes = sectionNotes[section.id] || { progress: '', feedback: '' }
+          await markSectionVisit(
+            section.id,
+            date,
+            section.visit.attended,
+            notes.progress || undefined,
+            notes.feedback || undefined
+          )
+        }
       }
 
       await updateStreaks(childId, date)
@@ -314,6 +379,9 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
               </button>
               <button className={`premium-tab ${tab === 'sport' ? 'active' : ''}`} onClick={() => setTab('sport')}>
                 <span className="premium-tab-icon">💪</span><span>Спорт</span>
+              </button>
+              <button className={`premium-tab ${tab === 'sections' ? 'active' : ''}`} onClick={() => setTab('sections')}>
+                <span className="premium-tab-icon">🏊</span><span>Секции</span>
               </button>
             </div>
 
@@ -564,6 +632,76 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                     <div className="premium-section" style={{ marginTop: '24px' }}>
                       <div className="premium-section-title">Заметки о спорте</div>
                       <textarea className="premium-textarea" placeholder="Комментарий" value={sportNote} onChange={(e) => setSportNote(e.target.value)} rows={3}/>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {tab === 'sections' && (
+                <div className="premium-tab-content">
+                  {sections.length === 0 ? (
+                    <div className="premium-empty">
+                      <div className="premium-empty-icon">🏊</div>
+                      <div className="premium-empty-text">Нет секций</div>
+                      <div className="premium-empty-hint">Добавьте секции в Settings</div>
+                    </div>
+                  ) : (
+                    <div className="premium-exercises-grid">
+                      {sections.map(section => {
+                        const isAttended = section.visit?.attended || false
+                        const notes = sectionNotes[section.id] || { progress: '', feedback: '' }
+                        
+                        return (
+                          <div key={section.id} className={`premium-exercise-card ${isAttended ? 'active' : ''}`}>
+                            <label 
+                              className="premium-exercise-header" 
+                              onClick={(e) => {
+                                if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+                                toggleSectionAttended(section.id)
+                              }}
+                            >
+                              <input 
+                                type="checkbox" 
+                                checked={isAttended} 
+                                onChange={() => toggleSectionAttended(section.id)}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <span className="premium-exercise-icon">🏊</span>
+                              <div className="premium-exercise-name">
+                                <div>{section.name}</div>
+                                {section.trainer && (
+                                  <div style={{ fontSize: '13px', color: 'var(--gray-600)', fontWeight: 400 }}>
+                                    Тренер: {section.trainer}
+                                  </div>
+                                )}
+                              </div>
+                            </label>
+                            
+                            {isAttended && (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                                <input
+                                  type="text"
+                                  className="premium-input"
+                                  placeholder="Прогресс (например: Научился нырять 🏊)"
+                                  value={notes.progress}
+                                  onChange={(e) => updateSectionNote(section.id, 'progress', e.target.value)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  style={{ fontSize: '14px', padding: '10px 12px' }}
+                                />
+                                <input
+                                  type="text"
+                                  className="premium-input"
+                                  placeholder="Отзыв тренера"
+                                  value={notes.feedback}
+                                  onChange={(e) => updateSectionNote(section.id, 'feedback', e.target.value)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  style={{ fontSize: '14px', padding: '10px 12px' }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                   )}
                 </div>

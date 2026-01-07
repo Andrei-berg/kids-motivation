@@ -5,13 +5,13 @@ import {
   getExpenses, 
   getExpenseCategories, 
   getExpenseStats,
-  addExpense,
   deleteExpense,
   Expense,
   ExpenseCategory,
   ExpenseStats
 } from '@/lib/expenses-api'
 import NavBar from '@/components/NavBar'
+import ExpenseModal from '@/components/ExpenseModal'
 
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([])
@@ -274,20 +274,13 @@ export default function ExpensesPage() {
         </div>
       </main>
 
-      {/* Модалка добавления - TODO */}
-      {showAddModal && isParent && (
-        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>+ Добавить расход</h2>
-              <button onClick={() => setShowAddModal(false)}>✕</button>
-            </div>
-            <div className="modal-body">
-              <p>Модалка в разработке...</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Модалка добавления */}
+      <ExpenseModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        categories={categories}
+        onSuccess={loadData}
+      />
     </div>
   )
 }
