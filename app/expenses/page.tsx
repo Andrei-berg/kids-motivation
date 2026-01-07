@@ -12,6 +12,7 @@ import {
 } from '@/lib/expenses-api'
 import NavBar from '@/components/NavBar'
 import ExpenseModal from '@/components/ExpenseModal'
+import ExpenseCharts from '@/components/ExpenseCharts'
 
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([])
@@ -215,6 +216,11 @@ export default function ExpensesPage() {
                     </div>
                   )}
                 </div>
+              )}
+
+              {/* Графики */}
+              {stats && stats.total > 0 && (
+                <ExpenseCharts stats={stats} getChildName={getChildName} />
               )}
 
               {/* История расходов */}

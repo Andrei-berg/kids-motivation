@@ -9,11 +9,16 @@ import {
   addExpenseCategory, 
   toggleCategoryActive, 
   deleteExpenseCategory,
-  ExpenseCategory 
+  ExpenseCategory,
+  getSections,
+  addSection,
+  updateSection,
+  deleteSection,
+  Section
 } from '@/lib/expenses-api'
 import { verifyPin } from '@/utils/helpers'
 
-type Tab = 'subjects' | 'schedule' | 'exercises' | 'categories'
+type Tab = 'subjects' | 'schedule' | 'exercises' | 'categories' | 'sections'
 
 export default function Settings() {
   const [childId, setChildId] = useState('adam')
@@ -40,6 +45,13 @@ export default function Settings() {
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newCategoryIcon, setNewCategoryIcon] = useState('💰')
   
+  // Sections
+  const [sections, setSections] = useState<Section[]>([])
+  const [newSectionName, setNewSectionName] = useState('')
+  const [newSectionCost, setNewSectionCost] = useState('')
+  const [newSectionTrainer, setNewSectionTrainer] = useState('')
+  const [newSectionAddress, setNewSectionAddress] = useState('')
+  
   useEffect(() => {
     const saved = localStorage.getItem('v4_selected_kid')
     if (saved) setChildId(saved)
@@ -52,6 +64,8 @@ export default function Settings() {
       loadExercises()
     } else if (activeTab === 'categories') {
       loadCategories()
+    } else if (activeTab === 'sections') {
+      loadSections()
     }
   }, [childId, activeTab])
   
@@ -130,6 +144,65 @@ export default function Settings() {
       await loadCategories()
     } catch (err: any) {
       alert(err.message || 'Ошибка удаления категории')
+    }
+  }
+  
+  async function loadSections() {
+    try {
+      setLoading(true)
+      const data = await getSections(childId)
+      setSections(data)
+    } catch (err) {
+      console.error('Error loading sections:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  async function handleAddSection() {
+    if (!newSectionName.trim()) return
+    
+    try {
+      await addSection({
+        childId,
+        name: newSectionName.trim(),
+        cost: newSectionCost ? Number(newSectionCost) : undefined,
+        trainer: newSectionTrainer.trim() || undefined,
+        address: newSectionAddress.trim() || undefined
+      })
+      
+      setNewSectionName('')
+      setNewSectionCost('')
+      setNewSectionTrainer('')
+      setNewSectionAddress('')
+      await loadSections()
+    } catch (err) {
+      alert('Ошибка добавления секции')
+    }
+  }
+  
+  async function handleToggleSectionActive(id: string, isActive: boolean) {
+    try {
+      await updateSection(id, { isActive: !isActive })
+      await loadSections()
+    } catch (err) {
+      alert('Ошибка изменения секции')
+    }
+  }
+  
+  async function handleDeleteSection(id: string) {
+    if (!isAuthenticated) {
+      setShowPinPrompt(true)
+      return
+    }
+    
+    if (!confirm('Удалить секцию? История посещений будет удалена.')) return
+    
+    try {
+      await deleteSection(id)
+      await loadSections()
+    } catch (err) {
+      alert('Ошибка удаления секции')
     }
   }
   
@@ -254,6 +327,12 @@ export default function Settings() {
               onClick={() => setActiveTab('categories')}
             >
               💰 Категории расходов
+            </button>
+            <button
+              className={activeTab === 'sections' ? 'btn-pill active' : 'btn-pill'}
+              onClick={() => setActiveTab('sections')}
+            >
+              🏊 Секции
             </button>
           </div>
 
@@ -511,6 +590,119 @@ export default function Settings() {
                             🗑️ Удалить
                           </button>
                         )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* СЕКЦИИ */}
+          {activeTab === 'sections' && (
+            <div style={{ marginTop: '16px' }}>
+              <div className="h2">Секции для {childId === 'adam' ? 'Адама' : 'Алима'}</div>
+              
+              {/* Добавить секцию */}
+              <div style={{ marginTop: '16px', display: 'grid', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    placeholder="Название секции (например: Плавание)"
+                    className="input"
+                    value={newSectionName}
+                    onChange={(e) => setNewSectionName(e.target.value)}
+                    style={{ flex: 1 }}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Стоимость ₽"
+                    className="input"
+                    value={newSectionCost}
+                    onChange={(e) => setNewSectionCost(e.target.value)}
+                    style={{ width: '150px' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    placeholder="Тренер"
+                    className="input"
+                    value={newSectionTrainer}
+                    onChange={(e) => setNewSectionTrainer(e.target.value)}
+                    style={{ flex: 1 }}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Адрес"
+                    className="input"
+                    value={newSectionAddress}
+                    onChange={(e) => setNewSectionAddress(e.target.value)}
+                    style={{ flex: 1 }}
+                  />
+                  <button className="btn primary" onClick={handleAddSection}>
+                    + Добавить
+                  </button>
+                </div>
+              </div>
+
+              {/* Список секций */}
+              <div style={{ marginTop: '24px' }}>
+                <div className="h3" style={{ marginBottom: '12px' }}>Активные секции</div>
+                {sections.length === 0 && (
+                  <div className="tip">Нет секций. Добавьте первую!</div>
+                )}
+                <div style={{ display: 'grid', gap: '8px' }}>
+                  {sections.map(section => (
+                    <div
+                      key={section.id}
+                      className="card"
+                      style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '16px',
+                        opacity: section.is_active ? 1 : 0.5
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: '6px' }}>
+                          🏊 {section.name}
+                        </div>
+                        {section.cost && (
+                          <div className="tip" style={{ marginTop: '4px' }}>
+                            💰 {section.cost.toLocaleString('ru-RU')} ₽/мес
+                          </div>
+                        )}
+                        {section.trainer && (
+                          <div className="tip" style={{ marginTop: '4px' }}>
+                            👤 Тренер: {section.trainer}
+                          </div>
+                        )}
+                        {section.address && (
+                          <div className="tip" style={{ marginTop: '4px' }}>
+                            📍 {section.address}
+                          </div>
+                        )}
+                        {!section.is_active && (
+                          <div className="tip" style={{ marginTop: '4px', color: '#ef4444' }}>
+                            Отключена
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          className="btn"
+                          onClick={() => handleToggleSectionActive(section.id, section.is_active)}
+                        >
+                          {section.is_active ? '⚪ Отключить' : '🟢 Включить'}
+                        </button>
+                        <button
+                          className="btn"
+                          onClick={() => handleDeleteSection(section.id)}
+                        >
+                          🗑️ Удалить
+                        </button>
                       </div>
                     </div>
                   ))}
