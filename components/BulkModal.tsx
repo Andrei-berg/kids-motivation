@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { api } from '@/lib/api'
+import { flexibleApi, Subject } from '@/lib/flexible-api'
 import { getWeekRange, getDatesInRange, formatDate, getDayName, normalizeDate, addDays } from '@/utils/helpers'
 
 interface BulkModalProps {
@@ -18,6 +19,7 @@ interface SubjectRow {
 export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) {
   const [weekStart, setWeekStart] = useState(normalizeDate(new Date()))
   const [subjects, setSubjects] = useState<SubjectRow[]>([])
+  const [availableSubjects, setAvailableSubjects] = useState<Subject[]>([])
   const [newSubject, setNewSubject] = useState('')
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState('')
@@ -35,6 +37,10 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
   async function loadData() {
     setLoading(true)
     try {
+      // Загрузить доступные предметы из Settings
+      const activeSubjects = await flexibleApi.getActiveSubjects(childId)
+      setAvailableSubjects(activeSubjects)
+      
       // Загрузить все оценки за неделю
       const data = await api.getWeekData(childId, weekStart)
       
@@ -63,10 +69,16 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
   }
 
   function addSubject() {
-    if (!newSubject.trim()) return
+    if (!newSubject) return
+    
+    // Проверить что предмет ещё не добавлен
+    if (subjects.find(s => s.subject === newSubject)) {
+      alert('Этот предмет уже добавлен!')
+      return
+    }
     
     setSubjects([...subjects, {
-      subject: newSubject.trim(),
+      subject: newSubject,
       grades: {}
     }])
     setNewSubject('')
@@ -250,14 +262,20 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
 
           {/* Add Subject */}
           <div className="row" style={{ gap: '8px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--line)' }}>
-            <input
+            <select
               value={newSubject}
               onChange={(e) => setNewSubject(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && addSubject()}
-              placeholder="Название предмета"
-              style={{ flex: 1, maxWidth: '300px' }}
-            />
-            <button className="btn primary" onClick={addSubject}>
+              style={{ flex: 1, maxWidth: '300px', padding: '8px 12px', borderRadius: '8px', border: '1.5px solid var(--line)' }}
+            >
+              <option value="">Выберите предмет из настроек</option>
+              {availableSubjects
+                .filter(subj => !subjects.find(s => s.subject === subj.name))
+                .map(subj => (
+                  <option key={subj.id} value={subj.name}>{subj.name}</option>
+                ))
+              }
+            </select>
+            <button className="btn primary" onClick={addSubject} disabled={!newSubject}>
               ➕ Добавить предмет
             </button>
           </div>

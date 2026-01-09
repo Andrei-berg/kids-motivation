@@ -50,6 +50,9 @@ export default function NavBar() {
         <Link href="/kid" className={`pill ${pathname === '/kid' ? 'active' : ''}`}>
           👦 Kid
         </Link>
+        <Link href="/wallet" className={`pill ${pathname === '/wallet' ? 'active' : ''}`}>
+          💰 Кошелёк
+        </Link>
         <Link href="/analytics" className={`pill ${pathname === '/analytics' ? 'active' : ''}`}>
           📊 Analytics
         </Link>
