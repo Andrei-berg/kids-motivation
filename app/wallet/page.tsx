@@ -217,15 +217,16 @@ export default function WalletPage() {
         onSuccess={handleSuccess}
       />
 
-      <P2PTransferModal
-        isOpen={showP2P}
-        onClose={() => setShowP2P(false)}
-        fromChildId={childId}
-        toChildId={childId === 'adam' ? 'alim' : 'adam'}
-        fromChildName={getChildName(childId)}
-        toChildName={getChildName(childId === 'adam' ? 'alim' : 'adam')}
-        onSuccess={handleSuccess}
-      />
+      {showP2P && (
+        <P2PTransferModal
+          fromChildId={childId}
+          toChildId={childId === 'adam' ? 'alim' : 'adam'}
+          fromChildName={getChildName(childId)}
+          toChildName={getChildName(childId === 'adam' ? 'alim' : 'adam')}
+          onClose={() => setShowP2P(false)}
+          onSuccess={handleSuccess}
+        />
+      )}
     </>
   )
 }
