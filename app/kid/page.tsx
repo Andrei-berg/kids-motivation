@@ -1,14 +1,17 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import NavBar from '@/components/NavBar'
 import DailyModal from '@/components/DailyModal'
 import GoalsModal from '@/components/GoalsModal'
 import BulkModal from '@/components/BulkModal'
+import PotentialWidget from '@/components/PotentialWidget'
 import { api, Child, Goal } from '@/lib/api'
 import { normalizeDate, formatDate, getWeekRange, addDays, formatMoney, calculatePercentage } from '@/utils/helpers'
 
 export default function KidScreen() {
+  const router = useRouter()
   const [childId, setChildId] = useState('adam')
   const [child, setChild] = useState<Child | null>(null)
   const [loading, setLoading] = useState(true)
@@ -247,6 +250,14 @@ export default function KidScreen() {
               Точный расчёт будет в Weekly Review
             </div>
           </div>
+        </div>
+
+        {/* Monthly Potential */}
+        <div style={{ marginTop: '16px' }}>
+          <PotentialWidget 
+            childId={childId}
+            onDetailsClick={() => router.push(`/potential/${childId}`)}
+          />
         </div>
 
         {/* Active Goal */}

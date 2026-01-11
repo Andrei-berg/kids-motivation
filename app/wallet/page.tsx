@@ -6,6 +6,7 @@ import WalletDashboard from '@/components/WalletDashboard'
 import ExchangeModal from '@/components/ExchangeModal'
 import ShopModal from '@/components/ShopModal'
 import WithdrawModal from '@/components/WithdrawModal'
+import P2PTransferModal from '@/components/P2PTransferModal'
 import { getTransactions, WalletTransaction } from '@/lib/wallet-api'
 
 export default function WalletPage() {
@@ -13,6 +14,7 @@ export default function WalletPage() {
   const [showExchange, setShowExchange] = useState(false)
   const [showShop, setShowShop] = useState(false)
   const [showWithdraw, setShowWithdraw] = useState(false)
+  const [showP2P, setShowP2P] = useState(false)
   const [transactions, setTransactions] = useState<WalletTransaction[]>([])
   const [loading, setLoading] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
@@ -116,6 +118,19 @@ export default function WalletPage() {
               <span className="wallet-action-label">Вывести деньги</span>
               <span className="wallet-action-hint">Получить наличными</span>
             </button>
+
+            <button 
+              className="wallet-action-btn wallet-action-p2p"
+              onClick={() => setShowP2P(true)}
+              style={{ 
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white'
+              }}
+            >
+              <span className="wallet-action-icon">💸</span>
+              <span className="wallet-action-label">Перевести брату</span>
+              <span className="wallet-action-hint">Подарок, займ, сделка</span>
+            </button>
           </div>
         </div>
 
@@ -199,6 +214,16 @@ export default function WalletPage() {
         isOpen={showWithdraw}
         onClose={() => setShowWithdraw(false)}
         childId={childId}
+        onSuccess={handleSuccess}
+      />
+
+      <P2PTransferModal
+        isOpen={showP2P}
+        onClose={() => setShowP2P(false)}
+        fromChildId={childId}
+        toChildId={childId === 'adam' ? 'alim' : 'adam'}
+        fromChildName={getChildName(childId)}
+        toChildName={getChildName(childId === 'adam' ? 'alim' : 'adam')}
         onSuccess={handleSuccess}
       />
     </>

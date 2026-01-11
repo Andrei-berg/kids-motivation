@@ -65,11 +65,17 @@ export default function NavBar() {
         <Link href="/streaks" className={`pill ${pathname === '/streaks' ? 'active' : ''}`}>
           🔥 Streaks
         </Link>
+        <Link href="/coach-rating" className={`pill ${pathname === '/coach-rating' ? 'active' : ''}`}>
+          💪 Оценка
+        </Link>
         <Link href="/records" className={`pill ${pathname === '/records' ? 'active' : ''}`}>
           🏆 Records
         </Link>
         <Link href="/expenses" className={`pill ${pathname === '/expenses' ? 'active' : ''}`}>
           💰 Расходы
+        </Link>
+        <Link href="/audit" className={`pill ${pathname === '/audit' ? 'active' : ''}`}>
+          💼 История
         </Link>
         <Link href="/settings" className={`pill ${pathname === '/settings' ? 'active' : ''}`}>
           ⚙️ Settings
