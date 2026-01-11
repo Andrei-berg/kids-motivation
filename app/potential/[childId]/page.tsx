@@ -98,28 +98,28 @@ export default function PotentialDetailsPage() {
     {
       name: 'Оценки',
       icon: '📚',
-      potential: potential.grades_potential,
+      potential: potential.grades_potential ?? 0,
       earned: 0, // Рассчитать из лога
       color: 'blue'
     },
     {
       name: 'Комната',
       icon: '🏠',
-      potential: potential.room_potential,
+      potential: potential.room_potential ?? 0,
       earned: 0,
       color: 'green'
     },
     {
       name: 'Спорт',
       icon: '💪',
-      potential: potential.sport_potential,
+      potential: potential.sport_potential ?? 0,
       earned: 0,
       color: 'orange'
     },
     {
       name: 'Поведение',
       icon: '😊',
-      potential: potential.behavior_potential,
+      potential: potential.behavior_potential ?? 0,
       earned: 0,
       color: 'purple'
     }
