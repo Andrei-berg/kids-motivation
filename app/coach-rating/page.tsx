@@ -184,16 +184,17 @@ export default function CoachRatingPage() {
       </div>
 
       {/* Модалка */}
-      <CoachRatingModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        childId={childId}
-        sections={sections}
-        onSuccess={() => {
-          setShowModal(false)
-          alert('Оценка сохранена! 🎉')
-        }}
-      />
+      {showModal && (
+        <CoachRatingModal
+          childId={childId}
+          sections={sections}
+          onClose={() => setShowModal(false)}
+          onSuccess={() => {
+            setShowModal(false)
+            alert('Оценка сохранена! 🎉')
+          }}
+        />
+      )}
     </>
   )
 }
