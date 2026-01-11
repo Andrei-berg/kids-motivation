@@ -100,6 +100,10 @@ export interface WalletSettings {
   coins_per_room_task: number
   coins_per_good_behavior: number
   coins_per_exercise: number
+  p2p_max_per_transfer: number
+  p2p_max_per_day: number
+  p2p_max_per_month: number
+  p2p_max_debt: number
   updated_at: string
 }
 
@@ -282,6 +286,10 @@ export async function getWalletSettings(): Promise<WalletSettings> {
       coins_per_room_task: 3,
       coins_per_good_behavior: 5,
       coins_per_exercise: 5,
+      p2p_max_per_transfer: 100,
+      p2p_max_per_day: 200,
+      p2p_max_per_month: 500,
+      p2p_max_debt: 200,
       updated_at: new Date().toISOString()
     }
   }
