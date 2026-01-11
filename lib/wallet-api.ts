@@ -104,6 +104,50 @@ export interface WalletSettings {
 }
 
 // ============================================================================
+// WALLET V2 - НОВЫЕ ТИПЫ
+// ============================================================================
+
+export interface MonthlyPotential {
+  child_id: string
+  base_potential: number
+  max_with_bonuses: number
+  grades_potential?: number
+  room_potential?: number
+  sport_potential?: number
+  behavior_potential?: number
+  available_bonuses?: Record<string, {
+    icon: string
+    title: string
+    amount: number
+    progress?: {
+      current: number
+      target: number
+    }
+  }>
+}
+
+export interface AuditLog {
+  id: string
+  child_id: string
+  action_type: string
+  action_by: string
+  coins_change: number | null
+  money_change: number | null
+  description: string
+  icon: string
+  coins_before: number | null
+  coins_after: number | null
+  money_before: number | null
+  money_after: number | null
+  created_at: string
+  is_suspicious: boolean
+  requires_review: boolean
+  parent_reviewed: boolean
+  metadata: Record<string, any>
+  related_type?: string | null
+}
+
+// ============================================================================
 // КОШЕЛЁК (WALLET)
 // ============================================================================
 
@@ -871,7 +915,7 @@ export async function awardCoinsForSport(
  * 
  * Возвращает базовый потенциал и максимум с бонусами
  */
-export async function getMonthlyPotential(childId: string): Promise<any> {
+export async function getMonthlyPotential(childId: string): Promise<MonthlyPotential> {
   // Заглушка - вернуть базовые значения
   return {
     child_id: childId,
@@ -897,7 +941,7 @@ export async function getMonthlyPotential(childId: string): Promise<any> {
  * 
  * История всех операций с полной прозрачностью
  */
-export async function getAuditLog(childId: string, limit: number = 50): Promise<any[]> {
+export async function getAuditLog(childId: string, limit: number = 50): Promise<AuditLog[]> {
   // Использовать существующие транзакции как audit log
   const transactions = await getTransactions(childId, limit)
   
@@ -918,7 +962,8 @@ export async function getAuditLog(childId: string, limit: number = 50): Promise<
     is_suspicious: false,
     requires_review: false,
     parent_reviewed: false,
-    metadata: {}
+    metadata: {},
+    related_type: t.related_type
   }))
 }
 
