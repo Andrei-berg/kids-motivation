@@ -8,9 +8,10 @@ import ShopModal from '@/components/ShopModal'
 import WithdrawModal from '@/components/WithdrawModal'
 import P2PTransferModal from '@/components/P2PTransferModal'
 import { getTransactions, WalletTransaction } from '@/lib/wallet-api'
+import { useAppStore } from '@/lib/store'
 
 export default function WalletPage() {
-  const [childId, setChildId] = useState('adam')
+  const { childId, setChildId } = useAppStore()
   const [showExchange, setShowExchange] = useState(false)
   const [showShop, setShowShop] = useState(false)
   const [showWithdraw, setShowWithdraw] = useState(false)
@@ -18,11 +19,6 @@ export default function WalletPage() {
   const [transactions, setTransactions] = useState<WalletTransaction[]>([])
   const [loading, setLoading] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
-
-  useEffect(() => {
-    const saved = localStorage.getItem('v4_selected_kid')
-    if (saved) setChildId(saved)
-  }, [])
 
   useEffect(() => {
     loadTransactions()
@@ -64,19 +60,13 @@ export default function WalletPage() {
           <div style={{ display: 'flex', gap: '12px' }}>
             <button
               className={childId === 'adam' ? 'btn primary' : 'btn'}
-              onClick={() => {
-                setChildId('adam')
-                localStorage.setItem('v4_selected_kid', 'adam')
-              }}
+              onClick={() => setChildId('adam')}
             >
               👦 Адам
             </button>
             <button
               className={childId === 'alim' ? 'btn primary' : 'btn'}
-              onClick={() => {
-                setChildId('alim')
-                localStorage.setItem('v4_selected_kid', 'alim')
-              }}
+              onClick={() => setChildId('alim')}
             >
               👶 Алим
             </button>

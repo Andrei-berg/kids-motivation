@@ -232,7 +232,7 @@ export async function getDay(childId: string, date: string) {
 // ОЦЕНКИ ПО ПРЕДМЕТАМ
 // ============================================================================
 
-export async function addSubjectGrade(params: {
+export async function saveSubjectGrade(params: {
   childId: string
   date: string
   subject: string
@@ -252,26 +252,17 @@ export async function addSubjectGrade(params: {
     })
     .select()
     .single()
-  
+
   if (error) throw error
-  
+
   // Обновить кеш предметов
   await updateSubjectCache(params.childId, params.subject, params.date)
-  
+
   return data
 }
 
-// Алиас для DailyModal (saveSubjectGrade)
-export async function saveSubjectGrade(params: {
-  childId: string
-  date: string
-  subject: string
-  subjectId?: string
-  grade: number
-  note?: string
-}) {
-  return addSubjectGrade(params)
-}
+// Backward-compat alias
+export const addSubjectGrade = saveSubjectGrade
 
 export async function getSubjectGradesForDate(childId: string, date: string) {
   const { data, error } = await supabase
@@ -660,6 +651,49 @@ export async function finalizeWeek(params: {
 }
 
 // ============================================================================
+// РАСЧЁТ ОЧКОВ НЕДЕЛИ (без финализации)
+// ============================================================================
+
+/**
+ * Считает очки за неделю прямо из raw-данных (days + grades).
+ * Не требует финализации недели.
+ */
+export async function getWeekScore(childId: string, weekStart: string): Promise<{
+  coinsFromGrades: number
+  coinsFromRoom: number
+  coinsFromBehavior: number
+  total: number
+  gradedDays: number
+  roomOkDays: number
+  filledDays: number
+}> {
+  const week = getWeekRange(weekStart)
+
+  const [{ data: days }, { data: grades }] = await Promise.all([
+    supabase.from('days').select('*').eq('child_id', childId).gte('date', week.start).lte('date', week.end),
+    supabase.from('subject_grades').select('grade').eq('child_id', childId).gte('date', week.start).lte('date', week.end)
+  ])
+
+  const GRADE_COINS: Record<number, number> = { 5: 5, 4: 3, 3: -3, 2: -5, 1: -10 }
+
+  const coinsFromGrades = (grades || []).reduce((sum, g) => sum + (GRADE_COINS[g.grade] ?? 0), 0)
+  const roomOkDays = (days || []).filter(d => d.room_ok).length
+  const coinsFromRoom = roomOkDays * 3
+  const behaviorDays = (days || []).filter(d => d.good_behavior).length
+  const coinsFromBehavior = behaviorDays * 5
+
+  return {
+    coinsFromGrades,
+    coinsFromRoom,
+    coinsFromBehavior,
+    total: coinsFromGrades + coinsFromRoom + coinsFromBehavior,
+    gradedDays: Array.from(new Set((grades || []).map((g: any) => g.date))).length,
+    roomOkDays,
+    filledDays: (days || []).length
+  }
+}
+
+// ============================================================================
 // СТРИКИ
 // ============================================================================
 
@@ -690,8 +724,8 @@ export const api = {
   getDay,
   
   // Оценки
-  addSubjectGrade,
   saveSubjectGrade,
+  addSubjectGrade,
   getSubjectGradesForDate,
   deleteSubjectGrade,
   getSubjectSuggestions,
@@ -711,6 +745,7 @@ export const api = {
   
   // Недели
   getWeekData,
+  getWeekScore,
   finalizeWeek,
   
   // Стрики

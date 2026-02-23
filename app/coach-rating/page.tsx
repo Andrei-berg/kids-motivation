@@ -4,18 +4,14 @@ import { useState, useEffect } from 'react'
 import NavBar from '@/components/NavBar'
 import CoachRatingModal from '@/components/CoachRatingModal'
 import { api } from '@/lib/api'
+import { useAppStore } from '@/lib/store'
 
 export default function CoachRatingPage() {
-  const [childId, setChildId] = useState('adam')
+  const { childId, setChildId } = useAppStore()
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [sections, setSections] = useState<any[]>([])
 
-  useEffect(() => {
-    const saved = localStorage.getItem('v4_selected_kid')
-    if (saved) setChildId(saved)
-    loadSections()
-  }, [])
 
   useEffect(() => {
     loadSections()

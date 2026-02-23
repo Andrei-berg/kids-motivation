@@ -3981,6 +3981,176 @@ textarea::placeholder {
 }
 
 /* ============================================================================
+   V5 REDESIGN — NEW COMPONENTS
+   ============================================================================ */
+
+/* Dashboard Hero Card */
+.dashboard-hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  padding: 24px;
+  color: white;
+}
+.dashboard-hero .h1,
+.dashboard-hero .muted {
+  color: white;
+}
+.dashboard-hero .muted {
+  opacity: 0.8;
+}
+.dashboard-hero .progress {
+  background: rgba(255,255,255,0.25);
+}
+.dashboard-hero .fill {
+  background: rgba(255,255,255,0.9) !important;
+}
+.dashboard-hero .btn {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border: 1.5px solid rgba(255,255,255,0.4);
+}
+.dashboard-hero .btn:hover {
+  background: rgba(255,255,255,0.35);
+}
+.dashboard-hero .btn.primary {
+  background: white;
+  color: #667eea;
+  border-color: white;
+}
+.dashboard-hero .btn.primary:hover {
+  background: #f0f0ff;
+}
+
+/* Today status 4-column grid */
+.day-status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+.day-status-item {
+  border-radius: 12px;
+  padding: 12px 8px;
+  text-align: center;
+  background: var(--gray-50);
+  border: 1.5px solid var(--gray-200);
+  transition: all 0.2s;
+}
+.day-status-item.ok {
+  background: var(--emerald-50);
+  border-color: #a7f3d0;
+}
+.day-status-item.warn {
+  background: var(--red-50);
+  border-color: #fca5a5;
+}
+.day-status-item.empty {
+  opacity: 0.5;
+}
+.day-status-icon { font-size: 20px; margin-bottom: 4px; }
+.day-status-label { font-size: 11px; color: var(--gray-500); margin-bottom: 2px; }
+.day-status-val { font-size: 16px; font-weight: 700; color: var(--gray-800); }
+
+/* 7-day week calendar strip */
+.week-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-top: 8px;
+}
+.week-day {
+  border-radius: 10px;
+  padding: 8px 4px;
+  text-align: center;
+  background: var(--gray-50);
+  border: 1.5px solid var(--gray-200);
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.week-day:hover:not(.future) {
+  border-color: var(--blue-500);
+  background: var(--blue-50);
+}
+.week-day.today {
+  border-color: var(--blue-500);
+  background: var(--blue-50);
+}
+.week-day.filled {
+  background: var(--emerald-50);
+  border-color: #a7f3d0;
+}
+.week-day.future {
+  opacity: 0.35;
+  cursor: default;
+}
+.week-day-label { font-size: 11px; color: var(--gray-500); font-weight: 500; margin-bottom: 4px; }
+.week-day-dot { font-size: 14px; font-weight: 700; color: var(--gray-700); }
+.week-day.filled .week-day-dot { color: var(--emerald-600); }
+.week-day.today .week-day-dot { color: var(--blue-600); }
+
+/* Single-scroll modal layout */
+.scroll-modal {
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+.scroll-modal-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 0 24px 0;
+}
+.scroll-section {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--gray-100);
+}
+.scroll-section:last-child {
+  border-bottom: none;
+}
+.scroll-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.scroll-section-icon { font-size: 18px; }
+.scroll-section-title { font-size: 15px; font-weight: 700; color: var(--gray-800); flex: 1; }
+.scroll-section-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.scroll-section-badge.ok { background: var(--emerald-50); color: var(--emerald-600); }
+.scroll-section-badge.warn { background: var(--red-50); color: var(--red-600); }
+
+/* Mobile breakpoints */
+@media (max-width: 640px) {
+  .day-status-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .week-calendar {
+    gap: 2px;
+  }
+  .week-day {
+    padding: 6px 2px;
+  }
+  .week-day-label { font-size: 10px; }
+  .dashboard-hero {
+    padding: 16px;
+  }
+  .scroll-modal-body {
+    padding: 0 16px 0;
+  }
+  .grid3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .grid4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ============================================================================
    WALLET V2 STYLES - ИМПОРТ
    ============================================================================ */
 @import './wallet-v2-styles.css';

@@ -924,15 +924,33 @@ export async function awardCoinsForSport(
  * Возвращает базовый потенциал и максимум с бонусами
  */
 export async function getMonthlyPotential(childId: string): Promise<MonthlyPotential> {
-  // Заглушка - вернуть базовые значения
+  // Вычислить потенциал из реальных данных за последние 30 дней
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const fromDate = thirtyDaysAgo.toISOString().split('T')[0]
+  const toDate = new Date().toISOString().split('T')[0]
+
+  const [{ data: grades }, { data: days }] = await Promise.all([
+    supabase.from('subject_grades').select('grade').eq('child_id', childId).gte('date', fromDate).lte('date', toDate),
+    supabase.from('days').select('room_ok, good_behavior').eq('child_id', childId).gte('date', fromDate).lte('date', toDate)
+  ])
+
+  const GRADE_COINS: Record<number, number> = { 5: 5, 4: 3, 3: -3, 2: -5, 1: -10 }
+  const gradesPotential = (grades || []).reduce((sum, g) => sum + (GRADE_COINS[g.grade] ?? 0), 0)
+  const roomPotential = (days || []).filter(d => d.room_ok).length * 3
+  const behaviorPotential = (days || []).filter(d => d.good_behavior).length * 5
+
+  const base = gradesPotential + roomPotential + behaviorPotential
+  const sportPotential = Math.round(base * 0.15) // оценочный вклад спорта
+
   return {
     child_id: childId,
-    base_potential: 320,
-    max_with_bonuses: 520,
-    grades_potential: childId === 'adam' ? 209 : 0,
-    room_potential: childId === 'adam' ? 33 : 57,
-    sport_potential: childId === 'adam' ? 80 : 75,
-    behavior_potential: childId === 'adam' ? 30 : 130,
+    base_potential: base,
+    max_with_bonuses: Math.round(base * 1.3),
+    grades_potential: gradesPotential,
+    room_potential: roomPotential,
+    sport_potential: sportPotential,
+    behavior_potential: behaviorPotential,
     available_bonuses: {
       perfect_week: { icon: '🔥', title: 'Идеальная неделя', amount: 50 },
       perfect_month: { icon: '🏆', title: 'Идеальный месяц', amount: 100 },

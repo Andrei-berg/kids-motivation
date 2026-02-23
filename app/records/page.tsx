@@ -3,16 +3,13 @@
 import { useState, useEffect } from 'react'
 import NavBar from '@/components/NavBar'
 import { getChildBadges, getAvailableBadges } from '@/lib/badges'
+import { useAppStore } from '@/lib/store'
 
 export default function Records() {
-  const [childId, setChildId] = useState('adam')
+  const { childId } = useAppStore()
   const [badges, setBadges] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const saved = localStorage.getItem('v4_selected_kid')
-    if (saved) setChildId(saved)
-  }, [])
 
   useEffect(() => {
     if (childId) {

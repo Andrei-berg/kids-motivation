@@ -3,16 +3,13 @@
 import { useState, useEffect } from 'react'
 import NavBar from '@/components/NavBar'
 import { api } from '@/lib/api'
+import { useAppStore } from '@/lib/store'
 
 export default function SuperStreaks() {
-  const [childId, setChildId] = useState('adam')
+  const { childId } = useAppStore()
   const [streaks, setStreaks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const saved = localStorage.getItem('v4_selected_kid')
-    if (saved) setChildId(saved)
-  }, [])
 
   useEffect(() => {
     if (childId) {

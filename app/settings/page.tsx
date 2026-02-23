@@ -17,11 +17,12 @@ import {
   Section
 } from '@/lib/expenses-api'
 import { verifyPin } from '@/utils/helpers'
+import { useAppStore } from '@/lib/store'
 
 type Tab = 'subjects' | 'schedule' | 'exercises' | 'categories' | 'sections'
 
 export default function Settings() {
-  const [childId, setChildId] = useState('adam')
+  const { childId } = useAppStore()
   const [activeTab, setActiveTab] = useState<Tab>('subjects')
   const [loading, setLoading] = useState(true)
   
@@ -52,10 +53,6 @@ export default function Settings() {
   const [newSectionTrainer, setNewSectionTrainer] = useState('')
   const [newSectionAddress, setNewSectionAddress] = useState('')
   
-  useEffect(() => {
-    const saved = localStorage.getItem('v4_selected_kid')
-    if (saved) setChildId(saved)
-  }, [])
   
   useEffect(() => {
     if (childId && activeTab === 'subjects') {

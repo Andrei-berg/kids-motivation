@@ -3,16 +3,12 @@
 import { useState, useEffect } from 'react'
 import NavBar from '@/components/NavBar'
 import AuditLogViewer from '@/components/AuditLogViewer'
+import { useAppStore } from '@/lib/store'
 
 export default function AuditPage() {
-  const [childId, setChildId] = useState('adam')
-  const [loading, setLoading] = useState(true)
+  const { childId } = useAppStore()
+  const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    const saved = localStorage.getItem('v4_selected_kid')
-    if (saved) setChildId(saved)
-    setLoading(false)
-  }, [])
 
   if (loading) {
     return (
