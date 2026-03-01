@@ -50,7 +50,7 @@ Plans:
 
 **Requirements:** REQ-ONB-001, REQ-ONB-002, REQ-ONB-003, REQ-ONB-004, REQ-ONB-005, REQ-ONB-006, REQ-ONB-007, REQ-ONB-008, REQ-ONB-009, REQ-ONB-010, REQ-FAM-008, REQ-FAM-009, REQ-FAM-010
 
-**Plans:** 5 plans
+**Plans:** 2/5 plans executed
 
 Plans:
 - [ ] 01.2-01-PLAN.md — Schema patch (onboarding_step column, avatars Storage bucket) + lib/onboarding-api.ts type contracts

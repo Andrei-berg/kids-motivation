@@ -3,24 +3,24 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-01T16:17:58.382Z"
+last_updated: "2026-03-01T20:13:00Z"
 progress:
   total_phases: 24
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 8
+  completed_plans: 5
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-03-01 (01.1-03 executed)
+> Обновляется после каждой фазы. Последнее обновление: 2026-03-01 (01.2-02 executed, checkpoint:human-verify pending for /login + /register pages)
 
 ---
 
 ## Статус проекта
 
 ```
-🟢 EXECUTING — Phase 1.1 COMPLETE (Plan 03/03 done) → Phase 1.2 next
+🟢 EXECUTING — Phase 1.2 IN PROGRESS (Plan 02/05 done, checkpoint:human-verify pending for /login + /register)
 ```
 
 ---
@@ -120,6 +120,16 @@ Phase 7.3  [ ] Google Play
 | Штрафы | Да, оставляем | Реализм, ответственность |
 | Магазин | Родитель создаёт позиции | Гибкость |
 | Подтверждение покупок | Родитель одобряет | Контроль |
+
+### Phase 1.2 Plan 02 — Ключевые решения (2026-03-01)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| Auth page styling | Inline styles + CSS variables | Прямое использование --emerald-500 и др. из globals.css |
+| Google G icon | Inline SVG | Без внешних зависимостей для единственного логотипа |
+| Forgot password UX | Email поле → затем клик | Нет отдельного поля; один шаг для пользователя |
+| Register dual-mode | Обрабатывает оба случая Supabase | email-confirmation on=show UI, off=redirect to /dashboard |
+| Auth pages | Без NavBar | Pre-auth страницы — gates, не app pages |
 
 ### Phase 1.1 Plan 03 — Ключевые решения (2026-03-01)
 
