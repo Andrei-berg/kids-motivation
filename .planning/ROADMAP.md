@@ -12,7 +12,7 @@
 
 ### Progress
 
-- [ ] **Phase 1.1: db-schema** — New DB with families, RLS, Auth, data migration
+- [x] **Phase 1.1: db-schema** — New DB with families, RLS, Auth, data migration (completed 2026-03-01)
 - [ ] **Phase 1.2: onboarding** — Registration, family creation, adding children
 - [ ] **Phase 1.3: categories-schedule** — Flexible categories, schedule, push notifications
 - [ ] **Phase 1.4: dashboard-refactor** — Remove all hardcodes, adapt UI
@@ -27,7 +27,7 @@
 
 **Requirements:** REQ-AUTH-001, REQ-AUTH-002, REQ-AUTH-004, REQ-AUTH-005, REQ-AUTH-006, REQ-AUTH-007, REQ-AUTH-008, REQ-FAM-001, REQ-FAM-002, REQ-FAM-003, REQ-FAM-004, REQ-FAM-005, REQ-FAM-007, REQ-FAM-013, REQ-SEC-001, REQ-SEC-005
 
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 01.1-01-PLAN.md — SQL schema: new identity tables (families, family_members, user_profiles), RLS policies, and adam/alim data migration

@@ -1,13 +1,13 @@
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-03-01 (01.1-02 executed)
+> Обновляется после каждой фазы. Последнее обновление: 2026-03-01 (01.1-03 executed)
 
 ---
 
 ## Статус проекта
 
 ```
-🟢 EXECUTING — Phase 1.1 in progress (Plan 02/03 complete)
+🟢 EXECUTING — Phase 1.1 COMPLETE (Plan 03/03 done) → Phase 1.2 next
 ```
 
 ---
@@ -23,20 +23,16 @@
 - [x] Создан ONBOARDING.md — детальные экраны онбординга
 - [x] Создан CODEBASE-ANALYSIS.md — что переиспользуем, что переписываем
 
-### 🔄 Phase 1.1 — DB Schema (in progress, 2026-03-01)
+### ✅ Phase 1.1 — DB Schema (COMPLETE, 2026-03-01)
 - [x] Plan 01: SQL migrations — schema-v3.sql, seed-migration.sql, rls.sql (commits: ced902d, 28eeff6, df9271d)
 - [x] Plan 02: Supabase clients (lib/supabase/client.ts, server.ts, middleware.ts) — commits: 08b9843, 292ef31
-- [ ] Plan 03: Auth middleware (middleware.ts)
+- [x] Plan 03: Auth middleware (middleware.ts, app/auth/callback/route.ts) — commits: 73a7c5e, 5ea318b
 
 ---
 
 ## Следующий шаг
 
-**→ Phase 1.1 Plan 03: Auth middleware (middleware.ts)**
-
-```bash
-# Run next plan in phase 01.1
-```
+**→ Phase 1.2: Onboarding Flow** (login/register pages, family creation, Google OAuth setup)
 
 ---
 
@@ -44,7 +40,7 @@
 
 ### Milestone 1 — Foundation
 ```
-Phase 1.1  [~] Новая схема БД (families, RLS, Auth) — Plan 02/03 done
+Phase 1.1  [x] Новая схема БД (families, RLS, Auth) — COMPLETE (3/3 plans)
 Phase 1.2  [ ] Onboarding Flow
 Phase 1.3  [ ] Гибкие категории + расписание
 Phase 1.4  [ ] Dashboard рефактор (убрать hardcodes)
@@ -111,6 +107,15 @@ Phase 7.3  [ ] Google Play
 | Штрафы | Да, оставляем | Реализм, ответственность |
 | Магазин | Родитель создаёт позиции | Гибкость |
 | Подтверждение покупок | Родитель одобряет | Контроль |
+
+### Phase 1.1 Plan 03 — Ключевые решения (2026-03-01)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| Middleware family_members check | DB roundtrip на каждый запрос | Просто и корректно; оптимизация в Phase 1.4 |
+| Onboarding paths | Auth-required, но family-check exempt | Пользователь создаёт семью после регистрации |
+| /auth/callback | Поддержка `next` query param | Deep-link redirects post-auth |
+| OAuth config | Supabase Dashboard + Google Cloud Console | Phase 1.2 user setup (не автоматизируется) |
 
 ### Phase 1.1 Plan 02 — Ключевые решения (2026-03-01)
 
