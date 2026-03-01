@@ -341,16 +341,30 @@ CREATE POLICY "families_insert" ON families
 -- ---------------------------------------------------------------------------
 -- SECTION 5 — family_members: members can read roster; controlled insert/update
 -- ---------------------------------------------------------------------------
+-- NOTE: Direct self-referential subqueries on family_members cause infinite
+-- recursion in RLS policy evaluation. Use SECURITY DEFINER helper functions
+-- that bypass RLS to safely query the table.
+-- ---------------------------------------------------------------------------
+
+-- Helper: returns family_ids the current user belongs to (bypasses RLS)
+CREATE OR REPLACE FUNCTION get_my_family_ids()
+RETURNS SETOF UUID LANGUAGE sql SECURITY DEFINER STABLE
+SET search_path = public AS $$
+  SELECT family_id FROM public.family_members WHERE user_id = auth.uid();
+$$;
+
+-- Helper: returns family_ids where current user is a parent (bypasses RLS)
+CREATE OR REPLACE FUNCTION get_my_parent_family_ids()
+RETURNS SETOF UUID LANGUAGE sql SECURITY DEFINER STABLE
+SET search_path = public AS $$
+  SELECT family_id FROM public.family_members
+  WHERE user_id = auth.uid() AND role = 'parent';
+$$;
 
 -- Any member of a family can see the full roster of that family
 CREATE POLICY "family_members_read" ON family_members
   FOR SELECT TO authenticated
-  USING (
-    family_id IN (
-      SELECT family_id FROM family_members fm2
-      WHERE fm2.user_id = (SELECT auth.uid())
-    )
-  );
+  USING (family_id IN (SELECT get_my_family_ids()));
 
 -- A user can add themselves to any family (joining by invite code),
 -- OR a parent can add members to their own family
@@ -358,22 +372,13 @@ CREATE POLICY "family_members_insert" ON family_members
   FOR INSERT TO authenticated
   WITH CHECK (
     user_id = (SELECT auth.uid())
-    OR
-    family_id IN (
-      SELECT family_id FROM family_members
-      WHERE user_id = (SELECT auth.uid()) AND role = 'parent'
-    )
+    OR family_id IN (SELECT get_my_family_ids())
   );
 
 -- Only parents can update or delete family membership records
 CREATE POLICY "family_members_update_delete" ON family_members
   FOR ALL TO authenticated
-  USING (
-    family_id IN (
-      SELECT family_id FROM family_members
-      WHERE user_id = (SELECT auth.uid()) AND role = 'parent'
-    )
-  );
+  USING (family_id IN (SELECT get_my_parent_family_ids()));
 
 
 -- ---------------------------------------------------------------------------
