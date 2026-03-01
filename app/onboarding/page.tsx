@@ -772,12 +772,12 @@ export default function OnboardingPage() {
           router.replace('/login')
           return
         }
+        setWizardData((prev) => ({ ...prev, userId: user.id }))
         const step = await getOnboardingStep(user.id)
         if (step >= 6) {
           router.replace('/dashboard')
           return
         }
-        setWizardData((prev) => ({ ...prev, userId: user.id }))
         setCurrentStep(step)
       } catch {
         // Non-fatal: stay at step 0
