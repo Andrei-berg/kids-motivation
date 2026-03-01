@@ -45,7 +45,7 @@ CREATE INDEX IF NOT EXISTS idx_families_invite_code ON families(invite_code);
 CREATE TABLE IF NOT EXISTS public.family_members (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   family_id    UUID NOT NULL REFERENCES families(id) ON DELETE CASCADE,
-  user_id      UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id      UUID REFERENCES auth.users(id) ON DELETE CASCADE, -- nullable: children added before they register
   role         TEXT NOT NULL CHECK (role IN ('parent', 'child', 'extended')),
   display_name TEXT,
   avatar_url   TEXT,
