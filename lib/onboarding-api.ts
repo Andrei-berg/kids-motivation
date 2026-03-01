@@ -277,18 +277,15 @@ export async function joinFamilyAsChild(
 ): Promise<void> {
   const supabase = createClient()
 
-  // Update the pre-registered child row (user_id IS NULL) with the authenticated user's ID.
-  // Requires family_members_claim_child RLS policy: UPDATE where user_id IS NULL → auth.uid().
-  const { error: memberError } = await supabase
-    .from('family_members')
-    .update({ user_id: userId })
-    .eq('id', child.memberId)
-    .eq('family_id', familyId)
+  // claim_child_profile (SECURITY DEFINER):
+  // - if user already has a row in this family → just marks onboarding complete
+  // - otherwise → updates the pre-registered child row (user_id IS NULL) with auth.uid()
+  const { error } = await supabase.rpc('claim_child_profile', {
+    p_member_id: child.memberId,
+    p_family_id: familyId,
+  })
 
-  if (memberError) {
-    throw new Error(`Failed to join family as child: ${memberError.message}`)
+  if (error) {
+    throw new Error(`Failed to join family as child: ${error.message}`)
   }
-
-  // Mark onboarding complete for this child user
-  await updateOnboardingStep(userId, 6)
 }
