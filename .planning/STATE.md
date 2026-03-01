@@ -3,24 +3,24 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-01T20:40:00Z"
+last_updated: "2026-03-01T20:29:07Z"
 progress:
   total_phases: 24
   completed_phases: 1
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-03-01 (01.2-02 complete — /login + /register pages verified and approved)
+> Обновляется после каждой фазы. Последнее обновление: 2026-03-01 (01.2-03 complete — parent onboarding wizard /onboarding with 5 steps, emoji/photo avatar, invite code)
 
 ---
 
 ## Статус проекта
 
 ```
-🟢 EXECUTING — Phase 1.2 IN PROGRESS (Plan 02/05 COMPLETE, ready for Plan 03: parent onboarding wizard)
+🟢 EXECUTING — Phase 1.2 IN PROGRESS (Plan 03/05 COMPLETE, ready for Plan 04: category/schedule setup steps 5-6)
 ```
 
 ---
@@ -45,7 +45,7 @@ progress:
 
 ## Следующий шаг
 
-**→ Phase 1.2 Plan 03: Parent Onboarding Wizard** (family creation flow for new users post-registration)
+**→ Phase 1.2 Plan 04: Onboarding Steps 5-6** (category/schedule setup + completion redirect)
 
 ---
 
@@ -120,6 +120,15 @@ Phase 7.3  [ ] Google Play
 | Штрафы | Да, оставляем | Реализм, ответственность |
 | Магазин | Родитель создаёт позиции | Гибкость |
 | Подтверждение покупок | Родитель одобряет | Контроль |
+
+### Phase 1.2 Plan 03 — Ключевые решения (2026-03-01)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| Wizard state | WizardData для cross-step данных, local state для form fields | Избежать засорения верхнего уровня транзиентными полями формы |
+| Photo upload timing | Дефер до submit (не на file select) | Предотвращение orphaned объектов в Supabase Storage |
+| addChildToFamily arg order | (familyId, parentUserId, child) | Реальная сигнатура функции; план показывал перепутанный порядок аргументов |
+| Back button scope | Steps 1-4 only | Step 0 нет кнопки "назад"; steps 5+ — placeholder, навигация не имеет смысла |
 
 ### Phase 1.2 Plan 02 — Ключевые решения (2026-03-01)
 
