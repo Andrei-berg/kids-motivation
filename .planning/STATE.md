@@ -1,13 +1,13 @@
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-03-01
+> Обновляется после каждой фазы. Последнее обновление: 2026-03-01 (01.1-01 executed)
 
 ---
 
 ## Статус проекта
 
 ```
-🟡 PLANNING — планирование завершено, готов к Phase 1
+🟢 EXECUTING — Phase 1.1 in progress (Plan 01/03 complete)
 ```
 
 ---
@@ -23,14 +23,19 @@
 - [x] Создан ONBOARDING.md — детальные экраны онбординга
 - [x] Создан CODEBASE-ANALYSIS.md — что переиспользуем, что переписываем
 
+### 🔄 Phase 1.1 — DB Schema (in progress, 2026-03-01)
+- [x] Plan 01: SQL migrations — schema-v3.sql, seed-migration.sql, rls.sql (commits: ced902d, 28eeff6, df9271d)
+- [ ] Plan 02: Supabase clients (lib/supabase-server.ts, lib/supabase-browser.ts)
+- [ ] Plan 03: Auth middleware (middleware.ts)
+
 ---
 
 ## Следующий шаг
 
-**→ Phase 1.1: Новая архитектура БД (multi-tenant + RLS)**
+**→ Phase 1.1 Plan 02: Supabase clients (lib/supabase-server.ts, lib/supabase-browser.ts)**
 
 ```bash
-/gsd:plan-phase 1.1
+# Run next plan in phase 01.1
 ```
 
 ---
@@ -39,7 +44,7 @@
 
 ### Milestone 1 — Foundation
 ```
-Phase 1.1  [ ] Новая схема БД (families, RLS, Auth)
+Phase 1.1  [~] Новая схема БД (families, RLS, Auth) — Plan 01/03 done
 Phase 1.2  [ ] Onboarding Flow
 Phase 1.3  [ ] Гибкие категории + расписание
 Phase 1.4  [ ] Dashboard рефактор (убрать hardcodes)
@@ -106,6 +111,17 @@ Phase 7.3  [ ] Google Play
 | Штрафы | Да, оставляем | Реализм, ответственность |
 | Магазин | Родитель создаёт позиции | Гибкость |
 | Подтверждение покупок | Родитель одобряет | Контроль |
+
+### Phase 1.1 Plan 01 — Ключевые решения (2026-03-01)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| family_id nullable | Nullable до Phase 1.4 | NOT NULL сломает существующий TypeScript |
+| child_id сохраняется | Не удалять до Phase 1.4 | Все lib/* файлы используют child_id = 'adam'/'alim' |
+| exercise_types family_id | NULL = global, non-null = family override | Глобальные упражнения доступны всем |
+| Bootstrap семья | LEGACY invite_code | Идемпотентность через ON CONFLICT |
+| Auth trigger | EXCEPTION block + SECURITY DEFINER | Никогда не блокировать регистрацию |
+| RLS performance | (SELECT auth.uid()) wrapper | Избежать re-evaluation per row |
 
 ---
 
