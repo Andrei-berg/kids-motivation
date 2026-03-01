@@ -34,7 +34,7 @@ export async function middleware(request: NextRequest) {
     if (!membership) {
       // Authenticated but no family — go to onboarding
       const url = request.nextUrl.clone()
-      url.pathname = '/onboarding/welcome'
+      url.pathname = '/onboarding'
       return NextResponse.redirect(url)
     }
   }

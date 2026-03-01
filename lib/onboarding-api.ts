@@ -28,6 +28,12 @@ export interface FamilyLookup {
   name: string
 }
 
+export interface ChildProfile {
+  memberId: string
+  displayName: string
+  avatarUrl: string | null
+}
+
 // ---------------------------------------------------------------------------
 // getOnboardingStep
 // ---------------------------------------------------------------------------
@@ -231,6 +237,30 @@ export async function lookupFamilyByCode(code: string): Promise<FamilyLookup | n
     familyId: data.id,
     name: data.name,
   }
+}
+
+// ---------------------------------------------------------------------------
+// getFamilyChildren
+// ---------------------------------------------------------------------------
+// Fetches all family_members with role='child' for a given family.
+// Used in the child join flow to show "Is this you?" profile list.
+
+export async function getFamilyChildren(familyId: string): Promise<ChildProfile[]> {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .from('family_members')
+    .select('id, display_name, avatar_url')
+    .eq('family_id', familyId)
+    .eq('role', 'child')
+
+  if (error) throw new Error(error.message)
+
+  return (data || []).map((row) => ({
+    memberId: row.id,
+    displayName: row.display_name || 'Ребёнок',
+    avatarUrl: row.avatar_url,
+  }))
 }
 
 // ---------------------------------------------------------------------------
