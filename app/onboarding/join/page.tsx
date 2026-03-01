@@ -111,7 +111,7 @@ export default function JoinFamilyPage() {
         setError('Ошибка авторизации. Войдите снова.')
         return
       }
-      await joinFamilyAsChild(familyId, user.id, { displayName: selectedChild.displayName })
+      await joinFamilyAsChild(familyId, user.id, { memberId: selectedChild.memberId, displayName: selectedChild.displayName })
       router.push('/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось присоединиться. Попробуйте снова.')

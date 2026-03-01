@@ -273,22 +273,17 @@ export async function getFamilyChildren(familyId: string): Promise<ChildProfile[
 export async function joinFamilyAsChild(
   familyId: string,
   userId: string,
-  child: { displayName: string }
+  child: { memberId: string; displayName: string }
 ): Promise<void> {
   const supabase = createClient()
 
-  // Upsert family_members row for the child
+  // Update the pre-registered child row (user_id IS NULL) with the authenticated user's ID.
+  // Requires family_members_claim_child RLS policy: UPDATE where user_id IS NULL → auth.uid().
   const { error: memberError } = await supabase
     .from('family_members')
-    .upsert(
-      {
-        family_id: familyId,
-        user_id: userId,
-        role: 'child',
-        display_name: child.displayName,
-      },
-      { onConflict: 'family_id,user_id' }
-    )
+    .update({ user_id: userId })
+    .eq('id', child.memberId)
+    .eq('family_id', familyId)
 
   if (memberError) {
     throw new Error(`Failed to join family as child: ${memberError.message}`)
