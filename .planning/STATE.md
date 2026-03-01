@@ -1,13 +1,13 @@
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-03-01 (01.1-01 executed)
+> Обновляется после каждой фазы. Последнее обновление: 2026-03-01 (01.1-02 executed)
 
 ---
 
 ## Статус проекта
 
 ```
-🟢 EXECUTING — Phase 1.1 in progress (Plan 01/03 complete)
+🟢 EXECUTING — Phase 1.1 in progress (Plan 02/03 complete)
 ```
 
 ---
@@ -25,14 +25,14 @@
 
 ### 🔄 Phase 1.1 — DB Schema (in progress, 2026-03-01)
 - [x] Plan 01: SQL migrations — schema-v3.sql, seed-migration.sql, rls.sql (commits: ced902d, 28eeff6, df9271d)
-- [ ] Plan 02: Supabase clients (lib/supabase-server.ts, lib/supabase-browser.ts)
+- [x] Plan 02: Supabase clients (lib/supabase/client.ts, server.ts, middleware.ts) — commits: 08b9843, 292ef31
 - [ ] Plan 03: Auth middleware (middleware.ts)
 
 ---
 
 ## Следующий шаг
 
-**→ Phase 1.1 Plan 02: Supabase clients (lib/supabase-server.ts, lib/supabase-browser.ts)**
+**→ Phase 1.1 Plan 03: Auth middleware (middleware.ts)**
 
 ```bash
 # Run next plan in phase 01.1
@@ -44,7 +44,7 @@
 
 ### Milestone 1 — Foundation
 ```
-Phase 1.1  [~] Новая схема БД (families, RLS, Auth) — Plan 01/03 done
+Phase 1.1  [~] Новая схема БД (families, RLS, Auth) — Plan 02/03 done
 Phase 1.2  [ ] Onboarding Flow
 Phase 1.3  [ ] Гибкие категории + расписание
 Phase 1.4  [ ] Dashboard рефактор (убрать hardcodes)
@@ -111,6 +111,16 @@ Phase 7.3  [ ] Google Play
 | Штрафы | Да, оставляем | Реализм, ответственность |
 | Магазин | Родитель создаёт позиции | Гибкость |
 | Подтверждение покупок | Родитель одобряет | Контроль |
+
+### Phase 1.1 Plan 02 — Ключевые решения (2026-03-01)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| Browser client library | createBrowserClient (@supabase/ssr) | Автоматическая работа с cookies, не supabase-js |
+| server.ts async | async createClient() + await cookies() | next/headers cookies() — async API в Next.js 14 |
+| middleware export | updateSession() вместо createClient() | Клиент и response держать вместе, иначе cookie desync |
+| JWT validation | getUser() не getSession() | getSession() не валидирует JWT на сервере Supabase |
+| lib/supabase.ts | Сохранён без изменений | Backward compat — все существующие страницы работают |
 
 ### Phase 1.1 Plan 01 — Ключевые решения (2026-03-01)
 
