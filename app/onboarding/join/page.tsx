@@ -9,7 +9,6 @@ import {
   joinFamilyAsChild,
   joinFamilyAsAdult,
   getUserDisplayName,
-  getOnboardingStep,
   ChildProfile,
 } from '@/lib/onboarding-api'
 
@@ -98,11 +97,6 @@ export default function JoinFamilyPage() {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
           router.replace('/login')
-          return
-        }
-        const step = await getOnboardingStep(user.id)
-        if (step >= 6) {
-          router.replace('/dashboard')
           return
         }
         const displayName = await getUserDisplayName(user.id)
