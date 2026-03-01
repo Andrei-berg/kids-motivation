@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS public.families (
   name        TEXT NOT NULL,
   avatar_url  TEXT,
   invite_code TEXT UNIQUE NOT NULL DEFAULT upper(substr(md5(random()::text), 1, 6)),
+  created_by  UUID REFERENCES auth.users(id),
   created_at  TIMESTAMPTZ DEFAULT NOW(),
   updated_at  TIMESTAMPTZ DEFAULT NOW()
 );

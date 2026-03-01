@@ -310,14 +310,13 @@ CREATE POLICY "user_profiles_own" ON user_profiles
 -- SECTION 4 — families: members can read; parents can update; anyone can create
 -- ---------------------------------------------------------------------------
 
--- Members of a family can read that family's row
+-- Members of a family can read that family's row.
+-- The creator can also see it before any members are added (bootstraps the join flow).
 CREATE POLICY "families_member_read" ON families
   FOR SELECT TO authenticated
   USING (
-    id IN (
-      SELECT family_id FROM family_members
-      WHERE user_id = (SELECT auth.uid())
-    )
+    id IN (SELECT get_my_family_ids())
+    OR created_by = (SELECT auth.uid())
   );
 
 -- Only parents can update family settings
