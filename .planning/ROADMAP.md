@@ -53,8 +53,8 @@ Plans:
 **Plans:** 2/5 plans executed
 
 Plans:
-- [ ] 01.2-01-PLAN.md — Schema patch (onboarding_step column, avatars Storage bucket) + lib/onboarding-api.ts type contracts
-- [ ] 01.2-02-PLAN.md — /login and /register pages with Google OAuth + email/password auth
+- [x] 01.2-01-PLAN.md — Schema patch (onboarding_step column, avatars Storage bucket) + lib/onboarding-api.ts type contracts
+- [x] 01.2-02-PLAN.md — /login and /register pages with Google OAuth + email/password auth
 - [ ] 01.2-03-PLAN.md — Onboarding wizard steps 1-5 (welcome, profile, family, add child, invite parent)
 - [ ] 01.2-04-PLAN.md — Onboarding wizard steps 6-7 (categories, done + confetti) — full wizard end-to-end
 - [ ] 01.2-05-PLAN.md — Child join flow at /onboarding/join + middleware redirect fix

@@ -3,24 +3,24 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-01T20:13:00Z"
+last_updated: "2026-03-01T20:40:00Z"
 progress:
   total_phases: 24
   completed_phases: 1
   total_plans: 8
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-03-01 (01.2-02 executed, checkpoint:human-verify pending for /login + /register pages)
+> Обновляется после каждой фазы. Последнее обновление: 2026-03-01 (01.2-02 complete — /login + /register pages verified and approved)
 
 ---
 
 ## Статус проекта
 
 ```
-🟢 EXECUTING — Phase 1.2 IN PROGRESS (Plan 02/05 done, checkpoint:human-verify pending for /login + /register)
+🟢 EXECUTING — Phase 1.2 IN PROGRESS (Plan 02/05 COMPLETE, ready for Plan 03: parent onboarding wizard)
 ```
 
 ---
@@ -45,7 +45,7 @@ progress:
 
 ## Следующий шаг
 
-**→ Phase 1.2: Onboarding Flow** (login/register pages, family creation, Google OAuth setup)
+**→ Phase 1.2 Plan 03: Parent Onboarding Wizard** (family creation flow for new users post-registration)
 
 ---
 
