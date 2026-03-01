@@ -1,20 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   lookupFamilyByCode,
   getFamilyChildren,
   joinFamilyAsChild,
+  joinFamilyAsAdult,
+  getUserDisplayName,
+  getOnboardingStep,
   ChildProfile,
 } from '@/lib/onboarding-api'
 
 // ---------------------------------------------------------------------------
-// Styles (inline, matching wizard page conventions)
+// Shared styles
 // ---------------------------------------------------------------------------
 
-const primaryBtnStyle: React.CSSProperties = {
+const primaryBtn: React.CSSProperties = {
   width: '100%',
   padding: '0.75rem 1.5rem',
   background: '#10b981',
@@ -26,10 +29,22 @@ const primaryBtnStyle: React.CSSProperties = {
   cursor: 'pointer',
 }
 
-const primaryBtnDisabledStyle: React.CSSProperties = {
-  ...primaryBtnStyle,
+const primaryBtnDisabled: React.CSSProperties = {
+  ...primaryBtn,
   background: '#9ca3af',
   cursor: 'not-allowed',
+}
+
+const secondaryBtn: React.CSSProperties = {
+  width: '100%',
+  padding: '0.75rem 1.5rem',
+  background: '#fff',
+  color: '#374151',
+  border: '2px solid #e5e7eb',
+  borderRadius: '0.5rem',
+  fontSize: '1rem',
+  fontWeight: 500,
+  cursor: 'pointer',
 }
 
 const errorStyle: React.CSSProperties = {
@@ -39,35 +54,76 @@ const errorStyle: React.CSSProperties = {
 }
 
 // ---------------------------------------------------------------------------
-// Child join page — 2-screen flow: code entry → profile confirm
+// Join page — screens: code → select → adult-role
 // ---------------------------------------------------------------------------
+
+type Screen = 'code' | 'select' | 'adult-role'
 
 export default function JoinFamilyPage() {
   const router = useRouter()
 
-  // Screen state
-  const [screen, setScreen] = useState<'code' | 'confirm'>('code')
+  // Auth state
+  const [userId, setUserId] = useState<string | null>(null)
+  const [userDisplayName, setUserDisplayName] = useState<string | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
 
-  // Code entry screen state
+  // Screen
+  const [screen, setScreen] = useState<Screen>('code')
+
+  // Code entry
   const [code, setCode] = useState('')
   const [lookingUp, setLookingUp] = useState(false)
 
-  // Confirm screen state
+  // Family data (after code lookup)
   const [familyId, setFamilyId] = useState('')
   const [familyName, setFamilyName] = useState('')
-  const [children, setChildren] = useState<ChildProfile[]>([])
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(null)
+  const [unlinkedChildren, setUnlinkedChildren] = useState<ChildProfile[]>([])
 
-  // Shared state
+  // Selection
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null)
+  const [selectedRole, setSelectedRole] = useState<'parent' | 'extended' | null>(null)
+
+  // Shared
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // ---------------------------------------------------------------------------
-  // Screen 1 — lookup by code
+  // Auth check on mount — redirect if already onboarded
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.replace('/login')
+          return
+        }
+        const step = await getOnboardingStep(user.id)
+        if (step >= 6) {
+          router.replace('/dashboard')
+          return
+        }
+        const displayName = await getUserDisplayName(user.id)
+        setUserId(user.id)
+        setUserDisplayName(displayName)
+      } catch {
+        // Non-fatal — continue to join flow
+      } finally {
+        setAuthLoading(false)
+      }
+    }
+    init()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ---------------------------------------------------------------------------
+  // Screen 1 — look up family by code
   // ---------------------------------------------------------------------------
 
   const handleLookup = async () => {
-    if (code.length !== 6) return
+    if (code.length !== 6 || lookingUp) return
     setLookingUp(true)
     setError(null)
     try {
@@ -76,14 +132,14 @@ export default function JoinFamilyPage() {
         setError('Код не найден. Проверьте и попробуйте ещё раз.')
         return
       }
-      // Fetch children in the family
-      const childList = await getFamilyChildren(result.familyId)
+      const children = await getFamilyChildren(result.familyId)
       setFamilyId(result.familyId)
       setFamilyName(result.name)
-      setChildren(childList)
+      setUnlinkedChildren(children)
       setSelectedChildId(null)
+      setSelectedRole(null)
       setError(null)
-      setScreen('confirm')
+      setScreen('select')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Произошла ошибка. Попробуйте снова.')
     } finally {
@@ -92,26 +148,40 @@ export default function JoinFamilyPage() {
   }
 
   // ---------------------------------------------------------------------------
-  // Screen 2 — confirm profile and join
+  // Screen 2 — join as child
   // ---------------------------------------------------------------------------
 
-  const handleJoin = async () => {
-    if (!selectedChildId) return
-    const selectedChild = children.find((c) => c.memberId === selectedChildId)
-    if (!selectedChild) return
+  const handleJoinAsChild = async () => {
+    if (!selectedChildId || !userId) return
+    const child = unlinkedChildren.find((c) => c.memberId === selectedChildId)
+    if (!child) return
 
     setLoading(true)
     setError(null)
     try {
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) {
-        setError('Ошибка авторизации. Войдите снова.')
-        return
-      }
-      await joinFamilyAsChild(familyId, user.id, { memberId: selectedChild.memberId, displayName: selectedChild.displayName })
+      await joinFamilyAsChild(familyId, userId, {
+        memberId: child.memberId,
+        displayName: child.displayName,
+      })
+      router.push('/dashboard')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не удалось присоединиться. Попробуйте снова.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Screen 3 — join as adult (after role selection)
+  // ---------------------------------------------------------------------------
+
+  const handleJoinAsAdult = async () => {
+    if (!selectedRole || !userId) return
+
+    setLoading(true)
+    setError(null)
+    try {
+      await joinFamilyAsAdult(familyId, userId, selectedRole, userDisplayName)
       router.push('/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось присоединиться. Попробуйте снова.')
@@ -123,6 +193,14 @@ export default function JoinFamilyPage() {
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
+
+  if (authLoading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ color: '#9ca3af', fontSize: '0.875rem' }}>Загрузка...</span>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -145,28 +223,35 @@ export default function JoinFamilyPage() {
           padding: '2rem',
         }}
       >
-        {screen === 'code' ? (
+        {screen === 'code' && (
           <ScreenCode
             code={code}
-            onCodeChange={(v) => {
-              setCode(v.toUpperCase().slice(0, 6))
-              setError(null)
-            }}
+            onCodeChange={(v) => { setCode(v.toUpperCase().slice(0, 6)); setError(null) }}
             onSubmit={handleLookup}
             loading={lookingUp}
             error={error}
           />
-        ) : (
-          <ScreenConfirm
+        )}
+        {screen === 'select' && (
+          <ScreenSelect
             familyName={familyName}
-            children={children}
+            unlinkedChildren={unlinkedChildren}
             selectedChildId={selectedChildId}
             onSelectChild={setSelectedChildId}
-            onBack={() => {
-              setScreen('code')
-              setError(null)
-            }}
-            onConfirm={handleJoin}
+            onJoinAsChild={handleJoinAsChild}
+            onGoAdult={() => { setScreen('adult-role'); setSelectedChildId(null); setError(null) }}
+            onBack={() => { setScreen('code'); setError(null) }}
+            loading={loading}
+            error={error}
+          />
+        )}
+        {screen === 'adult-role' && (
+          <ScreenAdultRole
+            familyName={familyName}
+            selectedRole={selectedRole}
+            onSelectRole={setSelectedRole}
+            onConfirm={handleJoinAsAdult}
+            onBack={() => { setScreen('select'); setError(null) }}
             loading={loading}
             error={error}
           />
@@ -181,11 +266,7 @@ export default function JoinFamilyPage() {
 // ---------------------------------------------------------------------------
 
 function ScreenCode({
-  code,
-  onCodeChange,
-  onSubmit,
-  loading,
-  error,
+  code, onCodeChange, onSubmit, loading, error,
 }: {
   code: string
   onCodeChange: (v: string) => void
@@ -197,45 +278,24 @@ function ScreenCode({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Logo */}
       <div style={{ textAlign: 'center' }}>
-        <span
-          style={{
-            fontSize: '1.5rem',
-            fontWeight: 700,
-            color: '#10b981',
-            letterSpacing: '-0.02em',
-          }}
-        >
+        <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#10b981', letterSpacing: '-0.02em' }}>
           FamilyCoins
         </span>
       </div>
-
-      {/* Heading */}
       <div style={{ textAlign: 'center' }}>
-        <h1
-          style={{
-            fontSize: '1.25rem',
-            fontWeight: 700,
-            color: '#111827',
-            marginBottom: '0.375rem',
-          }}
-        >
+        <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', marginBottom: '0.375rem' }}>
           Войти в семью
         </h1>
         <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
           Введите код, который дал вам родитель
         </p>
       </div>
-
-      {/* 6-char code input */}
       <input
         type="text"
         value={code}
         onChange={(e) => onCodeChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && canSubmit) onSubmit()
-        }}
+        onKeyDown={(e) => { if (e.key === 'Enter' && canSubmit) onSubmit() }}
         placeholder="XXXXXX"
         maxLength={6}
         autoCapitalize="characters"
@@ -260,26 +320,13 @@ function ScreenCode({
         onFocus={(e) => (e.currentTarget.style.borderColor = '#10b981')}
         onBlur={(e) => (e.currentTarget.style.borderColor = '#e5e7eb')}
       />
-
-      {/* Error */}
       {error && <p style={errorStyle}>{error}</p>}
-
-      {/* Submit button */}
-      <button
-        onClick={onSubmit}
-        disabled={!canSubmit}
-        style={canSubmit ? primaryBtnStyle : primaryBtnDisabledStyle}
-      >
+      <button onClick={onSubmit} disabled={!canSubmit} style={canSubmit ? primaryBtn : primaryBtnDisabled}>
         {loading ? 'Поиск...' : 'Найти семью'}
       </button>
-
-      {/* Fallback link */}
       <p style={{ fontSize: '0.8125rem', color: '#9ca3af', textAlign: 'center', margin: 0 }}>
         Нет аккаунта?{' '}
-        <a
-          href="/register"
-          style={{ color: '#10b981', textDecoration: 'none', fontWeight: 500 }}
-        >
+        <a href="/register" style={{ color: '#10b981', textDecoration: 'none', fontWeight: 500 }}>
           Зарегистрироваться
         </a>
       </p>
@@ -288,89 +335,49 @@ function ScreenCode({
 }
 
 // ---------------------------------------------------------------------------
-// Screen 2 — Profile confirm
+// Screen 2 — Who are you?
 // ---------------------------------------------------------------------------
 
-function ScreenConfirm({
-  familyName,
-  children,
-  selectedChildId,
-  onSelectChild,
-  onBack,
-  onConfirm,
-  loading,
-  error,
+function ScreenSelect({
+  familyName, unlinkedChildren, selectedChildId,
+  onSelectChild, onJoinAsChild, onGoAdult, onBack, loading, error,
 }: {
   familyName: string
-  children: ChildProfile[]
+  unlinkedChildren: ChildProfile[]
   selectedChildId: string | null
   onSelectChild: (id: string) => void
+  onJoinAsChild: () => void
+  onGoAdult: () => void
   onBack: () => void
-  onConfirm: () => void
   loading: boolean
   error: string | null
 }) {
-  const canConfirm = !!selectedChildId && !loading
+  const canJoinAsChild = !!selectedChildId && !loading
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-      {/* Back button */}
-      <button
-        onClick={onBack}
-        style={{
-          background: 'none',
-          border: 'none',
-          color: '#6b7280',
-          fontSize: '0.875rem',
-          cursor: 'pointer',
-          padding: 0,
-          textAlign: 'left',
-          alignSelf: 'flex-start',
-        }}
-      >
+      <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '0.875rem', cursor: 'pointer', padding: 0, textAlign: 'left', alignSelf: 'flex-start' }}>
         ← Назад
       </button>
 
-      {/* Heading */}
       <div>
-        <h1
-          style={{
-            fontSize: '1.25rem',
-            fontWeight: 700,
-            color: '#111827',
-            marginBottom: '0.25rem',
-          }}
-        >
-          Вы в семье: {familyName}
+        <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', marginBottom: '0.25rem' }}>
+          Семья: {familyName}
         </h1>
         <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
-          Выберите ваш профиль
+          Кто вы в этой семье?
         </p>
       </div>
 
-      {/* Child profiles */}
-      {children.length === 0 ? (
-        <div
-          style={{
-            background: '#f9fafb',
-            borderRadius: '0.75rem',
-            padding: '1.5rem',
-            textAlign: 'center',
-          }}
-        >
-          <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
-            Родитель ещё не добавил детей. Попросите их сделать это сначала.
-          </p>
-        </div>
-      ) : (
+      {/* Unlinked child profiles */}
+      {unlinkedChildren.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-          {children.map((child) => {
+          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#6b7280', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Я ребёнок
+          </p>
+          {unlinkedChildren.map((child) => {
             const isSelected = selectedChildId === child.memberId
-            const isEmoji =
-              child.avatarUrl !== null &&
-              child.avatarUrl !== '' &&
-              !child.avatarUrl.startsWith('http')
-
+            const isEmoji = child.avatarUrl !== null && child.avatarUrl !== '' && !child.avatarUrl.startsWith('http')
             return (
               <button
                 key={child.memberId}
@@ -389,73 +396,128 @@ function ScreenConfirm({
                   width: '100%',
                 }}
               >
-                {/* Avatar */}
-                <span
-                  style={{
-                    fontSize: isEmoji ? '2rem' : undefined,
-                    flexShrink: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '3rem',
-                    height: '3rem',
-                  }}
-                >
+                <span style={{ fontSize: isEmoji ? '2rem' : undefined, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '3rem', height: '3rem' }}>
                   {child.avatarUrl ? (
-                    isEmoji ? (
-                      child.avatarUrl
-                    ) : (
+                    isEmoji ? child.avatarUrl : (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={child.avatarUrl}
-                        alt={child.displayName}
-                        style={{
-                          width: '3rem',
-                          height: '3rem',
-                          borderRadius: '50%',
-                          objectFit: 'cover',
-                        }}
-                      />
+                      <img src={child.avatarUrl} alt={child.displayName} style={{ width: '3rem', height: '3rem', borderRadius: '50%', objectFit: 'cover' }} />
                     )
                   ) : (
                     <span style={{ fontSize: '2rem' }}>👤</span>
                   )}
                 </span>
-                {/* Name */}
-                <span
-                  style={{
-                    fontSize: '1.0625rem',
-                    fontWeight: 500,
-                    color: '#111827',
-                  }}
-                >
+                <span style={{ fontSize: '1.0625rem', fontWeight: 500, color: '#111827' }}>
                   {child.displayName}
                 </span>
-                {/* Selected indicator */}
-                {isSelected && (
-                  <span style={{ marginLeft: 'auto', color: '#10b981', fontSize: '1.125rem' }}>
-                    ✓
-                  </span>
-                )}
+                {isSelected && <span style={{ marginLeft: 'auto', color: '#10b981', fontSize: '1.125rem' }}>✓</span>}
               </button>
             )
           })}
+          {canJoinAsChild && (
+            <button onClick={onJoinAsChild} disabled={!canJoinAsChild} style={canJoinAsChild ? primaryBtn : primaryBtnDisabled}>
+              {loading ? 'Присоединяюсь...' : 'Это я!'}
+            </button>
+          )}
         </div>
       )}
 
-      {/* Error */}
+      {/* Divider if both sections visible */}
+      {unlinkedChildren.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ flex: 1, height: '1px', background: '#e5e7eb' }} />
+          <span style={{ fontSize: '0.8125rem', color: '#9ca3af' }}>или</span>
+          <div style={{ flex: 1, height: '1px', background: '#e5e7eb' }} />
+        </div>
+      )}
+
+      {/* Adult join option */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        {unlinkedChildren.length === 0 && (
+          <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#6b7280', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Я взрослый
+          </p>
+        )}
+        <button onClick={onGoAdult} style={secondaryBtn}>
+          👤 Я родитель / член семьи
+        </button>
+      </div>
+
+      {error && <p style={errorStyle}>{error}</p>}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Screen 3 — Adult role selection
+// ---------------------------------------------------------------------------
+
+function ScreenAdultRole({
+  familyName, selectedRole, onSelectRole, onConfirm, onBack, loading, error,
+}: {
+  familyName: string
+  selectedRole: 'parent' | 'extended' | null
+  onSelectRole: (role: 'parent' | 'extended') => void
+  onConfirm: () => void
+  onBack: () => void
+  loading: boolean
+  error: string | null
+}) {
+  const canConfirm = !!selectedRole && !loading
+
+  const roles: { value: 'parent' | 'extended'; label: string; description: string }[] = [
+    { value: 'parent', label: '👨‍👩‍👧 Родитель', description: 'Полный доступ: управление детьми, монетами, настройками' },
+    { value: 'extended', label: '👴 Член семьи', description: 'Просмотр: бабушка, дедушка, другие близкие' },
+  ]
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      <button onClick={onBack} style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '0.875rem', cursor: 'pointer', padding: 0, textAlign: 'left', alignSelf: 'flex-start' }}>
+        ← Назад
+      </button>
+
+      <div>
+        <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', marginBottom: '0.25rem' }}>
+          Ваша роль в семье
+        </h1>
+        <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
+          {familyName}
+        </p>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+        {roles.map(({ value, label, description }) => {
+          const isSelected = selectedRole === value
+          return (
+            <button
+              key={value}
+              onClick={() => onSelectRole(value)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                gap: '0.25rem',
+                padding: '1rem',
+                borderRadius: '0.75rem',
+                border: isSelected ? '2px solid #10b981' : '2px solid #e5e7eb',
+                background: isSelected ? '#f0fdf4' : '#fff',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'border-color 150ms, background 150ms',
+                width: '100%',
+              }}
+            >
+              <span style={{ fontSize: '1rem', fontWeight: 600, color: '#111827' }}>{label}</span>
+              <span style={{ fontSize: '0.8125rem', color: '#6b7280' }}>{description}</span>
+            </button>
+          )
+        })}
+      </div>
+
       {error && <p style={errorStyle}>{error}</p>}
 
-      {/* Confirm button — only show if there are children */}
-      {children.length > 0 && (
-        <button
-          onClick={onConfirm}
-          disabled={!canConfirm}
-          style={canConfirm ? primaryBtnStyle : primaryBtnDisabledStyle}
-        >
-          {loading ? 'Присоединяюсь...' : 'Это я!'}
-        </button>
-      )}
+      <button onClick={onConfirm} disabled={!canConfirm} style={canConfirm ? primaryBtn : primaryBtnDisabled}>
+        {loading ? 'Присоединяюсь...' : 'Войти в семью'}
+      </button>
     </div>
   )
 }

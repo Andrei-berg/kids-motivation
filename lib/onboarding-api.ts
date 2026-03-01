@@ -248,11 +248,14 @@ export async function lookupFamilyByCode(code: string): Promise<FamilyLookup | n
 export async function getFamilyChildren(familyId: string): Promise<ChildProfile[]> {
   const supabase = createClient()
 
+  // Only return unlinked children (user_id IS NULL) — these are the profiles
+  // a child can claim. Already-linked profiles belong to existing accounts.
   const { data, error } = await supabase
     .from('family_members')
     .select('id, display_name, avatar_url')
     .eq('family_id', familyId)
     .eq('role', 'child')
+    .is('user_id', null)
 
   if (error) throw new Error(error.message)
 
@@ -288,4 +291,53 @@ export async function joinFamilyAsChild(
   if (error) {
     throw new Error(`Failed to join family as child: ${error.message}`)
   }
+}
+
+// ---------------------------------------------------------------------------
+// joinFamilyAsAdult
+// ---------------------------------------------------------------------------
+// Inserts an authenticated adult (parent or extended family) into family_members.
+// If already a member (duplicate key), silently skips — treats as re-join.
+// Sets user_profiles.onboarding_step = 6 (complete).
+
+export async function joinFamilyAsAdult(
+  familyId: string,
+  userId: string,
+  role: 'parent' | 'extended',
+  displayName: string | null
+): Promise<void> {
+  const supabase = createClient()
+
+  const { error } = await supabase
+    .from('family_members')
+    .insert({
+      family_id: familyId,
+      user_id: userId,
+      role,
+      display_name: displayName,
+    })
+
+  // 23505 = unique_violation — user is already in this family, treat as success
+  if (error && error.code !== '23505') {
+    throw new Error(`Failed to join family: ${error.message}`)
+  }
+
+  await updateOnboardingStep(userId, 6)
+}
+
+// ---------------------------------------------------------------------------
+// getUserDisplayName
+// ---------------------------------------------------------------------------
+// Returns the current user's display_name from user_profiles, or null.
+
+export async function getUserDisplayName(userId: string): Promise<string | null> {
+  const supabase = createClient()
+
+  const { data } = await supabase
+    .from('user_profiles')
+    .select('display_name')
+    .eq('id', userId)
+    .maybeSingle()
+
+  return data?.display_name ?? null
 }
