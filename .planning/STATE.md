@@ -3,24 +3,24 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-01T20:29:07Z"
+last_updated: "2026-03-02T00:00:00Z"
 progress:
   total_phases: 24
   completed_phases: 1
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-03-01 (01.2-03 complete — parent onboarding wizard /onboarding with 5 steps, emoji/photo avatar, invite code)
+> Обновляется после каждой фазы. Последнее обновление: 2026-03-02 (01.2-04 complete — 7-step onboarding wizard complete with confetti, categories UI, /dashboard redirect; 4 DB/RLS fixes applied)
 
 ---
 
 ## Статус проекта
 
 ```
-🟢 EXECUTING — Phase 1.2 IN PROGRESS (Plan 03/05 COMPLETE, ready for Plan 04: category/schedule setup steps 5-6)
+🟢 EXECUTING — Phase 1.2 IN PROGRESS (Plan 04/05 COMPLETE, ready for Plan 05: child join flow at /onboarding/join)
 ```
 
 ---
@@ -41,11 +41,18 @@ progress:
 - [x] Plan 02: Supabase clients (lib/supabase/client.ts, server.ts, middleware.ts) — commits: 08b9843, 292ef31
 - [x] Plan 03: Auth middleware (middleware.ts, app/auth/callback/route.ts) — commits: 73a7c5e, 5ea318b
 
+### Phase 1.2 — Onboarding (IN PROGRESS, 4/5 plans complete)
+- [x] Plan 01: Schema patch (onboarding_step, avatars bucket) + lib/onboarding-api.ts
+- [x] Plan 02: /login and /register pages with Google OAuth + email/password
+- [x] Plan 03: Onboarding wizard steps 0-4 (welcome, profile, family, add child, invite) — commit: e0c8fd7
+- [x] Plan 04: Onboarding wizard steps 5-6 (categories toggle, confetti + Done screen) — commit: 0a173bf; DB fixes: 0ce79a0, ce7a477, 92b6e6b, 85a76ce
+- [ ] Plan 05: Child join flow at /onboarding/join + middleware redirect fix
+
 ---
 
 ## Следующий шаг
 
-**→ Phase 1.2 Plan 04: Onboarding Steps 5-6** (category/schedule setup + completion redirect)
+**→ Phase 1.2 Plan 05: Child Join Flow** (/onboarding/join — child enters 6-digit invite code + middleware redirect fix)
 
 ---
 
@@ -120,6 +127,15 @@ Phase 7.3  [ ] Google Play
 | Штрафы | Да, оставляем | Реализм, ответственность |
 | Магазин | Родитель создаёт позиции | Гибкость |
 | Подтверждение покупок | Родитель одобряет | Контроль |
+
+### Phase 1.2 Plan 04 — Ключевые решения (2026-03-02)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| Категории — Phase 1.2 | UI only, без записи в DB | Таблицы категорий создаются в Phase 1.3; Step 5 вызывает только updateOnboardingStep |
+| family_members.user_id | Nullable | Дочерние профили создаются без auth-аккаунта; привязка при присоединении по invite code |
+| families.created_by | UUID column добавлен | RLS SELECT после INSERT до создания family_members row требует прямой проверки created_by |
+| RLS рекурсия | SECURITY DEFINER хелперы | Рекурсивная политика family_members вызывала stack overflow; хелпер get_my_family_ids() решает проблему |
 
 ### Phase 1.2 Plan 03 — Ключевые решения (2026-03-01)
 

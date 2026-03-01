@@ -50,13 +50,13 @@ Plans:
 
 **Requirements:** REQ-ONB-001, REQ-ONB-002, REQ-ONB-003, REQ-ONB-004, REQ-ONB-005, REQ-ONB-006, REQ-ONB-007, REQ-ONB-008, REQ-ONB-009, REQ-ONB-010, REQ-FAM-008, REQ-FAM-009, REQ-FAM-010
 
-**Plans:** 3/5 plans executed
+**Plans:** 4/5 plans executed
 
 Plans:
 - [x] 01.2-01-PLAN.md — Schema patch (onboarding_step column, avatars Storage bucket) + lib/onboarding-api.ts type contracts
 - [x] 01.2-02-PLAN.md — /login and /register pages with Google OAuth + email/password auth
-- [ ] 01.2-03-PLAN.md — Onboarding wizard steps 1-5 (welcome, profile, family, add child, invite parent)
-- [ ] 01.2-04-PLAN.md — Onboarding wizard steps 6-7 (categories, done + confetti) — full wizard end-to-end
+- [x] 01.2-03-PLAN.md — Onboarding wizard steps 1-5 (welcome, profile, family, add child, invite parent)
+- [x] 01.2-04-PLAN.md — Onboarding wizard steps 6-7 (categories, done + confetti) — full wizard end-to-end
 - [ ] 01.2-05-PLAN.md — Child join flow at /onboarding/join + middleware redirect fix
 
 **Success Criteria:**
