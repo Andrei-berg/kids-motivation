@@ -13,14 +13,14 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-03-02 (01.2-04 complete — 7-step onboarding wizard complete with confetti, categories UI, /dashboard redirect; 4 DB/RLS fixes applied)
+> Обновляется после каждой фазы. Последнее обновление: 2026-03-01 (01.2-05 complete — child join flow at /onboarding/join, middleware redirect fixed, getFamilyChildren added)
 
 ---
 
 ## Статус проекта
 
 ```
-🟢 EXECUTING — Phase 1.2 IN PROGRESS (Plan 04/05 COMPLETE, ready for Plan 05: child join flow at /onboarding/join)
+🟢 EXECUTING — Phase 1.2 COMPLETE (5/5 plans done). Ready for Phase 1.3: Flexible categories + schedule.
 ```
 
 ---
@@ -41,18 +41,18 @@ progress:
 - [x] Plan 02: Supabase clients (lib/supabase/client.ts, server.ts, middleware.ts) — commits: 08b9843, 292ef31
 - [x] Plan 03: Auth middleware (middleware.ts, app/auth/callback/route.ts) — commits: 73a7c5e, 5ea318b
 
-### Phase 1.2 — Onboarding (IN PROGRESS, 4/5 plans complete)
+### Phase 1.2 — Onboarding (COMPLETE, 5/5 plans)
 - [x] Plan 01: Schema patch (onboarding_step, avatars bucket) + lib/onboarding-api.ts
 - [x] Plan 02: /login and /register pages with Google OAuth + email/password
 - [x] Plan 03: Onboarding wizard steps 0-4 (welcome, profile, family, add child, invite) — commit: e0c8fd7
 - [x] Plan 04: Onboarding wizard steps 5-6 (categories toggle, confetti + Done screen) — commit: 0a173bf; DB fixes: 0ce79a0, ce7a477, 92b6e6b, 85a76ce
-- [ ] Plan 05: Child join flow at /onboarding/join + middleware redirect fix
+- [x] Plan 05: Child join flow at /onboarding/join + middleware redirect fix — commits: f462c02, fc72a20
 
 ---
 
 ## Следующий шаг
 
-**→ Phase 1.2 Plan 05: Child Join Flow** (/onboarding/join — child enters 6-digit invite code + middleware redirect fix)
+**→ Phase 1.3: Flexible Categories + Schedule** (гибкие категории, расписание, привязка к семье)
 
 ---
 
@@ -61,7 +61,7 @@ progress:
 ### Milestone 1 — Foundation
 ```
 Phase 1.1  [x] Новая схема БД (families, RLS, Auth) — COMPLETE (3/3 plans)
-Phase 1.2  [ ] Onboarding Flow
+Phase 1.2  [x] Onboarding Flow — COMPLETE (5/5 plans)
 Phase 1.3  [ ] Гибкие категории + расписание
 Phase 1.4  [ ] Dashboard рефактор (убрать hardcodes)
 ```
@@ -127,6 +127,15 @@ Phase 7.3  [ ] Google Play
 | Штрафы | Да, оставляем | Реализм, ответственность |
 | Магазин | Родитель создаёт позиции | Гибкость |
 | Подтверждение покупок | Родитель одобряет | Контроль |
+
+### Phase 1.2 Plan 05 — Ключевые решения (2026-03-01)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| joinFamilyAsChild flow | Upsert with onConflict: family_id,user_id | Child picks pre-created profile → links auth UID to existing null-user_id row |
+| Empty children list UX | Helpful message (не ошибка) | Parent may not have added children yet; child can ask parent first |
+| Avatar emoji detection | !avatarUrl.startsWith('http') → treat as emoji | Wizard stores emoji strings directly; this is consistent with parent wizard pattern |
+| Child join page routing | No URL change between screens (screen: 'code' | 'confirm' state) | 2-screen flows don't warrant separate routes |
 
 ### Phase 1.2 Plan 04 — Ключевые решения (2026-03-02)
 

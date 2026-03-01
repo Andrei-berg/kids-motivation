@@ -13,7 +13,7 @@
 ### Progress
 
 - [x] **Phase 1.1: db-schema** — New DB with families, RLS, Auth, data migration (completed 2026-03-01)
-- [ ] **Phase 1.2: onboarding** — Registration, family creation, adding children
+- [x] **Phase 1.2: onboarding** — Registration, family creation, adding children (completed 2026-03-01)
 - [ ] **Phase 1.3: categories-schedule** — Flexible categories, schedule, push notifications
 - [ ] **Phase 1.4: dashboard-refactor** — Remove all hardcodes, adapt UI
 
@@ -50,7 +50,7 @@ Plans:
 
 **Requirements:** REQ-ONB-001, REQ-ONB-002, REQ-ONB-003, REQ-ONB-004, REQ-ONB-005, REQ-ONB-006, REQ-ONB-007, REQ-ONB-008, REQ-ONB-009, REQ-ONB-010, REQ-FAM-008, REQ-FAM-009, REQ-FAM-010
 
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans complete
 
 Plans:
 - [x] 01.2-01-PLAN.md — Schema patch (onboarding_step column, avatars Storage bucket) + lib/onboarding-api.ts type contracts
