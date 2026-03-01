@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import confetti from 'canvas-confetti'
 import { createClient } from '@/lib/supabase/client'
 import {
   getOnboardingStep,
@@ -452,23 +453,223 @@ function StepInviteParent({
   )
 }
 
-// Steps 5-6 placeholder
-function StepPlaceholder() {
+// ---------------------------------------------------------------------------
+// Step 5 — Categories
+// ---------------------------------------------------------------------------
+
+interface Category {
+  id: string
+  emoji: string
+  name: string
+  description: string
+}
+
+const DEFAULT_CATEGORIES: Category[] = [
+  { id: 'study', emoji: '📚', name: 'Учёба', description: 'Оценки, домашние задания' },
+  { id: 'home', emoji: '🏠', name: 'Дом', description: 'Уборка комнаты, помощь по дому' },
+  { id: 'sport', emoji: '⚽', name: 'Спорт', description: 'Тренировки, секции, упражнения' },
+  { id: 'routine', emoji: '⏰', name: 'Распорядок', description: 'Режим дня, личная гигиена' },
+]
+
+function StepCategories({
+  onNext,
+  submitting,
+}: {
+  onNext: () => void
+  submitting: boolean
+}) {
+  const [selected, setSelected] = useState<Set<string>>(
+    new Set(DEFAULT_CATEGORIES.map((c) => c.id))
+  )
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
   return (
-    <div style={{ textAlign: 'center', padding: '2rem 0', color: '#6b7280' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      <div>
+        <h1 style={stepHeadingStyle}>Выберите категории активностей</h1>
+        <p style={stepSubStyle}>Вы сможете добавить больше в настройках</p>
+      </div>
       <div
         style={{
-          width: '2rem',
-          height: '2rem',
-          border: '3px solid #e5e7eb',
-          borderTopColor: '#10b981',
-          borderRadius: '50%',
-          margin: '0 auto 1rem',
-          animation: 'spin 0.8s linear infinite',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: '0.75rem',
         }}
-      />
-      Загружаем следующий шаг...
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      >
+        {DEFAULT_CATEGORIES.map((cat) => {
+          const isSelected = selected.has(cat.id)
+          return (
+            <button
+              key={cat.id}
+              onClick={() => toggle(cat.id)}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                gap: '0.25rem',
+                padding: '0.875rem',
+                borderRadius: '0.75rem',
+                border: isSelected ? '2px solid #10b981' : '2px solid #e5e7eb',
+                background: isSelected ? '#f0fdf4' : '#fff',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'border-color 150ms, background 150ms',
+              }}
+            >
+              <span style={{ fontSize: '1.5rem' }}>{cat.emoji}</span>
+              <span
+                style={{
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  color: '#111827',
+                }}
+              >
+                {cat.name}
+              </span>
+              <span
+                style={{
+                  fontSize: '0.75rem',
+                  color: '#6b7280',
+                  lineHeight: 1.4,
+                }}
+              >
+                {cat.description}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+      <button onClick={onNext} disabled={submitting} style={primaryBtnStyle}>
+        {submitting ? '...' : 'Продолжить'}
+      </button>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Step 6 — Done
+// ---------------------------------------------------------------------------
+
+function StepDone({
+  parentName,
+  familyName,
+  inviteCode,
+  onFinish,
+  submitting,
+}: {
+  parentName: string
+  familyName: string
+  inviteCode: string
+  onFinish: () => void
+  submitting: boolean
+}) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(inviteCode).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: '3.75rem', marginBottom: '0.75rem' }}>🎉</div>
+        <h1
+          style={{
+            fontSize: '1.5rem',
+            fontWeight: 700,
+            color: '#111827',
+            marginBottom: '0.25rem',
+          }}
+        >
+          Всё готово!
+        </h1>
+        <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
+          Ваша семья создана. Пора начинать!
+        </p>
+      </div>
+
+      {/* Summary card */}
+      <div
+        style={{
+          background: '#f9fafb',
+          borderRadius: '0.75rem',
+          padding: '1rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.625rem',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '1rem' }}>👤</span>
+          <span style={{ fontSize: '0.875rem', color: '#374151' }}>
+            <strong>Родитель:</strong> {parentName || '—'}
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '1rem' }}>🏠</span>
+          <span style={{ fontSize: '0.875rem', color: '#374151' }}>
+            <strong>Семья:</strong> {familyName || '—'}
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: '1rem' }}>🔑</span>
+            <span style={{ fontSize: '0.875rem', color: '#374151', flex: 1, minWidth: 0 }}>
+              <strong>Код приглашения:</strong>{' '}
+              <span
+                style={{
+                  fontFamily: 'monospace',
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  color: '#111827',
+                }}
+              >
+                {inviteCode || '—'}
+              </span>
+            </span>
+          </div>
+          {inviteCode && (
+            <button
+              onClick={handleCopy}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '1.1rem',
+                color: copied ? '#10b981' : '#6b7280',
+                padding: '0.25rem',
+                flexShrink: 0,
+              }}
+              title="Скопировать код"
+            >
+              {copied ? '✓' : '📋'}
+            </button>
+          )}
+        </div>
+        {copied && (
+          <p style={{ fontSize: '0.75rem', color: '#10b981', margin: 0, textAlign: 'center' }}>
+            Скопировано!
+          </p>
+        )}
+      </div>
+
+      <button onClick={onFinish} disabled={submitting} style={primaryBtnStyle}>
+        {submitting ? '...' : 'Перейти в приложение'}
+      </button>
     </div>
   )
 }
@@ -558,7 +759,8 @@ export default function OnboardingPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
 
-  // On mount: get authenticated user and resume from last onboarding step
+  // On mount: get authenticated user and resume from last onboarding step.
+  // Already-onboarded users (step >= 6) are sent directly to /dashboard.
   useEffect(() => {
     const init = async () => {
       try {
@@ -571,6 +773,10 @@ export default function OnboardingPage() {
           return
         }
         const step = await getOnboardingStep(user.id)
+        if (step >= 6) {
+          router.replace('/dashboard')
+          return
+        }
         setWizardData((prev) => ({ ...prev, userId: user.id }))
         setCurrentStep(step)
       } catch {
@@ -582,6 +788,18 @@ export default function OnboardingPage() {
     init()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Fire confetti when user reaches the Done screen (step 6)
+  useEffect(() => {
+    if (currentStep === 6) {
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ['#10b981', '#059669', '#f59e0b', '#3b82f6'],
+      })
+    }
+  }, [currentStep])
 
   const goTo = (step: number, dir: Direction) => {
     if (animating) return
@@ -664,6 +882,35 @@ export default function OnboardingPage() {
       setSubmitting(false)
     }
     goForward()
+  }
+
+  // Step 5: Categories — UI only; no DB write for category selections in Phase 1.2.
+  // Phase 1.3 will seed default categories for every family unconditionally.
+  // Only DB call here is updateOnboardingStep to advance the wizard.
+  const handleCategoriesNext = async () => {
+    setSubmitting(true)
+    try {
+      await updateOnboardingStep(wizardData.userId, 6)
+    } catch {
+      // Non-fatal
+    } finally {
+      setSubmitting(false)
+    }
+    goForward()
+  }
+
+  // Step 6: Done — mark onboarding complete (step 6 already set by Step 5 handler),
+  // then navigate to /dashboard.
+  const handleFinish = async () => {
+    setSubmitting(true)
+    try {
+      await updateOnboardingStep(wizardData.userId, 6)
+    } catch {
+      // Non-fatal: DB may already be at 6
+    } finally {
+      setSubmitting(false)
+    }
+    router.push('/dashboard')
   }
 
   // Progress bar percentage (1-indexed display: step 1 of 7 on step 0)
@@ -808,10 +1055,25 @@ export default function OnboardingPage() {
             />
           )}
 
-          {currentStep >= 5 && <StepPlaceholder />}
+          {currentStep === 5 && (
+            <StepCategories
+              onNext={handleCategoriesNext}
+              submitting={submitting}
+            />
+          )}
+
+          {currentStep === 6 && (
+            <StepDone
+              parentName={wizardData.parentName}
+              familyName={wizardData.familyName}
+              inviteCode={wizardData.inviteCode}
+              onFinish={handleFinish}
+              submitting={submitting}
+            />
+          )}
         </div>
 
-        {/* Back button */}
+        {/* Back button — hidden on step 0 (Welcome) and steps 5+ (categories / done) */}
         {currentStep > 0 && currentStep < 5 && (
           <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-start' }}>
             <button
