@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-01T22:10:51.581Z"
+last_updated: "2026-03-07T16:24:38Z"
 progress:
   total_phases: 24
   completed_phases: 2
@@ -13,14 +13,14 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-03-07 (01.3-01 complete — SQL migration for categories/tasks/schedule_items/push_subscriptions with RLS + seed_default_categories function)
+> Обновляется после каждой фазы. Последнее обновление: 2026-03-07 (01.3-02 complete — categories-api.ts, schedule-api.ts, push-api.ts created; store extended with familyId; createFamily wired to seedDefaultCategories)
 
 ---
 
 ## Статус проекта
 
 ```
-🟢 EXECUTING — Phase 1.3 IN PROGRESS (1/4 plans done). SQL migration complete. Ready for Plan 02: categories API.
+🟢 EXECUTING — Phase 1.3 IN PROGRESS (2/4 plans done). API layer complete. Ready for Plan 03: Settings page.
 ```
 
 ---
@@ -48,14 +48,15 @@ progress:
 - [x] Plan 04: Onboarding wizard steps 5-6 (categories toggle, confetti + Done screen) — commit: 0a173bf; DB fixes: 0ce79a0, ce7a477, 92b6e6b, 85a76ce
 - [x] Plan 05: Child join flow at /onboarding/join + middleware redirect fix — commits: f462c02, fc72a20
 
-### Phase 1.3 — Flexible Categories + Schedule (IN PROGRESS, 1/4 plans)
+### Phase 1.3 — Flexible Categories + Schedule (IN PROGRESS, 2/4 plans)
 - [x] Plan 01: SQL migration — categories, tasks, schedule_items, push_subscriptions tables + RLS + seed_default_categories() — commit: df64c43
+- [x] Plan 02: Categories API layer — categories-api.ts, schedule-api.ts, push-api.ts; store.ts extended with familyId; createFamily wired to seedDefaultCategories — commits: 5f92d7f, d46273a
 
 ---
 
 ## Следующий шаг
 
-**→ Phase 1.3 Plan 02: Categories API** (lib/categories-api.ts — CRUD for categories, tasks, schedule_items)
+**→ Phase 1.3 Plan 03: Settings page** (UI for managing categories and schedule — consumes categories-api.ts, schedule-api.ts)
 
 ---
 
@@ -130,6 +131,16 @@ Phase 7.3  [ ] Google Play
 | Штрафы | Да, оставляем | Реализм, ответственность |
 | Магазин | Родитель создаёт позиции | Гибкость |
 | Подтверждение покупок | Родитель одобряет | Контроль |
+
+### Phase 1.3 Plan 02 — Ключевые решения (2026-03-07)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| API параметры | familyId передаётся явно в каждую функцию | Multi-tenant паттерн; не тянем из store, caller контролирует scope |
+| createClient() | lib/supabase/client.ts (не legacy lib/supabase.ts) | Консистентность с Phase 1.1; SSR-safe |
+| seedDefaultCategories в createFamily | try/catch, non-fatal | Convenience defaults; семья создаётся успешно даже без них |
+| Legacy childId в store | Сохранён рядом с familyId + activeMemberId | Backward compat до Phase 1.4; преждевременное удаление сломает все существующие страницы |
+| push-api.ts | Только browser-side хранение | Server-side отправка пушей — отдельный Server Action в app/actions/push.ts |
 
 ### Phase 1.3 Plan 01 — Ключевые решения (2026-03-07)
 
