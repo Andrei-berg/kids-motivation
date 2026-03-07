@@ -14,7 +14,7 @@
 
 - [x] **Phase 1.1: db-schema** — New DB with families, RLS, Auth, data migration (completed 2026-03-01)
 - [x] **Phase 1.2: onboarding** — Registration, family creation, adding children (completed 2026-03-01)
-- [ ] **Phase 1.3: categories-schedule** — Flexible categories, schedule, push notifications
+- [x] **Phase 1.3: categories-schedule** — Flexible categories, schedule, push notifications (completed 2026-03-07)
 - [ ] **Phase 1.4: dashboard-refactor** — Remove all hardcodes, adapt UI
 
 ---

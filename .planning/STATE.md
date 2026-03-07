@@ -13,14 +13,14 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-03-07 (01.3-03 complete — Settings page full redesign: PIN gate + family-scoped content + 6 sub-components in components/settings/)
+> Обновляется после каждой фазы. Последнее обновление: 2026-03-07 (01.3-04 complete — Phase 1.3 COMPLETE: Push notifications stack — web-push VAPID Server Action, PWA manifest, service worker, PushInit in layout)
 
 ---
 
 ## Статус проекта
 
 ```
-🟢 EXECUTING — Phase 1.3 IN PROGRESS (3/4 plans done). Settings page complete. Ready for Plan 04: Push notifications.
+🟢 EXECUTING — Phase 1.3 COMPLETE (4/4 plans done). Push notifications stack complete. Ready for Phase 1.4: Dashboard refactor.
 ```
 
 ---
@@ -52,12 +52,13 @@ progress:
 - [x] Plan 01: SQL migration — categories, tasks, schedule_items, push_subscriptions tables + RLS + seed_default_categories() — commit: df64c43
 - [x] Plan 02: Categories API layer — categories-api.ts, schedule-api.ts, push-api.ts; store.ts extended with familyId; createFamily wired to seedDefaultCategories — commits: 5f92d7f, d46273a
 - [x] Plan 03: Settings page full redesign — app/settings/page.tsx + 6 sub-components in components/settings/ — commits: 8c739d2, 4ff66fb
+- [x] Plan 04: Push notifications — web-push Server Action + PWA manifest + service worker + PushInit in root layout — commits: 83dbe67, 96e0dff
 
 ---
 
 ## Следующий шаг
 
-**→ Phase 1.3 Plan 04: Push notifications** (service worker, VAPID keys, server-side push sending via Server Action)
+**→ Phase 1.4: Dashboard refactor** (remove hardcoded 'adam'/'alim', wire to Supabase family_members, replace legacy store childId with new multi-tenant pattern)
 
 ---
 
@@ -67,7 +68,7 @@ progress:
 ```
 Phase 1.1  [x] Новая схема БД (families, RLS, Auth) — COMPLETE (3/3 plans)
 Phase 1.2  [x] Onboarding Flow — COMPLETE (5/5 plans)
-Phase 1.3  [ ] Гибкие категории + расписание
+Phase 1.3  [x] Гибкие категории + расписание — COMPLETE (4/4 plans)
 Phase 1.4  [ ] Dashboard рефактор (убрать hardcodes)
 ```
 
@@ -132,6 +133,15 @@ Phase 7.3  [ ] Google Play
 | Штрафы | Да, оставляем | Реализм, ответственность |
 | Магазин | Родитель создаёт позиции | Гибкость |
 | Подтверждение покупок | Родитель одобряет | Контроль |
+
+### Phase 1.3 Plan 04 — Ключевые решения (2026-03-07)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| CRON_SECRET обязательность | Опционален | Dev-режим работает без него; production должен установить для безопасности |
+| PushInit поведение без поддержки | Silently no-ops | App полностью функционален без push; не блокируем работу |
+| Test notification flow | Прямой Server Action вызов | Нет нужды в промежуточном API route для тестовой отправки |
+| Иконки PWA | Не создаются в этом плане | manifest работает без иконок; браузер деградирует корректно; добавить в /public/ отдельно |
 
 ### Phase 1.3 Plan 03 — Ключевые решения (2026-03-07)
 
