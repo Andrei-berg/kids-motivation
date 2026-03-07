@@ -4,6 +4,7 @@
 // Import in 'use client' components only.
 
 import { createClient } from '@/lib/supabase/client'
+import { seedDefaultCategories } from '@/lib/categories-api'
 
 // ---------------------------------------------------------------------------
 // Exported types
@@ -148,6 +149,14 @@ export async function createFamily(
 
   // Step 4: advance parent's onboarding step
   await updateOnboardingStep(userId, 2)
+
+  // Step 5: seed default categories for the new family (Учёба, Дом, Спорт, Распорядок)
+  try {
+    await seedDefaultCategories(familyRow.id)
+  } catch (seedError) {
+    // Non-critical: default categories couldn't be seeded; user can add manually
+    console.warn('seedDefaultCategories failed (non-fatal):', seedError)
+  }
 
   return {
     familyId: familyRow.id,
