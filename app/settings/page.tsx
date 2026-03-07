@@ -1,740 +1,245 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import NavBar from '@/components/NavBar'
-import ScheduleEditor from '@/components/ScheduleEditor'
-import { flexibleApi, Subject, ExerciseType } from '@/lib/flexible-api'
-import { 
-  getAllExpenseCategories, 
-  addExpenseCategory, 
-  toggleCategoryActive, 
-  deleteExpenseCategory,
-  ExpenseCategory,
-  getSections,
-  addSection,
-  updateSection,
-  deleteSection,
-  Section
-} from '@/lib/expenses-api'
 import { verifyPin } from '@/utils/helpers'
-import { useAppStore } from '@/lib/store'
+import { createClient } from '@/lib/supabase/client'
+import { getCategories } from '@/lib/categories-api'
+import type { Category } from '@/lib/categories-api'
+import CategoryManager from '@/components/settings/CategoryManager'
+import TaskManager from '@/components/settings/TaskManager'
+import CoinRulesEditor from '@/components/settings/CoinRulesEditor'
+import StreakSettings from '@/components/settings/StreakSettings'
+import ScheduleEditor from '@/components/settings/ScheduleEditor'
+import NotificationSettings from '@/components/settings/NotificationSettings'
 
-type Tab = 'subjects' | 'schedule' | 'exercises' | 'categories' | 'sections'
+type Section = 'categories' | 'tasks' | 'coins' | 'streaks' | 'schedule' | 'notifications'
 
-export default function Settings() {
-  const { childId } = useAppStore()
-  const [activeTab, setActiveTab] = useState<Tab>('subjects')
-  const [loading, setLoading] = useState(true)
-  
-  // PIN
+const SECTIONS: { id: Section; label: string; icon: string }[] = [
+  { id: 'categories', label: 'Категории', icon: '📂' },
+  { id: 'tasks', label: 'Задачи', icon: '✅' },
+  { id: 'coins', label: 'Монеты', icon: '🪙' },
+  { id: 'streaks', label: 'Стрики', icon: '🔥' },
+  { id: 'schedule', label: 'Расписание', icon: '📅' },
+  { id: 'notifications', label: 'Уведомления', icon: '🔔' },
+]
+
+export default function SettingsPage() {
+  // PIN gate
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [showPinPrompt, setShowPinPrompt] = useState(false)
   const [pinInput, setPinInput] = useState('')
-  
-  // Subjects
-  const [subjects, setSubjects] = useState<Subject[]>([])
-  const [archivedSubjects, setArchivedSubjects] = useState<Subject[]>([])
-  const [newSubjectName, setNewSubjectName] = useState('')
-  
-  // Exercises
-  const [exercises, setExercises] = useState<ExerciseType[]>([])
-  const [newExerciseName, setNewExerciseName] = useState('')
-  const [newExerciseUnit, setNewExerciseUnit] = useState('раз')
-  
-  // Categories
-  const [categories, setCategories] = useState<ExpenseCategory[]>([])
-  const [newCategoryName, setNewCategoryName] = useState('')
-  const [newCategoryIcon, setNewCategoryIcon] = useState('💰')
-  
-  // Sections
-  const [sections, setSections] = useState<Section[]>([])
-  const [newSectionName, setNewSectionName] = useState('')
-  const [newSectionCost, setNewSectionCost] = useState('')
-  const [newSectionTrainer, setNewSectionTrainer] = useState('')
-  const [newSectionAddress, setNewSectionAddress] = useState('')
-  
-  
-  useEffect(() => {
-    if (childId && activeTab === 'subjects') {
-      loadSubjects()
-    } else if (activeTab === 'exercises') {
-      loadExercises()
-    } else if (activeTab === 'categories') {
-      loadCategories()
-    } else if (activeTab === 'sections') {
-      loadSections()
-    }
-  }, [childId, activeTab])
-  
-  async function loadSubjects() {
+  const [pinError, setPinError] = useState('')
+
+  // Family data
+  const [familyId, setFamilyId] = useState<string | null>(null)
+  const [memberId, setMemberId] = useState<string | null>(null)
+  const [loadingFamily, setLoadingFamily] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([])
+
+  // Navigation
+  const [activeSection, setActiveSection] = useState<Section>('categories')
+
+  // Load family on PIN success
+  const loadFamily = useCallback(async () => {
+    setLoadingFamily(true)
     try {
-      setLoading(true)
-      const active = await flexibleApi.getActiveSubjects(childId)
-      const all = await flexibleApi.getSubjects(childId, true)
-      const archived = all.filter(s => s.archived)
-      
-      setSubjects(active)
-      setArchivedSubjects(archived)
-    } catch (err) {
-      console.error('Error loading subjects:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-  
-  async function loadExercises() {
-    try {
-      setLoading(true)
-      const data = await flexibleApi.getExerciseTypes()
-      setExercises(data)
-    } catch (err) {
-      console.error('Error loading exercises:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-  
-  async function loadCategories() {
-    try {
-      setLoading(true)
-      const data = await getAllExpenseCategories()
-      setCategories(data)
-    } catch (err) {
-      console.error('Error loading categories:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-  
-  async function handleAddCategory() {
-    if (!newCategoryName.trim()) return
-    
-    try {
-      await addExpenseCategory(newCategoryName.trim(), newCategoryIcon)
-      setNewCategoryName('')
-      setNewCategoryIcon('💰')
-      await loadCategories()
-    } catch (err) {
-      alert('Ошибка добавления категории')
-    }
-  }
-  
-  async function handleToggleCategoryActive(id: string, isActive: boolean) {
-    try {
-      await toggleCategoryActive(id, !isActive)
-      await loadCategories()
-    } catch (err) {
-      alert('Ошибка изменения категории')
-    }
-  }
-  
-  async function handleDeleteCategory(id: string) {
-    if (!isAuthenticated) {
-      setShowPinPrompt(true)
-      return
-    }
-    
-    if (!confirm('Удалить категорию? Это можно сделать только если нет расходов с этой категорией.')) return
-    
-    try {
-      await deleteExpenseCategory(id)
-      await loadCategories()
-    } catch (err: any) {
-      alert(err.message || 'Ошибка удаления категории')
-    }
-  }
-  
-  async function loadSections() {
-    try {
-      setLoading(true)
-      const data = await getSections(childId)
-      setSections(data)
-    } catch (err) {
-      console.error('Error loading sections:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-  
-  async function handleAddSection() {
-    if (!newSectionName.trim()) return
-    
-    try {
-      await addSection({
-        childId,
-        name: newSectionName.trim(),
-        cost: newSectionCost ? Number(newSectionCost) : undefined,
-        trainer: newSectionTrainer.trim() || undefined,
-        address: newSectionAddress.trim() || undefined
-      })
-      
-      setNewSectionName('')
-      setNewSectionCost('')
-      setNewSectionTrainer('')
-      setNewSectionAddress('')
-      await loadSections()
-    } catch (err) {
-      alert('Ошибка добавления секции')
-    }
-  }
-  
-  async function handleToggleSectionActive(id: string, isActive: boolean) {
-    try {
-      await updateSection(id, { isActive: !isActive })
-      await loadSections()
-    } catch (err) {
-      alert('Ошибка изменения секции')
-    }
-  }
-  
-  async function handleDeleteSection(id: string) {
-    if (!isAuthenticated) {
-      setShowPinPrompt(true)
-      return
-    }
-    
-    if (!confirm('Удалить секцию? История посещений будет удалена.')) return
-    
-    try {
-      await deleteSection(id)
-      await loadSections()
-    } catch (err) {
-      alert('Ошибка удаления секции')
-    }
-  }
-  
-  async function handleAddSubject() {
-    if (!newSubjectName.trim()) return
-    
-    try {
-      await flexibleApi.createSubject(childId, newSubjectName.trim())
-      setNewSubjectName('')
-      await loadSubjects()
-    } catch (err: any) {
-      if (err.message?.includes('duplicate')) {
-        alert('Этот предмет уже существует!')
-      } else {
-        alert('Ошибка добавления предмета')
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: member } = await supabase
+        .from('family_members')
+        .select('family_id, id')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      if (member) {
+        setFamilyId(member.family_id)
+        setMemberId(member.id)
+        // Load categories for TaskManager
+        try {
+          const cats = await getCategories(member.family_id)
+          setCategories(cats)
+        } catch {
+          // Non-fatal — TaskManager can show empty
+        }
       }
-    }
-  }
-  
-  async function handleToggleActive(id: string, active: boolean) {
-    try {
-      await flexibleApi.toggleSubjectActive(id, !active)
-      await loadSubjects()
     } catch (err) {
-      alert('Ошибка изменения предмета')
+      console.error('Settings: failed to load family', err)
+    } finally {
+      setLoadingFamily(false)
     }
-  }
-  
-  async function handleArchiveSubject(id: string) {
-    if (!isAuthenticated) {
-      setShowPinPrompt(true)
-      return
-    }
-    
-    if (!confirm('Архивировать предмет? Он будет скрыт из списка.')) return
-    
-    try {
-      await flexibleApi.archiveSubject(id)
-      await loadSubjects()
-    } catch (err) {
-      alert('Ошибка архивирования')
-    }
-  }
-  
-  async function handleAddExercise() {
-    if (!newExerciseName.trim()) return
-    
-    try {
-      await flexibleApi.createExerciseType(newExerciseName.trim(), true, newExerciseUnit)
-      setNewExerciseName('')
-      setNewExerciseUnit('раз')
-      await loadExercises()
-    } catch (err: any) {
-      if (err.message?.includes('duplicate')) {
-        alert('Это упражнение уже существует!')
-      } else {
-        alert('Ошибка добавления упражнения')
-      }
-    }
-  }
-  
-  async function handleDeleteExercise(id: string) {
-    if (!isAuthenticated) {
-      setShowPinPrompt(true)
-      return
-    }
-    
-    if (!confirm('Удалить упражнение? Все данные по нему тоже удалятся!')) return
-    
-    try {
-      await flexibleApi.deleteExerciseType(id)
-      await loadExercises()
-    } catch (err) {
-      alert('Ошибка удаления')
-    }
-  }
-  
-  async function handlePinSubmit() {
+  }, [])
+
+  const handlePinSubmit = () => {
     const hash = process.env.NEXT_PUBLIC_PARENT_PIN_HASH || 'MTIzNA=='
     if (verifyPin(pinInput, hash)) {
       setIsAuthenticated(true)
-      setShowPinPrompt(false)
       setPinInput('')
+      setPinError('')
+      loadFamily()
     } else {
-      alert('Неверный PIN')
+      setPinError('Неверный PIN-код. Попробуйте ещё раз.')
       setPinInput('')
     }
   }
 
+  const handlePinKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handlePinSubmit()
+  }
+
+  const appendDigit = (d: string) => {
+    if (pinInput.length < 4) setPinInput(prev => prev + d)
+  }
+
+  const clearPin = () => setPinInput('')
+
+  // Auto-submit when 4 digits entered
+  useEffect(() => {
+    if (pinInput.length === 4) {
+      handlePinSubmit()
+    }
+  }, [pinInput])
+
+  // ── PIN GATE ────────────────────────────────────────────────────────────────
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
+        <div className="bg-gray-800 rounded-2xl p-8 w-full max-w-sm shadow-2xl">
+          <div className="text-center mb-8">
+            <div className="text-4xl mb-3">🔐</div>
+            <h1 className="text-xl font-bold text-white">Настройки родителя</h1>
+            <p className="text-gray-400 text-sm mt-1">Введите PIN-код для доступа</p>
+          </div>
+
+          {/* PIN display */}
+          <div className="flex justify-center gap-3 mb-6">
+            {[0, 1, 2, 3].map(i => (
+              <div
+                key={i}
+                className={`w-12 h-12 rounded-xl border-2 flex items-center justify-center text-xl font-bold transition-all ${
+                  i < pinInput.length
+                    ? 'border-indigo-500 bg-indigo-500/20 text-white'
+                    : 'border-gray-600 bg-gray-700/50 text-gray-600'
+                }`}
+              >
+                {i < pinInput.length ? '●' : '○'}
+              </div>
+            ))}
+          </div>
+
+          {/* Error message */}
+          {pinError && (
+            <div className="text-red-400 text-sm text-center mb-4 bg-red-400/10 rounded-lg px-3 py-2">
+              {pinError}
+            </div>
+          )}
+
+          {/* Digit pad */}
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            {['1','2','3','4','5','6','7','8','9'].map(d => (
+              <button
+                key={d}
+                onClick={() => appendDigit(d)}
+                className="h-14 rounded-xl bg-gray-700 hover:bg-gray-600 active:bg-indigo-600 text-white text-xl font-semibold transition-colors"
+              >
+                {d}
+              </button>
+            ))}
+            <button
+              onClick={clearPin}
+              className="h-14 rounded-xl bg-gray-700 hover:bg-gray-600 text-gray-400 text-sm font-medium transition-colors"
+            >
+              Стереть
+            </button>
+            <button
+              onClick={() => appendDigit('0')}
+              className="h-14 rounded-xl bg-gray-700 hover:bg-gray-600 active:bg-indigo-600 text-white text-xl font-semibold transition-colors"
+            >
+              0
+            </button>
+            <button
+              onClick={handlePinSubmit}
+              className="h-14 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors"
+            >
+              Войти
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── SETTINGS CONTENT ────────────────────────────────────────────────────────
   return (
     <>
       <NavBar />
-      <div className="wrap">
-        <div className="card">
-          <div className="h1">⚙️ Настройки</div>
-          <div className="muted">Гибкая настройка системы</div>
-        </div>
-
-        {/* Tabs */}
-        <div className="card" style={{ marginTop: '16px' }}>
-          <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--gray-200)', paddingBottom: '12px' }}>
-            <button
-              className={activeTab === 'subjects' ? 'btn-pill active' : 'btn-pill'}
-              onClick={() => setActiveTab('subjects')}
-            >
-              📚 Предметы
-            </button>
-            <button
-              className={activeTab === 'schedule' ? 'btn-pill active' : 'btn-pill'}
-              onClick={() => setActiveTab('schedule')}
-            >
-              📅 Расписание
-            </button>
-            <button
-              className={activeTab === 'exercises' ? 'btn-pill active' : 'btn-pill'}
-              onClick={() => setActiveTab('exercises')}
-            >
-              💪 Упражнения
-            </button>
-            <button
-              className={activeTab === 'categories' ? 'btn-pill active' : 'btn-pill'}
-              onClick={() => setActiveTab('categories')}
-            >
-              💰 Категории расходов
-            </button>
-            <button
-              className={activeTab === 'sections' ? 'btn-pill active' : 'btn-pill'}
-              onClick={() => setActiveTab('sections')}
-            >
-              🏊 Секции
-            </button>
+      <div className="min-h-screen bg-gray-900 pb-8">
+        <div className="max-w-2xl mx-auto px-4 pt-4">
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-white">Настройки</h1>
+            <p className="text-gray-400 text-sm mt-1">Управление системой мотивации</p>
           </div>
 
-          {/* ПРЕДМЕТЫ */}
-          {activeTab === 'subjects' && (
-            <div style={{ marginTop: '16px' }}>
-              <div className="h2">Предметы для {childId === 'adam' ? 'Адама' : 'Алима'}</div>
-              
-              {/* Добавить предмет */}
-              <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
-                <input
-                  type="text"
-                  placeholder="Название предмета"
-                  className="input"
-                  value={newSubjectName}
-                  onChange={(e) => setNewSubjectName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddSubject()}
-                  style={{ flex: 1 }}
-                />
-                <button className="btn primary" onClick={handleAddSubject}>
-                  + Добавить
-                </button>
-              </div>
+          {/* Section navigation */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            {SECTIONS.map(s => (
+              <button
+                key={s.id}
+                onClick={() => setActiveSection(s.id)}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                  activeSection === s.id
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
+                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
+                }`}
+              >
+                {s.icon} {s.label}
+              </button>
+            ))}
+          </div>
 
-              {/* Активные предметы */}
-              <div style={{ marginTop: '24px' }}>
-                <div className="h3" style={{ marginBottom: '12px' }}>Активные предметы</div>
-                {subjects.length === 0 && (
-                  <div className="tip">Нет предметов. Добавьте первый!</div>
-                )}
-                <div style={{ display: 'grid', gap: '8px' }}>
-                  {subjects.map(subject => (
-                    <div
-                      key={subject.id}
-                      className="card"
-                      style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '12px 16px',
-                        opacity: subject.active ? 1 : 0.5
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: 600 }}>{subject.name}</div>
-                        {!subject.active && (
-                          <div className="tip" style={{ marginTop: '4px' }}>Отключен</div>
-                        )}
-                      </div>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button
-                          className="btn"
-                          onClick={() => handleToggleActive(subject.id, subject.active)}
-                        >
-                          {subject.active ? '🔒 Отключить' : '✅ Включить'}
-                        </button>
-                        <button
-                          className="btn"
-                          onClick={() => handleArchiveSubject(subject.id)}
-                        >
-                          📦 Архив
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+          {/* Loading family */}
+          {loadingFamily && (
+            <div className="bg-gray-800 rounded-2xl p-6 text-center text-gray-400">
+              Загрузка...
+            </div>
+          )}
 
-              {/* Архивированные */}
-              {archivedSubjects.length > 0 && (
-                <div style={{ marginTop: '24px' }}>
-                  <div className="h3" style={{ marginBottom: '12px' }}>📦 Архив</div>
-                  <div style={{ display: 'grid', gap: '8px', opacity: 0.6 }}>
-                    {archivedSubjects.map(subject => (
-                      <div
-                        key={subject.id}
-                        className="card"
-                        style={{ padding: '12px 16px' }}
-                      >
-                        <div>{subject.name}</div>
-                        <div className="tip" style={{ marginTop: '4px' }}>
-                          Архивирован {subject.archived_at && new Date(subject.archived_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+          {/* No family found */}
+          {!loadingFamily && !familyId && (
+            <div className="bg-gray-800 rounded-2xl p-6 text-center">
+              <div className="text-gray-400">
+                Семья не найдена. Пройдите онбординг для создания семьи.
+              </div>
+            </div>
+          )}
+
+          {/* Content area */}
+          {!loadingFamily && familyId && (
+            <div className="bg-gray-800 rounded-2xl p-6">
+              {activeSection === 'categories' && (
+                <CategoryManager familyId={familyId} />
               )}
-            </div>
-          )}
-
-          {/* РАСПИСАНИЕ */}
-          {activeTab === 'schedule' && (
-            <div style={{ marginTop: '16px' }}>
-              <ScheduleEditor childId={childId} />
-            </div>
-          )}
-
-          {/* УПРАЖНЕНИЯ */}
-          {activeTab === 'exercises' && (
-            <div style={{ marginTop: '16px' }}>
-              <div className="h2">Домашние упражнения</div>
-              
-              {/* Добавить упражнение */}
-              <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
-                <input
-                  type="text"
-                  placeholder="Название упражнения"
-                  className="input"
-                  value={newExerciseName}
-                  onChange={(e) => setNewExerciseName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddExercise()}
-                  style={{ flex: 1 }}
-                />
-                <select
-                  className="input"
-                  value={newExerciseUnit}
-                  onChange={(e) => setNewExerciseUnit(e.target.value)}
-                  style={{ width: '120px' }}
-                >
-                  <option value="раз">раз</option>
-                  <option value="мин">мин</option>
-                  <option value="сек">сек</option>
-                  <option value="км">км</option>
-                </select>
-                <button className="btn primary" onClick={handleAddExercise}>
-                  + Добавить
-                </button>
-              </div>
-
-              {/* Список упражнений */}
-              <div style={{ marginTop: '24px' }}>
-                <div className="h3" style={{ marginBottom: '12px' }}>Доступные упражнения</div>
-                <div style={{ display: 'grid', gap: '8px' }}>
-                  {exercises.map(exercise => (
-                    <div
-                      key={exercise.id}
-                      className="card"
-                      style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '12px 16px'
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: 600 }}>{exercise.name}</div>
-                        <div className="tip" style={{ marginTop: '4px' }}>
-                          Единица: {exercise.unit}
-                        </div>
-                      </div>
-                      <button
-                        className="btn"
-                        onClick={() => handleDeleteExercise(exercise.id)}
-                      >
-                        🗑️ Удалить
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* КАТЕГОРИИ РАСХОДОВ */}
-          {activeTab === 'categories' && (
-            <div style={{ marginTop: '16px' }}>
-              <div className="h2">Категории расходов</div>
-              
-              {/* Добавить категорию */}
-              <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
-                <select
-                  className="input"
-                  value={newCategoryIcon}
-                  onChange={(e) => setNewCategoryIcon(e.target.value)}
-                  style={{ width: '80px' }}
-                >
-                  <option value="💰">💰</option>
-                  <option value="🎓">🎓</option>
-                  <option value="🏃">🏃</option>
-                  <option value="🎨">🎨</option>
-                  <option value="👕">👕</option>
-                  <option value="🏥">🏥</option>
-                  <option value="🎮">🎮</option>
-                  <option value="🎒">🎒</option>
-                  <option value="📚">📚</option>
-                  <option value="💔">💔</option>
-                  <option value="🍎">🍎</option>
-                  <option value="🚗">🚗</option>
-                  <option value="🎸">🎸</option>
-                  <option value="⚽">⚽</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder="Название категории"
-                  className="input"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
-                  style={{ flex: 1 }}
-                />
-                <button className="btn primary" onClick={handleAddCategory}>
-                  + Добавить
-                </button>
-              </div>
-
-              {/* Список категорий */}
-              <div style={{ marginTop: '24px' }}>
-                <div className="h3" style={{ marginBottom: '12px' }}>Все категории</div>
-                <div className="tip" style={{ marginBottom: '12px' }}>
-                  Отключённые категории не показываются при добавлении расхода.
-                  Нельзя удалить категорию, если есть расходы с ней.
-                </div>
-                <div style={{ display: 'grid', gap: '8px' }}>
-                  {categories.map(category => (
-                    <div
-                      key={category.id}
-                      className="card"
-                      style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '12px 16px',
-                        opacity: category.is_active ? 1 : 0.5
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '24px' }}>{category.icon}</span>
-                        <div>
-                          <div style={{ fontWeight: 600 }}>{category.name}</div>
-                          {category.is_default && (
-                            <div className="tip" style={{ marginTop: '4px' }}>
-                              Предустановленная
-                            </div>
-                          )}
-                          {!category.is_active && (
-                            <div className="tip" style={{ marginTop: '4px', color: '#ef4444' }}>
-                              Отключена
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button
-                          className="btn"
-                          onClick={() => handleToggleCategoryActive(category.id, category.is_active)}
-                        >
-                          {category.is_active ? '⚪ Отключить' : '🟢 Включить'}
-                        </button>
-                        {!category.is_default && (
-                          <button
-                            className="btn"
-                            onClick={() => handleDeleteCategory(category.id)}
-                          >
-                            🗑️ Удалить
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* СЕКЦИИ */}
-          {activeTab === 'sections' && (
-            <div style={{ marginTop: '16px' }}>
-              <div className="h2">Секции для {childId === 'adam' ? 'Адама' : 'Алима'}</div>
-              
-              {/* Добавить секцию */}
-              <div style={{ marginTop: '16px', display: 'grid', gap: '12px' }}>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
-                    type="text"
-                    placeholder="Название секции (например: Плавание)"
-                    className="input"
-                    value={newSectionName}
-                    onChange={(e) => setNewSectionName(e.target.value)}
-                    style={{ flex: 1 }}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Стоимость ₽"
-                    className="input"
-                    value={newSectionCost}
-                    onChange={(e) => setNewSectionCost(e.target.value)}
-                    style={{ width: '150px' }}
-                  />
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
-                    type="text"
-                    placeholder="Тренер"
-                    className="input"
-                    value={newSectionTrainer}
-                    onChange={(e) => setNewSectionTrainer(e.target.value)}
-                    style={{ flex: 1 }}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Адрес"
-                    className="input"
-                    value={newSectionAddress}
-                    onChange={(e) => setNewSectionAddress(e.target.value)}
-                    style={{ flex: 1 }}
-                  />
-                  <button className="btn primary" onClick={handleAddSection}>
-                    + Добавить
-                  </button>
-                </div>
-              </div>
-
-              {/* Список секций */}
-              <div style={{ marginTop: '24px' }}>
-                <div className="h3" style={{ marginBottom: '12px' }}>Активные секции</div>
-                {sections.length === 0 && (
-                  <div className="tip">Нет секций. Добавьте первую!</div>
-                )}
-                <div style={{ display: 'grid', gap: '8px' }}>
-                  {sections.map(section => (
-                    <div
-                      key={section.id}
-                      className="card"
-                      style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '16px',
-                        opacity: section.is_active ? 1 : 0.5
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: '6px' }}>
-                          🏊 {section.name}
-                        </div>
-                        {section.cost && (
-                          <div className="tip" style={{ marginTop: '4px' }}>
-                            💰 {section.cost.toLocaleString('ru-RU')} ₽/мес
-                          </div>
-                        )}
-                        {section.trainer && (
-                          <div className="tip" style={{ marginTop: '4px' }}>
-                            👤 Тренер: {section.trainer}
-                          </div>
-                        )}
-                        {section.address && (
-                          <div className="tip" style={{ marginTop: '4px' }}>
-                            📍 {section.address}
-                          </div>
-                        )}
-                        {!section.is_active && (
-                          <div className="tip" style={{ marginTop: '4px', color: '#ef4444' }}>
-                            Отключена
-                          </div>
-                        )}
-                      </div>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button
-                          className="btn"
-                          onClick={() => handleToggleSectionActive(section.id, section.is_active)}
-                        >
-                          {section.is_active ? '⚪ Отключить' : '🟢 Включить'}
-                        </button>
-                        <button
-                          className="btn"
-                          onClick={() => handleDeleteSection(section.id)}
-                        >
-                          🗑️ Удалить
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              {activeSection === 'tasks' && (
+                <TaskManager familyId={familyId} categories={categories} />
+              )}
+              {activeSection === 'coins' && (
+                <CoinRulesEditor familyId={familyId} />
+              )}
+              {activeSection === 'streaks' && (
+                <StreakSettings familyId={familyId} />
+              )}
+              {activeSection === 'schedule' && (
+                <ScheduleEditor familyId={familyId} />
+              )}
+              {activeSection === 'notifications' && (
+                <NotificationSettings familyId={familyId} memberId={memberId} />
+              )}
             </div>
           )}
         </div>
       </div>
-
-      {/* PIN Prompt */}
-      {showPinPrompt && (
-        <div className="modal-overlay" onClick={() => setShowPinPrompt(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modalH">
-              <div className="h">🔐 Введите PIN</div>
-              <button className="close" onClick={() => setShowPinPrompt(false)}>×</button>
-            </div>
-            <div className="modalB">
-              <input
-                type="password"
-                className="input"
-                placeholder="PIN код"
-                value={pinInput}
-                onChange={(e) => setPinInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handlePinSubmit()}
-                autoFocus
-              />
-              <button className="btn primary" onClick={handlePinSubmit} style={{ marginTop: '12px' }}>
-                Подтвердить
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   )
 }
