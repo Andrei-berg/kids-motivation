@@ -13,14 +13,14 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-03-01 (01.2-05 complete — child join flow at /onboarding/join, middleware redirect fixed, getFamilyChildren added)
+> Обновляется после каждой фазы. Последнее обновление: 2026-03-07 (01.3-01 complete — SQL migration for categories/tasks/schedule_items/push_subscriptions with RLS + seed_default_categories function)
 
 ---
 
 ## Статус проекта
 
 ```
-🟢 EXECUTING — Phase 1.2 COMPLETE (5/5 plans done). Ready for Phase 1.3: Flexible categories + schedule.
+🟢 EXECUTING — Phase 1.3 IN PROGRESS (1/4 plans done). SQL migration complete. Ready for Plan 02: categories API.
 ```
 
 ---
@@ -48,11 +48,14 @@ progress:
 - [x] Plan 04: Onboarding wizard steps 5-6 (categories toggle, confetti + Done screen) — commit: 0a173bf; DB fixes: 0ce79a0, ce7a477, 92b6e6b, 85a76ce
 - [x] Plan 05: Child join flow at /onboarding/join + middleware redirect fix — commits: f462c02, fc72a20
 
+### Phase 1.3 — Flexible Categories + Schedule (IN PROGRESS, 1/4 plans)
+- [x] Plan 01: SQL migration — categories, tasks, schedule_items, push_subscriptions tables + RLS + seed_default_categories() — commit: df64c43
+
 ---
 
 ## Следующий шаг
 
-**→ Phase 1.3: Flexible Categories + Schedule** (гибкие категории, расписание, привязка к семье)
+**→ Phase 1.3 Plan 02: Categories API** (lib/categories-api.ts — CRUD for categories, tasks, schedule_items)
 
 ---
 
@@ -127,6 +130,16 @@ Phase 7.3  [ ] Google Play
 | Штрафы | Да, оставляем | Реализм, ответственность |
 | Магазин | Родитель создаёт позиции | Гибкость |
 | Подтверждение покупок | Родитель одобряет | Контроль |
+
+### Phase 1.3 Plan 01 — Ключевые решения (2026-03-07)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| RLS для новых таблиц | Тот же паттерн family_id IN (...) что и в rls.sql | Консистентность; get_my_family_ids() уже задефайнен |
+| seed_default_categories | SECURITY DEFINER + ON CONFLICT DO NOTHING | Идемпотентность; безопасно вызывать несколько раз |
+| Старая таблица schedule | Не трогать, новая schedule_items рядом | Backward compat до Phase 1.4 |
+| push_subscriptions UNIQUE | (member_id, (subscription->>'endpoint')) | Один row на device, предотвращает дубли |
+| tasks.child_member_id | NULL = все дети, non-null = конкретный ребёнок | Гибкость для семей с детьми разного возраста |
 
 ### Phase 1.2 Plan 05 — Ключевые решения (2026-03-01)
 
