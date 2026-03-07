@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { savePushSubscription, deletePushSubscription } from '@/lib/push-api'
+import { sendTestNotification } from '@/app/actions/push'
 
 interface Props {
   familyId: string
@@ -31,7 +32,9 @@ export default function NotificationSettings({ familyId, memberId }: Props) {
   const [subscribed, setSubscribed] = useState(false)
   const [currentSubscription, setCurrentSubscription] = useState<PushSubscription | null>(null)
   const [loading, setLoading] = useState(false)
+  const [testLoading, setTestLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [testSuccess, setTestSuccess] = useState<string | null>(null)
   const [showIOSBanner, setShowIOSBanner] = useState(false)
 
   const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
@@ -132,6 +135,27 @@ export default function NotificationSettings({ familyId, memberId }: Props) {
     }
   }
 
+  const handleTestNotification = async () => {
+    setError(null)
+    setTestSuccess(null)
+    setTestLoading(true)
+    try {
+      const reg = await navigator.serviceWorker.ready
+      const sub = await reg.pushManager.getSubscription()
+      if (!sub) {
+        setError('Сначала включите уведомления')
+        return
+      }
+      await sendTestNotification(JSON.stringify(sub))
+      setTestSuccess('Уведомление отправлено!')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Ошибка отправки'
+      setError(`Ошибка: проверьте VAPID ключи в .env.local (${msg})`)
+    } finally {
+      setTestLoading(false)
+    }
+  }
+
   return (
     <div>
       <h2 className="text-lg font-semibold text-white mb-4">Уведомления</h2>
@@ -210,17 +234,18 @@ export default function NotificationSettings({ familyId, memberId }: Props) {
       {/* Section 2: Test notification */}
       <div className="bg-gray-700/50 rounded-xl p-4 mb-4">
         <h3 className="text-sm font-medium text-white mb-3">Тест уведомления</h3>
-        <div className="relative group">
-          <button
-            disabled
-            className="w-full py-3 bg-gray-700 text-gray-500 text-sm font-medium rounded-xl cursor-not-allowed"
-          >
-            Отправить тестовое уведомление
-          </button>
-          <div className="absolute bottom-full left-0 right-0 mb-2 px-3 py-2 bg-gray-900 text-gray-400 text-xs rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none text-center">
-            Настройка в следующем шаге (Plan 04)
+        {testSuccess && (
+          <div className="mb-3 p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-sm">
+            {testSuccess}
           </div>
-        </div>
+        )}
+        <button
+          onClick={handleTestNotification}
+          disabled={testLoading}
+          className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
+        >
+          {testLoading ? 'Отправка...' : 'Отправить тестовое уведомление'}
+        </button>
       </div>
 
       {/* Section 3: Task reminders info */}
