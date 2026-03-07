@@ -3,24 +3,24 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-07T16:24:38Z"
+last_updated: "2026-03-07T16:35:15Z"
 progress:
   total_phases: 24
   completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 9
+  completed_plans: 9
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-03-07 (01.3-02 complete — categories-api.ts, schedule-api.ts, push-api.ts created; store extended with familyId; createFamily wired to seedDefaultCategories)
+> Обновляется после каждой фазы. Последнее обновление: 2026-03-07 (01.3-03 complete — Settings page full redesign: PIN gate + family-scoped content + 6 sub-components in components/settings/)
 
 ---
 
 ## Статус проекта
 
 ```
-🟢 EXECUTING — Phase 1.3 IN PROGRESS (2/4 plans done). API layer complete. Ready for Plan 03: Settings page.
+🟢 EXECUTING — Phase 1.3 IN PROGRESS (3/4 plans done). Settings page complete. Ready for Plan 04: Push notifications.
 ```
 
 ---
@@ -48,15 +48,16 @@ progress:
 - [x] Plan 04: Onboarding wizard steps 5-6 (categories toggle, confetti + Done screen) — commit: 0a173bf; DB fixes: 0ce79a0, ce7a477, 92b6e6b, 85a76ce
 - [x] Plan 05: Child join flow at /onboarding/join + middleware redirect fix — commits: f462c02, fc72a20
 
-### Phase 1.3 — Flexible Categories + Schedule (IN PROGRESS, 2/4 plans)
+### Phase 1.3 — Flexible Categories + Schedule (IN PROGRESS, 3/4 plans)
 - [x] Plan 01: SQL migration — categories, tasks, schedule_items, push_subscriptions tables + RLS + seed_default_categories() — commit: df64c43
 - [x] Plan 02: Categories API layer — categories-api.ts, schedule-api.ts, push-api.ts; store.ts extended with familyId; createFamily wired to seedDefaultCategories — commits: 5f92d7f, d46273a
+- [x] Plan 03: Settings page full redesign — app/settings/page.tsx + 6 sub-components in components/settings/ — commits: 8c739d2, 4ff66fb
 
 ---
 
 ## Следующий шаг
 
-**→ Phase 1.3 Plan 03: Settings page** (UI for managing categories and schedule — consumes categories-api.ts, schedule-api.ts)
+**→ Phase 1.3 Plan 04: Push notifications** (service worker, VAPID keys, server-side push sending via Server Action)
 
 ---
 
@@ -131,6 +132,14 @@ Phase 7.3  [ ] Google Play
 | Штрафы | Да, оставляем | Реализм, ответственность |
 | Магазин | Родитель создаёт позиции | Гибкость |
 | Подтверждение покупок | Родитель одобряет | Контроль |
+
+### Phase 1.3 Plan 03 — Ключевые решения (2026-03-07)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| CoinRules/StreakSettings хранение | localStorage (family-scoped key) | Нет нового столбца в БД в Phase 1.3; Phase 2.1 мигрирует в coin_rules таблицу |
+| Settings familyId источник | supabase.auth.getUser() + family_members query | Multi-tenant; не из legacy Zustand store |
+| urlBase64ToUint8Array тип | Возвращает ArrayBuffer | TypeScript strict: Uint8Array<ArrayBufferLike> несовместим с BufferSource для PushManager.subscribe |
 
 ### Phase 1.3 Plan 02 — Ключевые решения (2026-03-07)
 
