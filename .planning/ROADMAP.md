@@ -89,6 +89,13 @@ Plans:
 
 **Requirements:** REQ-FAM-010, REQ-FAM-011, REQ-UX-001, REQ-SEC-002
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] 01.4-01-PLAN.md — useFamilyMembers hook + store migration (remove legacy childId/setChildId)
+- [ ] 01.4-02-PLAN.md — NavBar dynamic pills + ExpenseModal/AuditLogViewer/PotentialWidget component updates
+- [ ] 01.4-03-PLAN.md — All pages migrated to activeMemberId: dashboard, wallet, expenses, coach-rating, records, streaks, audit
+
 **Success Criteria:**
 1. Zero occurrences of hardcoded 'adam' or 'alim' in TypeScript files
 2. NavBar loads children list dynamically from DB
