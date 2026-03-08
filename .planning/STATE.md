@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-07T16:35:15Z"
+last_updated: "2026-03-08T02:08:00Z"
 progress:
   total_phases: 24
   completed_phases: 2
@@ -48,17 +48,20 @@ progress:
 - [x] Plan 04: Onboarding wizard steps 5-6 (categories toggle, confetti + Done screen) — commit: 0a173bf; DB fixes: 0ce79a0, ce7a477, 92b6e6b, 85a76ce
 - [x] Plan 05: Child join flow at /onboarding/join + middleware redirect fix — commits: f462c02, fc72a20
 
-### Phase 1.3 — Flexible Categories + Schedule (IN PROGRESS, 3/4 plans)
+### Phase 1.3 — Flexible Categories + Schedule (COMPLETE, 4/4 plans)
 - [x] Plan 01: SQL migration — categories, tasks, schedule_items, push_subscriptions tables + RLS + seed_default_categories() — commit: df64c43
 - [x] Plan 02: Categories API layer — categories-api.ts, schedule-api.ts, push-api.ts; store.ts extended with familyId; createFamily wired to seedDefaultCategories — commits: 5f92d7f, d46273a
 - [x] Plan 03: Settings page full redesign — app/settings/page.tsx + 6 sub-components in components/settings/ — commits: 8c739d2, 4ff66fb
 - [x] Plan 04: Push notifications — web-push Server Action + PWA manifest + service worker + PushInit in root layout — commits: 83dbe67, 96e0dff
 
+### Phase 1.4 — Dashboard Refactor (IN PROGRESS, 1/3 plans)
+- [x] Plan 01: useFamilyMembers hook + store.ts cleanup (remove childId/setChildId) — commits: d8720f6, da9750d
+
 ---
 
 ## Следующий шаг
 
-**→ Phase 1.4: Dashboard refactor** (remove hardcoded 'adam'/'alim', wire to Supabase family_members, replace legacy store childId with new multi-tenant pattern)
+**→ Phase 1.4 Plan 02: NavBar wiring** — wire NavBar to useFamilyMembers hook, replace childId pill buttons with activeMemberId UUID-based selection
 
 ---
 
@@ -69,7 +72,7 @@ progress:
 Phase 1.1  [x] Новая схема БД (families, RLS, Auth) — COMPLETE (3/3 plans)
 Phase 1.2  [x] Onboarding Flow — COMPLETE (5/5 plans)
 Phase 1.3  [x] Гибкие категории + расписание — COMPLETE (4/4 plans)
-Phase 1.4  [ ] Dashboard рефактор (убрать hardcodes)
+Phase 1.4  [~] Dashboard рефактор (1/3 plans done)
 ```
 
 ### Milestone 2 — Core Loop
@@ -133,6 +136,15 @@ Phase 7.3  [ ] Google Play
 | Штрафы | Да, оставляем | Реализм, ответственность |
 | Магазин | Родитель создаёт позиции | Гибкость |
 | Подтверждение покупок | Родитель одобряет | Контроль |
+
+### Phase 1.4 Plan 01 — Ключевые решения (2026-03-08)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| Legacy childId/setChildId | Удалены из store.ts в Phase 1.4 Plan 01 | activeMemberId (UUID) — единственный идентификатор ребёнка |
+| REQ-FAM-011 (Delete member) | Отложен до Phase 2.x | Phase 1.1 RLS уже защищает на уровне БД; UI удаления — вне скоупа 1.4 |
+| REQ-SEC-002 (Parent PIN) | Pre-satisfied в Phase 1.3 | app/settings/page.tsx PIN gate не тронут в Phase 1.4 |
+| useFamilyMembers queries | 2 запроса на каждую страницу | Допустимо для семейного приложения с 2-3 детьми |
 
 ### Phase 1.3 Plan 04 — Ключевые решения (2026-03-07)
 
