@@ -2,25 +2,25 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-last_updated: "2026-03-08T02:08:00Z"
+status: active
+last_updated: "2026-03-08T03:00:00Z"
 progress:
   total_phases: 24
-  completed_phases: 2
-  total_plans: 9
-  completed_plans: 9
+  completed_phases: 3
+  total_plans: 12
+  completed_plans: 12
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-03-08 (01.4-02 complete — NavBar dynamic pill buttons + ExpenseModal/AuditLogViewer/PotentialWidget dynamic props, all hardcoded adam/alim removed from 4 shared components)
+> Обновляется после каждой фазы. Последнее обновление: 2026-03-08 (01.4-03 complete — Page migration: all 8 pages use activeMemberId with null guards; zero hardcoded adam/alim in TypeScript; Phase 1.4 COMPLETE)
 
 ---
 
 ## Статус проекта
 
 ```
-🟢 EXECUTING — Phase 1.4 Plan 02 COMPLETE (2/3 plans done). Shared components wired. Ready for Phase 1.4 Plan 03: Page migration.
+✅ PHASE 1.4 COMPLETE — All 3 plans done. Zero adam/alim in TypeScript. activeMemberId (UUID) used everywhere. Ready for Phase 2.1: Coin Engine.
 ```
 
 ---
@@ -54,15 +54,16 @@ progress:
 - [x] Plan 03: Settings page full redesign — app/settings/page.tsx + 6 sub-components in components/settings/ — commits: 8c739d2, 4ff66fb
 - [x] Plan 04: Push notifications — web-push Server Action + PWA manifest + service worker + PushInit in root layout — commits: 83dbe67, 96e0dff
 
-### Phase 1.4 — Dashboard Refactor (IN PROGRESS, 2/3 plans)
+### Phase 1.4 — Dashboard Refactor (COMPLETE, 3/3 plans)
 - [x] Plan 01: useFamilyMembers hook + store.ts cleanup (remove childId/setChildId) — commits: d8720f6, da9750d
 - [x] Plan 02: NavBar dynamic pill buttons + ExpenseModal/AuditLogViewer/PotentialWidget dynamic props — commits: 8552a2e, 45e63e8
+- [x] Plan 03: Page migration — 8 pages use activeMemberId; zero hardcoded adam/alim; build passes — commits: 4422b1b, bc7fd9b
 
 ---
 
 ## Следующий шаг
 
-**→ Phase 1.4 Plan 03: Page migration** — update all pages (dashboard, wallet, analytics, wallboard, expenses, audit) to use activeMemberId from store instead of legacy childId
+**→ Phase 2.1: Coin Engine** — flexible, configurable coin reward system (Phase 1.4 complete)
 
 ---
 
@@ -73,7 +74,7 @@ progress:
 Phase 1.1  [x] Новая схема БД (families, RLS, Auth) — COMPLETE (3/3 plans)
 Phase 1.2  [x] Onboarding Flow — COMPLETE (5/5 plans)
 Phase 1.3  [x] Гибкие категории + расписание — COMPLETE (4/4 plans)
-Phase 1.4  [~] Dashboard рефактор (1/3 plans done)
+Phase 1.4  [x] Dashboard рефактор — COMPLETE (3/3 plans done)
 ```
 
 ### Milestone 2 — Core Loop
@@ -137,6 +138,17 @@ Phase 7.3  [ ] Google Play
 | Штрафы | Да, оставляем | Реализм, ответственность |
 | Магазин | Родитель создаёт позиции | Гибкость |
 | Подтверждение покупок | Родитель одобряет | Контроль |
+
+### Phase 1.4 Plan 03 — Ключевые решения (2026-03-08)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| P2P siblings.length === 0 | Скрыть кнопку P2P | Некому переводить |
+| P2P siblings.length === 1 | Авто-выбор, показать имя получателя | Семья с 2 детьми — только 1 вариант |
+| P2P siblings.length >= 2 | TODO дропдаун (отложено) | Текущая семья 2 детей — не регрессия |
+| coach-rating child switcher | Удалён | Global switching в NavBar; дублирование UX |
+| app/wallboard/page.tsx | Не изменён | Нет hardcoded строк; legacy api.getChildren(); отложен до Phase 2.x |
+| app/kid/page.tsx default state | '' вместо 'adam' | Rule 2: выполнение условия zero-adam/alim grep |
 
 ### Phase 1.4 Plan 02 — Ключевые решения (2026-03-08)
 

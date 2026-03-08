@@ -15,7 +15,7 @@
 - [x] **Phase 1.1: db-schema** — New DB with families, RLS, Auth, data migration (completed 2026-03-01)
 - [x] **Phase 1.2: onboarding** — Registration, family creation, adding children (completed 2026-03-01)
 - [x] **Phase 1.3: categories-schedule** — Flexible categories, schedule, push notifications (completed 2026-03-07)
-- [ ] **Phase 1.4: dashboard-refactor** — Remove all hardcodes, adapt UI
+- [x] **Phase 1.4: dashboard-refactor** — Remove all hardcodes, adapt UI (completed 2026-03-08)
 
 ---
 
@@ -89,7 +89,7 @@ Plans:
 
 **Requirements:** REQ-FAM-010, REQ-FAM-011, REQ-UX-001, REQ-SEC-002
 
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 01.4-01-PLAN.md — useFamilyMembers hook + store migration (remove legacy childId/setChildId)
