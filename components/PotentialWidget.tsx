@@ -36,10 +36,11 @@ import type { MonthlyPotential, Wallet } from '@/lib/wallet-api'
 
 interface PotentialWidgetProps {
   childId: string
+  displayName?: string
   onDetailsClick?: () => void
 }
 
-export default function PotentialWidget({ childId, onDetailsClick }: PotentialWidgetProps) {
+export default function PotentialWidget({ childId, displayName, onDetailsClick }: PotentialWidgetProps) {
   const [potential, setPotential] = useState<MonthlyPotential | null>(null)
   const [wallet, setWallet] = useState<Wallet | null>(null)
   const [loading, setLoading] = useState(true)
@@ -114,7 +115,7 @@ export default function PotentialWidget({ childId, onDetailsClick }: PotentialWi
       {/* Заголовок */}
       <div className="potential-header">
         <h3>💰 ПОТЕНЦИАЛ МЕСЯЦА</h3>
-        <div className="child-name">{childId === 'adam' ? 'АДАМ' : 'АЛИМ'}</div>
+        <div className="child-name">{(displayName ?? childId).toUpperCase()}</div>
       </div>
 
       {/* Баланс */}

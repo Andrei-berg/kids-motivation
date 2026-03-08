@@ -13,8 +13,10 @@ import {
 import NavBar from '@/components/NavBar'
 import ExpenseModal from '@/components/ExpenseModal'
 import ExpenseCharts from '@/components/ExpenseCharts'
+import { useFamilyMembers } from '@/lib/hooks/useFamilyMembers'
 
 export default function ExpensesPage() {
+  const { members } = useFamilyMembers()
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [categories, setCategories] = useState<ExpenseCategory[]>([])
   const [stats, setStats] = useState<ExpenseStats | null>(null)
@@ -286,6 +288,7 @@ export default function ExpensesPage() {
         onClose={() => setShowAddModal(false)}
         categories={categories}
         onSuccess={loadData}
+        members={members}
       />
     </div>
   )

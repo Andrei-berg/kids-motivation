@@ -2,25 +2,34 @@
 
 import { useState, useEffect } from 'react'
 import { addExpense, ExpenseCategory } from '@/lib/expenses-api'
+import type { FamilyMember } from '@/lib/hooks/useFamilyMembers'
 
 interface ExpenseModalProps {
   isOpen: boolean
   onClose: () => void
   categories: ExpenseCategory[]
   onSuccess: () => void
+  members: FamilyMember[]
 }
 
-export default function ExpenseModal({ isOpen, onClose, categories, onSuccess }: ExpenseModalProps) {
+export default function ExpenseModal({ isOpen, onClose, categories, onSuccess, members }: ExpenseModalProps) {
   const [title, setTitle] = useState('')
   const [amount, setAmount] = useState('')
   const [categoryId, setCategoryId] = useState('')
-  const [childId, setChildId] = useState('adam')
+  const [selectedMemberId, setSelectedMemberId] = useState<string>('')
   const [date, setDate] = useState(getTodayDate())
   const [isRecurring, setIsRecurring] = useState(false)
   const [recurringPeriod, setRecurringPeriod] = useState('monthly')
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  // Initialize selectedMemberId when modal opens or members changes
+  useEffect(() => {
+    if (isOpen && members.length > 0) {
+      setSelectedMemberId(members[0].id)
+    }
+  }, [isOpen, members])
 
   function getTodayDate() {
     return new Date().toISOString().split('T')[0]
@@ -30,7 +39,7 @@ export default function ExpenseModal({ isOpen, onClose, categories, onSuccess }:
     setTitle('')
     setAmount('')
     setCategoryId('')
-    setChildId('adam')
+    setSelectedMemberId('')
     setDate(getTodayDate())
     setIsRecurring(false)
     setRecurringPeriod('monthly')
@@ -67,7 +76,7 @@ export default function ExpenseModal({ isOpen, onClose, categories, onSuccess }:
       setSaving(true)
 
       await addExpense({
-        childId,
+        childId: selectedMemberId,
         title: title.trim(),
         amount: Number(amount),
         categoryId,
@@ -103,7 +112,7 @@ export default function ExpenseModal({ isOpen, onClose, categories, onSuccess }:
         {/* Header */}
         <div className="expense-modal-header">
           <h2 className="expense-modal-title">+ Добавить расход</h2>
-          <button 
+          <button
             className="expense-modal-close"
             onClick={handleClose}
             disabled={saving}
@@ -175,26 +184,18 @@ export default function ExpenseModal({ isOpen, onClose, categories, onSuccess }:
               Для кого <span className="required">*</span>
             </label>
             <div className="form-radio-group">
-              <label className="form-radio">
-                <input
-                  type="radio"
-                  name="childId"
-                  value="adam"
-                  checked={childId === 'adam'}
-                  onChange={(e) => setChildId(e.target.value)}
-                />
-                <span>👦 Адам</span>
-              </label>
-              <label className="form-radio">
-                <input
-                  type="radio"
-                  name="childId"
-                  value="alim"
-                  checked={childId === 'alim'}
-                  onChange={(e) => setChildId(e.target.value)}
-                />
-                <span>👶 Алим</span>
-              </label>
+              {members.map(member => (
+                <label key={member.id} className="form-radio">
+                  <input
+                    type="radio"
+                    name="childId"
+                    value={member.id}
+                    checked={selectedMemberId === member.id}
+                    onChange={(e) => setSelectedMemberId(e.target.value)}
+                  />
+                  <span>{member.avatar_url && !member.avatar_url.startsWith('http') ? member.avatar_url : '👦'} {member.display_name}</span>
+                </label>
+              ))}
             </div>
           </div>
 

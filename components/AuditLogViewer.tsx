@@ -39,14 +39,16 @@ import type { AuditLog } from '@/lib/wallet-api'
 
 interface AuditLogViewerProps {
   childId: string
+  displayName?: string
   limit?: number
   showFilters?: boolean
 }
 
-export default function AuditLogViewer({ 
-  childId, 
+export default function AuditLogViewer({
+  childId,
+  displayName,
   limit = 50,
-  showFilters = true 
+  showFilters = true
 }: AuditLogViewerProps) {
   const [logs, setLogs] = useState<AuditLog[]>([])
   const [filteredLogs, setFilteredLogs] = useState<AuditLog[]>([])
@@ -123,7 +125,7 @@ export default function AuditLogViewer({
     switch (actionBy) {
       case 'system': return '🤖 Система'
       case 'parent': return '👨‍👩‍👦 Родитель'
-      case 'child': return '👦 ' + (childId === 'adam' ? 'Адам' : 'Алим')
+      case 'child': return '👦 ' + (displayName ?? childId)
       default: return actionBy
     }
   }
