@@ -308,6 +308,47 @@ CREATE POLICY "user_profiles_own" ON user_profiles
 
 
 -- ---------------------------------------------------------------------------
+-- DROP all policies created by this file (makes script idempotent / re-runnable)
+-- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS "families_member_read"              ON families;
+DROP POLICY IF EXISTS "families_member_write"             ON families;
+DROP POLICY IF EXISTS "families_insert"                   ON families;
+DROP POLICY IF EXISTS "family_members_read"               ON family_members;
+DROP POLICY IF EXISTS "family_members_insert"             ON family_members;
+DROP POLICY IF EXISTS "family_members_update_delete"      ON family_members;
+DROP POLICY IF EXISTS "children_family_isolation"         ON children;
+DROP POLICY IF EXISTS "settings_family_isolation"         ON settings;
+DROP POLICY IF EXISTS "days_family_isolation"             ON days;
+DROP POLICY IF EXISTS "subject_grades_family_isolation"   ON subject_grades;
+DROP POLICY IF EXISTS "subjects_cache_family_isolation"   ON subjects_cache;
+DROP POLICY IF EXISTS "home_sports_family_isolation"      ON home_sports;
+DROP POLICY IF EXISTS "sports_sections_family_isolation"  ON sports_sections;
+DROP POLICY IF EXISTS "section_attendance_family_isolation" ON section_attendance;
+DROP POLICY IF EXISTS "goals_family_isolation"            ON goals;
+DROP POLICY IF EXISTS "goal_log_family_isolation"         ON goal_log;
+DROP POLICY IF EXISTS "weeks_family_isolation"            ON weeks;
+DROP POLICY IF EXISTS "streaks_family_isolation"          ON streaks;
+DROP POLICY IF EXISTS "badges_family_isolation"           ON badges;
+DROP POLICY IF EXISTS "records_family_isolation"          ON records;
+DROP POLICY IF EXISTS "challenges_family_isolation"       ON challenges;
+DROP POLICY IF EXISTS "subjects_family_isolation"         ON subjects;
+DROP POLICY IF EXISTS "schedule_family_isolation"         ON schedule;
+DROP POLICY IF EXISTS "home_exercises_family_isolation"   ON home_exercises;
+DROP POLICY IF EXISTS "exercise_types_family_isolation"   ON exercise_types;
+DROP POLICY IF EXISTS "expense_categories_family_isolation" ON expense_categories;
+DROP POLICY IF EXISTS "expenses_family_isolation"         ON expenses;
+DROP POLICY IF EXISTS "sections_family_isolation"         ON sections;
+DROP POLICY IF EXISTS "section_visits_family_isolation"   ON section_visits;
+DROP POLICY IF EXISTS "wallet_family_isolation"           ON wallet;
+DROP POLICY IF EXISTS "wallet_transactions_family_isolation" ON wallet_transactions;
+DROP POLICY IF EXISTS "wallet_settings_family_isolation"  ON wallet_settings;
+DROP POLICY IF EXISTS "rewards_family_isolation"          ON rewards;
+DROP POLICY IF EXISTS "reward_purchases_family_isolation" ON reward_purchases;
+DROP POLICY IF EXISTS "coin_exchanges_family_isolation"   ON coin_exchanges;
+DROP POLICY IF EXISTS "cash_withdrawals_family_isolation" ON cash_withdrawals;
+DROP POLICY IF EXISTS "p2p_transfers_family_isolation"    ON p2p_transfers;
+
+-- ---------------------------------------------------------------------------
 -- SECTION 4 — families: members can read; parents can update; anyone can create
 -- ---------------------------------------------------------------------------
 
