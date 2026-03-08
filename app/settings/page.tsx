@@ -4,20 +4,14 @@ import { useState, useEffect, useCallback } from 'react'
 import NavBar from '@/components/NavBar'
 import { verifyPin } from '@/utils/helpers'
 import { createClient } from '@/lib/supabase/client'
-import { getCategories } from '@/lib/categories-api'
-import type { Category } from '@/lib/categories-api'
-import CategoryManager from '@/components/settings/CategoryManager'
-import TaskManager from '@/components/settings/TaskManager'
 import CoinRulesEditor from '@/components/settings/CoinRulesEditor'
 import StreakSettings from '@/components/settings/StreakSettings'
 import ScheduleEditor from '@/components/settings/ScheduleEditor'
 import NotificationSettings from '@/components/settings/NotificationSettings'
 
-type Section = 'categories' | 'tasks' | 'coins' | 'streaks' | 'schedule' | 'notifications'
+type Section = 'coins' | 'streaks' | 'schedule' | 'notifications'
 
 const SECTIONS: { id: Section; label: string; icon: string }[] = [
-  { id: 'categories', label: 'Категории', icon: '📂' },
-  { id: 'tasks', label: 'Задачи', icon: '✅' },
   { id: 'coins', label: 'Монеты', icon: '🪙' },
   { id: 'streaks', label: 'Стрики', icon: '🔥' },
   { id: 'schedule', label: 'Расписание', icon: '📅' },
@@ -34,10 +28,9 @@ export default function SettingsPage() {
   const [familyId, setFamilyId] = useState<string | null>(null)
   const [memberId, setMemberId] = useState<string | null>(null)
   const [loadingFamily, setLoadingFamily] = useState(false)
-  const [categories, setCategories] = useState<Category[]>([])
 
   // Navigation
-  const [activeSection, setActiveSection] = useState<Section>('categories')
+  const [activeSection, setActiveSection] = useState<Section>('coins')
 
   // Load family on PIN success
   const loadFamily = useCallback(async () => {
@@ -56,13 +49,6 @@ export default function SettingsPage() {
       if (member) {
         setFamilyId(member.family_id)
         setMemberId(member.id)
-        // Load categories for TaskManager
-        try {
-          const cats = await getCategories(member.family_id)
-          setCategories(cats)
-        } catch {
-          // Non-fatal — TaskManager can show empty
-        }
       }
     } catch (err) {
       console.error('Settings: failed to load family', err)
@@ -218,12 +204,6 @@ export default function SettingsPage() {
           {/* Content area */}
           {!loadingFamily && familyId && (
             <div className="bg-gray-800 rounded-2xl p-6">
-              {activeSection === 'categories' && (
-                <CategoryManager familyId={familyId} />
-              )}
-              {activeSection === 'tasks' && (
-                <TaskManager familyId={familyId} categories={categories} />
-              )}
               {activeSection === 'coins' && (
                 <CoinRulesEditor familyId={familyId} />
               )}
