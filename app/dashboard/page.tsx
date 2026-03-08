@@ -16,7 +16,7 @@ function getDaysOfWeek(weekStart: string): string[] {
 }
 
 export default function Dashboard() {
-  const { childId } = useAppStore()
+  const { activeMemberId } = useAppStore()
   const [child, setChild] = useState<Child | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -33,26 +33,28 @@ export default function Dashboard() {
   const [showAllBadges, setShowAllBadges] = useState(false)
 
   useEffect(() => {
+    if (!activeMemberId) return
     loadData()
-  }, [childId])
+  }, [activeMemberId])
 
   async function loadData() {
+    if (!activeMemberId) return
     try {
       setLoading(true)
       const today = normalizeDate(new Date())
       const week = getWeekRange(today)
 
       // Сначала загружаем ребёнка — критично
-      const childData = await api.getChild(childId)
+      const childData = await api.getChild(activeMemberId!)
       setChild(childData)
 
       // Остальное — параллельно, каждый с fallback чтобы один сбой не ломал всё
       const [weekData, goalsData, streaksData, badgesData, weekScoreData] = await Promise.all([
-        api.getWeekData(childId, today).catch(() => ({ days: [], grades: [], sports: [], weekRecord: null })),
-        api.getGoals(childId).catch(() => ({ active: null, archived: [], all: [] })),
-        api.getStreaks(childId).catch(() => []),
-        getChildBadges(childId).catch(() => []),
-        api.getWeekScore(childId, week.start).catch(() => ({ coinsFromGrades: 0, coinsFromRoom: 0, coinsFromBehavior: 0, total: 0, filledDays: 0, gradedDays: 0, roomOkDays: 0 }))
+        api.getWeekData(activeMemberId!, today).catch(() => ({ days: [], grades: [], sports: [], weekRecord: null })),
+        api.getGoals(activeMemberId!).catch(() => ({ active: null, archived: [], all: [] })),
+        api.getStreaks(activeMemberId!).catch(() => []),
+        getChildBadges(activeMemberId!).catch(() => []),
+        api.getWeekScore(activeMemberId!, week.start).catch(() => ({ coinsFromGrades: 0, coinsFromRoom: 0, coinsFromBehavior: 0, total: 0, filledDays: 0, gradedDays: 0, roomOkDays: 0 }))
       ])
 
       setWeekScore(weekScoreData)
@@ -305,7 +307,7 @@ export default function Dashboard() {
       <DailyModal
         isOpen={showDaily}
         onClose={() => setShowDaily(false)}
-        childId={childId}
+        childId={activeMemberId ?? ''}
         date={selectedDate}
         onSave={loadData}
       />
@@ -313,7 +315,7 @@ export default function Dashboard() {
       <GoalsModal
         isOpen={showGoals}
         onClose={() => setShowGoals(false)}
-        childId={childId}
+        childId={activeMemberId ?? ''}
       />
     </>
   )

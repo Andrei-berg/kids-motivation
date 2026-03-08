@@ -6,21 +6,22 @@ import { getChildBadges, getAvailableBadges } from '@/lib/badges'
 import { useAppStore } from '@/lib/store'
 
 export default function Records() {
-  const { childId } = useAppStore()
+  const { activeMemberId } = useAppStore()
   const [badges, setBadges] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
 
   useEffect(() => {
-    if (childId) {
+    if (activeMemberId) {
       loadBadges()
     }
-  }, [childId])
+  }, [activeMemberId])
 
   async function loadBadges() {
+    if (!activeMemberId) return
     try {
       setLoading(true)
-      const earned = await getChildBadges(childId)
+      const earned = await getChildBadges(activeMemberId!)
       setBadges(earned)
     } catch (err) {
       console.error('Error loading badges:', err)

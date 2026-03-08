@@ -22,7 +22,7 @@ import { Line, Pie, Bar } from 'react-chartjs-2'
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend)
 
 export default function Analytics() {
-  const { childId } = useAppStore()
+  const { activeMemberId } = useAppStore()
   const [loading, setLoading] = useState(true)
   const [weeks, setWeeks] = useState<any[]>([])
   const [totalCoins, setTotalCoins] = useState(0)
@@ -31,10 +31,12 @@ export default function Analytics() {
   const [gradeDistribution, setGradeDistribution] = useState({ 5: 0, 4: 0, 3: 0, 2: 0 })
 
   useEffect(() => {
+    if (!activeMemberId) return
     loadAnalytics()
-  }, [childId])
+  }, [activeMemberId])
 
   async function loadAnalytics() {
+    if (!activeMemberId) return
     try {
       setLoading(true)
 
@@ -44,8 +46,8 @@ export default function Analytics() {
 
       for (let i = 0; i < 8; i++) {
         const [weekData, weekScore] = await Promise.all([
-          api.getWeekData(childId, weekStart),
-          api.getWeekScore(childId, weekStart)
+          api.getWeekData(activeMemberId!, weekStart),
+          api.getWeekScore(activeMemberId!, weekStart)
         ])
 
         // Включаем неделю если есть хоть один день с данными

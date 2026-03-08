@@ -7,7 +7,7 @@ import { api } from '@/lib/api'
 import { useAppStore } from '@/lib/store'
 
 export default function CoachRatingPage() {
-  const { childId, setChildId } = useAppStore()
+  const { activeMemberId } = useAppStore()
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [sections, setSections] = useState<any[]>([])
@@ -15,7 +15,7 @@ export default function CoachRatingPage() {
 
   useEffect(() => {
     loadSections()
-  }, [childId])
+  }, [activeMemberId])
 
   async function loadSections() {
     try {
@@ -35,46 +35,26 @@ export default function CoachRatingPage() {
     }
   }
 
-  function getChildName(id: string) {
-    return id === 'adam' ? 'Адам' : 'Алим'
-  }
-
   return (
     <>
       <NavBar />
       <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
         <div className="page-header" style={{ marginBottom: '24px', textAlign: 'center' }}>
-          <h1 style={{ 
-            fontSize: '40px', 
-            fontWeight: 900, 
+          <h1 style={{
+            fontSize: '40px',
+            fontWeight: 900,
             margin: 0,
             marginBottom: '8px'
           }}>
             💪 Оценка тренера
           </h1>
-          <p style={{ 
-            color: 'var(--gray-600)', 
+          <p style={{
+            color: 'var(--gray-600)',
             fontSize: '16px',
             marginBottom: '24px'
           }}>
             Оцени как ребёнок работал на тренировке
           </p>
-
-          {/* Выбор ребёнка */}
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-            <button
-              className={childId === 'adam' ? 'btn primary' : 'btn'}
-              onClick={() => setChildId('adam')}
-            >
-              👦 Адам
-            </button>
-            <button
-              className={childId === 'alim' ? 'btn primary' : 'btn'}
-              onClick={() => setChildId('alim')}
-            >
-              👶 Алим
-            </button>
-          </div>
         </div>
 
         {/* Философия */}
@@ -167,22 +147,22 @@ export default function CoachRatingPage() {
         {/* Кнопка оценить */}
         <button
           className="btn primary"
-          style={{ 
-            width: '100%', 
+          style={{
+            width: '100%',
             padding: '20px',
             fontSize: '18px',
             fontWeight: 700
           }}
           onClick={() => setShowModal(true)}
         >
-          ⭐ Оценить тренировку {getChildName(childId)}
+          ⭐ Оценить тренировку
         </button>
       </div>
 
       {/* Модалка */}
       {showModal && (
         <CoachRatingModal
-          childId={childId}
+          childId={activeMemberId ?? ''}
           sections={sections}
           onClose={() => setShowModal(false)}
           onSuccess={() => {

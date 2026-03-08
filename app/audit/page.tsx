@@ -4,9 +4,12 @@ import { useState, useEffect } from 'react'
 import NavBar from '@/components/NavBar'
 import AuditLogViewer from '@/components/AuditLogViewer'
 import { useAppStore } from '@/lib/store'
+import { useFamilyMembers } from '@/lib/hooks/useFamilyMembers'
 
 export default function AuditPage() {
-  const { childId } = useAppStore()
+  const { activeMemberId } = useAppStore()
+  const { members } = useFamilyMembers()
+  const activeChild = members.find(m => m.id === activeMemberId)
   const [loading, setLoading] = useState(false)
 
 
@@ -47,8 +50,9 @@ export default function AuditPage() {
           </p>
         </div>
 
-        <AuditLogViewer 
-          childId={childId}
+        <AuditLogViewer
+          childId={activeMemberId ?? ''}
+          displayName={activeChild?.display_name}
           limit={100}
           showFilters={true}
         />

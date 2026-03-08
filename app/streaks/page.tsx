@@ -6,21 +6,22 @@ import { api } from '@/lib/api'
 import { useAppStore } from '@/lib/store'
 
 export default function SuperStreaks() {
-  const { childId } = useAppStore()
+  const { activeMemberId } = useAppStore()
   const [streaks, setStreaks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
 
   useEffect(() => {
-    if (childId) {
+    if (activeMemberId) {
       loadStreaks()
     }
-  }, [childId])
+  }, [activeMemberId])
 
   async function loadStreaks() {
+    if (!activeMemberId) return
     try {
       setLoading(true)
-      const data = await api.getStreaks(childId)
+      const data = await api.getStreaks(activeMemberId!)
       setStreaks(data)
     } catch (err) {
       console.error('Error loading streaks:', err)
