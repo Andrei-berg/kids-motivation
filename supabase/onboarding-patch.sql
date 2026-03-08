@@ -45,24 +45,15 @@ ON CONFLICT (id) DO NOTHING;
 -- SECTION 3: Storage RLS policies for the avatars bucket
 -- =============================================================================
 -- Policy 1: Authenticated users can upload avatars
-INSERT INTO storage.policies (name, bucket_id, operation, definition)
-VALUES (
-  'Avatar upload: auth users only',
-  'avatars',
-  'INSERT',
-  '(auth.uid() IS NOT NULL)'
-)
-ON CONFLICT DO NOTHING;
+DROP POLICY IF EXISTS "Avatar upload: auth users only" ON storage.objects;
+CREATE POLICY "Avatar upload: auth users only" ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'avatars' AND auth.uid() IS NOT NULL);
 
 -- Policy 2: Anyone (public) can read avatars
-INSERT INTO storage.policies (name, bucket_id, operation, definition)
-VALUES (
-  'Avatar read: public',
-  'avatars',
-  'SELECT',
-  'true'
-)
-ON CONFLICT DO NOTHING;
+DROP POLICY IF EXISTS "Avatar read: public" ON storage.objects;
+CREATE POLICY "Avatar read: public" ON storage.objects
+  FOR SELECT USING (bucket_id = 'avatars');
 
 
 -- =============================================================================

@@ -300,6 +300,7 @@ ALTER TABLE p2p_transfers       ENABLE ROW LEVEL SECURITY;
 -- ---------------------------------------------------------------------------
 -- SECTION 3 — user_profiles: each user can only read and update their own row
 -- ---------------------------------------------------------------------------
+DROP POLICY IF EXISTS "user_profiles_own" ON user_profiles;
 CREATE POLICY "user_profiles_own" ON user_profiles
   FOR ALL TO authenticated
   USING     (id = (SELECT auth.uid()))

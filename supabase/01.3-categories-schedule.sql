@@ -124,9 +124,11 @@ CREATE TABLE IF NOT EXISTS public.push_subscriptions (
   member_id   UUID NOT NULL REFERENCES public.family_members(id) ON DELETE CASCADE,
   subscription JSONB NOT NULL,
   user_agent  TEXT,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE(member_id, (subscription->>'endpoint'))
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS push_subscriptions_member_endpoint_idx
+  ON public.push_subscriptions (member_id, (subscription->>'endpoint'));
 
 CREATE INDEX IF NOT EXISTS push_subscriptions_member_id_idx ON public.push_subscriptions(member_id);
 
