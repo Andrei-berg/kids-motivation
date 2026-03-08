@@ -96,8 +96,8 @@ export default function ExpensesPage() {
     })
   }
 
-  function getChildName(childId: string) {
-    return childId === 'adam' ? 'Адам' : childId === 'alim' ? 'Алим' : childId
+  function getChildDisplayName(memberId: string) {
+    return members.find(m => m.id === memberId)?.display_name ?? memberId
   }
 
   async function handleDelete(expenseId: string) {
@@ -136,14 +136,15 @@ export default function ExpensesPage() {
 
           {/* Фильтры */}
           <div className="expenses-filters">
-            <select 
+            <select
               value={selectedChild}
               onChange={(e) => setSelectedChild(e.target.value)}
               className="filter-select"
             >
               <option value="all">Все дети</option>
-              <option value="adam">Адам</option>
-              <option value="alim">Алим</option>
+              {members.map(m => (
+                <option key={m.id} value={m.id}>{m.display_name}</option>
+              ))}
             </select>
 
             <select 
@@ -206,7 +207,7 @@ export default function ExpensesPage() {
                         {stats.byChild.map(item => (
                           <div key={item.childId} className="stats-item">
                             <div className="stats-item-info">
-                              <span className="stats-item-name">{getChildName(item.childId)}</span>
+                              <span className="stats-item-name">{getChildDisplayName(item.childId)}</span>
                             </div>
                             <div className="stats-item-amount">
                               {formatAmount(item.amount)}
@@ -222,7 +223,7 @@ export default function ExpensesPage() {
 
               {/* Графики */}
               {stats && stats.total > 0 && (
-                <ExpenseCharts stats={stats} getChildName={getChildName} />
+                <ExpenseCharts stats={stats} getChildName={getChildDisplayName} />
               )}
 
               {/* История расходов */}
@@ -259,7 +260,7 @@ export default function ExpensesPage() {
                           <div className="expense-card-info">
                             <span className="expense-card-amount">{formatAmount(Number(expense.amount))}</span>
                             <span className="expense-card-dot">•</span>
-                            <span className="expense-card-child">{getChildName(expense.child_id)}</span>
+                            <span className="expense-card-child">{getChildDisplayName(expense.child_id)}</span>
                             <span className="expense-card-dot">•</span>
                             <span className="expense-card-date">{formatDate(expense.date)}</span>
                           </div>

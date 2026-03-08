@@ -9,9 +9,11 @@ import WithdrawModal from '@/components/WithdrawModal'
 import P2PTransferModal from '@/components/P2PTransferModal'
 import { getTransactions, WalletTransaction } from '@/lib/wallet-api'
 import { useAppStore } from '@/lib/store'
+import { useFamilyMembers } from '@/lib/hooks/useFamilyMembers'
 
 export default function WalletPage() {
-  const { childId, setChildId } = useAppStore()
+  const { activeMemberId } = useAppStore()
+  const { members } = useFamilyMembers()
   const [showExchange, setShowExchange] = useState(false)
   const [showShop, setShowShop] = useState(false)
   const [showWithdraw, setShowWithdraw] = useState(false)
@@ -20,14 +22,21 @@ export default function WalletPage() {
   const [loading, setLoading] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
 
+  // Derive siblings for P2P — no hardcoded names
+  const siblings = members.filter(m => m.id !== activeMemberId)
+  // Auto-select single sibling; if 0 siblings hide P2P; if 2+ show TODO dropdown
+  const p2pRecipient = siblings.length === 1 ? siblings[0] : null
+
   useEffect(() => {
+    if (!activeMemberId) return
     loadTransactions()
-  }, [childId, refreshKey])
+  }, [activeMemberId, refreshKey])
 
   async function loadTransactions() {
+    if (!activeMemberId) return
     try {
       setLoading(true)
-      const data = await getTransactions(childId, 10)
+      const data = await getTransactions(activeMemberId!, 10)
       setTransactions(data)
     } catch (err) {
       console.error('Error loading transactions:', err)
@@ -40,10 +49,6 @@ export default function WalletPage() {
     setRefreshKey(prev => prev + 1)
   }
 
-  function getChildName(id: string) {
-    return id === 'adam' ? 'Адам' : 'Алим'
-  }
-
   return (
     <>
       <NavBar />
@@ -54,35 +59,16 @@ export default function WalletPage() {
           <div className="muted">Управляй своими монетами и деньгами</div>
         </div>
 
-        {/* Выбор ребёнка */}
-        <div className="card" style={{ marginTop: '16px' }}>
-          <div className="h3" style={{ marginBottom: '12px' }}>Чей кошелёк?</div>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button
-              className={childId === 'adam' ? 'btn primary' : 'btn'}
-              onClick={() => setChildId('adam')}
-            >
-              👦 Адам
-            </button>
-            <button
-              className={childId === 'alim' ? 'btn primary' : 'btn'}
-              onClick={() => setChildId('alim')}
-            >
-              👶 Алим
-            </button>
-          </div>
-        </div>
-
         {/* Dashboard с балансами */}
         <div style={{ marginTop: '24px' }}>
-          <WalletDashboard key={`${childId}-${refreshKey}`} childId={childId} />
+          <WalletDashboard key={`${activeMemberId}-${refreshKey}`} childId={activeMemberId ?? ''} />
         </div>
 
         {/* Быстрые действия */}
         <div className="card" style={{ marginTop: '24px' }}>
           <div className="h2" style={{ marginBottom: '16px' }}>⚡ Быстрые действия</div>
           <div className="wallet-actions">
-            <button 
+            <button
               className="wallet-action-btn wallet-action-exchange"
               onClick={() => setShowExchange(true)}
             >
@@ -91,7 +77,7 @@ export default function WalletPage() {
               <span className="wallet-action-hint">Монеты → Деньги</span>
             </button>
 
-            <button 
+            <button
               className="wallet-action-btn wallet-action-shop"
               onClick={() => setShowShop(true)}
             >
@@ -100,7 +86,7 @@ export default function WalletPage() {
               <span className="wallet-action-hint">Купить награды</span>
             </button>
 
-            <button 
+            <button
               className="wallet-action-btn wallet-action-withdraw"
               onClick={() => setShowWithdraw(true)}
             >
@@ -109,25 +95,32 @@ export default function WalletPage() {
               <span className="wallet-action-hint">Получить наличными</span>
             </button>
 
-            <button 
-              className="wallet-action-btn wallet-action-p2p"
-              onClick={() => setShowP2P(true)}
-              style={{ 
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white'
-              }}
-            >
-              <span className="wallet-action-icon">💸</span>
-              <span className="wallet-action-label">Перевести брату</span>
-              <span className="wallet-action-hint">Подарок, займ, сделка</span>
-            </button>
+            {/* P2P button: hidden when no siblings, shown when 1 sibling */}
+            {siblings.length > 0 && (
+              <button
+                className="wallet-action-btn wallet-action-p2p"
+                onClick={() => setShowP2P(true)}
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: 'white'
+                }}
+              >
+                <span className="wallet-action-icon">💸</span>
+                <span className="wallet-action-label">
+                  {p2pRecipient
+                    ? `Перевести ${p2pRecipient.display_name}`
+                    : 'Перевести'}
+                </span>
+                <span className="wallet-action-hint">Подарок, займ, сделка</span>
+              </button>
+            )}
           </div>
         </div>
 
         {/* История транзакций */}
         <div className="card" style={{ marginTop: '24px' }}>
           <div className="h2" style={{ marginBottom: '16px' }}>📜 История операций</div>
-          
+
           {loading ? (
             <div className="wallet-history-loading">Загрузка...</div>
           ) : transactions.length === 0 ? (
@@ -189,34 +182,36 @@ export default function WalletPage() {
       <ExchangeModal
         isOpen={showExchange}
         onClose={() => setShowExchange(false)}
-        childId={childId}
+        childId={activeMemberId ?? ''}
         onSuccess={handleSuccess}
       />
 
       <ShopModal
         isOpen={showShop}
         onClose={() => setShowShop(false)}
-        childId={childId}
+        childId={activeMemberId ?? ''}
         onSuccess={handleSuccess}
       />
 
       <WithdrawModal
         isOpen={showWithdraw}
         onClose={() => setShowWithdraw(false)}
-        childId={childId}
+        childId={activeMemberId ?? ''}
         onSuccess={handleSuccess}
       />
 
-      {showP2P && (
+      {/* P2P modal: only show when 1 sibling (auto-selected recipient) */}
+      {showP2P && p2pRecipient && (
         <P2PTransferModal
-          fromChildId={childId}
-          toChildId={childId === 'adam' ? 'alim' : 'adam'}
-          fromChildName={getChildName(childId)}
-          toChildName={getChildName(childId === 'adam' ? 'alim' : 'adam')}
+          fromChildId={activeMemberId ?? ''}
+          toChildId={p2pRecipient.id}
+          fromChildName={''}
+          toChildName={p2pRecipient.display_name}
           onClose={() => setShowP2P(false)}
           onSuccess={handleSuccess}
         />
       )}
+      {/* TODO: siblings.length >= 2 — show sibling selector dropdown before P2P modal */}
     </>
   )
 }

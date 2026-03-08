@@ -12,7 +12,7 @@ import { normalizeDate, formatDate, getWeekRange, addDays, formatMoney, calculat
 
 export default function KidScreen() {
   const router = useRouter()
-  const [childId, setChildId] = useState('adam')
+  const [childId, setChildId] = useState('')
   const [child, setChild] = useState<Child | null>(null)
   const [loading, setLoading] = useState(true)
   
