@@ -88,3 +88,31 @@ SUPABASE_SERVICE_ROLE_KEY=
 SQL migration files in repo root: `supabase-schema-v2.sql` (main schema), `supabase-migration-flexible.sql` (subjects/schedule), `supabase-step3-expenses.sql` (expenses/sections). Run in Supabase SQL Editor to apply.
 
 Children have `id TEXT PRIMARY KEY` — values are `'adam'` and `'alim'`.
+
+## Methodology
+
+### Before Starting Any Task
+Load context from `ai-context/` — 7 concise files (≤200 lines each):
+- `current-wave.md` — what phase is next
+- `architecture-summary.md` — file tree + patterns
+- `api-rules.md` — how to call lib/
+- `coding-rules.md` — forbidden patterns
+- `constraints.md` — tech debt + known issues
+
+### Documentation Source of Truth
+`project-docs/` — 10 files covering overview, requirements, architecture, tech stack, data model, API spec, security, coding standards, testing, deployment. Update when making architectural changes.
+
+### lib/ Code Organization
+```
+lib/models/       — types only
+lib/repositories/ — Supabase queries
+lib/services/     — business logic
+lib/*.ts          — backward compat re-export wrappers (old paths still work)
+```
+**Note:** lib/ refactor is planned but not yet executed — old files still contain full implementations.
+
+### GSD — Execution Tool
+`.planning/` directory with ROADMAP.md, STATE.md, 24 phase plans.
+- `/gsd:plan-phase N.M` — plan next phase
+- `/gsd:execute-phase` — execute plans
+- `/gsd:progress` — check current state
