@@ -13,14 +13,14 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-03-07 (01.3-04 complete — Phase 1.3 COMPLETE: Push notifications stack — web-push VAPID Server Action, PWA manifest, service worker, PushInit in layout)
+> Обновляется после каждой фазы. Последнее обновление: 2026-03-08 (01.4-02 complete — NavBar dynamic pill buttons + ExpenseModal/AuditLogViewer/PotentialWidget dynamic props, all hardcoded adam/alim removed from 4 shared components)
 
 ---
 
 ## Статус проекта
 
 ```
-🟢 EXECUTING — Phase 1.3 COMPLETE (4/4 plans done). Push notifications stack complete. Ready for Phase 1.4: Dashboard refactor.
+🟢 EXECUTING — Phase 1.4 Plan 02 COMPLETE (2/3 plans done). Shared components wired. Ready for Phase 1.4 Plan 03: Page migration.
 ```
 
 ---
@@ -54,14 +54,15 @@ progress:
 - [x] Plan 03: Settings page full redesign — app/settings/page.tsx + 6 sub-components in components/settings/ — commits: 8c739d2, 4ff66fb
 - [x] Plan 04: Push notifications — web-push Server Action + PWA manifest + service worker + PushInit in root layout — commits: 83dbe67, 96e0dff
 
-### Phase 1.4 — Dashboard Refactor (IN PROGRESS, 1/3 plans)
+### Phase 1.4 — Dashboard Refactor (IN PROGRESS, 2/3 plans)
 - [x] Plan 01: useFamilyMembers hook + store.ts cleanup (remove childId/setChildId) — commits: d8720f6, da9750d
+- [x] Plan 02: NavBar dynamic pill buttons + ExpenseModal/AuditLogViewer/PotentialWidget dynamic props — commits: 8552a2e, 45e63e8
 
 ---
 
 ## Следующий шаг
 
-**→ Phase 1.4 Plan 02: NavBar wiring** — wire NavBar to useFamilyMembers hook, replace childId pill buttons with activeMemberId UUID-based selection
+**→ Phase 1.4 Plan 03: Page migration** — update all pages (dashboard, wallet, analytics, wallboard, expenses, audit) to use activeMemberId from store instead of legacy childId
 
 ---
 
@@ -136,6 +137,14 @@ Phase 7.3  [ ] Google Play
 | Штрафы | Да, оставляем | Реализм, ответственность |
 | Магазин | Родитель создаёт позиции | Гибкость |
 | Подтверждение покупок | Родитель одобряет | Контроль |
+
+### Phase 1.4 Plan 02 — Ключевые решения (2026-03-08)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| ExpenseModal members prop | Обязательный (required) | Без списка членов нельзя отрисовать динамический picker |
+| displayName на AuditLogViewer/PotentialWidget | Опциональный | Backward compat; callers не обновлены до Plan 03 |
+| app/expenses/page.tsx патч | Rule 3 auto-fix в Task 2 | required prop вызвал TS ошибку у единственного caller |
 
 ### Phase 1.4 Plan 01 — Ключевые решения (2026-03-08)
 
