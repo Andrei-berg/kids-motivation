@@ -3,10 +3,12 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAppStore } from '@/lib/store'
+import { useFamilyMembers } from '@/lib/hooks/useFamilyMembers'
 
 export default function NavBar() {
   const pathname = usePathname()
-  const { childId, setChildId } = useAppStore()
+  const { activeMemberId, setActiveMemberId } = useAppStore()
+  const { members, loading } = useFamilyMembers()
 
   return (
     <div className="nav">
@@ -16,23 +18,21 @@ export default function NavBar() {
       </div>
 
       <div className="navR">
-        {/* Выбор ребенка */}
-        <select
-          value={childId}
-          onChange={(e) => setChildId(e.target.value as 'adam' | 'alim')}
-          style={{
-            padding: '8px 16px',
-            borderRadius: '999px',
-            border: '1.5px solid var(--line)',
-            background: '#fff',
-            fontWeight: 600,
-            fontSize: '14px',
-            cursor: 'pointer'
-          }}
-        >
-          <option value="adam">👦 Адам</option>
-          <option value="alim">👶 Алим</option>
-        </select>
+        {/* Выбор ребенка — динамические pill buttons */}
+        {!loading && members.map(member => {
+          const avatarDisplay = member.avatar_url && !member.avatar_url.startsWith('http')
+            ? member.avatar_url
+            : '👦'
+          return (
+            <button
+              key={member.id}
+              className={activeMemberId === member.id ? 'btn primary' : 'btn'}
+              onClick={() => setActiveMemberId(member.id)}
+            >
+              {avatarDisplay} {member.display_name}
+            </button>
+          )
+        })}
 
         {/* Навигация — 5 пунктов */}
         <Link href="/dashboard" className={`pill ${pathname === '/dashboard' ? 'active' : ''}`}>
