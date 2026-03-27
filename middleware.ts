@@ -30,13 +30,14 @@ export async function middleware(request: NextRequest) {
 
   // Logged in but no family → onboarding (skip if already going there)
   if (user && !isPublicPath && !isOnboardingPath) {
-    const { data: membership } = await supabase
+    const { data: membership, error: membershipError } = await supabase
       .from('family_members')
       .select('id')
       .eq('user_id', user.id)
       .maybeSingle()
 
-    if (!membership) {
+    // Only redirect if we got a clean null (no family) — not on query errors
+    if (!membershipError && !membership) {
       const url = request.nextUrl.clone()
       url.pathname = '/onboarding'
       return NextResponse.redirect(url)

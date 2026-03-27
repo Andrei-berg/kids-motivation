@@ -33,7 +33,10 @@ export default function Dashboard() {
   const [showAllBadges, setShowAllBadges] = useState(false)
 
   useEffect(() => {
-    if (!activeMemberId) return
+    if (!activeMemberId) {
+      setLoading(false)
+      return
+    }
     loadData()
   }, [activeMemberId])
 
@@ -114,14 +117,29 @@ export default function Dashboard() {
         <NavBar />
         <div className="wrap">
           <div className="card text-center" style={{ padding: '60px' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>❌</div>
-            <div className="h">Ребенок не найден</div>
-            <div className="muted" style={{ marginTop: '8px', fontSize: '13px' }}>
-              Проверь подключение к Supabase и наличие записей в таблице children (id: adam / alim)
-            </div>
-            <button className="btn primary" style={{ marginTop: '16px' }} onClick={loadData}>
-              Повторить
-            </button>
+            {activeMemberId ? (
+              <>
+                <div style={{ fontSize: '48px', marginBottom: '16px' }}>❌</div>
+                <div className="h">Ребенок не найден</div>
+                <div className="muted" style={{ marginTop: '8px', fontSize: '13px' }}>
+                  Нет доступа к данным. Проверь, что твой аккаунт добавлен в семью в Supabase.
+                </div>
+                <button className="btn primary" style={{ marginTop: '16px' }} onClick={loadData}>
+                  Повторить
+                </button>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: '48px', marginBottom: '16px' }}>👨‍👩‍👧</div>
+                <div className="h">Семья не настроена</div>
+                <div className="muted" style={{ marginTop: '8px', fontSize: '13px' }}>
+                  Создайте семью и добавьте детей, чтобы начать
+                </div>
+                <a href="/onboarding" className="btn primary" style={{ marginTop: '16px', display: 'inline-block' }}>
+                  Настроить семью
+                </a>
+              </>
+            )}
           </div>
         </div>
       </>

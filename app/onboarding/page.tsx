@@ -910,7 +910,8 @@ export default function OnboardingPage() {
     } finally {
       setSubmitting(false)
     }
-    router.push('/dashboard')
+    // Full navigation to flush middleware session check
+    window.location.href = '/dashboard'
   }
 
   // Progress bar percentage (1-indexed display: step 1 of 7 on step 0)

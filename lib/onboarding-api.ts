@@ -66,7 +66,7 @@ export async function updateOnboardingStep(userId: string, step: number): Promis
 
   const { error } = await supabase
     .from('user_profiles')
-    .upsert({ id: userId, onboarding_step: step, updated_at: new Date().toISOString() })
+    .update({ onboarding_step: step, updated_at: new Date().toISOString() })
     .eq('id', userId)
 
   if (error) {

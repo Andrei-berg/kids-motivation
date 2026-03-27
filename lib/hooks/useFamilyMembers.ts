@@ -35,11 +35,16 @@ export function useFamilyMembers(): { members: FamilyMember[]; loading: boolean;
         if (!cancelled) {
           setMembers(mapped)
 
-          // Auto-select first if activeMemberId is null or stale
           if (mapped.length > 0) {
+            // Auto-select first if activeMemberId is null or stale
             const isValid = activeMemberId !== null && mapped.some(m => m.id === activeMemberId)
             if (!isValid) {
               setActiveMemberId(mapped[0].id)
+            }
+          } else {
+            // No children accessible — clear stale activeMemberId so dashboard doesn't retry
+            if (activeMemberId !== null) {
+              setActiveMemberId(null)
             }
           }
         }

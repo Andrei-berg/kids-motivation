@@ -29,9 +29,15 @@ export default function AuthPage() {
     setLoading(true)
     try {
       const supabase = createClient()
-      const { error: err } = await supabase.auth.signInWithPassword({ email, password })
+      const { data, error: err } = await supabase.auth.signInWithPassword({ email, password })
       if (err) { setError(err.message); return }
-      router.push('/dashboard')
+      // Check if user has a family — if not, send to onboarding (same as OAuth callback)
+      const { data: membership } = await supabase
+        .from('family_members')
+        .select('id')
+        .eq('user_id', data.user!.id)
+        .maybeSingle()
+      router.push(membership ? '/dashboard' : '/onboarding')
     } finally {
       setLoading(false)
     }
