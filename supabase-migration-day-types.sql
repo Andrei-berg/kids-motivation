@@ -3,10 +3,11 @@
 -- Run in Supabase SQL Editor
 -- ============================================================================
 
--- 1. Extend days table with sick day and home help fields
+-- 1. Extend days table with sick day, home help, and weekend homework fields
 ALTER TABLE days ADD COLUMN IF NOT EXISTS is_sick BOOLEAN DEFAULT false;
 ALTER TABLE days ADD COLUMN IF NOT EXISTS home_help BOOLEAN DEFAULT false;
 ALTER TABLE days ADD COLUMN IF NOT EXISTS home_help_note TEXT;
+ALTER TABLE days ADD COLUMN IF NOT EXISTS homework_done BOOLEAN DEFAULT false;
 
 -- 2. Vacation periods (defined by parents in Settings)
 CREATE TABLE IF NOT EXISTS vacation_periods (

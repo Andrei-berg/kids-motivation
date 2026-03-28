@@ -30,6 +30,7 @@ export type DayData = {
   is_sick: boolean
   home_help: boolean
   home_help_note: string | null
+  homework_done: boolean
 }
 
 export type SubjectGrade = {

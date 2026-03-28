@@ -154,6 +154,9 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   const [homeHelp, setHomeHelp] = useState(false)
   const [homeHelpNote, setHomeHelpNote] = useState('')
 
+  // ДОМАШНЕЕ ЗАДАНИЕ (weekend only)
+  const [homeworkDone, setHomeworkDone] = useState(false)
+
   // ─── Load / Reset ──────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -212,6 +215,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
           setIsSick(dayData.is_sick ?? false)
           setHomeHelp(dayData.home_help ?? false)
           setHomeHelpNote(dayData.home_help_note || '')
+          setHomeworkDone(dayData.homework_done ?? false)
         }
       } catch {}
 
@@ -292,7 +296,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
     setGoodBehavior(true); setDiaryNotDone(false); setDayNote('')
     setExercises([]); setSportNote('')
     setSections([]); setSectionNotes({})
-    setIsSick(false); setHomeHelp(false); setHomeHelpNote('')
+    setIsSick(false); setHomeHelp(false); setHomeHelpNote(''); setHomeworkDone(false)
     setBookTitle(''); setPagesRead(0); setMinutesRead(0); setBookFinished(false); setReadingNote('')
     setLessons([]); setLessonTab('subject'); setLessonSubject(''); setLessonCourseName('')
     setStatus(''); setError(false)
@@ -395,6 +399,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
         isSick,
         homeHelp,
         homeHelpNote,
+        homeworkDone,
       })
 
       const saveGrades = Promise.all(
@@ -445,6 +450,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   const readingCoins = calcReadingCoins(pagesRead, minutesRead, bookFinished)
   const lessonCoins = calcExtraLessonsCoins(lessons.filter(l => l.done).length)
   const helpCoins = calcHomeHelpCoins(homeHelp)
+  const homeworkCoins = homeworkDone ? 5 : 0
   const roomScore = [roomBed, roomFloor, roomDesk, roomCloset, roomTrash].filter(Boolean).length
   const roomOk = roomScore >= 3
   const roomCoins = roomOk ? 3 : 0
@@ -458,7 +464,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   const styles = DAY_TYPE_STYLES[dayType] || DAY_TYPE_STYLES.school
 
   const totalCoins = nonSchool
-    ? readingCoins + lessonCoins + helpCoins + roomCoins + behaviorCoins
+    ? readingCoins + lessonCoins + helpCoins + homeworkCoins + roomCoins + behaviorCoins
     : gradeCoins + roomCoins + behaviorCoins
 
   if (!isOpen) return null
@@ -742,6 +748,49 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                       style={{ fontSize: '14px', padding: '10px 12px' }}
                     />
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* ── ДОМАШНЕЕ ЗАДАНИЕ (weekend only) ─────────────── */}
+            {dayType === 'weekend' && (
+              <div className="scroll-section">
+                <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
+                  <span className="scroll-section-icon">📝</span>
+                  <span className="scroll-section-title">Домашнее задание</span>
+                  {homeworkDone && (
+                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.22)', padding: '2px 8px', borderRadius: '20px' }}>
+                      +5💰
+                    </span>
+                  )}
+                </div>
+                <div style={{ padding: '12px 0 0' }}>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {[
+                      { val: true, label: '✅ Сделал', green: true },
+                      { val: false, label: '❌ Не сделал', green: false },
+                    ].map(opt => (
+                      <button
+                        key={String(opt.val)}
+                        onClick={() => setHomeworkDone(opt.val)}
+                        style={{
+                          flex: 1, padding: '12px', fontSize: '13px', fontWeight: 900,
+                          borderRadius: '10px', border: '1.5px solid', cursor: 'pointer',
+                          borderColor: homeworkDone === opt.val
+                            ? (opt.green ? 'rgba(16,185,129,0.4)' : 'rgba(244,63,94,0.35)')
+                            : 'rgba(255,255,255,0.1)',
+                          background: homeworkDone === opt.val
+                            ? (opt.green ? 'rgba(16,185,129,0.12)' : 'rgba(244,63,94,0.1)')
+                            : 'rgba(255,255,255,0.03)',
+                          color: homeworkDone === opt.val
+                            ? (opt.green ? '#10B981' : '#F43F5E')
+                            : 'rgba(238,238,255,0.5)',
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
