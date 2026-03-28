@@ -27,6 +27,9 @@ export type DayData = {
   diary_not_done: boolean
   note_parent: string | null
   note_child: string | null
+  is_sick: boolean
+  home_help: boolean
+  home_help_note: string | null
 }
 
 export type SubjectGrade = {

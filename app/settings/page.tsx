@@ -5,12 +5,14 @@ import NavBar from '@/components/NavBar'
 import { verifyPin } from '@/utils/helpers'
 import CoinRulesEditor from '@/components/settings/CoinRulesEditor'
 import StreakSettings from '@/components/settings/StreakSettings'
+import PeriodsManager from '@/components/settings/PeriodsManager'
 
-type Section = 'coins' | 'streaks'
+type Section = 'coins' | 'streaks' | 'periods'
 
 const SECTIONS: { id: Section; label: string; icon: string }[] = [
   { id: 'coins', label: 'Монеты', icon: '🪙' },
   { id: 'streaks', label: 'Стрики', icon: '🔥' },
+  { id: 'periods', label: 'Каникулы', icon: '🌴' },
 ]
 
 export default function SettingsPage() {
@@ -135,6 +137,7 @@ export default function SettingsPage() {
           <div className="bg-gray-800 rounded-2xl p-6">
             {activeSection === 'coins' && <CoinRulesEditor familyId="default" />}
             {activeSection === 'streaks' && <StreakSettings familyId="default" />}
+            {activeSection === 'periods' && <PeriodsManager />}
           </div>
         </div>
       </div>

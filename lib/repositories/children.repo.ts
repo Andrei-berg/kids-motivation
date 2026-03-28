@@ -86,8 +86,11 @@ export async function saveDay(params: {
   diaryNotDone?: boolean
   noteParent?: string
   noteChild?: string
+  isSick?: boolean
+  homeHelp?: boolean
+  homeHelpNote?: string
 }) {
-  const { childId, date, roomData, goodBehavior, diaryNotDone, noteParent, noteChild } = params
+  const { childId, date, roomData, goodBehavior, diaryNotDone, noteParent, noteChild, isSick, homeHelp, homeHelpNote } = params
 
   const bed = params.roomBed ?? roomData?.bed ?? false
   const floor = params.roomFloor ?? roomData?.floor ?? false
@@ -106,7 +109,10 @@ export async function saveDay(params: {
     good_behavior: goodBehavior ?? true,
     diary_not_done: diaryNotDone ?? false,
     note_parent: noteParent || null,
-    note_child: noteChild || null
+    note_child: noteChild || null,
+    is_sick: isSick ?? false,
+    home_help: homeHelp ?? false,
+    home_help_note: homeHelpNote || null,
   }
 
   const { data, error } = await supabase

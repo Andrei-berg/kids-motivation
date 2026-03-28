@@ -8,6 +8,8 @@ import { api, Child, Goal } from '@/lib/api'
 import { getChildBadges } from '@/lib/badges'
 import { useAppStore } from '@/lib/store'
 import { normalizeDate, formatDate, getWeekRange, addDays } from '@/utils/helpers'
+import { getVacationPeriods, VacationPeriod } from '@/lib/vacation-api'
+import { getDayType, DayType } from '@/lib/day-type'
 
 const DAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
@@ -15,8 +17,16 @@ function getDaysOfWeek(weekStart: string): string[] {
   return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
 }
 
+// Per-day-type color config
+const DAY_TYPE_CELL: Record<DayType, { bg: string; border: string; dotColor: string }> = {
+  school: { bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)', dotColor: '#93C5FD' },
+  weekend: { bg: 'rgba(139,92,246,0.09)', border: 'rgba(139,92,246,0.22)', dotColor: '#C4B5FD' },
+  vacation: { bg: 'rgba(245,158,11,0.10)', border: 'rgba(245,158,11,0.28)', dotColor: '#FCD34D' },
+  sick: { bg: 'rgba(244,63,94,0.09)', border: 'rgba(244,63,94,0.25)', dotColor: '#FDA4AF' },
+}
+
 export default function Dashboard() {
-  const { activeMemberId } = useAppStore()
+  const { activeMemberId, familyId } = useAppStore()
   const [child, setChild] = useState<Child | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -32,11 +42,13 @@ export default function Dashboard() {
   const [badges, setBadges] = useState<any[]>([])
   const [showAllBadges, setShowAllBadges] = useState(false)
 
+  // Day type state
+  const [vacationPeriods, setVacationPeriods] = useState<VacationPeriod[]>([])
+  const [activePeriod, setActivePeriod] = useState<VacationPeriod | null>(null)
+  const [vacationDay, setVacationDay] = useState<{ current: number; total: number } | null>(null)
+
   useEffect(() => {
-    if (!activeMemberId) {
-      setLoading(false)
-      return
-    }
+    if (!activeMemberId) { setLoading(false); return }
     loadData()
   }, [activeMemberId])
 
@@ -47,23 +59,41 @@ export default function Dashboard() {
       const today = normalizeDate(new Date())
       const week = getWeekRange(today)
 
-      // Сначала загружаем ребёнка — критично
       const childData = await api.getChild(activeMemberId!)
       setChild(childData)
 
-      // Остальное — параллельно, каждый с fallback чтобы один сбой не ломал всё
-      const [weekData, goalsData, streaksData, badgesData, weekScoreData] = await Promise.all([
+      const [weekData, goalsData, streaksData, badgesData, weekScoreData, periodsData] = await Promise.all([
         api.getWeekData(activeMemberId!, today).catch(() => ({ days: [], grades: [], sports: [], weekRecord: null })),
         api.getGoals(activeMemberId!).catch(() => ({ active: null, archived: [], all: [] })),
         api.getStreaks(activeMemberId!).catch(() => []),
         getChildBadges(activeMemberId!).catch(() => []),
-        api.getWeekScore(activeMemberId!, week.start).catch(() => ({ coinsFromGrades: 0, coinsFromRoom: 0, coinsFromBehavior: 0, total: 0, filledDays: 0, gradedDays: 0, roomOkDays: 0 }))
+        api.getWeekScore(activeMemberId!, week.start).catch(() => ({ coinsFromGrades: 0, coinsFromRoom: 0, coinsFromBehavior: 0, total: 0, filledDays: 0, gradedDays: 0, roomOkDays: 0 })),
+        getVacationPeriods(familyId ?? 'default').catch(() => []),
       ])
 
+      setVacationPeriods(periodsData)
       setWeekScore(weekScoreData)
       setActiveGoal(goalsData.active)
       setStreaks(streaksData)
       setBadges(badgesData)
+
+      // Find active vacation period for today
+      const currentPeriod = periodsData.find((p: VacationPeriod) => {
+        const matchChild = p.child_filter === 'all' || p.child_filter === activeMemberId
+        return matchChild && today >= p.start_date && today <= p.end_date
+      })
+      setActivePeriod(currentPeriod || null)
+
+      if (currentPeriod) {
+        const start = new Date(currentPeriod.start_date + 'T12:00:00')
+        const todayD = new Date(today + 'T12:00:00')
+        const end = new Date(currentPeriod.end_date + 'T12:00:00')
+        const dayNum = Math.floor((todayD.getTime() - start.getTime()) / 86400000) + 1
+        const totalDays = Math.floor((end.getTime() - start.getTime()) / 86400000) + 1
+        setVacationDay({ current: dayNum, total: totalDays })
+      } else {
+        setVacationDay(null)
+      }
 
       const daysOfWeek = getDaysOfWeek(week.start)
       const dayMap: Record<string, any> = {}
@@ -74,7 +104,8 @@ export default function Dashboard() {
         label: DAY_LABELS[i],
         isToday: date === today,
         isFuture: date > today,
-        dayData: dayMap[date] || null
+        dayData: dayMap[date] || null,
+        dayType: getDayType(date, dayMap[date]?.is_sick ?? false, periodsData, activeMemberId!),
       })))
 
       const todayRecord = dayMap[today]
@@ -84,7 +115,8 @@ export default function Dashboard() {
         filled: !!todayRecord,
         roomOk: todayRecord?.room_ok || false,
         goodBehavior: todayRecord?.good_behavior ?? true,
-        gradesCount: todayGrades.length
+        gradesCount: todayGrades.length,
+        isSick: todayRecord?.is_sick ?? false,
       })
 
     } catch (err) {
@@ -124,9 +156,7 @@ export default function Dashboard() {
                 <div className="muted" style={{ marginTop: '8px', fontSize: '13px' }}>
                   Нет доступа к данным. Проверь, что твой аккаунт добавлен в семью в Supabase.
                 </div>
-                <button className="btn primary" style={{ marginTop: '16px' }} onClick={loadData}>
-                  Повторить
-                </button>
+                <button className="btn primary" style={{ marginTop: '16px' }} onClick={loadData}>Повторить</button>
               </>
             ) : (
               <>
@@ -135,9 +165,7 @@ export default function Dashboard() {
                 <div className="muted" style={{ marginTop: '8px', fontSize: '13px' }}>
                   Создайте семью и добавьте детей, чтобы начать
                 </div>
-                <a href="/onboarding" className="btn primary" style={{ marginTop: '16px', display: 'inline-block' }}>
-                  Настроить семью
-                </a>
+                <a href="/onboarding" className="btn primary" style={{ marginTop: '16px', display: 'inline-block' }}>Настроить семью</a>
               </>
             )}
           </div>
@@ -146,10 +174,51 @@ export default function Dashboard() {
     )
   }
 
+  const todayDayType = getDayType(normalizeDate(new Date()), todayData?.isSick ?? false, vacationPeriods, activeMemberId!)
+
   return (
     <>
       <NavBar />
       <div className="wrap">
+
+        {/* ── VACATION BANNER ────────────────────────────────── */}
+        {activePeriod && (
+          <div style={{
+            margin: '0 0 16px',
+            padding: '14px 16px',
+            borderRadius: '16px',
+            background: 'linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(252,211,77,0.07) 100%)',
+            border: '1px solid rgba(245,158,11,0.28)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            position: 'relative',
+            overflow: 'hidden',
+          }}>
+            <span style={{ fontSize: '28px' }}>{activePeriod.emoji}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#F59E0B' }}>{activePeriod.name}</div>
+              <div style={{ fontSize: '12px', color: 'rgba(238,238,255,0.5)', marginTop: '2px' }}>
+                {activePeriod.start_date.slice(5).split('-').reverse().join('.')} – {activePeriod.end_date.slice(5).split('-').reverse().join('.')}
+              </div>
+            </div>
+            {vacationDay && (
+              <div style={{
+                padding: '4px 10px',
+                background: 'rgba(245,158,11,0.18)',
+                border: '1px solid rgba(245,158,11,0.35)',
+                borderRadius: '20px',
+                fontSize: '11px', fontWeight: 900, color: '#F59E0B',
+                whiteSpace: 'nowrap',
+              }}>
+                День {vacationDay.current} из {vacationDay.total}
+              </div>
+            )}
+            <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '42px', opacity: 0.12, pointerEvents: 'none' }}>
+              {activePeriod.emoji}
+            </div>
+          </div>
+        )}
 
         {/* ── HERO ──────────────────────────────────────────── */}
         <div className="dashboard-hero slide-up">
@@ -166,7 +235,6 @@ export default function Dashboard() {
               <button className="btn ghost" onClick={() => setShowGoals(true)}>🎯 Цели</button>
             </div>
           </div>
-          {/* XP bar */}
           <div style={{ marginTop: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
               <span className="muted" style={{ fontSize: '13px' }}>До уровня {child.level + 1}</span>
@@ -181,30 +249,72 @@ export default function Dashboard() {
         {/* ── СЕГОДНЯ ──────────────────────────────────────── */}
         <div className="card fade-in" style={{ marginTop: '16px' }}>
           <div className="cardH">
-            <div className="h">📅 Сегодня</div>
+            <div className="h">
+              {todayDayType.emoji} Сегодня
+              {todayDayType.type !== 'school' && (
+                <span style={{
+                  marginLeft: '8px', fontSize: '11px', fontWeight: 800,
+                  padding: '2px 8px', borderRadius: '12px',
+                  background: todayDayType.type === 'vacation' ? 'rgba(245,158,11,0.15)' :
+                               todayDayType.type === 'weekend' ? 'rgba(139,92,246,0.15)' :
+                               'rgba(244,63,94,0.12)',
+                  color: todayDayType.type === 'vacation' ? '#F59E0B' :
+                         todayDayType.type === 'weekend' ? '#8B5CF6' : '#F43F5E',
+                }}>
+                  {todayDayType.label}
+                </span>
+              )}
+            </div>
             <div className="muted">{formatDate(normalizeDate(new Date()))}</div>
           </div>
           <div className="day-status-grid">
-            <div className={`day-status-item ${todayData?.gradesCount > 0 ? 'ok' : 'empty'}`}>
-              <div className="day-status-icon">📚</div>
-              <div className="day-status-label">Оценки</div>
-              <div className="day-status-val">{todayData?.gradesCount || 0}</div>
-            </div>
-            <div className={`day-status-item ${todayData?.roomOk ? 'ok' : todayData?.filled ? 'warn' : 'empty'}`}>
-              <div className="day-status-icon">🏠</div>
-              <div className="day-status-label">Комната</div>
-              <div className="day-status-val">{todayData?.roomOk ? '✓' : todayData?.filled ? '✗' : '–'}</div>
-            </div>
-            <div className={`day-status-item ${todayData?.filled && todayData?.goodBehavior ? 'ok' : todayData?.filled ? 'warn' : 'empty'}`}>
-              <div className="day-status-icon">😊</div>
-              <div className="day-status-label">Поведение</div>
-              <div className="day-status-val">{todayData?.filled ? (todayData?.goodBehavior ? '✓' : '✗') : '–'}</div>
-            </div>
-            <div className={`day-status-item ${todayData?.filled ? 'ok' : 'empty'}`}>
-              <div className="day-status-icon">✅</div>
-              <div className="day-status-label">Заполнен</div>
-              <div className="day-status-val">{todayData?.filled ? '✓' : '–'}</div>
-            </div>
+            {todayDayType.type === 'school' || todayDayType.type === 'sick' ? (
+              <>
+                <div className={`day-status-item ${todayData?.gradesCount > 0 ? 'ok' : 'empty'}`}>
+                  <div className="day-status-icon">📚</div>
+                  <div className="day-status-label">Оценки</div>
+                  <div className="day-status-val">{todayData?.gradesCount || 0}</div>
+                </div>
+                <div className={`day-status-item ${todayData?.roomOk ? 'ok' : todayData?.filled ? 'warn' : 'empty'}`}>
+                  <div className="day-status-icon">🏠</div>
+                  <div className="day-status-label">Комната</div>
+                  <div className="day-status-val">{todayData?.roomOk ? '✓' : todayData?.filled ? '✗' : '–'}</div>
+                </div>
+                <div className={`day-status-item ${todayData?.filled && todayData?.goodBehavior ? 'ok' : todayData?.filled ? 'warn' : 'empty'}`}>
+                  <div className="day-status-icon">😊</div>
+                  <div className="day-status-label">Поведение</div>
+                  <div className="day-status-val">{todayData?.filled ? (todayData?.goodBehavior ? '✓' : '✗') : '–'}</div>
+                </div>
+                <div className={`day-status-item ${todayData?.filled ? 'ok' : 'empty'}`}>
+                  <div className="day-status-icon">✅</div>
+                  <div className="day-status-label">Заполнен</div>
+                  <div className="day-status-val">{todayData?.filled ? '✓' : '–'}</div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className={`day-status-item ${todayData?.filled ? 'ok' : 'empty'}`}>
+                  <div className="day-status-icon">📚</div>
+                  <div className="day-status-label">Чтение</div>
+                  <div className="day-status-val">{todayData?.filled ? '✓' : '–'}</div>
+                </div>
+                <div className={`day-status-item ${todayData?.roomOk ? 'ok' : todayData?.filled ? 'warn' : 'empty'}`}>
+                  <div className="day-status-icon">🏠</div>
+                  <div className="day-status-label">Комната</div>
+                  <div className="day-status-val">{todayData?.roomOk ? '✓' : todayData?.filled ? '✗' : '–'}</div>
+                </div>
+                <div className={`day-status-item ${todayData?.filled && todayData?.goodBehavior ? 'ok' : todayData?.filled ? 'warn' : 'empty'}`}>
+                  <div className="day-status-icon">😊</div>
+                  <div className="day-status-label">Поведение</div>
+                  <div className="day-status-val">{todayData?.filled ? '✓' : '–'}</div>
+                </div>
+                <div className={`day-status-item ${todayData?.filled ? 'ok' : 'empty'}`}>
+                  <div className="day-status-icon">✅</div>
+                  <div className="day-status-label">Заполнен</div>
+                  <div className="day-status-val">{todayData?.filled ? '✓' : '–'}</div>
+                </div>
+              </>
+            )}
           </div>
           {!todayData?.filled && (
             <button className="btn primary" style={{ marginTop: '12px', width: '100%' }} onClick={() => { setSelectedDate(normalizeDate(new Date())); setShowDaily(true) }}>
@@ -221,21 +331,51 @@ export default function Dashboard() {
               <div className="muted">{weekScore.filledDays}/7 дней · {weekScore.total >= 0 ? '+' : ''}{weekScore.total} монет</div>
             )}
           </div>
-          <div className="week-calendar">
-            {weekDays.map((day, i) => (
-              <div
-                key={i}
-                className={`week-day${day.isToday ? ' today' : ''}${day.isFuture ? ' future' : ''}${day.dayData ? ' filled' : ''}`}
-                onClick={() => { if (!day.isFuture) { setSelectedDate(day.date); setShowDaily(true) } }}
-                title={day.date}
-              >
-                <div className="week-day-label">{day.label}</div>
-                <div className="week-day-dot">
-                  {day.dayData ? (day.dayData.room_ok ? '✓' : '·') : (day.isFuture ? '' : '○')}
+
+          {/* Day type legend (compact) */}
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
+            {[
+              { type: 'school', label: 'Учебный', color: '#3B82F6' },
+              { type: 'vacation', label: 'Каникулы', color: '#F59E0B' },
+              { type: 'weekend', label: 'Выходной', color: '#8B5CF6' },
+              { type: 'sick', label: 'Болезнь', color: '#F43F5E' },
+            ].map(({ type, label, color }) => (
+              weekDays.some(d => d.dayType.type === type) && (
+                <div key={type} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'rgba(238,238,255,0.5)' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: color }} />
+                  {label}
                 </div>
-              </div>
+              )
             ))}
           </div>
+
+          <div className="week-calendar">
+            {weekDays.map((day, i) => {
+              const dt = day.dayType as ReturnType<typeof getDayType>
+              const cellStyle = !day.isFuture && dt ? DAY_TYPE_CELL[dt.type] : null
+              return (
+                <div
+                  key={i}
+                  className={`week-day${day.isToday ? ' today' : ''}${day.isFuture ? ' future' : ''}${day.dayData ? ' filled' : ''}`}
+                  onClick={() => { if (!day.isFuture) { setSelectedDate(day.date); setShowDaily(true) } }}
+                  title={day.date}
+                  style={cellStyle && !day.isFuture ? {
+                    background: cellStyle.bg,
+                    borderColor: day.isToday ? undefined : cellStyle.border,
+                  } : undefined}
+                >
+                  <div className="week-day-label">{day.label}</div>
+                  <div className="week-day-dot">
+                    {dt.type === 'sick' && !day.isFuture ? '🤒' :
+                     dt.type === 'vacation' && !day.isFuture && !day.dayData ? dt.vacationPeriod?.emoji || '🌴' :
+                     day.dayData ? (day.dayData.room_ok ? '✓' : '·') :
+                     day.isFuture ? '' : '○'}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
           {weekScore && (
             <div className="grid3" style={{ marginTop: '12px' }}>
               <div className="mini">
