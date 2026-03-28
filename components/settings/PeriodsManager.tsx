@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useAppStore } from '@/lib/store'
 import { getVacationPeriods, createVacationPeriod, updateVacationPeriod, deleteVacationPeriod, VacationPeriod } from '@/lib/vacation-api'
 
 const EMOJIS = ['🌸', '🌴', '❄️', '🍂', '🎄', '☀️', '🌊', '⛷️']
@@ -20,7 +21,7 @@ interface ChildOption {
 }
 
 export default function PeriodsManager() {
-  const [familyId, setFamilyId] = useState<string | null>(null)
+  const { familyId } = useAppStore()
   const [children, setChildren] = useState<ChildOption[]>([])
   const [periods, setPeriods] = useState<VacationPeriod[]>([])
   const [loading, setLoading] = useState(true)
@@ -35,26 +36,12 @@ export default function PeriodsManager() {
   const [emoji, setEmoji] = useState('🌸')
   const [childFilter, setChildFilter] = useState('all')
 
-  useEffect(() => { loadData() }, [])
+  useEffect(() => { if (familyId) loadData(familyId) }, [familyId])
 
-  async function loadData() {
+  async function loadData(fid: string) {
     try {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
 
-      const { data: membership } = await supabase
-        .from('family_members')
-        .select('family_id')
-        .eq('user_id', user.id)
-        .maybeSingle()
-
-      if (!membership) return
-
-      const fid = membership.family_id
-      setFamilyId(fid)
-
-      // Load children for the filter selector
       const { data: childRows } = await supabase
         .from('family_members')
         .select('id, display_name')
