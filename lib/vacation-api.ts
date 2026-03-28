@@ -61,6 +61,14 @@ export async function createVacationPeriod(
   return data
 }
 
+export async function updateVacationPeriod(
+  id: string,
+  fields: Partial<Pick<VacationPeriod, 'name' | 'start_date' | 'end_date' | 'emoji' | 'child_filter'>>
+): Promise<void> {
+  const { error } = await supabase.from('vacation_periods').update(fields).eq('id', id)
+  if (error) throw error
+}
+
 export async function deleteVacationPeriod(id: string): Promise<void> {
   const { error } = await supabase.from('vacation_periods').delete().eq('id', id)
   if (error) throw error

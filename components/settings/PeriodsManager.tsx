@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { getVacationPeriods, createVacationPeriod, deleteVacationPeriod, VacationPeriod } from '@/lib/vacation-api'
+import { getVacationPeriods, createVacationPeriod, updateVacationPeriod, deleteVacationPeriod, VacationPeriod } from '@/lib/vacation-api'
 
 const EMOJIS = ['🌸', '🌴', '❄️', '🍂', '🎄', '☀️', '🌊', '⛷️']
 
@@ -25,6 +25,7 @@ export default function PeriodsManager() {
   const [periods, setPeriods] = useState<VacationPeriod[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
   const [name, setName] = useState('')
@@ -74,20 +75,36 @@ export default function PeriodsManager() {
     }
   }
 
+  function openEdit(p: VacationPeriod) {
+    setEditingId(p.id)
+    setName(p.name)
+    setEmoji(p.emoji)
+    setStartDate(p.start_date)
+    setEndDate(p.end_date)
+    setChildFilter(p.child_filter)
+    setShowForm(true)
+  }
+
+  function resetForm() {
+    setShowForm(false)
+    setEditingId(null)
+    setName(''); setStartDate(''); setEndDate(''); setEmoji('🌸'); setChildFilter('all')
+  }
+
   async function handleSave() {
     if (!name.trim() || !startDate || !endDate || !familyId) return
     try {
       setSaving(true)
-      await createVacationPeriod({
-        family_id: familyId,
-        name: name.trim(),
-        start_date: startDate,
-        end_date: endDate,
-        emoji,
-        child_filter: childFilter,
-      })
-      setShowForm(false)
-      setName(''); setStartDate(''); setEndDate(''); setEmoji('🌸'); setChildFilter('all')
+      if (editingId) {
+        await updateVacationPeriod(editingId, {
+          name: name.trim(), start_date: startDate, end_date: endDate, emoji, child_filter: childFilter,
+        })
+      } else {
+        await createVacationPeriod({
+          family_id: familyId, name: name.trim(), start_date: startDate, end_date: endDate, emoji, child_filter: childFilter,
+        })
+      }
+      resetForm()
       const data = await getVacationPeriods(familyId)
       setPeriods(data)
     } catch (e) {
@@ -151,8 +168,14 @@ export default function PeriodsManager() {
               <div className="text-xs text-gray-500 mt-0.5">{childFilterLabel(p.child_filter)}</div>
             </div>
             <button
+              onClick={() => openEdit(p)}
+              className="text-gray-500 hover:text-amber-400 transition-colors p-1 text-sm"
+              title="Редактировать"
+            >✏️</button>
+            <button
               onClick={() => handleDelete(p.id)}
               className="text-gray-500 hover:text-red-400 transition-colors p-1 text-sm"
+              title="Удалить"
             >🗑</button>
           </div>
         ))}
@@ -161,7 +184,7 @@ export default function PeriodsManager() {
       {/* Add form */}
       {showForm && (
         <div className="bg-gray-700/40 border border-gray-600 rounded-xl p-4 mb-4">
-          <div className="font-bold text-white mb-4">Новый период</div>
+          <div className="font-bold text-white mb-4">{editingId ? 'Редактировать период' : 'Новый период'}</div>
 
           <div className="mb-3">
             <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">Название</label>
@@ -211,7 +234,7 @@ export default function PeriodsManager() {
               className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold text-sm rounded-lg transition-colors">
               {saving ? 'Сохранение...' : 'Сохранить'}
             </button>
-            <button onClick={() => setShowForm(false)}
+            <button onClick={resetForm}
               className="px-4 py-2.5 bg-gray-700 text-gray-400 text-sm font-medium rounded-lg">
               Отмена
             </button>
