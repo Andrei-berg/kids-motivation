@@ -6,6 +6,14 @@ import { getVacationPeriods, createVacationPeriod, deleteVacationPeriod, Vacatio
 
 const EMOJIS = ['🌸', '🌴', '❄️', '🍂', '🎄', '☀️', '🌊', '⛷️']
 
+// Стандартные каникулы 2025–2026 учебного года (РФ, типовые даты)
+const PRESETS = [
+  { name: 'Осенние каникулы',  emoji: '🍂', start: '2025-10-27', end: '2025-11-02' },
+  { name: 'Зимние каникулы',   emoji: '❄️', start: '2025-12-29', end: '2026-01-09' },
+  { name: 'Весенние каникулы', emoji: '🌸', start: '2026-03-23', end: '2026-03-29' },
+  { name: 'Летние каникулы',   emoji: '☀️', start: '2026-06-01', end: '2026-08-31' },
+]
+
 interface ChildOption {
   id: string
   name: string
@@ -212,10 +220,53 @@ export default function PeriodsManager() {
       )}
 
       {!showForm && (
-        <button onClick={() => setShowForm(true)}
-          className="w-full py-3 border-2 border-dashed border-gray-600 hover:border-amber-500 hover:text-amber-500 text-gray-500 font-bold text-sm rounded-xl transition-all">
-          + Добавить период
-        </button>
+        <>
+          {/* Быстрые шаблоны */}
+          <div className="mb-4">
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
+              Шаблоны 2025–2026
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {PRESETS.map(p => {
+                const alreadyAdded = periods.some(
+                  existing => existing.name === p.name && existing.start_date === p.start
+                )
+                const fmt = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+                return (
+                  <button
+                    key={p.name}
+                    disabled={alreadyAdded}
+                    onClick={() => {
+                      setName(p.name)
+                      setEmoji(p.emoji)
+                      setStartDate(p.start)
+                      setEndDate(p.end)
+                      setChildFilter('all')
+                      setShowForm(true)
+                    }}
+                    className={`flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all ${
+                      alreadyAdded
+                        ? 'border-gray-700 bg-gray-800/30 opacity-50 cursor-not-allowed'
+                        : 'border-gray-600 bg-gray-700/40 hover:border-amber-500/60 hover:bg-amber-500/8 cursor-pointer'
+                    }`}
+                  >
+                    <span className="text-xl flex-shrink-0">{p.emoji}</span>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-white truncate">{p.name}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{fmt(p.start)} – {fmt(p.end)}</div>
+                    </div>
+                    {alreadyAdded && <span className="text-green-500 text-xs ml-auto flex-shrink-0">✓</span>}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <button onClick={() => setShowForm(true)}
+            className="w-full py-3 border-2 border-dashed border-gray-600 hover:border-amber-500 hover:text-amber-500 text-gray-500 font-bold text-sm rounded-xl transition-all">
+            + Добавить свой период
+          </button>
+        </>
       )}
     </div>
   )
