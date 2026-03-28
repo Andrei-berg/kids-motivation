@@ -27,6 +27,7 @@ export default function PeriodsManager() {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   const [name, setName] = useState('')
   const [startDate, setStartDate] = useState('')
@@ -88,11 +89,16 @@ export default function PeriodsManager() {
   function resetForm() {
     setShowForm(false)
     setEditingId(null)
+    setSaveError('')
     setName(''); setStartDate(''); setEndDate(''); setEmoji('🌸'); setChildFilter('all')
   }
 
   async function handleSave() {
-    if (!name.trim() || !startDate || !endDate || !familyId) return
+    setSaveError('')
+    if (!familyId) { setSaveError('Семья не найдена — перезагрузите страницу'); return }
+    if (!name.trim()) { setSaveError('Введите название'); return }
+    if (!startDate || !endDate) { setSaveError('Укажите даты начала и окончания'); return }
+    if (startDate > endDate) { setSaveError('Дата начала не может быть позже даты окончания'); return }
     try {
       setSaving(true)
       if (editingId) {
@@ -109,6 +115,7 @@ export default function PeriodsManager() {
       setPeriods(data)
     } catch (e) {
       console.error(e)
+      setSaveError(e instanceof Error ? e.message : 'Ошибка при сохранении')
     } finally {
       setSaving(false)
     }
@@ -229,8 +236,14 @@ export default function PeriodsManager() {
             </div>
           </div>
 
+          {saveError && (
+            <div className="bg-red-500/15 border border-red-500/30 rounded-lg px-3 py-2 text-red-400 text-sm mb-3">
+              ⚠️ {saveError}
+            </div>
+          )}
+
           <div className="flex gap-2">
-            <button onClick={handleSave} disabled={!name.trim() || !startDate || !endDate || saving}
+            <button onClick={handleSave} disabled={saving}
               className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold text-sm rounded-lg transition-colors">
               {saving ? 'Сохранение...' : 'Сохранить'}
             </button>
