@@ -51,6 +51,11 @@ export default function NavBar() {
           💸 Расходы
         </Link>
 
+        {/* Родительский центр */}
+        <Link href="/parent-dashboard" className={`pill ${pathname === '/parent-dashboard' ? 'active' : ''}`} title="Родительский центр">
+          🛡️
+        </Link>
+
         {/* Settings — иконка в углу */}
         <Link href="/settings" className={`pill ${pathname === '/settings' ? 'active' : ''}`} title="Settings">
           ⚙️

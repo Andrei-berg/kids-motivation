@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import NavBar from '@/components/NavBar'
 import { verifyPin } from '@/utils/helpers'
 import CoinRulesEditor from '@/components/settings/CoinRulesEditor'
@@ -118,6 +119,24 @@ export default function SettingsPage() {
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-white">Настройки</h1>
             <p className="text-gray-400 text-sm mt-1">Управление системой мотивации</p>
+          </div>
+
+          {/* Quick actions */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <Link href="/parent-dashboard" className="flex items-center gap-3 bg-gray-800 hover:bg-gray-700 rounded-2xl px-4 py-4 transition-colors group no-underline">
+              <div className="w-10 h-10 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-xl flex-shrink-0 group-hover:bg-violet-600/30 transition-colors">🛡️</div>
+              <div>
+                <div className="text-sm font-bold text-white">Родительский центр</div>
+                <div className="text-xs text-gray-400 mt-0.5">Активность, одобрения</div>
+              </div>
+            </Link>
+            <Link href="/onboarding/v2" className="flex items-center gap-3 bg-gray-800 hover:bg-gray-700 rounded-2xl px-4 py-4 transition-colors group no-underline">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-xl flex-shrink-0 group-hover:bg-amber-500/30 transition-colors">🧙</div>
+              <div>
+                <div className="text-sm font-bold text-white">Мастер настройки</div>
+                <div className="text-xs text-gray-400 mt-0.5">Перенастроить семью</div>
+              </div>
+            </Link>
           </div>
 
           <div className="flex flex-wrap gap-2 mb-6">
