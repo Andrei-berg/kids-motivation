@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { api } from '@/lib/api'
+import { createClient } from '@/lib/supabase/client'
 import { useAppStore } from '@/lib/store'
 
 export interface FamilyMember {
@@ -16,36 +16,61 @@ export function useFamilyMembers(): { members: FamilyMember[]; loading: boolean;
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const { activeMemberId, setActiveMemberId } = useAppStore()
+  const { activeMemberId, setActiveMemberId, setFamilyId } = useAppStore()
 
   useEffect(() => {
     let cancelled = false
 
     async function fetchMembers() {
       try {
-        const children = await api.getChildren()
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
 
-        const mapped: FamilyMember[] = children.map(c => ({
-          id: c.id,
-          display_name: c.name,
-          avatar_url: c.emoji ?? null,
-          role: 'child' as const,
+        if (!user) {
+          if (!cancelled) { setMembers([]); setLoading(false) }
+          return
+        }
+
+        // Find the user's family membership
+        const { data: myMembership } = await supabase
+          .from('family_members')
+          .select('family_id')
+          .eq('user_id', user.id)
+          .maybeSingle()
+
+        if (!myMembership) {
+          if (!cancelled) { setMembers([]); setLoading(false) }
+          return
+        }
+
+        const fid = myMembership.family_id
+
+        // Load all members of the family
+        const { data: allMembers, error: membersError } = await supabase
+          .from('family_members')
+          .select('id, display_name, avatar_url, role')
+          .eq('family_id', fid)
+          .order('created_at')
+
+        if (membersError) throw membersError
+
+        const mapped: FamilyMember[] = (allMembers || []).map(m => ({
+          id: m.id,
+          display_name: m.display_name || 'Участник',
+          avatar_url: m.avatar_url,
+          role: m.role as 'parent' | 'child' | 'extended',
         }))
 
         if (!cancelled) {
           setMembers(mapped)
+          setFamilyId(fid)
 
-          if (mapped.length > 0) {
-            // Auto-select first if activeMemberId is null or stale
-            const isValid = activeMemberId !== null && mapped.some(m => m.id === activeMemberId)
-            if (!isValid) {
-              setActiveMemberId(mapped[0].id)
-            }
-          } else {
-            // No children accessible — clear stale activeMemberId so dashboard doesn't retry
-            if (activeMemberId !== null) {
-              setActiveMemberId(null)
-            }
+          const children = mapped.filter(m => m.role === 'child')
+          const isValid = activeMemberId !== null && children.some(m => m.id === activeMemberId)
+          if (children.length > 0 && !isValid) {
+            setActiveMemberId(children[0].id)
+          } else if (children.length === 0 && activeMemberId !== null) {
+            setActiveMemberId(null)
           }
         }
       } catch (err) {

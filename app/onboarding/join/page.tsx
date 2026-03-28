@@ -11,6 +11,7 @@ import {
   getUserDisplayName,
   ChildProfile,
 } from '@/lib/onboarding-api'
+import { useAppStore } from '@/lib/store'
 
 // ---------------------------------------------------------------------------
 // Shared styles
@@ -60,6 +61,7 @@ type Screen = 'code' | 'select' | 'adult-role'
 
 export default function JoinFamilyPage() {
   const router = useRouter()
+  const { setFamilyId: setStoreFamilyId, setActiveMemberId } = useAppStore()
 
   // Auth state
   const [userId, setUserId] = useState<string | null>(null)
@@ -99,6 +101,20 @@ export default function JoinFamilyPage() {
           router.replace('/login')
           return
         }
+
+        // Already a member — redirect to dashboard
+        const { data: existingMembership } = await supabase
+          .from('family_members')
+          .select('id, family_id')
+          .eq('user_id', user.id)
+          .maybeSingle()
+
+        if (existingMembership) {
+          setStoreFamilyId(existingMembership.family_id)
+          router.replace('/dashboard')
+          return
+        }
+
         const displayName = await getUserDisplayName(user.id)
         setUserId(user.id)
         setUserDisplayName(displayName)
@@ -157,6 +173,8 @@ export default function JoinFamilyPage() {
         memberId: child.memberId,
         displayName: child.displayName,
       })
+      setStoreFamilyId(familyId)
+      setActiveMemberId(child.memberId)
       router.push('/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось присоединиться. Попробуйте снова.')
@@ -176,6 +194,7 @@ export default function JoinFamilyPage() {
     setError(null)
     try {
       await joinFamilyAsAdult(familyId, userId, selectedRole, userDisplayName)
+      setStoreFamilyId(familyId)
       router.push('/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось присоединиться. Попробуйте снова.')
