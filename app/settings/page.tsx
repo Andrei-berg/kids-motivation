@@ -6,10 +6,12 @@ import { verifyPin } from '@/utils/helpers'
 import CoinRulesEditor from '@/components/settings/CoinRulesEditor'
 import StreakSettings from '@/components/settings/StreakSettings'
 import PeriodsManager from '@/components/settings/PeriodsManager'
+import FamilyManager from '@/components/settings/FamilyManager'
 
-type Section = 'coins' | 'streaks' | 'periods'
+type Section = 'coins' | 'streaks' | 'periods' | 'family'
 
 const SECTIONS: { id: Section; label: string; icon: string }[] = [
+  { id: 'family', label: 'Семья', icon: '👨‍👩‍👧' },
   { id: 'coins', label: 'Монеты', icon: '🪙' },
   { id: 'streaks', label: 'Стрики', icon: '🔥' },
   { id: 'periods', label: 'Каникулы', icon: '🌴' },
@@ -19,7 +21,7 @@ export default function SettingsPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [pinInput, setPinInput] = useState('')
   const [pinError, setPinError] = useState('')
-  const [activeSection, setActiveSection] = useState<Section>('coins')
+  const [activeSection, setActiveSection] = useState<Section>('family')
 
   const handlePinSubmit = () => {
     const hash = process.env.NEXT_PUBLIC_PARENT_PIN_HASH || 'MTIzNA=='
@@ -135,6 +137,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="bg-gray-800 rounded-2xl p-6">
+            {activeSection === 'family' && <FamilyManager />}
             {activeSection === 'coins' && <CoinRulesEditor familyId="default" />}
             {activeSection === 'streaks' && <StreakSettings familyId="default" />}
             {activeSection === 'periods' && <PeriodsManager />}
