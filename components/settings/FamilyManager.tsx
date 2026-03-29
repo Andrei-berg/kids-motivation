@@ -48,7 +48,7 @@ export default function FamilyManager() {
         .from('family_members')
         .select('family_id')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+        .order('joined_at', { ascending: false })
         .limit(1)
 
       const membership = memberships?.[0]

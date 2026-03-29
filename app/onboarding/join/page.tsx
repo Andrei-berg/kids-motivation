@@ -675,7 +675,7 @@ export default function JoinFamilyPage() {
           .from('family_members')
           .select('id, family_id')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
+          .order('joined_at', { ascending: false })
           .limit(1)
 
         const existing = existingRows?.[0]
