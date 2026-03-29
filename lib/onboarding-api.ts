@@ -231,20 +231,18 @@ export async function lookupFamilyByCode(code: string): Promise<FamilyLookup | n
   const normalizedCode = code.trim().toUpperCase()
 
   const { data, error } = await supabase
-    .from('families')
-    .select('id, name')
-    .eq('invite_code', normalizedCode)
-    .maybeSingle()
+    .rpc('lookup_family_by_invite_code', { p_code: normalizedCode })
 
   if (error) {
     throw new Error(`Failed to look up family by code: ${error.message}`)
   }
 
-  if (!data) return null
+  const row = data?.[0]
+  if (!row) return null
 
   return {
-    familyId: data.id,
-    name: data.name,
+    familyId: row.id,
+    name: row.name,
   }
 }
 
@@ -260,15 +258,11 @@ export async function getFamilyChildren(familyId: string): Promise<ChildProfile[
   // Only return unlinked children (user_id IS NULL) — these are the profiles
   // a child can claim. Already-linked profiles belong to existing accounts.
   const { data, error } = await supabase
-    .from('family_members')
-    .select('id, display_name, avatar_url')
-    .eq('family_id', familyId)
-    .eq('role', 'child')
-    .is('user_id', null)
+    .rpc('get_family_children', { p_family_id: familyId })
 
   if (error) throw new Error(error.message)
 
-  return (data || []).map((row) => ({
+  return (data || []).map((row: { id: string; display_name: string | null; avatar_url: string | null }) => ({
     memberId: row.id,
     displayName: row.display_name || 'Ребёнок',
     avatarUrl: row.avatar_url,
