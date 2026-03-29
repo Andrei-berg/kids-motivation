@@ -18,11 +18,19 @@ export async function saveSubjectGrade(params: {
   grade: number
   note?: string
 }) {
+  // Fetch family_id from children table (required by RLS policy)
+  const { data: childRow } = await supabase
+    .from('children')
+    .select('family_id')
+    .eq('id', params.childId)
+    .single()
+
   const { data, error } = await supabase
     .from('subject_grades')
     .insert({
       child_id: params.childId,
       date: normalizeDate(params.date),
+      family_id: childRow?.family_id ?? null,
       subject: params.subject,
       subject_id: params.subjectId || null,
       grade: params.grade,
@@ -33,7 +41,7 @@ export async function saveSubjectGrade(params: {
 
   if (error) throw error
 
-  await updateSubjectCache(params.childId, params.subject, params.date)
+  await updateSubjectCache(params.childId, params.subject, params.date, childRow?.family_id ?? null)
 
   return data
 }
@@ -66,7 +74,7 @@ export async function deleteSubjectGrade(gradeId: string) {
 // SUBJECTS AUTOCOMPLETE CACHE
 // ============================================================================
 
-async function updateSubjectCache(childId: string, subject: string, date: string) {
+async function updateSubjectCache(childId: string, subject: string, date: string, familyId: string | null = null) {
   const { data } = await supabase
     .from('subjects_cache')
     .select('*')
@@ -82,7 +90,7 @@ async function updateSubjectCache(childId: string, subject: string, date: string
   } else {
     await supabase
       .from('subjects_cache')
-      .insert({ child_id: childId, subject, last_seen: date, frequency: 1 })
+      .insert({ child_id: childId, subject, last_seen: date, frequency: 1, family_id: familyId })
   }
 }
 

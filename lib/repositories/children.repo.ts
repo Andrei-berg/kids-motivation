@@ -99,9 +99,17 @@ export async function saveDay(params: {
   const closet = params.roomCloset ?? roomData?.closet ?? false
   const trash = params.roomTrash ?? roomData?.trash ?? false
 
+  // Fetch family_id from children table (required by RLS policy on days)
+  const { data: childRow } = await supabase
+    .from('children')
+    .select('family_id')
+    .eq('id', childId)
+    .single()
+
   const dayData = {
     child_id: childId,
     date: normalizeDate(date),
+    family_id: childRow?.family_id ?? null,
     room_bed: bed,
     room_floor: floor,
     room_desk: desk,
@@ -126,10 +134,10 @@ export async function saveDay(params: {
   if (error) {
     // If error is about missing columns (migration not yet applied), retry with base columns only
     if (error.message?.includes('does not exist')) {
-      const { child_id, date: d, room_bed, room_floor, room_desk, room_closet, room_trash, good_behavior, diary_not_done, note_parent } = dayData
+      const { child_id, date: d, family_id, room_bed, room_floor, room_desk, room_closet, room_trash, good_behavior, diary_not_done, note_parent } = dayData
       const { data: data2, error: error2 } = await supabase
         .from('days')
-        .upsert({ child_id, date: d, room_bed, room_floor, room_desk, room_closet, room_trash, good_behavior, diary_not_done, note_parent }, { onConflict: 'child_id,date' })
+        .upsert({ child_id, date: d, family_id, room_bed, room_floor, room_desk, room_closet, room_trash, good_behavior, diary_not_done, note_parent }, { onConflict: 'child_id,date' })
         .select()
         .single()
       if (error2) throw error2
@@ -169,11 +177,18 @@ export async function saveHomeSport(params: {
   totalMinutes: number
   note?: string
 }) {
+  const { data: childRow2 } = await supabase
+    .from('children')
+    .select('family_id')
+    .eq('id', params.childId)
+    .single()
+
   const { data, error } = await supabase
     .from('home_sports')
     .upsert({
       child_id: params.childId,
       date: normalizeDate(params.date),
+      family_id: childRow2?.family_id ?? null,
       running: params.running,
       exercises: params.exercises,
       outdoor_games: params.outdoorGames,
@@ -223,12 +238,19 @@ export async function saveSectionAttendance(params: {
   coachRating?: number
   coachComment?: string
 }) {
+  const { data: childRow3 } = await supabase
+    .from('children')
+    .select('family_id')
+    .eq('id', params.childId)
+    .single()
+
   const { data, error } = await supabase
     .from('section_attendance')
     .upsert({
       section_id: params.sectionId,
       child_id: params.childId,
       date: normalizeDate(params.date),
+      family_id: childRow3?.family_id ?? null,
       attended: params.attended,
       coach_rating: params.coachRating || null,
       coach_comment: params.coachComment || null
