@@ -165,7 +165,7 @@ export default function Dashboard() {
                 <div className="muted" style={{ marginTop: '8px', fontSize: '13px' }}>
                   Создайте семью и добавьте детей, чтобы начать
                 </div>
-                <a href="/onboarding" className="btn primary" style={{ marginTop: '16px', display: 'inline-block' }}>Настроить семью</a>
+                <a href="/settings" className="btn primary" style={{ marginTop: '16px', display: 'inline-block' }}>Настроить семью</a>
               </>
             )}
           </div>

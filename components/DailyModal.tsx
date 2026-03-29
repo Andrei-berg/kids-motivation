@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '@/lib/api'
 import { flexibleApi, Subject, ExerciseType } from '@/lib/flexible-api'
-import { getSectionsForDate, markSectionVisit, Section, SectionVisit } from '@/lib/expenses-api'
+import { getSectionsForDate, markSectionVisit, Section, SectionVisit, ExtraActivity, getExtraActivities, getActivityLogs, saveActivityLogs } from '@/lib/expenses-api'
 import { updateStreaks } from '@/lib/streaks'
 import { checkAndAwardBadges } from '@/lib/badges'
 import { getGradeColor } from '@/utils/helpers'
@@ -13,17 +13,13 @@ import {
   getVacationPeriods,
   getReadingLog,
   saveReadingLog,
-  getExtraLessons,
-  saveExtraLessons,
   VacationPeriod,
-  ExtraLesson,
 } from '@/lib/vacation-api'
 import {
   getDayType,
   DayTypeInfo,
   isNonSchoolDay,
   calcReadingCoins,
-  calcExtraLessonsCoins,
   calcHomeHelpCoins,
   readingCoinHint,
 } from '@/lib/day-type'
@@ -43,14 +39,6 @@ interface ExerciseEntry {
   exercise_name: string
   quantity: number | null
   unit: string
-}
-
-interface LessonEntry {
-  id?: string
-  lesson_type: 'subject' | 'course'
-  name: string
-  done: boolean
-  note: string
 }
 
 interface DailyModalProps {
@@ -144,11 +132,10 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   const [bookFinished, setBookFinished] = useState(false)
   const [readingNote, setReadingNote] = useState('')
 
-  // ДОП. УРОКИ (vacation)
-  const [lessons, setLessons] = useState<LessonEntry[]>([])
-  const [lessonTab, setLessonTab] = useState<'subject' | 'course'>('subject')
-  const [lessonSubject, setLessonSubject] = useState('')
-  const [lessonCourseName, setLessonCourseName] = useState('')
+  // ДОП. ЗАНЯТИЯ (vacation + weekend) — catalog-based
+  const [activities, setActivities] = useState<ExtraActivity[]>([])
+  const [activityDone, setActivityDone] = useState<Record<string, boolean>>({})
+  const [activityNote, setActivityNote] = useState<Record<string, string>>({})
 
   // ПОМОЩЬ ПО ДОМУ (vacation + weekend)
   const [homeHelp, setHomeHelp] = useState(false)
@@ -266,16 +253,21 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
         }
       } catch {}
 
-      // Extra lessons
+      // Extra activities catalog + logs for today
       try {
-        const lessonsData = await getExtraLessons(childId, date)
-        setLessons(lessonsData.map(l => ({
-          id: l.id,
-          lesson_type: l.lesson_type,
-          name: l.name,
-          done: l.done,
-          note: l.note || '',
-        })))
+        const [activitiesData, logsData] = await Promise.all([
+          getExtraActivities(childId),
+          getActivityLogs(childId, date),
+        ])
+        setActivities(activitiesData)
+        const doneMap: Record<string, boolean> = {}
+        const noteMap: Record<string, string> = {}
+        logsData.forEach(l => {
+          doneMap[l.activity_id] = l.done
+          noteMap[l.activity_id] = l.note || ''
+        })
+        setActivityDone(doneMap)
+        setActivityNote(noteMap)
       } catch {}
 
     } catch (err) {
@@ -298,7 +290,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
     setSections([]); setSectionNotes({})
     setIsSick(false); setHomeHelp(false); setHomeHelpNote(''); setHomeworkDone(false)
     setBookTitle(''); setPagesRead(0); setMinutesRead(0); setBookFinished(false); setReadingNote('')
-    setLessons([]); setLessonTab('subject'); setLessonSubject(''); setLessonCourseName('')
+    setActivities([]); setActivityDone({}); setActivityNote({})
     setStatus(''); setError(false)
   }
 
@@ -370,17 +362,6 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
     setSectionNotes(prev => ({ ...prev, [sectionId]: { ...prev[sectionId], [field]: value } }))
   }
 
-  // ─── Lesson handlers ───────────────────────────────────────────────────────
-
-  function addLesson() {
-    const name = lessonTab === 'subject' ? lessonSubject : lessonCourseName
-    if (!name.trim()) return
-    setLessons([...lessons, { lesson_type: lessonTab, name: name.trim(), done: true, note: '' }])
-    setLessonSubject(''); setLessonCourseName('')
-  }
-
-  function removeLesson(idx: number) { setLessons(lessons.filter((_, i) => i !== idx)) }
-
   // ─── Save ─────────────────────────────────────────────────────────────────
 
   async function handleSave() {
@@ -423,11 +404,17 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
         ? saveReadingLog({ child_id: childId, date, book_title: bookTitle, pages_read: pagesRead, minutes_read: minutesRead, book_finished: bookFinished, note: readingNote })
         : Promise.resolve()
 
-      const saveLessons = dayType === 'vacation'
-        ? saveExtraLessons(childId, date, lessons.map(l => ({ child_id: childId, date, lesson_type: l.lesson_type, name: l.name, done: l.done, note: l.note })))
+      // Save activity logs for current day type (vacation or weekend)
+      const visibleActivities = activities.filter(a => a.day_types.includes(dayType))
+      const saveActivities = (dayType === 'vacation' || dayType === 'weekend') && visibleActivities.length > 0
+        ? saveActivityLogs(childId, date, visibleActivities.map(a => ({
+            activityId: a.id,
+            done: activityDone[a.id] ?? false,
+            note: activityNote[a.id] || undefined,
+          })))
         : Promise.resolve()
 
-      await Promise.all([saveDay, saveGrades, saveExercises, saveSections, saveReading, saveLessons])
+      await Promise.all([saveDay, saveGrades, saveExercises, saveSections, saveReading, saveActivities])
 
       await updateStreaks(childId, date)
       const badges = await checkAndAwardBadges(childId, date)
@@ -448,7 +435,9 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   // ─── Coins preview (footer) ───────────────────────────────────────────────
 
   const readingCoins = calcReadingCoins(pagesRead, minutesRead, bookFinished)
-  const lessonCoins = calcExtraLessonsCoins(lessons.filter(l => l.done).length)
+  const activityCoins = activities
+    .filter(a => a.day_types.includes(dayTypeInfo.type) && activityDone[a.id])
+    .reduce((sum, a) => sum + a.coins, 0)
   const helpCoins = calcHomeHelpCoins(homeHelp)
   const homeworkCoins = homeworkDone ? 5 : 0
   const roomScore = [roomBed, roomFloor, roomDesk, roomCloset, roomTrash].filter(Boolean).length
@@ -464,7 +453,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   const styles = DAY_TYPE_STYLES[dayType] || DAY_TYPE_STYLES.school
 
   const totalCoins = nonSchool
-    ? readingCoins + lessonCoins + helpCoins + homeworkCoins + roomCoins + behaviorCoins
+    ? readingCoins + activityCoins + helpCoins + homeworkCoins + roomCoins + behaviorCoins
     : gradeCoins + roomCoins + behaviorCoins
 
   if (!isOpen) return null
@@ -601,103 +590,66 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
               </div>
             )}
 
-            {/* ── ДОП. УРОКИ (vacation only) ──────────────────── */}
-            {dayType === 'vacation' && (
-              <div className="scroll-section">
-                <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
-                  <span className="scroll-section-icon">📖</span>
-                  <span className="scroll-section-title">Доп. уроки</span>
-                  {lessonCoins > 0 && (
-                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.22)', padding: '2px 8px', borderRadius: '20px' }}>
-                      +{lessonCoins}💰
-                    </span>
-                  )}
-                </div>
-
-                <div style={{ padding: '12px 0 0' }}>
-                  {/* Tabs */}
-                  <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
-                    {(['subject', 'course'] as const).map(tab => (
-                      <button
-                        key={tab}
-                        onClick={() => setLessonTab(tab)}
-                        style={{
-                          flex: 1, padding: '8px', fontSize: '12px', fontWeight: 800,
-                          borderRadius: '10px', border: '1px solid',
-                          cursor: 'pointer',
-                          borderColor: lessonTab === tab ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.1)',
-                          background: lessonTab === tab ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.03)',
-                          color: lessonTab === tab ? '#F59E0B' : 'rgba(238,238,255,0.5)',
-                        }}
-                      >
-                        {tab === 'subject' ? '📝 Повторение' : '💻 Курс / репетитор'}
-                      </button>
-                    ))}
-                  </div>
-
-                  {lessonTab === 'subject' ? (
-                    <div style={{ marginBottom: '12px' }}>
-                      <div className="premium-label">Предмет</div>
-                      <select
-                        className="premium-select"
-                        value={lessonSubject}
-                        onChange={e => setLessonSubject(e.target.value)}
-                      >
-                        <option value="">Выберите предмет</option>
-                        {subjects.map(s => (
-                          <option key={s.id} value={s.name}>{s.name}</option>
-                        ))}
-                        {['Математика', 'Русский', 'Английский', 'Физика', 'История', 'Биология'].filter(n => !subjects.find(s => s.name === n)).map(n => (
-                          <option key={n} value={n}>{n}</option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : (
-                    <div style={{ marginBottom: '12px' }}>
-                      <div className="premium-label">Название курса или репетитора</div>
-                      <input
-                        className="premium-input"
-                        type="text"
-                        placeholder="Английский онлайн, Skysmart..."
-                        value={lessonCourseName}
-                        onChange={e => setLessonCourseName(e.target.value)}
-                        style={{ fontSize: '14px', padding: '10px 12px' }}
-                      />
-                    </div>
-                  )}
-
-                  <button
-                    className="premium-btn-gradient"
-                    onClick={addLesson}
-                    style={{ width: '100%', marginBottom: '12px' }}
-                    disabled={lessonTab === 'subject' ? !lessonSubject : !lessonCourseName.trim()}
-                  >
-                    ✓ Добавить урок (+3💰)
-                  </button>
-
-                  {/* Lesson entries */}
-                  {lessons.map((lesson, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', marginBottom: '6px' }}>
-                      <span style={{ fontSize: '16px' }}>✅</span>
-                      <span style={{ flex: 1, fontSize: '13px', fontWeight: 700 }}>
-                        {lesson.lesson_type === 'subject' ? '📝' : '💻'} {lesson.name}
+            {/* ── ДОП. ЗАНЯТИЯ (vacation + weekend, catalog-based) ── */}
+            {(dayType === 'vacation' || dayType === 'weekend') && (() => {
+              const dayActivities = activities.filter(a => a.day_types.includes(dayType))
+              if (dayActivities.length === 0) return null
+              return (
+                <div className="scroll-section">
+                  <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
+                    <span className="scroll-section-icon">📋</span>
+                    <span className="scroll-section-title">Доп. занятия</span>
+                    {activityCoins > 0 && (
+                      <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.22)', padding: '2px 8px', borderRadius: '20px' }}>
+                        +{activityCoins}💰
                       </span>
-                      <span style={{ fontSize: '11px', fontWeight: 900, color: '#10B981' }}>+3💰</span>
-                      <button
-                        onClick={() => removeLesson(idx)}
-                        style={{ background: 'none', border: 'none', color: 'rgba(238,238,255,0.3)', fontSize: '14px', cursor: 'pointer', padding: '4px' }}
-                      >✕</button>
-                    </div>
-                  ))}
-
-                  {lessons.length === 0 && (
-                    <div className="premium-empty" style={{ padding: '12px' }}>
-                      <div className="premium-empty-text" style={{ fontSize: '13px' }}>Добавьте выполненные уроки</div>
-                    </div>
-                  )}
+                    )}
+                  </div>
+                  <div style={{ padding: '12px 0 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {dayActivities.map(a => {
+                      const done = activityDone[a.id] ?? false
+                      return (
+                        <div
+                          key={a.id}
+                          style={{
+                            padding: '10px 14px',
+                            background: done ? 'rgba(16,185,129,0.07)' : 'rgba(255,255,255,0.03)',
+                            border: `1.5px solid ${done ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.08)'}`,
+                            borderRadius: '10px',
+                          }}
+                        >
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={done}
+                              onChange={e => setActivityDone(prev => ({ ...prev, [a.id]: e.target.checked }))}
+                              style={{ width: '18px', height: '18px', accentColor: '#10B981', flexShrink: 0 }}
+                            />
+                            <span style={{ fontSize: '18px', flexShrink: 0 }}>{a.emoji}</span>
+                            <span style={{ flex: 1, fontSize: '13px', fontWeight: 800, color: done ? '#fff' : 'rgba(238,238,255,0.7)' }}>
+                              {a.name}
+                            </span>
+                            <span style={{ fontSize: '11px', fontWeight: 900, color: '#10B981', flexShrink: 0 }}>
+                              +{a.coins}💰
+                            </span>
+                          </label>
+                          {done && (
+                            <input
+                              className="premium-input"
+                              type="text"
+                              placeholder="Заметка (необязательно)"
+                              value={activityNote[a.id] || ''}
+                              onChange={e => setActivityNote(prev => ({ ...prev, [a.id]: e.target.value }))}
+                              style={{ marginTop: '8px', fontSize: '13px', padding: '8px 10px' }}
+                            />
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
 
             {/* ── ПОМОЩЬ ПО ДОМУ (vacation + weekend) ────────── */}
             {(isNonSchoolDay(dayType)) && (
@@ -1057,7 +1009,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                 {nonSchool ? (
                   <>
                     {readingCoins > 0 && <span style={chipStyle('#10B981')}>📚 +{readingCoins}💰</span>}
-                    {lessonCoins > 0 && dayType === 'vacation' && <span style={chipStyle('#F59E0B')}>📖 +{lessonCoins}💰</span>}
+                    {activityCoins > 0 && <span style={chipStyle('#F59E0B')}>📋 +{activityCoins}💰</span>}
                     {homeHelp && <span style={chipStyle('#10B981')}>🏠 +{helpCoins}💰</span>}
                     {roomCoins > 0 && <span style={chipStyle('#10B981')}>🛏️ +{roomCoins}💰</span>}
                     {behaviorCoins > 0 && <span style={chipStyle('#10B981')}>⭐ +{behaviorCoins}💰</span>}

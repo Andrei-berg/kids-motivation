@@ -9,6 +9,8 @@ import type {
   Section,
   SectionVisit,
   ExpenseStats,
+  ExtraActivity,
+  ActivityLog,
 } from '../models/expense.types'
 
 // ============================================================================
@@ -221,7 +223,9 @@ export async function getExpenseStats(filters?: {
 // SECTIONS (sports clubs)
 // ============================================================================
 
-export async function getSections(childId?: string): Promise<Section[]> {
+// Returns active sections for a child, optionally filtered by a specific date
+// (date filtering: start_date <= date AND (end_date IS NULL OR end_date >= date))
+export async function getSections(childId?: string, date?: string): Promise<Section[]> {
   let query = supabase
     .from('sections')
     .select('*')
@@ -230,7 +234,25 @@ export async function getSections(childId?: string): Promise<Section[]> {
 
   if (childId) query = query.eq('child_id', childId)
 
+  // Date range filtering
+  if (date) {
+    query = query.or(`start_date.is.null,start_date.lte.${date}`)
+    query = query.or(`end_date.is.null,end_date.gte.${date}`)
+  }
+
   const { data, error } = await query
+
+  if (error) throw error
+  return data || []
+}
+
+// Returns ALL sections for a child (active + archived) for settings view
+export async function getAllSections(childId: string): Promise<Section[]> {
+  const { data, error } = await supabase
+    .from('sections')
+    .select('*')
+    .eq('child_id', childId)
+    .order('created_at', { ascending: false })
 
   if (error) throw error
   return data || []
@@ -243,6 +265,9 @@ export async function addSection(section: {
   cost?: number
   trainer?: string
   address?: string
+  startDate?: string
+  endDate?: string
+  scheduleDays?: string[]
 }): Promise<Section> {
   const { data, error } = await supabase
     .from('sections')
@@ -253,7 +278,10 @@ export async function addSection(section: {
       cost: section.cost || null,
       trainer: section.trainer || null,
       address: section.address || null,
-      is_active: true
+      is_active: true,
+      start_date: section.startDate || null,
+      end_date: section.endDate || null,
+      schedule_days: section.scheduleDays || [],
     })
     .select()
     .single()
@@ -271,16 +299,22 @@ export async function updateSection(
     trainer: string
     address: string
     isActive: boolean
+    startDate: string | null
+    endDate: string | null
+    scheduleDays: string[]
   }>
 ): Promise<void> {
   const updateData: any = {}
 
-  if (updates.name) updateData.name = updates.name
+  if (updates.name !== undefined) updateData.name = updates.name
   if (updates.schedule !== undefined) updateData.schedule = updates.schedule
   if (updates.cost !== undefined) updateData.cost = updates.cost
   if (updates.trainer !== undefined) updateData.trainer = updates.trainer
   if (updates.address !== undefined) updateData.address = updates.address
   if (updates.isActive !== undefined) updateData.is_active = updates.isActive
+  if (updates.startDate !== undefined) updateData.start_date = updates.startDate
+  if (updates.endDate !== undefined) updateData.end_date = updates.endDate
+  if (updates.scheduleDays !== undefined) updateData.schedule_days = updates.scheduleDays
 
   const { error } = await supabase
     .from('sections')
@@ -343,7 +377,22 @@ export async function markSectionVisit(
 }
 
 export async function getSectionsForDate(childId: string, date: string): Promise<(Section & { visit?: SectionVisit })[]> {
-  const sections = await getSections(childId)
+  // Get sections active on this date (respects start_date / end_date)
+  const allSections = await getSections(childId, date)
+
+  // Optionally filter by schedule_days if the section has them configured
+  const d = new Date(date)
+  const dayOfWeek = d.getDay() // 0=Sun,1=Mon,...,6=Sat
+  const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat']
+  const todayKey = DAY_KEYS[dayOfWeek]
+
+  const sections = allSections.filter(s => {
+    // If no schedule_days configured — show every day
+    if (!s.schedule_days || s.schedule_days.length === 0) return true
+    return s.schedule_days.includes(todayKey)
+  })
+
+  if (sections.length === 0) return []
 
   const { data: visits } = await supabase
     .from('section_visits')
@@ -355,4 +404,130 @@ export async function getSectionsForDate(childId: string, date: string): Promise
   visits?.forEach(v => { visitsMap[v.section_id] = v })
 
   return sections.map(s => ({ ...s, visit: visitsMap[s.id] }))
+}
+
+// ============================================================================
+// EXTRA ACTIVITIES (catalog)
+// ============================================================================
+
+export async function getExtraActivities(childId: string, dayType?: string): Promise<ExtraActivity[]> {
+  let query = supabase
+    .from('extra_activities')
+    .select('*')
+    .eq('child_id', childId)
+    .eq('is_active', true)
+    .order('sort_order')
+    .order('created_at')
+
+  const { data, error } = await query
+  if (error) throw error
+
+  const activities = data || []
+
+  // Filter by day_type if provided
+  if (dayType) {
+    return activities.filter(a => a.day_types.includes(dayType))
+  }
+  return activities
+}
+
+export async function addExtraActivity(activity: {
+  childId: string
+  familyId?: string
+  name: string
+  emoji: string
+  dayTypes: string[]
+  coins: number
+  sortOrder?: number
+}): Promise<ExtraActivity> {
+  const { data, error } = await supabase
+    .from('extra_activities')
+    .insert({
+      child_id: activity.childId,
+      family_id: activity.familyId || null,
+      name: activity.name,
+      emoji: activity.emoji,
+      day_types: activity.dayTypes,
+      coins: activity.coins,
+      sort_order: activity.sortOrder ?? 0,
+      is_active: true,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function updateExtraActivity(
+  activityId: string,
+  updates: Partial<{
+    name: string
+    emoji: string
+    dayTypes: string[]
+    coins: number
+    sortOrder: number
+    isActive: boolean
+  }>
+): Promise<void> {
+  const updateData: any = {}
+  if (updates.name !== undefined) updateData.name = updates.name
+  if (updates.emoji !== undefined) updateData.emoji = updates.emoji
+  if (updates.dayTypes !== undefined) updateData.day_types = updates.dayTypes
+  if (updates.coins !== undefined) updateData.coins = updates.coins
+  if (updates.sortOrder !== undefined) updateData.sort_order = updates.sortOrder
+  if (updates.isActive !== undefined) updateData.is_active = updates.isActive
+
+  const { error } = await supabase
+    .from('extra_activities')
+    .update(updateData)
+    .eq('id', activityId)
+
+  if (error) throw error
+}
+
+export async function deleteExtraActivity(activityId: string): Promise<void> {
+  const { error } = await supabase
+    .from('extra_activities')
+    .delete()
+    .eq('id', activityId)
+
+  if (error) throw error
+}
+
+// ============================================================================
+// ACTIVITY LOGS (daily completion)
+// ============================================================================
+
+export async function getActivityLogs(childId: string, date: string): Promise<ActivityLog[]> {
+  const { data, error } = await supabase
+    .from('activity_logs')
+    .select('*')
+    .eq('child_id', childId)
+    .eq('date', date)
+
+  if (error) throw error
+  return data || []
+}
+
+export async function saveActivityLogs(
+  childId: string,
+  date: string,
+  logs: { activityId: string; done: boolean; note?: string }[]
+): Promise<void> {
+  if (logs.length === 0) return
+
+  const rows = logs.map(l => ({
+    child_id: childId,
+    date,
+    activity_id: l.activityId,
+    done: l.done,
+    note: l.note || null,
+  }))
+
+  const { error } = await supabase
+    .from('activity_logs')
+    .upsert(rows, { onConflict: 'child_id,date,activity_id' })
+
+  if (error) throw error
 }

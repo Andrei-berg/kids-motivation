@@ -33,6 +33,9 @@ export interface Section {
   trainer: string | null
   address: string | null
   is_active: boolean
+  start_date: string | null
+  end_date: string | null
+  schedule_days: string[]
   created_at: string
 }
 
@@ -50,4 +53,29 @@ export interface ExpenseStats {
   total: number
   byCategory: { categoryId: string; categoryName: string; icon: string; amount: number; percentage: number }[]
   byChild: { childId: string; amount: number; percentage: number }[]
+}
+
+// ─── Extra Activities ─────────────────────────────────────────────────────────
+
+export interface ExtraActivity {
+  id: string
+  child_id: string
+  family_id: string | null
+  name: string
+  emoji: string
+  day_types: string[]  // ['vacation'] | ['weekend'] | ['vacation','weekend']
+  coins: number
+  sort_order: number
+  is_active: boolean
+  created_at: string
+}
+
+export interface ActivityLog {
+  id: string
+  child_id: string
+  date: string
+  activity_id: string
+  done: boolean
+  note: string | null
+  created_at: string
 }

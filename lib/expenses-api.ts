@@ -8,6 +8,8 @@ export type {
   Section,
   SectionVisit,
   ExpenseStats,
+  ExtraActivity,
+  ActivityLog,
 } from './models/expense.types'
 
 export {
@@ -22,10 +24,17 @@ export {
   deleteExpense,
   getExpenseStats,
   getSections,
+  getAllSections,
   addSection,
   updateSection,
   deleteSection,
   getSectionVisits,
   markSectionVisit,
   getSectionsForDate,
+  getExtraActivities,
+  addExtraActivity,
+  updateExtraActivity,
+  deleteExtraActivity,
+  getActivityLogs,
+  saveActivityLogs,
 } from './repositories/expenses.repo'

@@ -8,14 +8,18 @@ import CoinRulesEditor from '@/components/settings/CoinRulesEditor'
 import StreakSettings from '@/components/settings/StreakSettings'
 import PeriodsManager from '@/components/settings/PeriodsManager'
 import FamilyManager from '@/components/settings/FamilyManager'
+import SectionsManager from '@/components/settings/SectionsManager'
+import ActivitiesManager from '@/components/settings/ActivitiesManager'
 
-type Section = 'coins' | 'streaks' | 'periods' | 'family'
+type Section = 'coins' | 'streaks' | 'periods' | 'family' | 'sections' | 'activities'
 
 const SECTIONS: { id: Section; label: string; icon: string }[] = [
   { id: 'family', label: 'Семья', icon: '👨‍👩‍👧' },
   { id: 'coins', label: 'Монеты', icon: '🪙' },
   { id: 'streaks', label: 'Стрики', icon: '🔥' },
   { id: 'periods', label: 'Каникулы', icon: '🌴' },
+  { id: 'sections', label: 'Секции', icon: '⚽' },
+  { id: 'activities', label: 'Занятия', icon: '📋' },
 ]
 
 export default function SettingsPage() {
@@ -160,6 +164,8 @@ export default function SettingsPage() {
             {activeSection === 'coins' && <CoinRulesEditor familyId="default" />}
             {activeSection === 'streaks' && <StreakSettings familyId="default" />}
             {activeSection === 'periods' && <PeriodsManager />}
+            {activeSection === 'sections' && <SectionsManager />}
+            {activeSection === 'activities' && <ActivitiesManager />}
           </div>
         </div>
       </div>
