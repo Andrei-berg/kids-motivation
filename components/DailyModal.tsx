@@ -425,8 +425,9 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
       setTimeout(() => { onClose() }, 1500)
 
     } catch (err) {
-      console.error('Save error:', err)
-      setStatus('❌ Ошибка сохранения'); setError(true)
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error('Save error:', msg)
+      setStatus(`❌ ${msg.slice(0, 120)}`); setError(true)
     } finally {
       setSaving(false)
     }
