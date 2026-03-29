@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAppStore } from '@/lib/store'
+import { getChildren } from '@/lib/api'
 
 export interface FamilyMember {
   id: string
@@ -26,12 +27,27 @@ export function useFamilyMembers(): { members: FamilyMember[]; loading: boolean;
         const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
 
+        // ── No Supabase Auth user → fall back to children table ─────────────
         if (!user) {
-          if (!cancelled) { setMembers([]); setLoading(false) }
+          const children = await getChildren()
+          if (cancelled) return
+          const mapped: FamilyMember[] = children.map(c => ({
+            id: c.id,
+            display_name: c.name,
+            avatar_url: null,
+            role: 'child' as const,
+          }))
+          setMembers(mapped)
+          // Auto-select first child if none selected or selection is invalid
+          const isValid = activeMemberId !== null && mapped.some(m => m.id === activeMemberId)
+          if (mapped.length > 0 && !isValid) {
+            setActiveMemberId(mapped[0].id)
+          }
+          setLoading(false)
           return
         }
 
-        // Find the user's family membership
+        // ── Supabase Auth user → use family_members table ───────────────────
         const { data: myMembership } = await supabase
           .from('family_members')
           .select('family_id')
@@ -39,13 +55,24 @@ export function useFamilyMembers(): { members: FamilyMember[]; loading: boolean;
           .maybeSingle()
 
         if (!myMembership) {
-          if (!cancelled) { setMembers([]); setLoading(false) }
+          // Auth user but no family yet — fall back to children table
+          const children = await getChildren()
+          if (cancelled) return
+          const mapped: FamilyMember[] = children.map(c => ({
+            id: c.id,
+            display_name: c.name,
+            avatar_url: null,
+            role: 'child' as const,
+          }))
+          setMembers(mapped)
+          const isValid = activeMemberId !== null && mapped.some(m => m.id === activeMemberId)
+          if (mapped.length > 0 && !isValid) setActiveMemberId(mapped[0].id)
+          setLoading(false)
           return
         }
 
         const fid = myMembership.family_id
 
-        // Load all members of the family
         const { data: allMembers, error: membersError } = await supabase
           .from('family_members')
           .select('id, display_name, avatar_url, role')
@@ -76,6 +103,7 @@ export function useFamilyMembers(): { members: FamilyMember[]; loading: boolean;
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to load members')
+          setLoading(false)
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -83,7 +111,6 @@ export function useFamilyMembers(): { members: FamilyMember[]; loading: boolean;
     }
 
     fetchMembers()
-
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
