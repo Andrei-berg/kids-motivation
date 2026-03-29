@@ -58,7 +58,7 @@ export default function FamilyManager() {
 
       const [{ data: family }, { data: allMembers }] = await Promise.all([
         supabase.from('families').select('invite_code').eq('id', membership.family_id).single(),
-        supabase.from('family_members').select('id, display_name, avatar_url, role, user_id').eq('family_id', membership.family_id).order('created_at'),
+        supabase.from('family_members').select('id, display_name, avatar_url, role, user_id').eq('family_id', membership.family_id).order('joined_at'),
       ])
 
       setInviteCode(family?.invite_code ?? null)
