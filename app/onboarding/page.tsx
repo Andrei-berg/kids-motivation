@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import confetti from 'canvas-confetti'
 import { createClient } from '@/lib/supabase/client'
@@ -743,7 +743,7 @@ const errorStyle: React.CSSProperties = {
 // Main Wizard Page
 // ---------------------------------------------------------------------------
 
-export default function OnboardingPage() {
+function OnboardingWizard() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [currentStep, setCurrentStep] = useState(0)
@@ -1127,5 +1127,13 @@ export default function OnboardingPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense>
+      <OnboardingWizard />
+    </Suspense>
   )
 }

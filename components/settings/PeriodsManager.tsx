@@ -23,7 +23,7 @@ interface ChildOption {
 }
 
 export default function PeriodsManager() {
-  const { familyId, setFamilyId } = useAppStore()
+  const { familyId, setFamilyId, activeMemberId } = useAppStore()
   const [children, setChildren] = useState<ChildOption[]>([])
   const [periods, setPeriods] = useState<VacationPeriod[]>([])
   const [loading, setLoading] = useState(true)
@@ -39,31 +39,25 @@ export default function PeriodsManager() {
   const [childFilter, setChildFilter] = useState('all')
 
   useEffect(() => {
-    if (familyId) {
-      loadData(familyId)
-      return
+    async function init() {
+      // 1. Store has familyId
+      if (familyId) { loadData(familyId); return }
+      // 2. Try family_members table
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data } = await supabase.from('family_members').select('family_id').eq('user_id', user.id).maybeSingle()
+          if (data?.family_id) { setFamilyId(data.family_id); loadData(data.family_id); return }
+        }
+      } catch { /* table may not exist */ }
+      // 3. Fall back to activeMemberId (old schema — use child id as family id)
+      if (activeMemberId) { loadData(activeMemberId); return }
+      setLoading(false)
     }
-    // familyId not in store — look it up from the user's family membership
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { setLoading(false); return }
-      supabase
-        .from('family_members')
-        .select('family_id')
-        .eq('user_id', user.id)
-        .limit(1)
-        .maybeSingle()
-        .then(({ data }) => {
-          if (data?.family_id) {
-            setFamilyId(data.family_id)
-            loadData(data.family_id)
-          } else {
-            setLoading(false)
-          }
-        })
-    })
+    init()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [familyId])
+  }, [familyId, activeMemberId])
 
   async function loadData(fid: string) {
     try {

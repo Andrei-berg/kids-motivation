@@ -123,7 +123,20 @@ export async function saveDay(params: {
     .select()
     .single()
 
-  if (error) throw error
+  if (error) {
+    // If error is about missing columns (migration not yet applied), retry with base columns only
+    if (error.message?.includes('does not exist')) {
+      const { child_id, date: d, room_bed, room_floor, room_desk, room_closet, room_trash, good_behavior, diary_not_done, note_parent } = dayData
+      const { data: data2, error: error2 } = await supabase
+        .from('days')
+        .upsert({ child_id, date: d, room_bed, room_floor, room_desk, room_closet, room_trash, good_behavior, diary_not_done, note_parent }, { onConflict: 'child_id,date' })
+        .select()
+        .single()
+      if (error2) throw error2
+      return data2
+    }
+    throw error
+  }
   return data
 }
 
