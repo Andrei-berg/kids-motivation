@@ -44,12 +44,14 @@ export default function FamilyManager() {
       if (!user) return
       setUserId(user.id)
 
-      const { data: membership } = await supabase
+      const { data: memberships } = await supabase
         .from('family_members')
         .select('family_id')
         .eq('user_id', user.id)
-        .maybeSingle()
+        .order('created_at', { ascending: false })
+        .limit(1)
 
+      const membership = memberships?.[0]
       if (!membership) return
 
       setFamilyId(membership.family_id)

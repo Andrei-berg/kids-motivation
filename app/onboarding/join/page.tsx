@@ -671,12 +671,14 @@ export default function JoinFamilyPage() {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) { router.replace('/login'); return }
 
-        const { data: existing } = await supabase
+        const { data: existingRows } = await supabase
           .from('family_members')
           .select('id, family_id')
           .eq('user_id', user.id)
-          .maybeSingle()
+          .order('created_at', { ascending: false })
+          .limit(1)
 
+        const existing = existingRows?.[0]
         if (existing) {
           setStoreFamilyId(existing.family_id)
           router.replace('/dashboard')
