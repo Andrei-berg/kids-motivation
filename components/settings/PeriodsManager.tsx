@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useAppStore } from '@/lib/store'
 import { getVacationPeriods, createVacationPeriod, updateVacationPeriod, deleteVacationPeriod, VacationPeriod } from '@/lib/vacation-api'
 
+
+
 const EMOJIS = ['🌸', '🌴', '❄️', '🍂', '🎄', '☀️', '🌊', '⛷️']
 
 // Стандартные каникулы 2025–2026 учебного года (РФ, типовые даты)
@@ -21,7 +23,7 @@ interface ChildOption {
 }
 
 export default function PeriodsManager() {
-  const { familyId } = useAppStore()
+  const { familyId, setFamilyId } = useAppStore()
   const [children, setChildren] = useState<ChildOption[]>([])
   const [periods, setPeriods] = useState<VacationPeriod[]>([])
   const [loading, setLoading] = useState(true)
@@ -36,7 +38,32 @@ export default function PeriodsManager() {
   const [emoji, setEmoji] = useState('🌸')
   const [childFilter, setChildFilter] = useState('all')
 
-  useEffect(() => { if (familyId) loadData(familyId) }, [familyId])
+  useEffect(() => {
+    if (familyId) {
+      loadData(familyId)
+      return
+    }
+    // familyId not in store — look it up from the user's family membership
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) { setLoading(false); return }
+      supabase
+        .from('family_members')
+        .select('family_id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data?.family_id) {
+            setFamilyId(data.family_id)
+            loadData(data.family_id)
+          } else {
+            setLoading(false)
+          }
+        })
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [familyId])
 
   async function loadData(fid: string) {
     try {

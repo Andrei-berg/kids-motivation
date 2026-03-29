@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import confetti from 'canvas-confetti'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -745,6 +745,7 @@ const errorStyle: React.CSSProperties = {
 
 export default function OnboardingPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [currentStep, setCurrentStep] = useState(0)
   const [direction, setDirection] = useState<Direction>('forward')
   const [animating, setAnimating] = useState(false)
@@ -758,6 +759,8 @@ export default function OnboardingPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  // Prevents browser-back handler from firing during our own programmatic navigation
+  const internalNav = useRef(false)
 
   // On mount: get authenticated user and resume from last onboarding step.
   // Already-onboarded users (step >= 6) are sent directly to /dashboard.
@@ -773,21 +776,48 @@ export default function OnboardingPage() {
           return
         }
         setWizardData((prev) => ({ ...prev, userId: user.id }))
-        const step = await getOnboardingStep(user.id)
-        if (step >= 6) {
+        const dbStep = await getOnboardingStep(user.id)
+        if (dbStep >= 6) {
           router.replace('/dashboard')
           return
         }
-        setCurrentStep(step)
+        // Honour ?step= param if it's within already-completed range
+        const urlParam = searchParams.get('step')
+        const urlStep = urlParam !== null ? parseInt(urlParam, 10) : NaN
+        const startStep =
+          !isNaN(urlStep) && urlStep >= 0 && urlStep <= dbStep ? urlStep : dbStep
+        internalNav.current = true
+        setCurrentStep(startStep)
+        router.replace(`/onboarding?step=${startStep}`, { scroll: false })
       } catch {
         // Non-fatal: stay at step 0
       } finally {
         setLoading(false)
+        // Reset flag after microtasks settle
+        setTimeout(() => { internalNav.current = false }, 0)
       }
     }
     init()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Browser back/forward: sync step from URL when it changes externally
+  useEffect(() => {
+    if (loading || internalNav.current) return
+    const urlParam = searchParams.get('step')
+    if (urlParam === null) return
+    const parsed = parseInt(urlParam, 10)
+    if (isNaN(parsed) || parsed < 0 || parsed >= TOTAL_STEPS || parsed === currentStep) return
+    const dir: Direction = parsed < currentStep ? 'backward' : 'forward'
+    setDirection(dir)
+    setAnimating(true)
+    setError('')
+    setTimeout(() => {
+      setCurrentStep(parsed)
+      setAnimating(false)
+    }, 150)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   // Fire confetti when user reaches the Done screen (step 6)
   useEffect(() => {
@@ -803,12 +833,15 @@ export default function OnboardingPage() {
 
   const goTo = (step: number, dir: Direction) => {
     if (animating) return
+    internalNav.current = true
     setDirection(dir)
     setAnimating(true)
     setError('')
+    router.push(`/onboarding?step=${step}`, { scroll: false })
     setTimeout(() => {
       setCurrentStep(step)
       setAnimating(false)
+      internalNav.current = false
     }, 150)
   }
 
@@ -1074,8 +1107,8 @@ export default function OnboardingPage() {
           )}
         </div>
 
-        {/* Back button — hidden on step 0 (Welcome) and steps 5+ (categories / done) */}
-        {currentStep > 0 && currentStep < 5 && (
+        {/* Back button — hidden on step 0 (Welcome) and step 6 (Done) */}
+        {currentStep > 0 && currentStep < 6 && (
           <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-start' }}>
             <button
               onClick={goBackward}
