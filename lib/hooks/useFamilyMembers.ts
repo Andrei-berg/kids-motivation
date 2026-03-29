@@ -48,11 +48,14 @@ export function useFamilyMembers(): { members: FamilyMember[]; loading: boolean;
         }
 
         // ── Supabase Auth user → use family_members table ───────────────────
-        const { data: myMembership } = await supabase
+        const { data: myMemberships } = await supabase
           .from('family_members')
           .select('family_id')
           .eq('user_id', user.id)
-          .maybeSingle()
+          .order('joined_at', { ascending: false })
+          .limit(1)
+
+        const myMembership = myMemberships?.[0]
 
         if (!myMembership) {
           // Auth user but no family yet — fall back to children table
@@ -73,30 +76,26 @@ export function useFamilyMembers(): { members: FamilyMember[]; loading: boolean;
 
         const fid = myMembership.family_id
 
-        const { data: allMembers, error: membersError } = await supabase
-          .from('family_members')
-          .select('id, display_name, avatar_url, role')
-          .eq('family_id', fid)
-          .order('created_at')
+        // Always use legacy children table IDs ('adam'/'alim') — the whole
+        // app depends on these TEXT primary keys, not family_members UUIDs.
+        const legacyChildren = await getChildren()
+        if (cancelled) return
 
-        if (membersError) throw membersError
-
-        const mapped: FamilyMember[] = (allMembers || []).map(m => ({
-          id: m.id,
-          display_name: m.display_name || 'Участник',
-          avatar_url: m.avatar_url,
-          role: m.role as 'parent' | 'child' | 'extended',
+        const mapped: FamilyMember[] = legacyChildren.map(c => ({
+          id: c.id,               // 'adam' | 'alim'
+          display_name: c.name,
+          avatar_url: null,
+          role: 'child' as const,
         }))
 
         if (!cancelled) {
           setMembers(mapped)
           setFamilyId(fid)
 
-          const children = mapped.filter(m => m.role === 'child')
-          const isValid = activeMemberId !== null && children.some(m => m.id === activeMemberId)
-          if (children.length > 0 && !isValid) {
-            setActiveMemberId(children[0].id)
-          } else if (children.length === 0 && activeMemberId !== null) {
+          const isValid = activeMemberId !== null && mapped.some(m => m.id === activeMemberId)
+          if (mapped.length > 0 && !isValid) {
+            setActiveMemberId(mapped[0].id)
+          } else if (mapped.length === 0) {
             setActiveMemberId(null)
           }
         }
