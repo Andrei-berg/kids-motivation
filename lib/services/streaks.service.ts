@@ -42,7 +42,7 @@ export async function updateStreaks(childId: string, date: string) {
   await updateStreak(childId, 'sport', sportStreak.current, sportStreak.best)
 }
 
-function calculateRoomStreak(days: any[], today: string) {
+export function calculateRoomStreak(days: any[], today: string) {
   let current = 0
   let best = 0
   let streak = 0
@@ -68,7 +68,7 @@ function calculateRoomStreak(days: any[], today: string) {
   return { current, best }
 }
 
-function calculateStudyStreak(grades: any[], today: string) {
+export function calculateStudyStreak(grades: any[], today: string) {
   const daysWithGrades = new Set(grades.map(g => g.date))
 
   let current = 0
@@ -94,7 +94,7 @@ function calculateStudyStreak(grades: any[], today: string) {
   return { current, best }
 }
 
-function calculateSportStreak(sports: any[], today: string) {
+export function calculateSportStreak(sports: any[], today: string) {
   let current = 0
   let best = 0
   let streak = 0
