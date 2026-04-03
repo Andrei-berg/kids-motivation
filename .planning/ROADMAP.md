@@ -109,7 +109,7 @@ Plans:
 
 ### Phases
 
-- [ ] **Phase 2.1: role-routing** — Role detection after login + middleware guards for /parent/* and /kid/* routes
+- [x] **Phase 2.1: role-routing** — Role detection after login + middleware guards for /parent/* and /kid/* routes (completed 2026-04-03)
 - [ ] **Phase 2.2: parent-center** — Full parent UI: dark theme dashboard, daily input, wallets, analytics, shop management, settings
 - [ ] **Phase 2.3: kid-screen** — Full kid UI: bright theme, my day, wallet, achievements, shop browse, leaderboard
 - [ ] **Phase 2.4: shop-approval** — Purchase request flow: child requests → parent approves/rejects → coins deducted
@@ -119,7 +119,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 2.1 role-routing | 0/2 | Planned | - |
+| 2.1 role-routing | 2/2 | Complete   | 2026-04-03 |
 | 2.2 parent-center | 0/TBD | Not started | - |
 | 2.3 kid-screen | 0/TBD | Not started | - |
 | 2.4 shop-approval | 0/TBD | Not started | - |
@@ -142,7 +142,7 @@ Plans:
 4. Child visiting /parent/* is redirected to /kid/day
 5. Any authenticated user can access /family/* routes without redirect
 
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 02.1-01-PLAN.md — Skeleton route pages: /parent/dashboard, /kid/day, /family placeholders

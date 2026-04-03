@@ -3,32 +3,32 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role-Based UI
 status: phase_in_progress
-last_updated: "2026-04-03T06:17:00.000Z"
+last_updated: "2026-04-03T06:14:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-03 — Phase 2.1 plan 01 complete
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-03 — Phase 2.1 plan 02 complete (awaiting checkpoint verification)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 2.1 (in progress)
-Plan: 02.1-02 (wave 2) — next to execute
-Status: Plan 01 complete (skeleton pages). Plan 02 (middleware) ready to execute.
-Last activity: 2026-04-03 — 02.1-01 complete: 3 placeholder pages created (8 min)
+Phase: 2.1 (complete — awaiting human verification checkpoint)
+Plan: 02.1-02 (wave 2) — COMPLETE (middleware rewritten)
+Status: Both plans complete. Awaiting checkpoint:human-verify for middleware routing tests.
+Last activity: 2026-04-03 — 02.1-02 complete: middleware.ts rewritten with role-based routing (1 min)
 ```
 
 Progress bar (M2):
 ```
-[>         ] 0 / 5 phases complete (plan 1/2 in phase 2.1)
+[>         ] 0 / 5 phases complete (2/2 plans in phase 2.1 — awaiting verification)
 ```
 
 ---
@@ -93,6 +93,8 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | Purchase approval | Separate Phase 2.4 | Distinct user flow, depends on both parent + kid screens |
 | Placeholder styling | Inline styles only (no Tailwind/globals.css) | Scaffold pages isolated from styling system |
 | Legacy kid page | app/kid/page.tsx kept intact | New route is /kid/day (subdirectory), no conflict |
+| Middleware role query | Single family_members query per request | One round-trip covers both root redirect and path guards |
+| Fail-open on DB errors | Only redirect to /onboarding when !membershipError && !membership | Transient DB errors do not lock users out |
 
 ---
 
