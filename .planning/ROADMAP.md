@@ -120,7 +120,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 2.1 role-routing | 2/2 | Complete   | 2026-04-03 |
-| 2.2 parent-center | 0/TBD | Not started | - |
+| 2.2 parent-center | 0/6 | In progress | - |
 | 2.3 kid-screen | 0/TBD | Not started | - |
 | 2.4 shop-approval | 0/TBD | Not started | - |
 | 2.5 notifications-animations | 0/TBD | Not started | - |
@@ -166,7 +166,15 @@ Plans:
 5. Parent creates, edits, and deletes shop items at /parent/shop; auto-approval toggle and starter templates are available
 6. Parent accesses /parent/settings with PIN protection; coin rules are configurable (not hardcoded)
 
-**Plans:** TBD
+**Plans:** 6 plans
+
+Plans:
+- [ ] 02.2-01-PLAN.md — Parent nav shell (dark layout + ParentNav) + /parent/dashboard status cards
+- [ ] 02.2-02-PLAN.md — /parent/daily — child tab selector + embedded DailyModal form
+- [ ] 02.2-03-PLAN.md — /parent/wallets — balance per child, transaction history, manual bonus/penalty, P2P, exchange
+- [ ] 02.2-04-PLAN.md — /parent/analytics — 8-week coin chart, grade distribution, KPI cards
+- [ ] 02.2-05-PLAN.md — /parent/shop — CRUD for shop items, auto-approve toggle, starter templates
+- [ ] 02.2-06-PLAN.md — /parent/settings — PIN protection, configurable coin rules, audit log
 
 ---
 
