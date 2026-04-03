@@ -119,7 +119,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 2.1 role-routing | 0/TBD | Not started | - |
+| 2.1 role-routing | 0/2 | Planned | - |
 | 2.2 parent-center | 0/TBD | Not started | - |
 | 2.3 kid-screen | 0/TBD | Not started | - |
 | 2.4 shop-approval | 0/TBD | Not started | - |
@@ -142,7 +142,11 @@ Plans:
 4. Child visiting /parent/* is redirected to /kid/day
 5. Any authenticated user can access /family/* routes without redirect
 
-**Plans:** TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 02.1-01-PLAN.md — Skeleton route pages: /parent/dashboard, /kid/day, /family placeholders
+- [ ] 02.1-02-PLAN.md — Middleware role-based routing: role fetch + /parent/* and /kid/* guards
 
 ---
 

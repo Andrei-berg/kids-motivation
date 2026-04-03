@@ -2,28 +2,28 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role-Based UI
-status: roadmap_ready
-last_updated: "2026-04-03T00:00:00.000Z"
+status: phase_planned
+last_updated: "2026-04-03T12:00:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
+  total_plans: 2
   completed_plans: 0
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-03 — M2 roadmap created (5 phases)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-03 — Phase 2.1 planned (2 plans)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 2.1 (next to execute)
-Plan: —
-Status: Roadmap ready — awaiting phase planning
-Last activity: 2026-04-03 — M2 roadmap written, 5 phases, 64 requirements mapped
+Phase: 2.1 (ready to execute)
+Plan: 02.1-01 (wave 1)
+Status: Planned — 2 plans, ready for /gsd:execute-phase 2.1
+Last activity: 2026-04-03 — Phase 2.1 planned: 2 plans, 2 waves
 ```
 
 Progress bar (M2):
