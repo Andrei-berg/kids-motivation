@@ -209,4 +209,19 @@
 
 ---
 
-*Документ создан: 2026-03-01. Версия 1.0.*
+## Current Milestone: v2.0 — Role-Based UI
+
+**Goal:** Split the app into two distinct experiences — Parent Center (dark theme, control, data entry) and Kid Screen (bright theme, gamification, own progress) — while keeping all existing backend (lib/, Supabase tables, Google Auth) untouched.
+
+**Target features:**
+- Role detection after Google login → automatic routing (parent→/parent, child→/kid)
+- Parent Center at `/parent/*`: dashboard, daily input, wallets, analytics, shop management, settings
+- Kid Screen at `/kid/*`: my day, wallet, achievements, shop, leaderboard
+- Shared screens at `/family/*`: wallboard, leaderboard
+- Shop + purchase approval flow (child requests → parent approves)
+- Notifications + animations (confetti, streaks, push)
+- Old pages (`/dashboard`, `/wallet`, `/analytics`) removed after new ones are ready
+
+---
+
+*Документ создан: 2026-03-01. Обновлён: 2026-04-03 — старт Milestone v2.0.*
