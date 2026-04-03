@@ -340,3 +340,91 @@ REQ-SEC-002, REQ-SEC-006, REQ-SCH-006
 ---
 
 *Документ создан: 2026-03-01. Обновлён: 2026-04-03 — добавлены требования Milestone 2 (ROLE, PARENT-UI, KID-UI).*
+
+---
+
+## Milestone 2 — Traceability (Phase Mapping)
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| REQ-ROLE-001 | Phase 2.1 | Pending |
+| REQ-ROLE-002 | Phase 2.1 | Pending |
+| REQ-ROLE-003 | Phase 2.1 | Pending |
+| REQ-ROLE-004 | Phase 2.1 | Pending |
+| REQ-PARENT-001 | Phase 2.2 | Pending |
+| REQ-PARENT-002 | Phase 2.2 | Pending |
+| REQ-PARENT-003 | Phase 2.2 | Pending |
+| REQ-PARENT-004 | Phase 2.2 | Pending |
+| REQ-PARENT-005 | Phase 2.2 | Pending |
+| REQ-PARENT-006 | Phase 2.2 | Pending |
+| REQ-PARENT-007 | Phase 2.2 | Pending |
+| REQ-DAY-002 | Phase 2.2 | Pending |
+| REQ-DAY-003 | Phase 2.2 | Pending |
+| REQ-DAY-004 | Phase 2.2 | Pending |
+| REQ-DAY-005 | Phase 2.2 | Pending |
+| REQ-DAY-006 | Phase 2.2 | Pending |
+| REQ-DAY-007 | Phase 2.2 | Pending |
+| REQ-DAY-008 | Phase 2.2 | Pending |
+| REQ-DAY-009 | Phase 2.2 | Pending |
+| REQ-DAY-010 | Phase 2.2 | Pending |
+| REQ-DAY-011 | Phase 2.2 | Pending |
+| REQ-DAY-013 | Phase 2.2 | Pending |
+| REQ-COIN-001 | Phase 2.2 | Pending |
+| REQ-COIN-002 | Phase 2.2 | Pending |
+| REQ-COIN-003 | Phase 2.2 | Pending |
+| REQ-COIN-004 | Phase 2.2 | Pending |
+| REQ-COIN-005 | Phase 2.2 | Pending |
+| REQ-COIN-006 | Phase 2.2 | Pending |
+| REQ-COIN-007 | Phase 2.2 | Pending |
+| REQ-COIN-008 | Phase 2.2 | Pending |
+| REQ-COIN-009 | Phase 2.2 | Pending |
+| REQ-COIN-010 | Phase 2.2 | Pending |
+| REQ-COIN-011 | Phase 2.2 | Pending |
+| REQ-WAL-001 | Phase 2.2 | Pending |
+| REQ-WAL-002 | Phase 2.2 | Pending |
+| REQ-WAL-003 | Phase 2.2 | Pending |
+| REQ-WAL-004 | Phase 2.2 | Pending |
+| REQ-WAL-005 | Phase 2.2 | Pending |
+| REQ-WAL-006 | Phase 2.2 | Pending |
+| REQ-SHOP-001 | Phase 2.2 | Pending |
+| REQ-SHOP-002 | Phase 2.2 | Pending |
+| REQ-SHOP-005 | Phase 2.2 | Pending |
+| REQ-SHOP-006 | Phase 2.2 | Pending |
+| REQ-ANL-001 | Phase 2.2 | Pending |
+| REQ-ANL-002 | Phase 2.2 | Pending |
+| REQ-ANL-003 | Phase 2.2 | Pending |
+| REQ-ANL-004 | Phase 2.2 | Pending |
+| REQ-ANL-005 | Phase 2.2 | Pending |
+| REQ-ANL-006 | Phase 2.2 | Pending |
+| REQ-UX-002 | Phase 2.2 | Pending |
+| REQ-UX-003 | Phase 2.2 | Pending |
+| REQ-SEC-002 | Phase 2.2 | Pending |
+| REQ-SEC-006 | Phase 2.2 | Pending |
+| REQ-KID-001 | Phase 2.3 | Pending |
+| REQ-KID-002 | Phase 2.3 | Pending |
+| REQ-KID-003 | Phase 2.3 | Pending |
+| REQ-KID-004 | Phase 2.3 | Pending |
+| REQ-KID-005 | Phase 2.3 | Pending |
+| REQ-KID-006 | Phase 2.3 | Pending |
+| REQ-KID-007 | Phase 2.3 | Pending |
+| REQ-SHOP-003 | Phase 2.3 | Pending |
+| REQ-BAD-001 | Phase 2.3 | Pending |
+| REQ-BAD-002 | Phase 2.3 | Pending |
+| REQ-BAD-004 | Phase 2.3 | Pending |
+| REQ-BAD-005 | Phase 2.3 | Pending |
+| REQ-BAD-006 | Phase 2.3 | Pending |
+| REQ-STR-001 | Phase 2.3 | Pending |
+| REQ-STR-002 | Phase 2.3 | Pending |
+| REQ-STR-003 | Phase 2.3 | Pending |
+| REQ-STR-004 | Phase 2.3 | Pending |
+| REQ-SHOP-004 | Phase 2.4 | Pending |
+| REQ-SHOP-007 | Phase 2.4 | Pending |
+| REQ-SHOP-008 | Phase 2.4 | Pending |
+| REQ-PARENT-008 | Phase 2.4 | Pending |
+| REQ-UX-004 | Phase 2.5 | Pending |
+| REQ-BAD-003 | Phase 2.5 | Pending |
+| REQ-STR-005 | Phase 2.5 | Pending |
+| REQ-STR-006 | Phase 2.5 | Pending |
+| REQ-SCH-004 | Phase 2.5 | Pending |
+| REQ-SCH-005 | Phase 2.5 | Pending |
+| REQ-SCH-006 | Phase 2.5 | Pending |

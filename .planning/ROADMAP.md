@@ -105,65 +105,121 @@ Plans:
 
 ---
 
-## Phases — Milestone 2: Core Loop
+## Phases — Milestone 2: Role-Based UI
 
-### Phase 2.1: coins-engine
+### Phases
 
-**Goal:** Flexible coin rules engine where parents configure rewards/penalties per category. Coins auto-calculated on task confirmation.
+- [ ] **Phase 2.1: role-routing** — Role detection after login + middleware guards for /parent/* and /kid/* routes
+- [ ] **Phase 2.2: parent-center** — Full parent UI: dark theme dashboard, daily input, wallets, analytics, shop management, settings
+- [ ] **Phase 2.3: kid-screen** — Full kid UI: bright theme, my day, wallet, achievements, shop browse, leaderboard
+- [ ] **Phase 2.4: shop-approval** — Purchase request flow: child requests → parent approves/rejects → coins deducted
+- [ ] **Phase 2.5: notifications-animations** — Push notifications, confetti, badge animations, streak alerts
 
-**Requirements:** REQ-DAY-001, REQ-DAY-008, REQ-DAY-009, REQ-DAY-010, REQ-DAY-011, REQ-DAY-013, REQ-COIN-001, REQ-COIN-002, REQ-COIN-003, REQ-COIN-004, REQ-COIN-005, REQ-COIN-006, REQ-COIN-007, REQ-COIN-008, REQ-COIN-009, REQ-COIN-010, REQ-COIN-011
+### Progress Table
 
-**Success Criteria:**
-1. Parent can configure coin amounts per category (not hardcoded)
-2. Child marks task as done — parent confirms — coins added automatically
-3. Streak bonuses fire at correct thresholds
-4. Manual bonus/penalty from parent works
-5. Full transaction history available
-
----
-
-### Phase 2.2: wallet-shop
-
-**Goal:** Every child has a personal wallet. Parents create shop items. Children buy items. P2P transfers between siblings work.
-
-**Requirements:** REQ-DAY-002, REQ-DAY-003, REQ-DAY-004, REQ-DAY-005, REQ-DAY-006, REQ-DAY-007, REQ-WAL-001, REQ-WAL-002, REQ-WAL-003, REQ-WAL-004, REQ-WAL-005, REQ-WAL-006, REQ-SHOP-001, REQ-SHOP-002, REQ-SHOP-003, REQ-SHOP-004, REQ-SHOP-005, REQ-SHOP-006, REQ-SHOP-007, REQ-SHOP-008
-
-**Success Criteria:**
-1. Wallet balance visible, updates in real-time
-2. Parent creates shop item → child sees it → buys → parent approves
-3. P2P transfer between children in same family works
-4. Coin-to-money exchange at parent-defined rate works
-5. Transaction history shows all operations
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 2.1 role-routing | 0/TBD | Not started | - |
+| 2.2 parent-center | 0/TBD | Not started | - |
+| 2.3 kid-screen | 0/TBD | Not started | - |
+| 2.4 shop-approval | 0/TBD | Not started | - |
+| 2.5 notifications-animations | 0/TBD | Not started | - |
 
 ---
 
-### Phase 2.3: badges-achievements
+### Phase 2.1: role-routing
 
-**Goal:** Badges awarded automatically. XP and levels visible. Achievement showcase in child profile.
+**Goal:** After login every user is routed to the correct experience — parents land on /parent, children land on /kid — and cross-role access is blocked at the middleware level.
 
-**Requirements:** REQ-STR-001, REQ-STR-002, REQ-STR-003, REQ-STR-004, REQ-BAD-001, REQ-BAD-002, REQ-BAD-003, REQ-BAD-004, REQ-BAD-005, REQ-BAD-006
+**Depends on:** Phase 1.1 (Supabase Auth + family_members.role)
+
+**Requirements:** REQ-ROLE-001, REQ-ROLE-002, REQ-ROLE-003, REQ-ROLE-004
 
 **Success Criteria:**
-1. Minimum 10 badges defined
-2. Badge awarded automatically when condition met
-3. Badge award animation shown to child
-4. Streaks display current + best record
-5. XP + level visible on child profile
+1. Parent logs in → automatically redirected to /parent/dashboard (no manual navigation needed)
+2. Child logs in → automatically redirected to /kid/day
+3. Parent visiting /kid/* is redirected to /parent/dashboard
+4. Child visiting /parent/* is redirected to /kid/day
+5. Any authenticated user can access /family/* routes without redirect
+
+**Plans:** TBD
 
 ---
 
-### Phase 2.4: analytics
+### Phase 2.2: parent-center
 
-**Goal:** Child sees personal progress charts. Parent sees all children at a glance. 8 weeks of history available.
+**Goal:** Parents have a complete dark-theme control center at /parent/* — they can enter daily data for each child, view and adjust wallets, review analytics, manage the shop catalogue, and configure family settings.
 
-**Requirements:** REQ-ANL-001, REQ-ANL-002, REQ-ANL-003, REQ-ANL-004, REQ-ANL-005, REQ-ANL-006
+**Depends on:** Phase 2.1 (role routing), Phase 1.3 (categories)
+
+**Requirements:** REQ-PARENT-001, REQ-PARENT-002, REQ-PARENT-003, REQ-PARENT-004, REQ-PARENT-005, REQ-PARENT-006, REQ-PARENT-007, REQ-DAY-002, REQ-DAY-003, REQ-DAY-004, REQ-DAY-005, REQ-DAY-006, REQ-DAY-007, REQ-DAY-008, REQ-DAY-009, REQ-DAY-010, REQ-DAY-011, REQ-DAY-013, REQ-COIN-001, REQ-COIN-002, REQ-COIN-003, REQ-COIN-004, REQ-COIN-005, REQ-COIN-006, REQ-COIN-007, REQ-COIN-008, REQ-COIN-009, REQ-COIN-010, REQ-COIN-011, REQ-WAL-001, REQ-WAL-002, REQ-WAL-003, REQ-WAL-004, REQ-WAL-005, REQ-WAL-006, REQ-SHOP-001, REQ-SHOP-002, REQ-SHOP-005, REQ-SHOP-006, REQ-ANL-001, REQ-ANL-002, REQ-ANL-003, REQ-ANL-004, REQ-ANL-005, REQ-ANL-006, REQ-UX-002, REQ-UX-003, REQ-SEC-002, REQ-SEC-006
 
 **Success Criteria:**
-1. 8-week coin progress chart works for any child
-2. Grade distribution pie chart works
-3. KPI cards: best week, average grade, total coins
-4. Parent view shows all children in one screen
-5. Analytics work without finalization (raw data)
+1. Parent opens /parent/dashboard and sees today's status for all children (tasks done, coins earned today)
+2. Parent fills in daily input form for a child (grades, room checkboxes, behaviour, sport, sections) and coins are calculated and credited automatically on save
+3. Parent opens /parent/wallets and sees each child's balance, can apply a manual bonus or penalty, and sees full transaction history
+4. Parent opens /parent/analytics and sees an 8-week coin chart, grade distribution, and KPI cards for any child
+5. Parent creates, edits, and deletes shop items at /parent/shop; auto-approval toggle and starter templates are available
+6. Parent accesses /parent/settings with PIN protection; coin rules are configurable (not hardcoded)
+
+**Plans:** TBD
+
+---
+
+### Phase 2.3: kid-screen
+
+**Goal:** Children have their own bright, gamified experience at /kid/* — they see today's tasks, their wallet, their achievements and streaks, and can browse the shop.
+
+**Depends on:** Phase 2.1 (role routing), Phase 2.2 (coin engine + wallet + shop catalogue)
+
+**Requirements:** REQ-KID-001, REQ-KID-002, REQ-KID-003, REQ-KID-004, REQ-KID-005, REQ-KID-006, REQ-KID-007, REQ-SHOP-003, REQ-BAD-001, REQ-BAD-002, REQ-BAD-004, REQ-BAD-005, REQ-BAD-006, REQ-STR-001, REQ-STR-002, REQ-STR-003, REQ-STR-004
+
+**Success Criteria:**
+1. Child opens /kid/day and sees their tasks for today with checkboxes; marking a task done is reflected immediately
+2. Child opens /kid/wallet and sees their current coin balance and a scrollable transaction history showing only their own data
+3. Child opens /kid/achievements and sees their badge showcase, current streaks with record, XP total, and level label
+4. At least 10 badges are defined and award automatically when their condition is met; new badge appears in the showcase after earning
+5. Child browses /kid/shop and can tap any item to initiate a purchase request; they cannot see sibling wallets or grades
+
+**Plans:** TBD
+
+---
+
+### Phase 2.4: shop-approval
+
+**Goal:** The purchase flow is complete end-to-end — a child's request freezes the coins, the parent sees the pending request on the dashboard, approves or rejects it, and the wallet updates accordingly.
+
+**Depends on:** Phase 2.2 (shop catalogue, wallet engine), Phase 2.3 (kid shop browse)
+
+**Requirements:** REQ-SHOP-004, REQ-SHOP-007, REQ-SHOP-008, REQ-PARENT-008
+
+**Success Criteria:**
+1. Child taps "Buy" on a shop item → a purchase request is created and coins are frozen (not yet deducted)
+2. Parent sees pending purchase requests prominently on /parent/dashboard without navigating away
+3. Parent approves a request → coins deducted, item marked as purchased; parent rejects → coins unfrozen
+4. Parent can mark an approved item as "delivered" to close the loop
+5. Full purchase history (pending, approved, rejected, delivered) is visible per child
+
+**Plans:** TBD
+
+---
+
+### Phase 2.5: notifications-animations
+
+**Goal:** Key moments — earning coins, gaining a badge, breaking a streak, missing a task — are accompanied by animations and push notifications that make the experience feel alive.
+
+**Depends on:** Phase 2.2 (coin engine), Phase 2.3 (kid screen + badges + streaks)
+
+**Requirements:** REQ-UX-004, REQ-BAD-003, REQ-STR-005, REQ-STR-006, REQ-SCH-004, REQ-SCH-005, REQ-SCH-006
+
+**Success Criteria:**
+1. Earning coins shows a number-flies-up animation; receiving a badge shows a full-screen celebration with confetti
+2. Push notification fires at the configured reminder time for each scheduled task
+3. Child receives a push notification when they break a streak
+4. Child receives a push notification when they set a new streak record
+5. Parent receives a push notification when a child misses a required task
+
+**Plans:** TBD
 
 ---
 
@@ -402,4 +458,4 @@ Plans:
 
 ---
 
-*Document created: 2026-03-01. Version 1.0.*
+*Document created: 2026-03-01. Updated: 2026-04-03 — Milestone v2.0 Role-Based UI phases added.*

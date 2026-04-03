@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role-Based UI
-status: defining_requirements
+status: roadmap_ready
 last_updated: "2026-04-03T00:00:00.000Z"
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -13,17 +13,22 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-03 — Milestone v2.0 started
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-03 — M2 roadmap created (5 phases)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: Not started (defining requirements)
+Phase: 2.1 (next to execute)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-03 — Milestone v2.0 started
+Status: Roadmap ready — awaiting phase planning
+Last activity: 2026-04-03 — M2 roadmap written, 5 phases, 64 requirements mapped
+```
+
+Progress bar (M2):
+```
+[          ] 0 / 5 phases complete
 ```
 
 ---
@@ -41,12 +46,14 @@ All 4 phases shipped:
 ## Milestone 2 — Role-Based UI (IN PROGRESS)
 
 ```
-Phase 2.1  [ ] Role detection + routing
-Phase 2.2  [ ] Parent Center
-Phase 2.3  [ ] Kid Screen
-Phase 2.4  [ ] Shop + purchase approval flow
-Phase 2.5  [ ] Notifications + animations
+Phase 2.1  [ ] role-routing         — REQ-ROLE-001–004 (4 reqs)
+Phase 2.2  [ ] parent-center        — REQ-PARENT-001–007, REQ-DAY-002–013, REQ-COIN-001–011, REQ-WAL-001–006, REQ-SHOP-001–002/005–006, REQ-ANL-001–006, REQ-UX-002–003, REQ-SEC-002/006 (46 reqs)
+Phase 2.3  [ ] kid-screen           — REQ-KID-001–007, REQ-SHOP-003, REQ-BAD-001–002/004–006, REQ-STR-001–004 (18 reqs)
+Phase 2.4  [ ] shop-approval        — REQ-SHOP-004/007–008, REQ-PARENT-008 (4 reqs)
+Phase 2.5  [ ] notifications-anims  — REQ-UX-004, REQ-BAD-003, REQ-STR-005–006, REQ-SCH-004–006 (7 reqs)
 ```
+
+Total M2 requirements mapped: 79
 
 ---
 
@@ -55,7 +62,7 @@ Phase 2.5  [ ] Notifications + animations
 See: .planning/PROJECT.md (updated 2026-04-03)
 
 **Core value:** Any family can register and use the app — children earn coins for real effort, spend them on real rewards
-**Current focus:** Milestone v2.0 — Role-Based UI
+**Current focus:** Milestone v2.0 — Role-Based UI → Phase 2.1: role-routing
 
 ---
 
@@ -81,6 +88,9 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | UI split | /parent/* + /kid/* + /family/* | Role-based routing from the start |
 | Backend | Keep existing lib/ + Supabase | No backend rewrite — frontend only |
 | Old pages | Remove after new ones ready | Avoid dead code accumulation |
+| Phase order | role-routing first | Everything else depends on correct routing |
+| Coin engine | Built in Phase 2.2 (parent center) | Parent daily input is where coins originate |
+| Purchase approval | Separate Phase 2.4 | Distinct user flow, depends on both parent + kid screens |
 
 ---
 
