@@ -2,33 +2,33 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role-Based UI
-status: phase_planned
-last_updated: "2026-04-03T12:00:00.000Z"
+status: phase_in_progress
+last_updated: "2026-04-03T06:17:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 2
-  completed_plans: 0
+  completed_plans: 1
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-03 — Phase 2.1 planned (2 plans)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-03 — Phase 2.1 plan 01 complete
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 2.1 (ready to execute)
-Plan: 02.1-01 (wave 1)
-Status: Planned — 2 plans, ready for /gsd:execute-phase 2.1
-Last activity: 2026-04-03 — Phase 2.1 planned: 2 plans, 2 waves
+Phase: 2.1 (in progress)
+Plan: 02.1-02 (wave 2) — next to execute
+Status: Plan 01 complete (skeleton pages). Plan 02 (middleware) ready to execute.
+Last activity: 2026-04-03 — 02.1-01 complete: 3 placeholder pages created (8 min)
 ```
 
 Progress bar (M2):
 ```
-[          ] 0 / 5 phases complete
+[>         ] 0 / 5 phases complete (plan 1/2 in phase 2.1)
 ```
 
 ---
@@ -91,6 +91,8 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | Phase order | role-routing first | Everything else depends on correct routing |
 | Coin engine | Built in Phase 2.2 (parent center) | Parent daily input is where coins originate |
 | Purchase approval | Separate Phase 2.4 | Distinct user flow, depends on both parent + kid screens |
+| Placeholder styling | Inline styles only (no Tailwind/globals.css) | Scaffold pages isolated from styling system |
+| Legacy kid page | app/kid/page.tsx kept intact | New route is /kid/day (subdirectory), no conflict |
 
 ---
 

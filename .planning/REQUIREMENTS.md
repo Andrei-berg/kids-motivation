@@ -347,10 +347,10 @@ REQ-SEC-002, REQ-SEC-006, REQ-SCH-006
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| REQ-ROLE-001 | Phase 2.1 | Pending |
-| REQ-ROLE-002 | Phase 2.1 | Pending |
-| REQ-ROLE-003 | Phase 2.1 | Pending |
-| REQ-ROLE-004 | Phase 2.1 | Pending |
+| REQ-ROLE-001 | Phase 2.1 | Complete |
+| REQ-ROLE-002 | Phase 2.1 | Complete |
+| REQ-ROLE-003 | Phase 2.1 | Complete |
+| REQ-ROLE-004 | Phase 2.1 | Complete |
 | REQ-PARENT-001 | Phase 2.2 | Pending |
 | REQ-PARENT-002 | Phase 2.2 | Pending |
 | REQ-PARENT-003 | Phase 2.2 | Pending |
