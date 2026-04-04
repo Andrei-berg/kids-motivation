@@ -110,7 +110,7 @@ Plans:
 ### Phases
 
 - [x] **Phase 2.1: role-routing** — Role detection after login + middleware guards for /parent/* and /kid/* routes (completed 2026-04-03)
-- [ ] **Phase 2.2: parent-center** — Full parent UI: dark theme dashboard, daily input, wallets, analytics, shop management, settings
+- [x] **Phase 2.2: parent-center** — Full parent UI: dark theme dashboard, daily input, wallets, analytics, shop management, settings (completed 2026-04-04)
 - [ ] **Phase 2.3: kid-screen** — Full kid UI: bright theme, my day, wallet, achievements, shop browse, leaderboard
 - [ ] **Phase 2.4: shop-approval** — Purchase request flow: child requests → parent approves/rejects → coins deducted
 - [ ] **Phase 2.5: notifications-animations** — Push notifications, confetti, badge animations, streak alerts
@@ -120,7 +120,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 2.1 role-routing | 2/2 | Complete   | 2026-04-03 |
-| 2.2 parent-center | 5/6 | In Progress|  |
+| 2.2 parent-center | 6/6 | Complete   | 2026-04-04 |
 | 2.3 kid-screen | 0/TBD | Not started | - |
 | 2.4 shop-approval | 0/TBD | Not started | - |
 | 2.5 notifications-animations | 0/TBD | Not started | - |
@@ -166,7 +166,7 @@ Plans:
 5. Parent creates, edits, and deletes shop items at /parent/shop; auto-approval toggle and starter templates are available
 6. Parent accesses /parent/settings with PIN protection; coin rules are configurable (not hardcoded)
 
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans complete
 
 Plans:
 - [x] 02.2-01-PLAN.md — Parent nav shell (dark layout + ParentNav) + /parent/dashboard status cards

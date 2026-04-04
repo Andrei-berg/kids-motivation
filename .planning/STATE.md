@@ -103,6 +103,8 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | Parent PIN storage | SHA-256 hash in localStorage (key: parent_pin_hash) | No DB round-trip; zero server dependency for PIN verification |
 | auto_approve type | Partial<Reward> & { auto_approve?: boolean } intersection | Avoids modifying canonical Reward type until DB migration runs |
 | Shop admin view | getRewards({ activeOnly: false }) | Parent needs to see inactive items to re-enable them |
+| createP2PTransfer params | Use actual repo signature (from_child_id, to_child_id, amount, transfer_type) | Plan's simplified interface was inaccurate vs actual implementation |
+| Exchange panel default | Collapsible (collapsed by default) | Reduces visual noise on /parent/wallets page |
 
 ---
 
