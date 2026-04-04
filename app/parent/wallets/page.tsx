@@ -6,9 +6,14 @@ import {
   getWallet,
   getTransactions,
   getWalletSettings,
+  updateWalletCoins,
+  createP2PTransfer,
+  exchangeCoins,
+  requestWithdrawal,
+  getWithdrawals,
 } from '@/lib/repositories/wallet.repo'
 import type { Child } from '@/lib/models/child.types'
-import type { Wallet, WalletTransaction, WalletSettings } from '@/lib/models/wallet.types'
+import type { Wallet, WalletTransaction, WalletSettings, CashWithdrawal } from '@/lib/models/wallet.types'
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr)
@@ -58,8 +63,8 @@ export default function WalletsPage() {
   const [withdrawalError, setWithdrawalError] = useState('')
   const [withdrawalSuccess, setWithdrawalSuccess] = useState(false)
   const [withdrawalSubmitting, setWithdrawalSubmitting] = useState(false)
-  const [pendingWithdrawals, setPendingWithdrawals] = useState<import('@/lib/models/wallet.types').CashWithdrawal[]>([])
-  const [approvedWithdrawals, setApprovedWithdrawals] = useState<import('@/lib/models/wallet.types').CashWithdrawal[]>([])
+  const [pendingWithdrawals, setPendingWithdrawals] = useState<CashWithdrawal[]>([])
+  const [approvedWithdrawals, setApprovedWithdrawals] = useState<CashWithdrawal[]>([])
 
   // Load children and settings on mount
   useEffect(() => {
@@ -91,8 +96,8 @@ export default function WalletsPage() {
       const [w, txs, pending, approved] = await Promise.all([
         getWallet(childId),
         getTransactions(childId, 50),
-        import('@/lib/repositories/wallet.repo').then(m => m.getWithdrawals(childId, 'pending')),
-        import('@/lib/repositories/wallet.repo').then(m => m.getWithdrawals(childId, 'approved')),
+        getWithdrawals(childId, 'pending'),
+        getWithdrawals(childId, 'approved'),
       ])
       setWallet(w)
       setTransactions(txs)
@@ -116,8 +121,8 @@ export default function WalletsPage() {
   async function refreshWithdrawals() {
     if (!selectedChildId) return
     const [pending, approved] = await Promise.all([
-      import('@/lib/repositories/wallet.repo').then(m => m.getWithdrawals(selectedChildId, 'pending')),
-      import('@/lib/repositories/wallet.repo').then(m => m.getWithdrawals(selectedChildId, 'approved')),
+      getWithdrawals(selectedChildId, 'pending'),
+      getWithdrawals(selectedChildId, 'approved'),
     ])
     setPendingWithdrawals(pending)
     setApprovedWithdrawals(approved.slice(0, 5))
@@ -159,7 +164,6 @@ export default function WalletsPage() {
     if (!selectedChildId) return
     setAdjustSubmitting(true)
     try {
-      const { updateWalletCoins } = await import('@/lib/repositories/wallet.repo')
       await updateWalletCoins(
         selectedChildId,
         amount,
@@ -189,7 +193,6 @@ export default function WalletsPage() {
     if (!selectedChildId || !p2pToChildId) return
     setP2pSubmitting(true)
     try {
-      const { createP2PTransfer } = await import('@/lib/repositories/wallet.repo')
       await createP2PTransfer({
         from_child_id: selectedChildId,
         to_child_id: p2pToChildId,
@@ -219,7 +222,6 @@ export default function WalletsPage() {
     if (!selectedChildId) return
     setExchangeSubmitting(true)
     try {
-      const { exchangeCoins } = await import('@/lib/repositories/wallet.repo')
       await exchangeCoins(selectedChildId, coins)
       await refreshWalletAndTransactions()
       setExchangeCoinsInput('')
@@ -243,7 +245,6 @@ export default function WalletsPage() {
     if (!selectedChildId) return
     setWithdrawalSubmitting(true)
     try {
-      const { requestWithdrawal } = await import('@/lib/repositories/wallet.repo')
       await requestWithdrawal(selectedChildId, amount)
       setWithdrawalAmount('')
       await refreshWithdrawals()
