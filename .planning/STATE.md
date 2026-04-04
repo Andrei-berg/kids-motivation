@@ -3,32 +3,32 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role-Based UI
 status: phase_in_progress
-last_updated: "2026-04-03T06:14:00.000Z"
+last_updated: "2026-04-04T17:05:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 8
+  completed_plans: 3
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-03 — Phase 2.1 plan 02 complete (awaiting checkpoint verification)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-04 — Phase 2.2 plan 01 complete (parent shell + dashboard)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 2.1 (complete — awaiting human verification checkpoint)
-Plan: 02.1-02 (wave 2) — COMPLETE (middleware rewritten)
-Status: Both plans complete. Awaiting checkpoint:human-verify for middleware routing tests.
-Last activity: 2026-04-03 — 02.1-02 complete: middleware.ts rewritten with role-based routing (1 min)
+Phase: 2.2 (in progress — plan 01 complete)
+Plan: 02.2-01 (wave 1) — COMPLETE (parent shell + dashboard)
+Status: Plan 01 complete. Next: 02.2-02 /parent/daily DailyModal
+Last activity: 2026-04-04 — 02.2-01 complete: dark-theme parent layout, ParentNav, /parent/dashboard
 ```
 
 Progress bar (M2):
 ```
-[>         ] 0 / 5 phases complete (2/2 plans in phase 2.1 — awaiting verification)
+[>         ] 0 / 5 phases complete (1/6 plans in phase 2.2 done)
 ```
 
 ---
@@ -95,6 +95,8 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | Legacy kid page | app/kid/page.tsx kept intact | New route is /kid/day (subdirectory), no conflict |
 | Middleware role query | Single family_members query per request | One round-trip covers both root redirect and path guards |
 | Fail-open on DB errors | Only redirect to /onboarding when !membershipError && !membership | Transient DB errors do not lock users out |
+| ParentNav responsive | Two separate nav elements (desktop top + mobile bottom) | Simpler than JS resize detection, pure CSS |
+| Middleware /parent bypass | Added /parent to isPublicPath for dev | Auth not yet wired; explicit TODO to remove |
 
 ---
 
