@@ -116,6 +116,7 @@ export default function ParentDashboardPage() {
         )
         setStatuses(results)
       } catch (err) {
+        console.error('[dashboard] load error:', err)
         setError(err instanceof Error ? err.message : 'Ошибка загрузки данных')
       }
     }

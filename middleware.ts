@@ -9,7 +9,8 @@ export async function middleware(request: NextRequest) {
   // Classify the path
   const isPublicPath =
     pathname.startsWith('/auth') ||
-    pathname === '/'
+    pathname === '/' ||
+    pathname.startsWith('/parent') // TODO: remove when parent auth is wired up
   const isOnboardingPath = pathname.startsWith('/onboarding')
   const isParentPath = pathname.startsWith('/parent')
   const isKidPath = pathname.startsWith('/kid')
