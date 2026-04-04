@@ -3,32 +3,32 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role-Based UI
 status: phase_in_progress
-last_updated: "2026-04-04T17:05:00.000Z"
+last_updated: "2026-04-04T17:26:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 8
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-04 — Phase 2.2 plan 01 complete (parent shell + dashboard)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-04 — Phase 2.2 plan 04 complete (/parent/analytics)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 2.2 (in progress — plan 01 complete)
-Plan: 02.2-01 (wave 1) — COMPLETE (parent shell + dashboard)
-Status: Plan 01 complete. Next: 02.2-02 /parent/daily DailyModal
-Last activity: 2026-04-04 — 02.2-01 complete: dark-theme parent layout, ParentNav, /parent/dashboard
+Phase: 2.2 (in progress — plan 04 complete)
+Plan: 02.2-04 (wave 2) — COMPLETE (/parent/analytics)
+Status: Plan 04 complete. Next: 02.2-05 /parent/shop
+Last activity: 2026-04-04 — 02.2-04 complete: /parent/analytics with child tabs, 8-week chart, grade distribution pie, KPI cards
 ```
 
 Progress bar (M2):
 ```
-[>         ] 0 / 5 phases complete (1/6 plans in phase 2.2 done)
+[>         ] 0 / 5 phases complete (4/6 plans in phase 2.2 done)
 ```
 
 ---
@@ -97,6 +97,7 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | Fail-open on DB errors | Only redirect to /onboarding when !membershipError && !membership | Transient DB errors do not lock users out |
 | ParentNav responsive | Two separate nav elements (desktop top + mobile bottom) | Simpler than JS resize detection, pure CSS |
 | Middleware /parent bypass | Added /parent to isPublicPath for dev | Auth not yet wired; explicit TODO to remove |
+| Grade distribution source | Direct Supabase query on subject_grades | getWeekScore only returns aggregated coin numbers, not raw grade records |
 
 ---
 
