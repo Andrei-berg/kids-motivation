@@ -223,7 +223,11 @@ export async function getRewards(filters?: {
   return data
 }
 
-export async function addReward(reward: Partial<Reward>): Promise<Reward> {
+// NOTE: auto_approve field requires DB migration:
+// ALTER TABLE rewards ADD COLUMN IF NOT EXISTS auto_approve BOOLEAN DEFAULT false;
+// Run in Supabase SQL Editor before auto-approve takes effect.
+// The field is passed through here; the column must exist in Supabase to persist.
+export async function addReward(reward: Partial<Reward> & { auto_approve?: boolean }): Promise<Reward> {
   const { data, error } = await supabase
     .from('rewards')
     .insert([reward])
@@ -234,7 +238,7 @@ export async function addReward(reward: Partial<Reward>): Promise<Reward> {
   return data
 }
 
-export async function updateReward(rewardId: string, updates: Partial<Reward>): Promise<Reward> {
+export async function updateReward(rewardId: string, updates: Partial<Reward> & { auto_approve?: boolean }): Promise<Reward> {
   const { data, error } = await supabase
     .from('rewards')
     .update(updates)
