@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { api } from '@/lib/api'
 import { flexibleApi, Subject, ExerciseType } from '@/lib/flexible-api'
 import { getSectionsForDate, markSectionVisit, Section, SectionVisit, ExtraActivity, getExtraActivities, getActivityLogs, saveActivityLogs } from '@/lib/expenses-api'
-import { updateStreaks } from '@/lib/streaks'
+import { updateStreaks, getStreakBonuses } from '@/lib/streaks'
+import { updateWalletCoins } from '@/lib/wallet-api'
 import { checkAndAwardBadges } from '@/lib/badges'
 import { getGradeColor } from '@/utils/helpers'
 import { triggerConfetti } from '@/utils/confetti'
@@ -417,6 +418,13 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
       await Promise.all([saveDay, saveGrades, saveExercises, saveSections, saveReading, saveActivities])
 
       await updateStreaks(childId, date)
+
+      // Award streak bonus coins if any threshold was crossed (REQ-COIN-007, REQ-COIN-008)
+      const bonus = await getStreakBonuses(childId)
+      if (bonus > 0) {
+        await updateWalletCoins(childId, bonus, 'streak_bonus', '🔥')
+      }
+
       const badges = await checkAndAwardBadges(childId, date)
       if (badges.length > 0) { triggerConfetti(); setStatus('🎉 Готово! Получен бейдж!') }
       else { setStatus('✅ Сохранено!') }
