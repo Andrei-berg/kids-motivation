@@ -3,32 +3,32 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role-Based UI
 status: phase_in_progress
-last_updated: "2026-04-04T17:35:00.000Z"
+last_updated: "2026-04-04T18:30:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 8
-  completed_plans: 4
+  completed_plans: 6
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-04 — Phase 2.2 plan 02 SUMMARY created (/parent/daily + streak bonus wiring)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-04 — Phase 2.2 plan 05 complete (/parent/shop CRUD with starter templates)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 2.2 (in progress — plan 04 complete)
-Plan: 02.2-04 (wave 2) — COMPLETE (/parent/analytics)
-Status: Plan 04 complete. Next: 02.2-05 /parent/shop
-Last activity: 2026-04-04 — 02.2-04 complete: /parent/analytics with child tabs, 8-week chart, grade distribution pie, KPI cards
+Phase: 2.2 (in progress — plan 05 complete)
+Plan: 02.2-05 (wave 2) — COMPLETE (/parent/shop)
+Status: Plan 05 complete. Next: 02.2-06 final phase plan
+Last activity: 2026-04-04 — 02.2-05 complete: /parent/shop CRUD (list, create, edit, delete, starter templates, auto-approve toggle)
 ```
 
 Progress bar (M2):
 ```
-[>         ] 0 / 5 phases complete (4/6 plans in phase 2.2 done)
+[>         ] 0 / 5 phases complete (5/6 plans in phase 2.2 done)
 ```
 
 ---
@@ -100,6 +100,8 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | Grade distribution source | Direct Supabase query on subject_grades | getWeekScore only returns aggregated coin numbers, not raw grade records |
 | DailyModal embed mode | isOpen=true + onClose no-op in /parent/daily | Parent daily page always shows form, not in modal overlay |
 | Streak bonus ordering | updateStreaks() first, then getStreakBonuses() | Must update counters before reading thresholds |
+| auto_approve type | Partial<Reward> & { auto_approve?: boolean } intersection | Avoids modifying canonical Reward type until DB migration runs |
+| Shop admin view | getRewards({ activeOnly: false }) | Parent needs to see inactive items to re-enable them |
 
 ---
 

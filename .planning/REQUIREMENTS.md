@@ -355,7 +355,7 @@ REQ-SEC-002, REQ-SEC-006, REQ-SCH-006
 | REQ-PARENT-002 | Phase 2.2 | Complete |
 | REQ-PARENT-003 | Phase 2.2 | Pending |
 | REQ-PARENT-004 | Phase 2.2 | Complete |
-| REQ-PARENT-005 | Phase 2.2 | Pending |
+| REQ-PARENT-005 | Phase 2.2 | Complete |
 | REQ-PARENT-006 | Phase 2.2 | Pending |
 | REQ-PARENT-007 | Phase 2.2 | Complete |
 | REQ-DAY-002 | Phase 2.2 | Complete |
@@ -386,10 +386,10 @@ REQ-SEC-002, REQ-SEC-006, REQ-SCH-006
 | REQ-WAL-004 | Phase 2.2 | Pending |
 | REQ-WAL-005 | Phase 2.2 | Pending |
 | REQ-WAL-006 | Phase 2.2 | Pending |
-| REQ-SHOP-001 | Phase 2.2 | Pending |
-| REQ-SHOP-002 | Phase 2.2 | Pending |
-| REQ-SHOP-005 | Phase 2.2 | Pending |
-| REQ-SHOP-006 | Phase 2.2 | Pending |
+| REQ-SHOP-001 | Phase 2.2 | Complete |
+| REQ-SHOP-002 | Phase 2.2 | Complete |
+| REQ-SHOP-005 | Phase 2.2 | Complete |
+| REQ-SHOP-006 | Phase 2.2 | Complete |
 | REQ-ANL-001 | Phase 2.2 | Complete |
 | REQ-ANL-002 | Phase 2.2 | Complete |
 | REQ-ANL-003 | Phase 2.2 | Complete |

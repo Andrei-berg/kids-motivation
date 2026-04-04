@@ -120,7 +120,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 2.1 role-routing | 2/2 | Complete   | 2026-04-03 |
-| 2.2 parent-center | 3/6 | In Progress|  |
+| 2.2 parent-center | 5/6 | In Progress|  |
 | 2.3 kid-screen | 0/TBD | Not started | - |
 | 2.4 shop-approval | 0/TBD | Not started | - |
 | 2.5 notifications-animations | 0/TBD | Not started | - |
@@ -166,7 +166,7 @@ Plans:
 5. Parent creates, edits, and deletes shop items at /parent/shop; auto-approval toggle and starter templates are available
 6. Parent accesses /parent/settings with PIN protection; coin rules are configurable (not hardcoded)
 
-**Plans:** 3/6 plans executed
+**Plans:** 5/6 plans executed
 
 Plans:
 - [x] 02.2-01-PLAN.md — Parent nav shell (dark layout + ParentNav) + /parent/dashboard status cards
