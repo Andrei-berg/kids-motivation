@@ -19,6 +19,7 @@ export {
   updateWalletCoins,
   updateWalletMoney,
   getWalletSettings,
+  updateWalletSettings,
   calculateExchangeRate,
   getRewards,
   addReward,

@@ -153,6 +153,18 @@ export async function getWalletSettings(): Promise<WalletSettings> {
   return data
 }
 
+export async function updateWalletSettings(
+  updates: Partial<Omit<WalletSettings, 'id' | 'updated_at'>>
+): Promise<WalletSettings> {
+  const { data, error } = await supabase
+    .from('wallet_settings')
+    .upsert({ id: 'default', ...updates, updated_at: new Date().toISOString() })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
 export async function calculateExchangeRate(coins: number): Promise<{ rate: number, bonus: number }> {
   const settings = await getWalletSettings()
   let bonus = 0
