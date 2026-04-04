@@ -13,22 +13,22 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-04 — Phase 2.2 plan 05 complete (/parent/shop CRUD with starter templates)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-04 — Phase 2.2 plan 06 complete (/parent/settings PIN gate + coin rules + audit log)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 2.2 (in progress — plan 05 complete)
-Plan: 02.2-05 (wave 2) — COMPLETE (/parent/shop)
-Status: Plan 05 complete. Next: 02.2-06 final phase plan
-Last activity: 2026-04-04 — 02.2-05 complete: /parent/shop CRUD (list, create, edit, delete, starter templates, auto-approve toggle)
+Phase: 2.2 (in progress — plan 06 complete)
+Plan: 02.2-06 (wave 2) — COMPLETE (/parent/settings)
+Status: Plan 06 complete. Phase 2.2 all plans done.
+Last activity: 2026-04-04 — 02.2-06 complete: PIN-gated /parent/settings with configurable coin rules (wallet_settings DB) and audit log viewer
 ```
 
 Progress bar (M2):
 ```
-[>         ] 0 / 5 phases complete (5/6 plans in phase 2.2 done)
+[>         ] 0 / 5 phases complete (6/6 plans in phase 2.2 done)
 ```
 
 ---
@@ -100,6 +100,7 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | Grade distribution source | Direct Supabase query on subject_grades | getWeekScore only returns aggregated coin numbers, not raw grade records |
 | DailyModal embed mode | isOpen=true + onClose no-op in /parent/daily | Parent daily page always shows form, not in modal overlay |
 | Streak bonus ordering | updateStreaks() first, then getStreakBonuses() | Must update counters before reading thresholds |
+| Parent PIN storage | SHA-256 hash in localStorage (key: parent_pin_hash) | No DB round-trip; zero server dependency for PIN verification |
 | auto_approve type | Partial<Reward> & { auto_approve?: boolean } intersection | Avoids modifying canonical Reward type until DB migration runs |
 | Shop admin view | getRewards({ activeOnly: false }) | Parent needs to see inactive items to re-enable them |
 
