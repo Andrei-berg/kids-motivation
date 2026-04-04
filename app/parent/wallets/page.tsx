@@ -476,19 +476,17 @@ export default function WalletsPage() {
         {pendingWithdrawals.length > 0 && (
           <div className="mt-4">
             <h3 className="text-sm font-medium text-gray-400 mb-2">Ожидают одобрения</h3>
-            <div className="divide-y divide-gray-700">
-              {pendingWithdrawals.map(w => (
-                <div key={w.id} className="flex items-center justify-between py-2">
-                  <span className="text-yellow-400 font-semibold text-sm">
-                    💵 {Number(w.amount).toFixed(2)} руб
-                  </span>
-                  <span className="text-xs text-gray-500">{formatDate(w.requested_at)}</span>
-                  <span className="bg-yellow-900 text-yellow-300 rounded-full px-2 py-0.5 text-xs">
-                    Ожидает
-                  </span>
-                </div>
-              ))}
-            </div>
+            {pendingWithdrawals.map(w => (
+              <div key={w.id} className="flex items-center justify-between py-2 border-b border-gray-700">
+                <span className="text-yellow-400 font-semibold text-sm">
+                  💵 {Number(w.amount).toFixed(2)} руб
+                </span>
+                <span className="text-xs text-gray-500">{formatDate(w.requested_at)}</span>
+                <span className="bg-yellow-900 text-yellow-300 rounded-full px-2 py-0.5 text-xs">
+                  Ожидает
+                </span>
+              </div>
+            ))}
           </div>
         )}
 
@@ -496,19 +494,17 @@ export default function WalletsPage() {
         {approvedWithdrawals.length > 0 && (
           <div className="mt-4">
             <h3 className="text-sm font-medium text-gray-400 mb-2">Одобренные (последние 5)</h3>
-            <div className="divide-y divide-gray-700">
-              {approvedWithdrawals.map(w => (
-                <div key={w.id} className="flex items-center justify-between py-2">
-                  <span className="text-yellow-400 font-semibold text-sm">
-                    💵 {Number(w.amount).toFixed(2)} руб
-                  </span>
-                  <span className="text-xs text-gray-500">{formatDate(w.requested_at)}</span>
-                  <span className="bg-green-900 text-green-300 rounded-full px-2 py-0.5 text-xs">
-                    Одобрено
-                  </span>
-                </div>
-              ))}
-            </div>
+            {approvedWithdrawals.map(w => (
+              <div key={w.id} className="flex items-center justify-between py-2 border-b border-gray-700">
+                <span className="text-yellow-400 font-semibold text-sm">
+                  💵 {Number(w.amount).toFixed(2)} руб
+                </span>
+                <span className="text-xs text-gray-500">{formatDate(w.requested_at)}</span>
+                <span className="bg-green-900 text-green-300 rounded-full px-2 py-0.5 text-xs">
+                  Одобрено
+                </span>
+              </div>
+            ))}
           </div>
         )}
       </div>
