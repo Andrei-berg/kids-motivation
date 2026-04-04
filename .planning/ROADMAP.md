@@ -169,7 +169,7 @@ Plans:
 **Plans:** 1/6 plans executed
 
 Plans:
-- [ ] 02.2-01-PLAN.md — Parent nav shell (dark layout + ParentNav) + /parent/dashboard status cards
+- [x] 02.2-01-PLAN.md — Parent nav shell (dark layout + ParentNav) + /parent/dashboard status cards
 - [ ] 02.2-02-PLAN.md — /parent/daily — child tab selector + embedded DailyModal form
 - [ ] 02.2-03-PLAN.md — /parent/wallets — balance per child, transaction history, manual bonus/penalty, P2P, exchange
 - [ ] 02.2-04-PLAN.md — /parent/analytics — 8-week coin chart, grade distribution, KPI cards
