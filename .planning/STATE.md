@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role-Based UI
 status: phase_in_progress
-last_updated: "2026-04-04T17:26:00.000Z"
+last_updated: "2026-04-04T17:35:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 0
@@ -13,7 +13,7 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-04 — Phase 2.2 plan 04 complete (/parent/analytics)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-04 — Phase 2.2 plan 02 SUMMARY created (/parent/daily + streak bonus wiring)
 
 ---
 
@@ -98,6 +98,8 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | ParentNav responsive | Two separate nav elements (desktop top + mobile bottom) | Simpler than JS resize detection, pure CSS |
 | Middleware /parent bypass | Added /parent to isPublicPath for dev | Auth not yet wired; explicit TODO to remove |
 | Grade distribution source | Direct Supabase query on subject_grades | getWeekScore only returns aggregated coin numbers, not raw grade records |
+| DailyModal embed mode | isOpen=true + onClose no-op in /parent/daily | Parent daily page always shows form, not in modal overlay |
+| Streak bonus ordering | updateStreaks() first, then getStreakBonuses() | Must update counters before reading thresholds |
 
 ---
 
