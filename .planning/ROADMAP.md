@@ -111,7 +111,7 @@ Plans:
 
 - [x] **Phase 2.1: role-routing** — Role detection after login + middleware guards for /parent/* and /kid/* routes (completed 2026-04-03)
 - [x] **Phase 2.2: parent-center** — Full parent UI: dark theme dashboard, daily input, wallets, analytics, shop management, settings (completed 2026-04-04)
-- [ ] **Phase 2.3: kid-screen** — Full kid UI: bright theme, my day, wallet, achievements, shop browse, leaderboard
+- [x] **Phase 2.3: kid-screen** — Full kid UI: bright theme, my day, wallet, achievements, shop browse, leaderboard (completed 2026-04-05)
 - [ ] **Phase 2.4: shop-approval** — Purchase request flow: child requests → parent approves/rejects → coins deducted
 - [ ] **Phase 2.5: notifications-animations** — Push notifications, confetti, badge animations, streak alerts
 
@@ -121,7 +121,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 2.1 role-routing | 2/2 | Complete   | 2026-04-03 |
 | 2.2 parent-center | 6/6 | Complete   | 2026-04-04 |
-| 2.3 kid-screen | 5/6 | In Progress|  |
+| 2.3 kid-screen | 6/6 | Complete   | 2026-04-05 |
 | 2.4 shop-approval | 0/TBD | Not started | - |
 | 2.5 notifications-animations | 0/TBD | Not started | - |
 
@@ -193,7 +193,7 @@ Plans:
 4. At least 10 badges are defined and award automatically when their condition is met; new badge appears in the showcase after earning
 5. Child browses /kid/shop and can tap any item to initiate a purchase request; they cannot see sibling wallets or grades
 
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans complete
 
 Plans:
 - [ ] 02.3-01-PLAN.md — Foundation: KidLayout, KidNav, kid CSS, /kid/page.tsx redirect, 4 new badges

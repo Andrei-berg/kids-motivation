@@ -20,15 +20,15 @@ progress:
 ## Текущая позиция
 
 ```
-Phase: 2.3 (IN PROGRESS — plan 05 of 6 done)
-Plan: 02.3-05 — COMPLETE (/kid/shop — reward grid, balance strip, detail sheet, 2-step confirm, purchase history)
-Status: Phase 2.3 in progress. Next: 02.3-06
-Last activity: 2026-04-06 — 02.3-05 complete: /kid/shop page (336 lines), TypeScript clean, uses activeMemberId from Zustand
+Phase: 2.3 (COMPLETE — all 6 plans done)
+Plan: 02.3-06 — COMPLETE (/kid/leaderboard podium + period selector + CelebrationOverlay)
+Status: Phase 2.3 complete. Next: Phase 2.4 (shop-approval)
+Last activity: 2026-04-06 — 02.3-06 complete: leaderboard page (269 lines) + CelebrationOverlay, TypeScript clean
 ```
 
 Progress bar (M2):
 ```
-[>         ] 0 / 5 phases complete (1/6 plans in phase 2.3 done)
+[>>        ] 1 / 5 phases complete (Phase 2.3 all 6/6 plans done)
 ```
 
 ---
@@ -130,6 +130,9 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | /kid/shop purchase reload | Reload wallet + purchases after purchaseReward() | Reflects deducted coins immediately without full page refresh |
 | computeBadgeProgress | Async function outside component, called in useEffect after data load | Keeps component state management clean; not a hook |
 | BadgeDetailSheet | Inlined in main JSX using selectedBadge state | Avoids extra prop drilling for single-use overlay |
+| PodiumBlock placement | Inlined in leaderboard page file | Single-use sub-component, no external export needed |
+| CelebrationOverlay localStorage | Timestamp updated regardless of badge found | Prevents same badge re-triggering when lastCheckTime is 0 |
+| Leaderboard period scoring | week=weekScore.total, month=wallet.coins, all=child.xp | Three distinct ordering signals per period |
 
 ---
 
