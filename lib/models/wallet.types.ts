@@ -96,6 +96,11 @@ export interface WalletSettings {
   coins_per_room_task: number
   coins_per_good_behavior: number
   coins_per_exercise: number
+  coins_per_coach_5: number
+  coins_per_coach_4: number
+  coins_per_coach_3: number
+  coins_per_coach_2: number
+  coins_per_coach_1: number
   p2p_max_per_transfer: number
   p2p_max_per_day: number
   p2p_max_per_month: number

@@ -142,6 +142,11 @@ export async function getWalletSettings(): Promise<WalletSettings> {
       coins_per_room_task: 3,
       coins_per_good_behavior: 5,
       coins_per_exercise: 5,
+      coins_per_coach_5: 10,
+      coins_per_coach_4: 5,
+      coins_per_coach_3: 0,
+      coins_per_coach_2: 3,
+      coins_per_coach_1: 10,
       p2p_max_per_transfer: 100,
       p2p_max_per_day: 200,
       p2p_max_per_month: 500,
@@ -676,8 +681,13 @@ export async function awardCoinsForSport(
 ): Promise<void> {
   if (coachRating < 1 || coachRating > 5) return
 
-  const SPORT_REWARDS: Record<number, number> = { 5: 10, 4: 5, 3: 0, 2: -3, 1: -10 }
-  const coins = SPORT_REWARDS[coachRating]
+  const settings = await getWalletSettings()
+  let coins = 0
+  if (coachRating === 5) coins = settings.coins_per_coach_5
+  else if (coachRating === 4) coins = settings.coins_per_coach_4
+  else if (coachRating === 3) coins = settings.coins_per_coach_3
+  else if (coachRating === 2) coins = -settings.coins_per_coach_2
+  else if (coachRating === 1) coins = -settings.coins_per_coach_1
 
   let icon = '💪'
   if (coachRating === 5) icon = '🔥'
@@ -692,6 +702,22 @@ export async function awardCoinsForSport(
   if (coins !== 0) {
     await updateWalletCoins(childId, coins, description, icon)
   }
+}
+
+export async function logSettingsChange(childId: string, description: string): Promise<void> {
+  const wallet = await getWallet(childId)
+  await supabase.from('wallet_transactions').insert({
+    child_id: childId,
+    transaction_type: 'settings_change',
+    coins_change: 0,
+    money_change: 0,
+    description,
+    icon: '⚙️',
+    related_id: null,
+    related_type: null,
+    balance_after_coins: wallet?.coins ?? 0,
+    balance_after_money: wallet?.money ?? 0,
+  })
 }
 
 // ============================================================================
