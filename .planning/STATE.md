@@ -3,32 +3,32 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role-Based UI
 status: phase_in_progress
-last_updated: "2026-04-05T00:15:00.000Z"
+last_updated: "2026-04-05T08:22:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-05 — Phase 2.2 plan 07 complete (coin award wiring + configurable grade values)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-05 — Phase 2.2 plan 08 complete (coach rating configurable + settings audit log)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 2.2 (in progress — plan 07 complete)
-Plan: 02.2-07 (gap closure) — COMPLETE (coin award wiring)
-Status: Plan 07 complete. 1 plan remaining in phase 2.2 (02.2-08).
-Last activity: 2026-04-05 — 02.2-07 complete: awardCoinsForGrade reads wallet_settings; DailyModal.handleSave wires all four coin award functions
+Phase: 2.2 (COMPLETE — all 8 plans done)
+Plan: 02.2-08 — COMPLETE (coach rating configurable + settings audit log)
+Status: Phase 2.2 complete. Next: Phase 2.3 kid-screen.
+Last activity: 2026-04-05 — 02.2-08 complete: awardCoinsForSport reads wallet_settings; /parent/settings shows coach fields; settings save logged to audit trail
 ```
 
 Progress bar (M2):
 ```
-[>         ] 0 / 5 phases complete (7/8 plans in phase 2.2 done)
+[>         ] 0 / 5 phases complete (8/8 plans in phase 2.2 done — phase 2.2 COMPLETE)
 ```
 
 ---
@@ -108,6 +108,8 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | Grades 1/2 coin penalties | Hardcoded (-10, -5) | wallet_settings has no coins_per_grade_1/2 fields |
 | Grade 3 coins from settings | Negated: -settings.coins_per_grade_3 | Stored as positive in DB, applied as deduction |
 | Coach rating in sections | Local UI state only (not persisted to DB) | section_visits only stores text trainer_feedback |
+| Coach penalty DB storage | Stored as positive integers (coins_per_coach_2=3 → -3 coins) | Consistent with grade 3 positive-stored penalty pattern |
+| Settings change audit log | Insert to wallet_transactions per child with transaction_type='settings_change', coins_change=0 | getAuditLog() reads wallet_transactions, so this appears in per-child journal without special handling |
 
 ---
 
