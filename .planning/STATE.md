@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.0
-milestone_name: Role-Based UI
-status: phase_in_progress
-last_updated: "2026-04-05T08:22:00.000Z"
+milestone_name: milestone
+status: unknown
+last_updated: "2026-04-05T18:35:02.448Z"
 progress:
-  total_phases: 5
-  completed_phases: 0
-  total_plans: 8
-  completed_plans: 8
+  total_phases: 8
+  completed_phases: 6
+  total_plans: 25
+  completed_plans: 25
 ---
 
 # STATE.md — Текущее состояние проекта
