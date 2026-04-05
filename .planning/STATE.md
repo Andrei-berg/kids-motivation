@@ -20,10 +20,10 @@ progress:
 ## Текущая позиция
 
 ```
-Phase: 2.3 (IN PROGRESS — plan 02 of 6 done)
-Plan: 02.3-02 — COMPLETE (/kid/day My Day screen — hero, snapshot, grades, week ring, streaks, goal)
-Status: Phase 2.3 in progress. Next: 02.3-03 (Kid Wallet page)
-Last activity: 2026-04-06 — 02.3-02 complete: /kid/day full gamified screen (402 lines), TypeScript clean, uses Zustand activeMemberId
+Phase: 2.3 (IN PROGRESS — plan 03 of 6 done)
+Plan: 02.3-03 — COMPLETE (/kid/wallet — balance, history, withdrawal, requests)
+Status: Phase 2.3 in progress. Next: 02.3-04
+Last activity: 2026-04-06 — 02.3-03 complete: /kid/wallet screen (419 lines), TypeScript clean, uses Zustand activeMemberId
 ```
 
 Progress bar (M2):
@@ -123,6 +123,9 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | checkFullWeekGrades import | Uses top-level getWeekRange import (not dynamic import) | getWeekRange already imported at file top; dynamic import unnecessary |
 | getWeekData return shape | Returns { days: DayData[], grades: SubjectGrade[], sports, weekRecord } — per-day arrays | Week stats computed from actual per-day rows (room_ok, good_behavior) not aggregate fields |
 | Kid Day XP bar | width = (xp % 1000) / 10 percent | Treats each 1000 XP as one full level cycle for clean progress display |
+| getTransactions pagination | Growing limit (20→40→60) instead of offset param | Actual repo signature has no offset parameter |
+| getWeekScore field names | coinsFromGrades/coinsFromRoom/coinsFromBehavior (not grades/room/behavior) | Actual service returns different field names than plan spec; sport shows 0 |
+| RewardPurchase status display | fulfilled boolean maps to approved/pending | No status field on RewardPurchase type |
 
 ---
 
