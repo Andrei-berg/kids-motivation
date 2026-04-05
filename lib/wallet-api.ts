@@ -43,4 +43,5 @@ export {
   getMonthlyPotential,
   getAuditLog,
   createP2PTransfer,
+  logSettingsChange,
 } from './repositories/wallet.repo'

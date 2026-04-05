@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { getWalletSettings, updateWalletSettings, getAuditLog } from '@/lib/wallet-api'
+import { getWalletSettings, updateWalletSettings, getAuditLog, logSettingsChange } from '@/lib/wallet-api'
 import { getChildren } from '@/lib/repositories/children.repo'
 import type { WalletSettings, AuditLog } from '@/lib/wallet-api'
 import type { Child } from '@/lib/models/child.types'
@@ -27,6 +27,11 @@ type SettingsForm = {
   coins_per_good_behavior: number
   coins_per_exercise: number
   base_exchange_rate: number
+  coins_per_coach_5: number
+  coins_per_coach_4: number
+  coins_per_coach_3: number
+  coins_per_coach_2: number
+  coins_per_coach_1: number
 }
 
 function defaultForm(): SettingsForm {
@@ -38,6 +43,11 @@ function defaultForm(): SettingsForm {
     coins_per_good_behavior: 5,
     coins_per_exercise: 5,
     base_exchange_rate: 10,
+    coins_per_coach_5: 10,
+    coins_per_coach_4: 5,
+    coins_per_coach_3: 0,
+    coins_per_coach_2: 3,
+    coins_per_coach_1: 10,
   }
 }
 
@@ -106,6 +116,11 @@ export default function ParentSettingsPage() {
         coins_per_good_behavior: settings.coins_per_good_behavior,
         coins_per_exercise: settings.coins_per_exercise,
         base_exchange_rate: settings.base_exchange_rate,
+        coins_per_coach_5: settings.coins_per_coach_5,
+        coins_per_coach_4: settings.coins_per_coach_4,
+        coins_per_coach_3: settings.coins_per_coach_3,
+        coins_per_coach_2: settings.coins_per_coach_2,
+        coins_per_coach_1: settings.coins_per_coach_1,
       })
 
       setChildren(kids)
@@ -205,6 +220,14 @@ export default function ParentSettingsPage() {
     setSaveStatus('saving')
     try {
       await updateWalletSettings(form)
+      // Log settings change in audit trail for each child (settings are global but log per-child)
+      if (children.length > 0) {
+        await Promise.all(
+          children.map(child =>
+            logSettingsChange(child.id, 'Правила монет обновлены родителем')
+          )
+        )
+      }
       setSaveStatus('saved')
       setTimeout(() => setSaveStatus('idle'), 2000)
     } catch (err) {
@@ -318,6 +341,35 @@ export default function ParentSettingsPage() {
               />
             </div>
           ))}
+        </div>
+
+        {/* Coach rating coin rules */}
+        <div style={{ marginTop: '16px' }}>
+          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
+            Оценка тренера (секции)
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {([
+              { label: 'Оценка 5 (награда)', field: 'coins_per_coach_5' as const },
+              { label: 'Оценка 4 (награда)', field: 'coins_per_coach_4' as const },
+              { label: 'Оценка 3 (нейтрально)', field: 'coins_per_coach_3' as const },
+              { label: 'Оценка 2 (штраф)', field: 'coins_per_coach_2' as const },
+              { label: 'Оценка 1 (штраф)', field: 'coins_per_coach_1' as const },
+            ] as { label: string; field: keyof SettingsForm }[]).map(({ label, field }) => (
+              <div key={field} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label className="text-sm text-gray-300">{label}</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={50}
+                  value={form[field]}
+                  onChange={e => setForm(prev => ({ ...prev, [field]: Number(e.target.value) }))}
+                  className="bg-gray-700 text-white rounded-lg px-3 py-2 w-24 text-center"
+                />
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 mt-2">Оценки 1 и 2 применяются как штраф (значение вычитается)</p>
         </div>
 
         <div className="mt-6 flex items-center gap-4">
