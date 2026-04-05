@@ -187,7 +187,7 @@ Plans:
 **Requirements:** REQ-KID-001, REQ-KID-002, REQ-KID-003, REQ-KID-004, REQ-KID-005, REQ-KID-006, REQ-KID-007, REQ-SHOP-003, REQ-BAD-001, REQ-BAD-002, REQ-BAD-004, REQ-BAD-005, REQ-BAD-006, REQ-STR-001, REQ-STR-002, REQ-STR-003, REQ-STR-004
 
 **Success Criteria:**
-1. Child opens /kid/day and sees their tasks for today with checkboxes; marking a task done is reflected immediately
+1. Child opens /kid/day and sees their tasks for today (room status, grades, behavior) in a read-only summary view; the data is entered by the parent
 2. Child opens /kid/wallet and sees their current coin balance and a scrollable transaction history showing only their own data
 3. Child opens /kid/achievements and sees their badge showcase, current streaks with record, XP total, and level label
 4. At least 10 badges are defined and award automatically when their condition is met; new badge appears in the showcase after earning
