@@ -633,14 +633,16 @@ export async function awardCoinsForGrade(
   grade: number,
   subject: string = 'Урок'
 ): Promise<void> {
+  const settings = await getWalletSettings()
   let coins = 0
   let icon = '📚'
 
-  if (grade === 5) { coins = 5; icon = '🎉' }
-  else if (grade === 4) { coins = 3; icon = '👍' }
-  else if (grade === 3) { coins = -3; icon = '⚠️' }
+  if (grade === 5) { coins = settings.coins_per_grade_5; icon = '🎉' }
+  else if (grade === 4) { coins = settings.coins_per_grade_4; icon = '👍' }
+  else if (grade === 3) { coins = -settings.coins_per_grade_3; icon = '⚠️' }
   else if (grade === 2) { coins = -5; icon = '❌' }
   else if (grade === 1) { coins = -10; icon = '💥' }
+  // grades 2 and 1 keep hardcoded penalties — wallet_settings has no fields for them
 
   if (coins !== 0) {
     const description = coins > 0
