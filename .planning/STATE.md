@@ -20,10 +20,10 @@ progress:
 ## Текущая позиция
 
 ```
-Phase: 2.3 (IN PROGRESS — plan 04 of 6 done)
-Plan: 02.3-04 — COMPLETE (/kid/achievements — level card, badge gallery with progress, streak records)
-Status: Phase 2.3 in progress. Next: 02.3-05
-Last activity: 2026-04-06 — 02.3-04 complete: /kid/achievements page (337 lines), TypeScript clean, uses Zustand activeMemberId
+Phase: 2.3 (IN PROGRESS — plan 05 of 6 done)
+Plan: 02.3-05 — COMPLETE (/kid/shop — reward grid, balance strip, detail sheet, 2-step confirm, purchase history)
+Status: Phase 2.3 in progress. Next: 02.3-06
+Last activity: 2026-04-06 — 02.3-05 complete: /kid/shop page (336 lines), TypeScript clean, uses activeMemberId from Zustand
 ```
 
 Progress bar (M2):
@@ -126,6 +126,8 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | getTransactions pagination | Growing limit (20→40→60) instead of offset param | Actual repo signature has no offset parameter |
 | getWeekScore field names | coinsFromGrades/coinsFromRoom/coinsFromBehavior (not grades/room/behavior) | Actual service returns different field names than plan spec; sport shows 0 |
 | RewardPurchase status display | fulfilled boolean maps to approved/pending | No status field on RewardPurchase type |
+| RewardPurchase date field | purchased_at used (not created_at) | Per actual wallet.types.ts; plan spec used wrong field name |
+| /kid/shop purchase reload | Reload wallet + purchases after purchaseReward() | Reflects deducted coins immediately without full page refresh |
 | computeBadgeProgress | Async function outside component, called in useEffect after data load | Keeps component state management clean; not a hook |
 | BadgeDetailSheet | Inlined in main JSX using selectedBadge state | Avoids extra prop drilling for single-use overlay |
 
