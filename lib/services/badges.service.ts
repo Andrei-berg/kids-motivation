@@ -55,6 +55,34 @@ const BADGES: Badge[] = [
     description: 'Оценки 14 дней подряд',
     icon: '📚',
     xp: 400
+  },
+  {
+    key: 'coin_saver',
+    title: 'Копилка',
+    description: 'Накопи 500 монет, не тратя',
+    icon: '💰',
+    xp: 300
+  },
+  {
+    key: 'first_purchase',
+    title: 'Первая покупка',
+    description: 'Первая покупка в магазине',
+    icon: '🛒',
+    xp: 200
+  },
+  {
+    key: 'streak_30',
+    title: 'Серия 30 дней',
+    description: 'Любая серия достигла 30 дней подряд',
+    icon: '🔥',
+    xp: 700
+  },
+  {
+    key: 'full_week_grades',
+    title: 'Отличный дневник',
+    description: 'Оценки получены каждый день учебной недели',
+    icon: '📋',
+    xp: 350
   }
 ]
 
@@ -65,6 +93,10 @@ export async function checkAndAwardBadges(childId: string, date: string) {
   if (await checkCleanMaster(childId, date)) badges.push('clean_master')
   if (await checkSportsman(childId, date)) badges.push('sportsman')
   if (await checkStudyLover(childId, date)) badges.push('study_lover')
+  if (await checkCoinSaver(childId)) badges.push('coin_saver')
+  if (await checkFirstPurchase(childId)) badges.push('first_purchase')
+  if (await checkStreak30(childId)) badges.push('streak_30')
+  if (await checkFullWeekGrades(childId, date)) badges.push('full_week_grades')
 
   for (const key of badges) {
     await awardBadge(childId, key)
@@ -209,6 +241,78 @@ async function checkStudyLover(childId: string, date: string): Promise<boolean> 
   }
 
   return false
+}
+
+async function checkCoinSaver(childId: string): Promise<boolean> {
+  const { data: wallet } = await supabase
+    .from('wallet')
+    .select('coins, total_earned_coins, total_spent_coins')
+    .eq('child_id', childId)
+    .maybeSingle()
+  if (!wallet) return false
+  const netSaved = wallet.total_earned_coins - wallet.total_spent_coins
+  if (netSaved < 500) return false
+  const { data: existing } = await supabase
+    .from('badges')
+    .select('id')
+    .eq('child_id', childId)
+    .eq('badge_key', 'coin_saver')
+    .maybeSingle()
+  return !existing
+}
+
+async function checkFirstPurchase(childId: string): Promise<boolean> {
+  const { data: purchases } = await supabase
+    .from('reward_purchases')
+    .select('id')
+    .eq('child_id', childId)
+    .limit(1)
+  if (!purchases || purchases.length === 0) return false
+  const { data: existing } = await supabase
+    .from('badges')
+    .select('id')
+    .eq('child_id', childId)
+    .eq('badge_key', 'first_purchase')
+    .maybeSingle()
+  return !existing
+}
+
+async function checkStreak30(childId: string): Promise<boolean> {
+  const { data: streaks } = await supabase
+    .from('streaks')
+    .select('current_count')
+    .eq('child_id', childId)
+  if (!streaks) return false
+  const hasStreak30 = streaks.some(s => s.current_count >= 30)
+  if (!hasStreak30) return false
+  const { data: existing } = await supabase
+    .from('badges')
+    .select('id')
+    .eq('child_id', childId)
+    .eq('badge_key', 'streak_30')
+    .maybeSingle()
+  return !existing
+}
+
+async function checkFullWeekGrades(childId: string, date: string): Promise<boolean> {
+  const week = getWeekRange(date)
+  const { data: grades } = await supabase
+    .from('subject_grades')
+    .select('date')
+    .eq('child_id', childId)
+    .gte('date', week.start)
+    .lte('date', week.end)
+  if (!grades) return false
+  // Need at least 5 unique days with grades
+  const uniqueDays = new Set(grades.map(g => g.date))
+  if (uniqueDays.size < 5) return false
+  const { data: existing } = await supabase
+    .from('badges')
+    .select('id')
+    .eq('child_id', childId)
+    .eq('badge_key', 'full_week_grades')
+    .maybeSingle()
+  return !existing
 }
 
 async function awardBadge(childId: string, badgeKey: string) {
