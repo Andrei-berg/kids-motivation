@@ -20,15 +20,15 @@ progress:
 ## Текущая позиция
 
 ```
-Phase: 2.2 (COMPLETE — all 8 plans done)
-Plan: 02.2-08 — COMPLETE (coach rating configurable + settings audit log)
-Status: Phase 2.2 complete. Next: Phase 2.3 kid-screen.
-Last activity: 2026-04-05 — 02.2-08 complete: awardCoinsForSport reads wallet_settings; /parent/settings shows coach fields; settings save logged to audit trail
+Phase: 2.3 (IN PROGRESS — plan 01 of 6 done)
+Plan: 02.3-01 — COMPLETE (KidNav, KidLayout, kid CSS, badge catalogue extended to 10)
+Status: Phase 2.3 in progress. Next: 02.3-02 (Kid Day page)
+Last activity: 2026-04-06 — 02.3-01 complete: KidLayout + KidNav (5-tab mobile/desktop), kid CSS variables/animations in globals.css, badges.service.ts extended to 10 badges
 ```
 
 Progress bar (M2):
 ```
-[>         ] 0 / 5 phases complete (8/8 plans in phase 2.2 done — phase 2.2 COMPLETE)
+[>         ] 0 / 5 phases complete (1/6 plans in phase 2.3 done)
 ```
 
 ---
@@ -110,6 +110,17 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | Coach rating in sections | Local UI state only (not persisted to DB) | section_visits only stores text trainer_feedback |
 | Coach penalty DB storage | Stored as positive integers (coins_per_coach_2=3 → -3 coins) | Consistent with grade 3 positive-stored penalty pattern |
 | Settings change audit log | Insert to wallet_transactions per child with transaction_type='settings_change', coins_change=0 | getAuditLog() reads wallet_transactions, so this appears in per-child journal without special handling |
+
+### New decisions (Phase 2.3)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| KidLayout structure | Server component; KidNav is 'use client' | usePathname requires client context; layout itself needs no client state |
+| Mobile nav height | 64px + env(safe-area-inset-bottom) via kid-nav-bottom class | iOS safe area support for bottom bar |
+| Desktop nav | sticky top-0 h-16 matching md:pt-16 on main | No JS resize detection; pure CSS with Tailwind breakpoints |
+| /kid root page | Server-side redirect('/kid/day') replaces broken localStorage component | Server redirect is instant; no client JS required |
+| 4 new badges | Added to existing BADGES array (single source of truth) | One array = one getAvailableBadges() call returns all 10 |
+| checkFullWeekGrades import | Uses top-level getWeekRange import (not dynamic import) | getWeekRange already imported at file top; dynamic import unnecessary |
 
 ---
 
