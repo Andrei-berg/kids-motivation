@@ -3,32 +3,32 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Role-Based UI
 status: phase_in_progress
-last_updated: "2026-04-04T18:30:00.000Z"
+last_updated: "2026-04-05T00:15:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-04 — Phase 2.2 plan 06 complete (/parent/settings PIN gate + coin rules + audit log)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-05 — Phase 2.2 plan 07 complete (coin award wiring + configurable grade values)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 2.2 (in progress — plan 06 complete)
-Plan: 02.2-06 (wave 2) — COMPLETE (/parent/settings)
-Status: Plan 06 complete. Phase 2.2 all plans done.
-Last activity: 2026-04-04 — 02.2-06 complete: PIN-gated /parent/settings with configurable coin rules (wallet_settings DB) and audit log viewer
+Phase: 2.2 (in progress — plan 07 complete)
+Plan: 02.2-07 (gap closure) — COMPLETE (coin award wiring)
+Status: Plan 07 complete. 1 plan remaining in phase 2.2 (02.2-08).
+Last activity: 2026-04-05 — 02.2-07 complete: awardCoinsForGrade reads wallet_settings; DailyModal.handleSave wires all four coin award functions
 ```
 
 Progress bar (M2):
 ```
-[>         ] 0 / 5 phases complete (6/6 plans in phase 2.2 done)
+[>         ] 0 / 5 phases complete (7/8 plans in phase 2.2 done)
 ```
 
 ---
@@ -105,6 +105,9 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | Shop admin view | getRewards({ activeOnly: false }) | Parent needs to see inactive items to re-enable them |
 | createP2PTransfer params | Use actual repo signature (from_child_id, to_child_id, amount, transfer_type) | Plan's simplified interface was inaccurate vs actual implementation |
 | Exchange panel default | Collapsible (collapsed by default) | Reduces visual noise on /parent/wallets page |
+| Grades 1/2 coin penalties | Hardcoded (-10, -5) | wallet_settings has no coins_per_grade_1/2 fields |
+| Grade 3 coins from settings | Negated: -settings.coins_per_grade_3 | Stored as positive in DB, applied as deduction |
+| Coach rating in sections | Local UI state only (not persisted to DB) | section_visits only stores text trainer_feedback |
 
 ---
 
