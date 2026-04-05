@@ -5,7 +5,7 @@ import { api } from '@/lib/api'
 import { flexibleApi, Subject, ExerciseType } from '@/lib/flexible-api'
 import { getSectionsForDate, markSectionVisit, Section, SectionVisit, ExtraActivity, getExtraActivities, getActivityLogs, saveActivityLogs } from '@/lib/expenses-api'
 import { updateStreaks, getStreakBonuses } from '@/lib/streaks'
-import { updateWalletCoins } from '@/lib/wallet-api'
+import { updateWalletCoins, awardCoinsForGrade, awardCoinsForRoom, awardCoinsForBehavior, awardCoinsForSport } from '@/lib/wallet-api'
 import { checkAndAwardBadges } from '@/lib/badges'
 import { getGradeColor } from '@/utils/helpers'
 import { triggerConfetti } from '@/utils/confetti'
@@ -124,7 +124,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
   // СЕКЦИИ
   const [sections, setSections] = useState<(Section & { visit?: SectionVisit })[]>([])
-  const [sectionNotes, setSectionNotes] = useState<{ [key: string]: { progress: string; feedback: string } }>({})
+  const [sectionNotes, setSectionNotes] = useState<{ [key: string]: { progress: string; feedback: string; coachRating: number | null } }>({})
 
   // ЧТЕНИЕ (vacation + weekend)
   const [bookTitle, setBookTitle] = useState('')
@@ -233,10 +233,10 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
       try {
         const sectionsData = await getSectionsForDate(childId, date)
         setSections(sectionsData)
-        const notes: { [key: string]: { progress: string; feedback: string } } = {}
+        const notes: { [key: string]: { progress: string; feedback: string; coachRating: number | null } } = {}
         sectionsData.forEach(section => {
           if (section.visit) {
-            notes[section.id] = { progress: section.visit.progress_note || '', feedback: section.visit.trainer_feedback || '' }
+            notes[section.id] = { progress: section.visit.progress_note || '', feedback: section.visit.trainer_feedback || '', coachRating: null }
           }
         })
         setSectionNotes(notes)
@@ -362,6 +362,9 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   function updateSectionNote(sectionId: string, field: 'progress' | 'feedback', value: string) {
     setSectionNotes(prev => ({ ...prev, [sectionId]: { ...prev[sectionId], [field]: value } }))
   }
+  function updateSectionRating(sectionId: string, rating: number | null) {
+    setSectionNotes(prev => ({ ...prev, [sectionId]: { ...prev[sectionId], coachRating: rating } }))
+  }
 
   // ─── Save ─────────────────────────────────────────────────────────────────
 
@@ -394,7 +397,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
       const saveSections = Promise.all(
         sections.filter(s => s.visit).map(section => {
-          const notes = sectionNotes[section.id] || { progress: '', feedback: '' }
+          const notes = sectionNotes[section.id] || { progress: '', feedback: '', coachRating: null }
           return markSectionVisit(section.id, date, section.visit!.attended, notes.progress || undefined, notes.feedback || undefined)
         })
       )
@@ -416,6 +419,43 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
         : Promise.resolve()
 
       await Promise.all([saveDay, saveGrades, saveExercises, saveSections, saveReading, saveActivities])
+
+      // Award coins for daily activities (REQ-COIN-002/003/004/005)
+      const coinAwards: Promise<void>[] = []
+
+      // Grade coins — one award per grade saved
+      for (const grade of grades) {
+        if (grade.grade >= 1 && grade.grade <= 5) {
+          coinAwards.push(awardCoinsForGrade(childId, grade.grade, grade.subject))
+        }
+      }
+
+      // Room coins — awarded when 3 or more room tasks are checked
+      const roomScore = [roomBed, roomFloor, roomDesk, roomCloset, roomTrash].filter(Boolean).length
+      if (roomScore >= 3 && !isSickDay) {
+        coinAwards.push(awardCoinsForRoom(childId))
+      }
+
+      // Behavior coins — awarded when goodBehavior is true (or sick day override)
+      const effectiveBehavior = isSickDay ? true : goodBehavior
+      if (effectiveBehavior) {
+        coinAwards.push(awardCoinsForBehavior(childId))
+      }
+
+      // Sport/section coach rating coins — awarded per attended section with a numeric rating
+      for (const section of sections) {
+        if (section.visit) {
+          const notes = sectionNotes[section.id]
+          const coachRating = notes?.coachRating
+          if (coachRating && coachRating >= 1 && coachRating <= 5) {
+            coinAwards.push(awardCoinsForSport(childId, coachRating, section.name))
+          }
+        }
+      }
+
+      if (coinAwards.length > 0) {
+        await Promise.all(coinAwards)
+      }
 
       await updateStreaks(childId, date)
 
@@ -988,7 +1028,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                 <div className="premium-exercises-grid">
                   {sections.map(section => {
                     const isAttended = section.visit?.attended || false
-                    const notes = sectionNotes[section.id] || { progress: '', feedback: '' }
+                    const notes = sectionNotes[section.id] || { progress: '', feedback: '', coachRating: null }
                     return (
                       <div key={section.id} className={`premium-exercise-card ${isAttended ? 'active' : ''}`}>
                         <label className="premium-exercise-header" onClick={(e) => { if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return; toggleSectionAttended(section.id) }}>
@@ -1003,6 +1043,25 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
                             <input type="text" className="premium-input" placeholder="Прогресс" value={notes.progress} onChange={(e) => updateSectionNote(section.id, 'progress', e.target.value)} onClick={(e) => e.stopPropagation()} style={{ fontSize: '14px', padding: '10px 12px' }} />
                             <input type="text" className="premium-input" placeholder="Отзыв тренера" value={notes.feedback} onChange={(e) => updateSectionNote(section.id, 'feedback', e.target.value)} onClick={(e) => e.stopPropagation()} style={{ fontSize: '14px', padding: '10px 12px' }} />
+                            {/* Coach rating (numeric 1-5) */}
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
+                              <span style={{ fontSize: '13px', color: 'var(--gray-600)' }}>Оценка тренера:</span>
+                              {[1, 2, 3, 4, 5].map(r => (
+                                <button
+                                  key={r}
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); updateSectionRating(section.id, notes.coachRating === r ? null : r) }}
+                                  style={{
+                                    width: '28px', height: '28px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                                    fontSize: '13px', fontWeight: 600,
+                                    background: notes.coachRating === r ? (r >= 4 ? '#22c55e' : r === 3 ? '#f59e0b' : '#ef4444') : 'var(--gray-200)',
+                                    color: notes.coachRating === r ? '#fff' : 'var(--gray-700)',
+                                  }}
+                                >
+                                  {r}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
