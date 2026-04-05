@@ -121,7 +121,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 2.1 role-routing | 2/2 | Complete   | 2026-04-03 |
 | 2.2 parent-center | 6/6 | Complete   | 2026-04-04 |
-| 2.3 kid-screen | 0/TBD | Not started | - |
+| 2.3 kid-screen | 0/6 | In progress | - |
 | 2.4 shop-approval | 0/TBD | Not started | - |
 | 2.5 notifications-animations | 0/TBD | Not started | - |
 
@@ -193,7 +193,15 @@ Plans:
 4. At least 10 badges are defined and award automatically when their condition is met; new badge appears in the showcase after earning
 5. Child browses /kid/shop and can tap any item to initiate a purchase request; they cannot see sibling wallets or grades
 
-**Plans:** TBD
+**Plans:** 6 plans
+
+Plans:
+- [ ] 02.3-01-PLAN.md — Foundation: KidLayout, KidNav, kid CSS, /kid/page.tsx redirect, 4 new badges
+- [ ] 02.3-02-PLAN.md — /kid/day: My Day screen (hero, today snapshot, grades, week ring, streaks, goal)
+- [ ] 02.3-03-PLAN.md — /kid/wallet: balance hero, earnings breakdown, transaction history, withdrawal sheet
+- [ ] 02.3-04-PLAN.md — /kid/achievements: level card, badge gallery (10 badges), streak records
+- [ ] 02.3-05-PLAN.md — /kid/shop: rewards grid, detail sheet, 2-step purchase confirm, my requests
+- [ ] 02.3-06-PLAN.md — /kid/leaderboard + CelebrationOverlay component
 
 ---
 
