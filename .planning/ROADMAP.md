@@ -112,7 +112,8 @@ Plans:
 - [x] **Phase 2.1: role-routing** — Role detection after login + middleware guards for /parent/* and /kid/* routes (completed 2026-04-03)
 - [x] **Phase 2.2: parent-center** — Full parent UI: dark theme dashboard, daily input, wallets, analytics, shop management, settings (completed 2026-04-04)
 - [x] **Phase 2.3: kid-screen** — Full kid UI: bright theme, my day, wallet, achievements, shop browse, leaderboard (completed 2026-04-05)
-- [ ] **Phase 2.4: shop-approval** — Purchase request flow: child requests → parent approves/rejects → coins deducted
+- [ ] **Phase 2.4: shop-approval** — Purchase request flow: child requests → parent approves/rejects → coins deducted; parent can preview kid's view
+- [ ] **Phase 2.4.1: kid-screen-v2** — /kid/day redesign with weekly calendar + live coins, kid day-fill form, expenses tab for kids
 - [ ] **Phase 2.5: notifications-animations** — Push notifications, confetti, badge animations, streak alerts
 
 ### Progress Table
@@ -123,6 +124,7 @@ Plans:
 | 2.2 parent-center | 6/6 | Complete   | 2026-04-04 |
 | 2.3 kid-screen | 6/6 | Complete   | 2026-04-05 |
 | 2.4 shop-approval | 0/TBD | Not started | - |
+| 2.4.1 kid-screen-v2 | 0/TBD | Not started | - |
 | 2.5 notifications-animations | 0/TBD | Not started | - |
 
 ---
@@ -207,7 +209,7 @@ Plans:
 
 ### Phase 2.4: shop-approval
 
-**Goal:** The purchase flow is complete end-to-end — a child's request freezes the coins, the parent sees the pending request on the dashboard, approves or rejects it, and the wallet updates accordingly.
+**Goal:** The purchase flow is complete end-to-end — a child's request freezes the coins, the parent sees the pending request on the dashboard, approves or rejects it, and the wallet updates accordingly. Parent can preview the kid's experience without switching accounts.
 
 **Depends on:** Phase 2.2 (shop catalogue, wallet engine), Phase 2.3 (kid shop browse)
 
@@ -219,6 +221,26 @@ Plans:
 3. Parent approves a request → coins deducted, item marked as purchased; parent rejects → coins unfrozen
 4. Parent can mark an approved item as "delivered" to close the loop
 5. Full purchase history (pending, approved, rejected, delivered) is visible per child
+6. Parent can switch to "Kid View" from the parent interface to preview what a child sees without logging out
+
+**Plans:** TBD
+
+---
+
+### Phase 2.4.1: kid-screen-v2
+
+**Goal:** The kid experience is engaging and empowering — children fill in their own day, see a rich weekly calendar with earned coins per day, and understand the family budget spent on them.
+
+**Depends on:** Phase 2.3 (kid-screen foundation), Phase 2.4 (shop-approval for kid shop interaction)
+
+**Requirements:** REQ-KID-001, REQ-KID-002, REQ-KID-003, REQ-DAY-001
+
+**Success Criteria:**
+1. /kid/day shows a redesigned hero (coin balance + XP bar), 4 stat cards with coin deltas, and a 7-day weekly calendar strip replacing the SVG ring
+2. Child can tap "Заполнить сегодня" and complete a full day-fill form: grades per subject, room checklist (5 items), behavior/mood, diary, sport exercises, sections — with a live coin counter updating as they fill it in
+3. A new /kid/expenses tab shows recurring expenses (sections, hobbies) and one-off costs (breakages) so children understand what the family spends on them
+4. The day-fill form adapts to day type: school day shows schedule-based subjects; weekend/vacation shows reading and home-help options
+5. After saving the form, a celebration screen shows total coins earned
 
 **Plans:** TBD
 
