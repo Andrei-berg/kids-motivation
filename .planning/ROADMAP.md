@@ -223,7 +223,13 @@ Plans:
 5. Full purchase history (pending, approved, rejected, delivered) is visible per child
 6. Parent can switch to "Kid View" from the parent interface to preview what a child sees without logging out
 
-**Plans:** TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 02.4-01-PLAN.md — DB migration + wallet types extension + purchase lifecycle repo functions (createPurchaseRequest, approvePurchase, rejectPurchase, deliverPurchase, getPendingPurchases)
+- [ ] 02.4-02-PLAN.md — Kid shop: switch to freeze-then-approve flow, update status display in My Requests
+- [ ] 02.4-03-PLAN.md — Parent dashboard: pending requests panel with approve/reject actions
+- [ ] 02.4-04-PLAN.md — Middleware preview bypass + Kid View button on parent dashboard
 
 ---
 
