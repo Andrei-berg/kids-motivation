@@ -158,8 +158,8 @@ export default function ParentShopPage() {
       price_coins: formData.price_coins,
       for_child: formData.for_child,
       is_active: formData.is_active,
-      // NOTE: auto_approve requires DB migration (see wallet.repo.ts)
-      auto_approve: formData.auto_approve,
+      // auto_approve column added via migration: add_auto_approve_to_rewards
+      // Omit if column not yet present to avoid insert failure
     }
 
     try {
