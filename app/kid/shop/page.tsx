@@ -5,7 +5,7 @@ import { useAppStore } from '@/lib/store'
 import {
   getWallet,
   getRewards,
-  purchaseReward,
+  createPurchaseRequest,
   getPurchases,
 } from '@/lib/repositories/wallet.repo'
 import type { Wallet, Reward, RewardPurchase } from '@/lib/models/wallet.types'
@@ -83,6 +83,15 @@ export default function KidShopPage() {
     return price - coinBalance
   }
 
+  function getPurchaseStatusLabel(p: RewardPurchase): { text: string; className: string } {
+    const s = p.status ?? (p.fulfilled ? 'delivered' : 'pending')
+    if (s === 'pending')   return { text: '⏳ Ожидает', className: 'bg-amber-100 text-amber-700' }
+    if (s === 'approved')  return { text: '✅ Одобрено', className: 'bg-green-100 text-green-700' }
+    if (s === 'rejected')  return { text: '❌ Отклонено', className: 'bg-red-100 text-red-700' }
+    if (s === 'delivered') return { text: '🎉 Выдано', className: 'bg-violet-100 text-violet-700' }
+    return { text: '⏳ Ожидает', className: 'bg-gray-100 text-gray-500' }
+  }
+
   function canAfford_forSelected(): boolean {
     if (!selectedReward) return false
     return canAfford(selectedReward)
@@ -97,9 +106,9 @@ export default function KidShopPage() {
     if (!activeMemberId || !selectedReward) return
     setPurchasing(true)
     try {
-      await purchaseReward(activeMemberId, selectedReward.id)
+      await createPurchaseRequest(activeMemberId, selectedReward.id)
       setSelectedReward(null)
-      showToast('Запрос отправлен! 📨 Ожидай одобрения родителя')
+      showToast('Запрос отправлен! Ждёт одобрения родителя.')
       const [walletData, purchasesData] = await Promise.all([
         getWallet(activeMemberId),
         getPurchases(activeMemberId),
@@ -231,25 +240,33 @@ export default function KidShopPage() {
       {purchases.length > 0 && (
         <div className="kid-card">
           <p className="text-sm font-bold text-gray-700 mb-3">📨 Мои запросы</p>
-          {purchases.slice(0, 5).map((p) => (
-            <div
-              key={p.id}
-              className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0"
-            >
-              <span className="text-xl">{p.reward_icon || '🎁'}</span>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-800">
-                  {p.reward_title}
-                </p>
-                <p className="text-xs text-gray-400">
-                  {new Date(p.purchased_at).toLocaleDateString('ru-RU')}
-                </p>
+          {purchases.slice(0, 10).map((p) => {
+            const statusLabel = getPurchaseStatusLabel(p)
+            return (
+              <div
+                key={p.id}
+                className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0"
+              >
+                <span className="text-xl">{p.reward_icon || '🎁'}</span>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-800">
+                    {p.reward_title}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {new Date(p.purchased_at).toLocaleDateString('ru-RU')}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className={`text-xs font-semibold px-2 py-1 rounded-full ${statusLabel.className}`}>
+                    {statusLabel.text}
+                  </span>
+                  {p.rejection_note && (
+                    <p className="text-xs text-gray-400 mt-0.5">{p.rejection_note}</p>
+                  )}
+                </div>
               </div>
-              <span className="text-xs font-semibold px-2 py-1 rounded-full bg-amber-100 text-amber-700">
-                {p.fulfilled ? '✅ Выполнено' : '⏳ Ожидает'}
-              </span>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -307,8 +324,7 @@ export default function KidShopPage() {
                     Точно хочешь?
                   </h3>
                   <p className="text-sm text-gray-500 mt-1">
-                    Спишется {selectedReward.price_coins} монет за «
-                    {selectedReward.title}»
+                    Отправить запрос на «{selectedReward.title}» за {selectedReward.price_coins} монет? Монеты спишутся после одобрения родителем.
                   </p>
                 </div>
                 <div className="flex gap-3 mt-5">
@@ -323,7 +339,7 @@ export default function KidShopPage() {
                     disabled={purchasing}
                     onClick={handlePurchase}
                   >
-                    {purchasing ? 'Отправляем...' : 'Подтвердить'}
+                    {purchasing ? 'Отправляем...' : 'Отправить запрос'}
                   </button>
                 </div>
               </>
