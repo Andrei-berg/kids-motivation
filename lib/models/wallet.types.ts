@@ -43,6 +43,12 @@ export interface RewardPurchase {
   fulfilled_note: string | null
   balance_after_coins: number
   balance_after_money: number
+  // Phase 2.4: approval lifecycle fields
+  status: 'pending' | 'approved' | 'rejected' | 'delivered'
+  frozen_coins: number
+  processed_by: string | null
+  processed_at: string | null
+  rejection_note: string | null
 }
 
 export interface CoinExchange {
