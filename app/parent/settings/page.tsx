@@ -5,6 +5,17 @@ import { getWalletSettings, updateWalletSettings, getAuditLog, logSettingsChange
 import { getChildren } from '@/lib/repositories/children.repo'
 import type { WalletSettings, AuditLog } from '@/lib/wallet-api'
 import type { Child } from '@/lib/models/child.types'
+import FamilyManager from '@/components/settings/FamilyManager'
+import SubjectsManager from '@/components/settings/SubjectsManager'
+
+type Tab = 'family' | 'subjects' | 'coins' | 'audit'
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'family', label: '👨‍👩‍👧 Семья' },
+  { id: 'subjects', label: '📚 Предметы' },
+  { id: 'coins', label: '🪙 Монеты' },
+  { id: 'audit', label: '📋 Журнал' },
+]
 
 // ============================================================================
 // PIN UTILITIES
@@ -70,6 +81,9 @@ function formatDate(iso: string): string {
 // ============================================================================
 
 export default function ParentSettingsPage() {
+  // Tab state
+  const [activeTab, setActiveTab] = useState<Tab>('family')
+
   // PIN gate state
   const [pinUnlocked, setPinUnlocked] = useState(false)
   const [pinInput, setPinInput] = useState('')
@@ -321,9 +335,45 @@ export default function ParentSettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 pt-6 pb-12">
-      <h1 className="text-2xl font-bold text-white mb-6">Настройки</h1>
+      <h1 className="text-2xl font-bold text-white mb-4">Настройки</h1>
 
-      {/* Coin Rules Section */}
+      {/* Tab bar */}
+      <div className="flex gap-1 mb-6 bg-gray-800 rounded-xl p-1">
+        {TABS.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex-1 py-2 px-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === tab.id
+                ? 'bg-indigo-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Семья */}
+      {activeTab === 'family' && (
+        <div className="bg-gray-800 rounded-xl p-5">
+          <FamilyManager />
+        </div>
+      )}
+
+      {/* Предметы */}
+      {activeTab === 'subjects' && (
+        <div className="bg-gray-800 rounded-xl p-5">
+          <h2 className="text-lg font-semibold text-white mb-4">Предметы</h2>
+          <p className="text-sm text-gray-400 mb-5">
+            Предметы отображаются в разделе «Учёба» при заполнении дня.
+          </p>
+          <SubjectsManager children={children} />
+        </div>
+      )}
+
+      {/* Монеты */}
+      {activeTab === 'coins' && (
       <div className="bg-gray-800 rounded-xl p-5 mt-4">
         <h2 className="text-lg font-semibold text-white mb-4">Правила монет</h2>
 
@@ -389,9 +439,11 @@ export default function ParentSettingsPage() {
           )}
         </div>
       </div>
+      )} {/* end activeTab === 'coins' */}
 
-      {/* Audit Log Section */}
-      <div className="bg-gray-800 rounded-xl p-5 mt-6">
+      {/* Журнал */}
+      {activeTab === 'audit' && (
+      <div className="bg-gray-800 rounded-xl p-5 mt-0">
         <h2 className="text-lg font-semibold text-white mb-3">Журнал действий</h2>
 
         {children.length > 0 && (
@@ -456,6 +508,7 @@ export default function ParentSettingsPage() {
           </button>
         )}
       </div>
+      )} {/* end activeTab === 'audit' */}
 
       {/* Change PIN */}
       <div className="mt-6 text-right">
