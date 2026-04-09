@@ -63,8 +63,11 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url)
       }
 
-      // /kid/* — child role only (REQ-ROLE-003)
-      if (isKidPath && membership.role !== 'child') {
+      // Preview mode: parent can access /kid/* with ?preview=true (REQ-PARENT-008)
+      const isPreviewMode = request.nextUrl.searchParams.get('preview') === 'true'
+
+      // /kid/* — child role only, UNLESS preview mode (REQ-ROLE-003)
+      if (isKidPath && membership.role !== 'child' && !isPreviewMode) {
         const url = request.nextUrl.clone()
         url.pathname = '/parent/dashboard'
         return NextResponse.redirect(url)

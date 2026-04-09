@@ -46,7 +46,7 @@ function StatusDot({ ok }: { ok: boolean }) {
   )
 }
 
-function ChildCard({ status, onFillDay }: { status: ChildStatus; onFillDay: () => void }) {
+function ChildCard({ status, onFillDay, onKidView }: { status: ChildStatus; onFillDay: () => void; onKidView: () => void }) {
   const { child, dayData, weekScore } = status
   const roomOk = !!(dayData?.room_ok)
   const behaviorOk = !!(dayData?.good_behavior)
@@ -88,6 +88,12 @@ function ChildCard({ status, onFillDay }: { status: ChildStatus; onFillDay: () =
         className="mt-1 w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors"
       >
         Заполнить день
+      </button>
+      <button
+        onClick={onKidView}
+        className="mt-1 w-full py-2 px-4 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm font-medium rounded-lg transition-colors"
+      >
+        Смотреть как ребёнок →
       </button>
     </div>
   )
@@ -373,6 +379,7 @@ export default function ParentDashboardPage() {
               key={child.id}
               status={{ child, dayData, weekScore }}
               onFillDay={() => router.push(`/parent/daily?childId=${child.id}`)}
+              onKidView={() => router.push(`/kid/day?childId=${child.id}&preview=true`)}
             />
           ))}
           {statuses.length === 0 && (
