@@ -13,17 +13,17 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-09 — Phase 2.4 plan 02 complete (kid shop: createPurchaseRequest + status display)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-09 — Phase 2.4 plan 03 complete (parent dashboard purchase management panels)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 2.4 (IN PROGRESS — 2/4 plans done)
-Plan: 02.4-02 — COMPLETE (kid shop: createPurchaseRequest + 4-state status display)
-Status: Phase 2.4 plan 02 complete. Next: 02.4-03 (parent approval UI)
-Last activity: 2026-04-09 — 02.4-02 complete: app/kid/shop/page.tsx updated with createPurchaseRequest, confirmation copy, getPurchaseStatusLabel, rejection notes
+Phase: 2.4 (IN PROGRESS — 3/4 plans done)
+Plan: 02.4-03 — COMPLETE (parent dashboard: PendingRequestsPanel + ApprovedPurchasesPanel + approve/reject/deliver)
+Status: Phase 2.4 plan 03 complete. Next: 02.4-04 (verification/testing)
+Last activity: 2026-04-09 — 02.4-03 complete: app/parent/dashboard/page.tsx updated with purchase request panels and action handlers
 ```
 
 Progress bar (M2):
@@ -144,6 +144,8 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | rejectPurchase wallet | No wallet change needed | Coins were never deducted in pending flow |
 | getPurchaseStatusLabel backward compat | p.status ?? (p.fulfilled ? 'delivered' : 'pending') | Old rows lack status field; fulfilled=true maps to delivered |
 | Kid shop toast copy | 'Ждёт одобрения родителя' | Accurate: coins not deducted until parent approves |
+| Approved purchases fetch | Direct Supabase query (status='approved') | getPendingPurchases only returns pending rows; no new repo function needed |
+| handleApprove UI update | Moves item from pending list to approved list | Immediate UX feedback; item appears in delivery panel without page reload |
 
 ---
 

@@ -420,7 +420,7 @@ REQ-SEC-002, REQ-SEC-006, REQ-SCH-006
 | REQ-SHOP-004 | Phase 2.4 | Complete |
 | REQ-SHOP-007 | Phase 2.4 | Complete |
 | REQ-SHOP-008 | Phase 2.4 | Complete |
-| REQ-PARENT-008 | Phase 2.4 | Pending |
+| REQ-PARENT-008 | Phase 2.4 | Complete |
 | REQ-UX-004 | Phase 2.5 | Pending |
 | REQ-BAD-003 | Phase 2.5 | Pending |
 | REQ-STR-005 | Phase 2.5 | Pending |
