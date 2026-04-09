@@ -13,17 +13,17 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-09 — Phase 2.4 plan 03 complete (parent dashboard purchase management panels)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-09 — Phase 2.4 plan 04 complete (middleware preview bypass + Kid View button)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 2.4 (IN PROGRESS — 3/4 plans done)
-Plan: 02.4-03 — COMPLETE (parent dashboard: PendingRequestsPanel + ApprovedPurchasesPanel + approve/reject/deliver)
-Status: Phase 2.4 plan 03 complete. Next: 02.4-04 (verification/testing)
-Last activity: 2026-04-09 — 02.4-03 complete: app/parent/dashboard/page.tsx updated with purchase request panels and action handlers
+Phase: 2.4 (IN PROGRESS — 4/4 plans done, awaiting human verification checkpoint)
+Plan: 02.4-04 — COMPLETE (middleware preview bypass + Kid View button per ChildCard)
+Status: Phase 2.4 all 4 plans done. Awaiting human verification of full purchase flow + Kid View.
+Last activity: 2026-04-09 — 02.4-04 complete: middleware.ts + app/parent/dashboard/page.tsx updated with preview bypass and Kid View button
 ```
 
 Progress bar (M2):
@@ -146,6 +146,7 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | Kid shop toast copy | 'Ждёт одобрения родителя' | Accurate: coins not deducted until parent approves |
 | Approved purchases fetch | Direct Supabase query (status='approved') | getPendingPurchases only returns pending rows; no new repo function needed |
 | handleApprove UI update | Moves item from pending list to approved list | Immediate UX feedback; item appears in delivery panel without page reload |
+| Preview bypass | ?preview=true query param (stateless) | No session change needed; middleware checks param before redirecting non-child from /kid/* |
 
 ---
 
