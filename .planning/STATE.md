@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-04-05T18:35:02.448Z"
+last_updated: "2026-04-09T08:57:42Z"
 progress:
   total_phases: 8
   completed_phases: 6
@@ -13,17 +13,17 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-05 — Phase 2.2 plan 08 complete (coach rating configurable + settings audit log)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-09 — Phase 2.4 plan 01 complete (shop approval data layer: freeze-then-approve)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 2.3 (COMPLETE — all 6 plans done)
-Plan: 02.3-06 — COMPLETE (/kid/leaderboard podium + period selector + CelebrationOverlay)
-Status: Phase 2.3 complete. Next: Phase 2.4 (shop-approval)
-Last activity: 2026-04-06 — 02.3-06 complete: leaderboard page (269 lines) + CelebrationOverlay, TypeScript clean
+Phase: 2.4 (IN PROGRESS — 1/4 plans done)
+Plan: 02.4-01 — COMPLETE (data layer: DB migration + RewardPurchase type + 5 lifecycle repo functions)
+Status: Phase 2.4 plan 01 complete. Next: 02.4-02 (parent approval UI)
+Last activity: 2026-04-09 — 02.4-01 complete: supabase-migration-shop-approval.sql, RewardPurchase extended, createPurchaseRequest/approvePurchase/rejectPurchase/deliverPurchase/getPendingPurchases
 ```
 
 Progress bar (M2):
@@ -133,6 +133,15 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | PodiumBlock placement | Inlined in leaderboard page file | Single-use sub-component, no external export needed |
 | CelebrationOverlay localStorage | Timestamp updated regardless of badge found | Prevents same badge re-triggering when lastCheckTime is 0 |
 | Leaderboard period scoring | week=weekScore.total, month=wallet.coins, all=child.xp | Three distinct ordering signals per period |
+
+### New decisions (Phase 2.4)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| reward_purchases backward compat | DEFAULT 'approved' in migration | Existing rows remain valid without data migration |
+| auto_approve bypass | Deduct immediately, status='approved', processed_by='auto' | Matches old purchaseReward() behavior for instant rewards |
+| frozen_coins storage | Stored on purchase row (not derived) | Auditable; allows UI to show available balance = coins - frozen |
+| rejectPurchase wallet | No wallet change needed | Coins were never deducted in pending flow |
 
 ---
 

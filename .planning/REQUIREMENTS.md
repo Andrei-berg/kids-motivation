@@ -404,7 +404,7 @@ REQ-SEC-002, REQ-SEC-006, REQ-SCH-006
 | REQ-KID-002 | Phase 2.3 | Complete |
 | REQ-KID-003 | Phase 2.3 | Complete |
 | REQ-KID-004 | Phase 2.3 | Complete |
-| REQ-KID-005 | Phase 2.3 | Pending |
+| REQ-KID-005 | Phase 2.3 | Complete |
 | REQ-KID-006 | Phase 2.3 | Complete |
 | REQ-KID-007 | Phase 2.3 | Complete |
 | REQ-SHOP-003 | Phase 2.3 | Complete |
@@ -417,9 +417,9 @@ REQ-SEC-002, REQ-SEC-006, REQ-SCH-006
 | REQ-STR-002 | Phase 2.3 | Complete |
 | REQ-STR-003 | Phase 2.3 | Complete |
 | REQ-STR-004 | Phase 2.3 | Complete |
-| REQ-SHOP-004 | Phase 2.4 | Pending |
-| REQ-SHOP-007 | Phase 2.4 | Pending |
-| REQ-SHOP-008 | Phase 2.4 | Pending |
+| REQ-SHOP-004 | Phase 2.4 | Complete |
+| REQ-SHOP-007 | Phase 2.4 | Complete |
+| REQ-SHOP-008 | Phase 2.4 | Complete |
 | REQ-PARENT-008 | Phase 2.4 | Pending |
 | REQ-UX-004 | Phase 2.5 | Pending |
 | REQ-BAD-003 | Phase 2.5 | Pending |
