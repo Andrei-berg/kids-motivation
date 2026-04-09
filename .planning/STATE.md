@@ -13,17 +13,17 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-09 — Phase 2.4 plan 01 complete (shop approval data layer: freeze-then-approve)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-09 — Phase 2.4 plan 02 complete (kid shop: createPurchaseRequest + status display)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 2.4 (IN PROGRESS — 1/4 plans done)
-Plan: 02.4-01 — COMPLETE (data layer: DB migration + RewardPurchase type + 5 lifecycle repo functions)
-Status: Phase 2.4 plan 01 complete. Next: 02.4-02 (parent approval UI)
-Last activity: 2026-04-09 — 02.4-01 complete: supabase-migration-shop-approval.sql, RewardPurchase extended, createPurchaseRequest/approvePurchase/rejectPurchase/deliverPurchase/getPendingPurchases
+Phase: 2.4 (IN PROGRESS — 2/4 plans done)
+Plan: 02.4-02 — COMPLETE (kid shop: createPurchaseRequest + 4-state status display)
+Status: Phase 2.4 plan 02 complete. Next: 02.4-03 (parent approval UI)
+Last activity: 2026-04-09 — 02.4-02 complete: app/kid/shop/page.tsx updated with createPurchaseRequest, confirmation copy, getPurchaseStatusLabel, rejection notes
 ```
 
 Progress bar (M2):
@@ -142,6 +142,8 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | auto_approve bypass | Deduct immediately, status='approved', processed_by='auto' | Matches old purchaseReward() behavior for instant rewards |
 | frozen_coins storage | Stored on purchase row (not derived) | Auditable; allows UI to show available balance = coins - frozen |
 | rejectPurchase wallet | No wallet change needed | Coins were never deducted in pending flow |
+| getPurchaseStatusLabel backward compat | p.status ?? (p.fulfilled ? 'delivered' : 'pending') | Old rows lack status field; fulfilled=true maps to delivered |
+| Kid shop toast copy | 'Ждёт одобрения родителя' | Accurate: coins not deducted until parent approves |
 
 ---
 
