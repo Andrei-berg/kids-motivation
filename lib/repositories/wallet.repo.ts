@@ -387,6 +387,249 @@ export async function fulfillPurchase(
 }
 
 // ============================================================================
+// PURCHASE LIFECYCLE (Phase 2.4 — freeze-then-approve flow)
+// ============================================================================
+
+/**
+ * Creates a purchase request without deducting coins (coins are frozen).
+ * If reward has auto_approve=true, deducts coins immediately and returns status='approved'.
+ */
+export async function createPurchaseRequest(
+  childId: string,
+  rewardId: string
+): Promise<RewardPurchase> {
+  const { data: reward, error: rewardError } = await supabase
+    .from('rewards')
+    .select('*')
+    .eq('id', rewardId)
+    .single()
+
+  if (rewardError || !reward) throw new Error('Reward not found')
+  if (!reward.is_active) throw new Error('Reward is not active')
+
+  const wallet = await getWallet(childId)
+  if (!wallet) throw new Error('Wallet not found')
+
+  if (reward.reward_type === 'coins') {
+    if (wallet.coins < (reward.price_coins || 0)) throw new Error('Insufficient coins')
+  }
+
+  const autoApprove = (reward as any).auto_approve === true
+
+  if (autoApprove) {
+    // Deduct coins immediately
+    const priceCoins = reward.price_coins || 0
+    const newCoins = wallet.coins - priceCoins
+    await supabase
+      .from('wallet')
+      .update({ coins: newCoins, total_spent_coins: wallet.total_spent_coins + priceCoins })
+      .eq('child_id', childId)
+
+    const purchase = {
+      reward_id: rewardId,
+      child_id: childId,
+      reward_title: reward.title,
+      reward_icon: reward.icon,
+      reward_type: reward.reward_type,
+      price_coins: reward.price_coins,
+      price_money: reward.price_money,
+      status: 'approved',
+      frozen_coins: 0,
+      fulfilled: false,
+      processed_by: 'auto',
+      processed_at: new Date().toISOString(),
+      balance_after_coins: newCoins,
+      balance_after_money: Number(wallet.money),
+    }
+
+    const { data, error } = await supabase
+      .from('reward_purchases')
+      .insert([purchase])
+      .select()
+      .single()
+
+    if (error) throw error
+
+    await supabase
+      .from('rewards')
+      .update({ purchase_count: reward.purchase_count + 1 })
+      .eq('id', rewardId)
+
+    return data
+  }
+
+  // Normal flow: freeze coins, create pending request
+  const frozenCoins = reward.reward_type === 'coins' ? (reward.price_coins || 0) : 0
+
+  const purchase = {
+    reward_id: rewardId,
+    child_id: childId,
+    reward_title: reward.title,
+    reward_icon: reward.icon,
+    reward_type: reward.reward_type,
+    price_coins: reward.price_coins,
+    price_money: reward.price_money,
+    status: 'pending',
+    frozen_coins: frozenCoins,
+    fulfilled: false,
+    balance_after_coins: wallet.coins,
+    balance_after_money: Number(wallet.money),
+  }
+
+  const { data, error } = await supabase
+    .from('reward_purchases')
+    .insert([purchase])
+    .select()
+    .single()
+
+  if (error) throw error
+
+  await supabase
+    .from('rewards')
+    .update({ purchase_count: reward.purchase_count + 1 })
+    .eq('id', rewardId)
+
+  return data
+}
+
+/**
+ * Approves a pending purchase request.
+ * Deducts the frozen coins from the wallet.
+ */
+export async function approvePurchase(
+  purchaseId: string,
+  processedBy?: string
+): Promise<RewardPurchase> {
+  const { data: purchase, error: fetchError } = await supabase
+    .from('reward_purchases')
+    .select('*')
+    .eq('id', purchaseId)
+    .single()
+
+  if (fetchError || !purchase) throw new Error('Purchase not found')
+  if (purchase.status !== 'pending') throw new Error('Purchase is not pending')
+
+  const wallet = await getWallet(purchase.child_id)
+  if (!wallet) throw new Error('Wallet not found')
+
+  if (purchase.reward_type === 'coins') {
+    await updateWalletCoins(
+      purchase.child_id,
+      -purchase.frozen_coins,
+      `Покупка одобрена: ${purchase.reward_title}`,
+      purchase.reward_icon
+    )
+  }
+
+  const { data, error } = await supabase
+    .from('reward_purchases')
+    .update({
+      status: 'approved',
+      processed_by: processedBy || 'parent',
+      processed_at: new Date().toISOString(),
+    })
+    .eq('id', purchaseId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * Rejects a pending purchase request.
+ * No wallet change — coins were never deducted.
+ */
+export async function rejectPurchase(
+  purchaseId: string,
+  rejectionNote?: string,
+  processedBy?: string
+): Promise<RewardPurchase> {
+  const { data: purchase, error: fetchError } = await supabase
+    .from('reward_purchases')
+    .select('*')
+    .eq('id', purchaseId)
+    .single()
+
+  if (fetchError || !purchase) throw new Error('Purchase not found')
+  if (purchase.status !== 'pending') throw new Error('Purchase is not pending')
+
+  const { data, error } = await supabase
+    .from('reward_purchases')
+    .update({
+      status: 'rejected',
+      rejection_note: rejectionNote || null,
+      processed_by: processedBy || 'parent',
+      processed_at: new Date().toISOString(),
+    })
+    .eq('id', purchaseId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * Marks an approved purchase as delivered (physically handed over).
+ */
+export async function deliverPurchase(
+  purchaseId: string,
+  note?: string,
+  processedBy?: string
+): Promise<RewardPurchase> {
+  const { data: purchase, error: fetchError } = await supabase
+    .from('reward_purchases')
+    .select('*')
+    .eq('id', purchaseId)
+    .single()
+
+  if (fetchError || !purchase) throw new Error('Purchase not found')
+  if (purchase.status !== 'approved') throw new Error('Purchase is not approved')
+
+  const { data, error } = await supabase
+    .from('reward_purchases')
+    .update({
+      status: 'delivered',
+      fulfilled: true,
+      fulfilled_at: new Date().toISOString(),
+      fulfilled_note: note || null,
+      processed_by: processedBy || 'parent',
+    })
+    .eq('id', purchaseId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+/**
+ * Returns all pending purchase requests, ordered oldest first.
+ * Optionally filter by childId.
+ */
+export async function getPendingPurchases(childId?: string): Promise<RewardPurchase[]> {
+  let query = supabase
+    .from('reward_purchases')
+    .select('*')
+    .eq('status', 'pending')
+    .order('purchased_at', { ascending: true })
+
+  if (childId) {
+    query = query.eq('child_id', childId)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error('Error fetching pending purchases:', error)
+    return []
+  }
+
+  return data
+}
+
+// ============================================================================
 // COIN EXCHANGES
 // ============================================================================
 
