@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { getChildren } from '@/lib/repositories/children.repo'
 import DailyModal from '@/components/DailyModal'
 
@@ -14,6 +14,7 @@ interface Child {
 
 function DailyPageContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const urlChildId = searchParams.get('childId')
 
   const [children, setChildren] = useState<Child[]>([])
@@ -144,7 +145,7 @@ function DailyPageContent() {
             <DailyModal
               key={`${selectedChildId}-${selectedDate}-${saveKey}`}
               isOpen={true}
-              onClose={() => {}}
+              onClose={() => router.push('/parent/dashboard')}
               childId={selectedChildId}
               date={selectedDate}
               onSave={handleSave}

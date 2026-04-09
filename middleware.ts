@@ -16,8 +16,11 @@ export async function middleware(request: NextRequest) {
   const isKidPath = pathname.startsWith('/kid')
   // isFamilyPath → pathname.startsWith('/family') — allowed for all authenticated members, no guard needed
 
+  // Preview mode: allow unauthenticated parents to access /kid/* with ?preview=true
+  const isPreviewMode = request.nextUrl.searchParams.get('preview') === 'true'
+
   // Not logged in + trying to access protected route → /
-  if (!user && !isPublicPath && !isOnboardingPath) {
+  if (!user && !isPublicPath && !isOnboardingPath && !(isKidPath && isPreviewMode)) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)
@@ -63,10 +66,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url)
       }
 
-      // Preview mode: parent can access /kid/* with ?preview=true (REQ-PARENT-008)
-      const isPreviewMode = request.nextUrl.searchParams.get('preview') === 'true'
-
-      // /kid/* — child role only, UNLESS preview mode (REQ-ROLE-003)
+      // /kid/* — child role only, UNLESS preview mode (REQ-ROLE-003, REQ-PARENT-008)
       if (isKidPath && membership.role !== 'child' && !isPreviewMode) {
         const url = request.nextUrl.clone()
         url.pathname = '/parent/dashboard'

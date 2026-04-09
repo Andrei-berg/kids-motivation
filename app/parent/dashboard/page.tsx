@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAppStore } from '@/lib/store'
 import { getChildren } from '@/lib/repositories/children.repo'
 import { getDay } from '@/lib/repositories/children.repo'
 import { getWeekScore } from '@/lib/services/coins.service'
@@ -239,6 +240,7 @@ function ApprovedPurchasesPanel({
 
 export default function ParentDashboardPage() {
   const router = useRouter()
+  const { setActiveMemberId } = useAppStore()
   const [statuses, setStatuses] = useState<ChildStatus[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [pendingPurchases, setPendingPurchases] = useState<RewardPurchase[]>([])
@@ -379,7 +381,10 @@ export default function ParentDashboardPage() {
               key={child.id}
               status={{ child, dayData, weekScore }}
               onFillDay={() => router.push(`/parent/daily?childId=${child.id}`)}
-              onKidView={() => router.push(`/kid/day?childId=${child.id}&preview=true`)}
+              onKidView={() => {
+                setActiveMemberId(child.id)
+                router.push(`/kid/day?preview=true`)
+              }}
             />
           ))}
           {statuses.length === 0 && (
