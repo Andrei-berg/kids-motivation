@@ -13,17 +13,17 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-10 — Phase 2.4.1 plan 01 complete (DB foundation: filled_by, kid_fill_mode, mood columns + TypeScript types)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-10 — Phase 2.4.1 plan 02 complete (KidDayFillForm: room checklist, mood picker, extra activities, live coin counter)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 2.4.1 (IN PROGRESS — 1/4 plans done)
-Plan: 02.4.1-01 — COMPLETE (DB foundation: days.filled_by, days.mood, children.kid_fill_mode + TypeScript types + getSectionsForChildExpenses)
-Status: Phase 2.4.1 plan 01 done. Next: 02.4.1-02 (kid day fill UI).
-Last activity: 2026-04-10 — 02.4.1-01 complete: supabase-migration-kid-fill-v2.sql + extended types + new repo function
+Phase: 2.4.1 (IN PROGRESS — 2/4 plans done)
+Plan: 02.4.1-02 — COMPLETE (KidDayFillForm: room checklist, mood, extra activities, live coin counter, submit with coin award)
+Status: Phase 2.4.1 plan 02 done. Next: 02.4.1-03 (kid day page wiring KidDayFillForm).
+Last activity: 2026-04-10 — 02.4.1-02 complete: components/kid/KidDayFillForm.tsx (378 lines, fully typed)
 ```
 
 Progress bar (M2):
@@ -141,6 +141,10 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | kid_fill_mode default | 1 (most restrictive) | Safe default for existing children — opt-in to more permissions |
 | filled_by column | Allows NULL | Legacy parent-only records remain valid without data migration |
 | mood column | TEXT (not enum) | Flexibility for emoji key values without schema migration per new mood |
+| getExtraActivitiesByDayType | Use getExtraActivities(childId, dayType) | Plan referenced non-existent function; actual function accepts optional dayType param |
+| logActivity batch | Use saveActivityLogs batch | Plan referenced non-existent logActivity; saveActivityLogs upserts all activity rows at once |
+| KidDayFillForm Set iteration | Array.from(checkedActivities) | TypeScript tsconfig targets ES5; direct for...of on Set requires downlevelIteration flag |
+| coinsPreview | useMemo (not useState) | Synchronous update on every render without extra state; plan specified this pattern |
 
 ### New decisions (Phase 2.4)
 
