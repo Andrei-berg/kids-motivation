@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-04-10T21:22:00Z"
+last_updated: "2026-04-11T00:00:00Z"
 progress:
   total_phases: 11
   completed_phases: 9
@@ -13,7 +13,7 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-10 — Phase 02.5 Plan 02 COMPLETE (streak push notifications)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-11 — Phase 02.5 Plan 01 COMPLETE (coin & badge animations — human-verify approved)
 
 ---
 
@@ -22,8 +22,8 @@ progress:
 ```
 Phase: 02.5 IN PROGRESS — notifications-animations (2/4 plans done)
 Next: Phase 02.5-03 (badge/achievement animations) or 02.5-04
-Status: Plan 02 done. Streak broken/record push notifications wired into both save paths.
-Last activity: 2026-04-10 — 02.5-02 complete: notifyStreakEvents + updateStreaks StreakEvents (154b87e)
+Status: Plan 01 human-verify approved. Plan 02 done. Streak broken/record push notifications wired into both save paths.
+Last activity: 2026-04-11 — 02.5-01 human-verify checkpoint approved by user (animations verified working)
 ```
 
 Progress bar (M2):
