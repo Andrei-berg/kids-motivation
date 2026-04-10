@@ -10,6 +10,7 @@ export interface Wallet {
   total_earned_money: number
   total_spent_money: number
   updated_at: string
+  family_id?: string | null
 }
 
 export interface Reward {
@@ -88,6 +89,7 @@ export interface WalletTransaction {
   balance_after_coins: number
   balance_after_money: number
   created_at: string
+  family_id?: string | null
 }
 
 export interface WalletSettings {
