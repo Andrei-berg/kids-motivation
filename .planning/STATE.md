@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-04-09T08:57:42Z"
+last_updated: "2026-04-10T00:15:00Z"
 progress:
   total_phases: 8
   completed_phases: 6
@@ -13,17 +13,17 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-10 — Phase 2.4.1 plan 02 complete (KidDayFillForm: room checklist, mood picker, extra activities, live coin counter)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-10 — Phase 2.4.1 plan 03 complete (/kid/day rewritten with 3-tab layout: Сегодня/Неделя/Расходы, SVG ring removed)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 2.4.1 (IN PROGRESS — 2/4 plans done)
-Plan: 02.4.1-02 — COMPLETE (KidDayFillForm: room checklist, mood, extra activities, live coin counter, submit with coin award)
-Status: Phase 2.4.1 plan 02 done. Next: 02.4.1-03 (kid day page wiring KidDayFillForm).
-Last activity: 2026-04-10 — 02.4.1-02 complete: components/kid/KidDayFillForm.tsx (378 lines, fully typed)
+Phase: 2.4.1 (IN PROGRESS — 3/4 plans done)
+Plan: 02.4.1-03 — COMPLETE (/kid/day 3-tab rewrite: Сегодня hero+form, Неделя 7-day strip, Расходы sections)
+Status: Phase 2.4.1 plan 03 done. Next: 02.4.1-04.
+Last activity: 2026-04-10 — 02.4.1-03 complete: app/kid/day/page.tsx (600+ lines, 3 tabs, SVG ring removed)
 ```
 
 Progress bar (M2):
@@ -145,6 +145,9 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | logActivity batch | Use saveActivityLogs batch | Plan referenced non-existent logActivity; saveActivityLogs upserts all activity rows at once |
 | KidDayFillForm Set iteration | Array.from(checkedActivities) | TypeScript tsconfig targets ES5; direct for...of on Set requires downlevelIteration flag |
 | coinsPreview | useMemo (not useState) | Synchronous update on every render without extra state; plan specified this pattern |
+| loadData as useCallback | Re-invoked after KidDayFillForm save | Avoids full page reload; refreshes stats post-save inline |
+| Celebration panel inline | Not CelebrationOverlay | Immediate deterministic feedback; CelebrationOverlay uses localStorage timing |
+| kid_fill_mode type cast | (child as any)?.kid_fill_mode | Child type in lib/api.ts does not yet expose kid_fill_mode (added by DB migration, not yet in TypeScript model) |
 
 ### New decisions (Phase 2.4)
 
