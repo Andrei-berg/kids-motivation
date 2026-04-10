@@ -8,13 +8,14 @@ import type { Child } from '@/lib/models/child.types'
 import FamilyManager from '@/components/settings/FamilyManager'
 import SubjectsManager from '@/components/settings/SubjectsManager'
 
-type Tab = 'family' | 'subjects' | 'coins' | 'audit'
+type Tab = 'family' | 'subjects' | 'coins' | 'audit' | 'kids'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'family', label: '👨‍👩‍👧 Семья' },
   { id: 'subjects', label: '📚 Предметы' },
   { id: 'coins', label: '🪙 Монеты' },
   { id: 'audit', label: '📋 Журнал' },
+  { id: 'kids', label: '🧒 Ребёнок' },
 ]
 
 // ============================================================================
@@ -104,6 +105,10 @@ export default function ParentSettingsPage() {
   const [auditLoading, setAuditLoading] = useState(false)
   const [hasMore, setHasMore] = useState(false)
 
+  // Kid fill mode state
+  const [kidFillModes, setKidFillModes] = useState<Record<string, 1 | 2 | 3>>({})
+  const [savingKidMode, setSavingKidMode] = useState<Record<string, boolean>>({})
+
   // Check PIN on mount
   useEffect(() => {
     const stored = localStorage.getItem('parent_pin_hash')
@@ -141,6 +146,14 @@ export default function ParentSettingsPage() {
       if (kids.length > 0) {
         setSelectedChildId(kids[0].id)
       }
+
+      // Populate kidFillModes from each child's kid_fill_mode (default 1 if null)
+      const modes: Record<string, 1 | 2 | 3> = {}
+      kids.forEach(child => {
+        const mode = (child as any)?.kid_fill_mode
+        modes[child.id] = (mode === 2 || mode === 3) ? mode : 1
+      })
+      setKidFillModes(modes)
     }
 
     load()
@@ -248,6 +261,20 @@ export default function ParentSettingsPage() {
       console.error('Failed to save settings', err)
       setSaveStatus('error')
       setTimeout(() => setSaveStatus('idle'), 3000)
+    }
+  }
+
+  // ============================================================================
+  // KID FILL MODE SAVE
+  // ============================================================================
+
+  async function handleSaveKidFillMode(childId: string) {
+    setSavingKidMode(prev => ({ ...prev, [childId]: true }))
+    try {
+      const { supabase } = await import('@/lib/supabase')
+      await supabase.from('children').update({ kid_fill_mode: kidFillModes[childId] ?? 1 }).eq('id', childId)
+    } finally {
+      setSavingKidMode(prev => ({ ...prev, [childId]: false }))
     }
   }
 
@@ -509,6 +536,57 @@ export default function ParentSettingsPage() {
         )}
       </div>
       )} {/* end activeTab === 'audit' */}
+
+      {/* Ребёнок */}
+      {activeTab === 'kids' && (
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">
+            Выбери, что ребёнок может заполнять сам. Оценки всегда вводит родитель.
+          </p>
+
+          {children.map(child => (
+            <div key={child.id} className="bg-gray-800 rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{(child as any).emoji || '👤'}</span>
+                <span className="text-white font-bold">{child.name}</span>
+              </div>
+
+              <div className="space-y-2">
+                {([
+                  { mode: 1, label: 'Режим 1', desc: 'Только настроение и доп. занятия' },
+                  { mode: 2, label: 'Режим 2', desc: 'Комната + настроение + доп. занятия' },
+                  { mode: 3, label: 'Режим 3', desc: 'Комната + настроение + спорт + занятия' },
+                ] as { mode: 1 | 2 | 3; label: string; desc: string }[]).map(({ mode, label, desc }) => (
+                  <button
+                    key={mode}
+                    onClick={() => setKidFillModes(prev => ({ ...prev, [child.id]: mode }))}
+                    className={`w-full text-left p-3 rounded-lg border transition ${
+                      kidFillModes[child.id] === mode
+                        ? 'border-amber-400 bg-amber-400/10 text-amber-300'
+                        : 'border-gray-700 text-gray-400'
+                    }`}
+                  >
+                    <span className="font-semibold">{label}</span>
+                    <span className="ml-2 text-xs opacity-70">{desc}</span>
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => handleSaveKidFillMode(child.id)}
+                disabled={savingKidMode[child.id]}
+                className="w-full py-2 bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-lg disabled:opacity-50"
+              >
+                {savingKidMode[child.id] ? 'Сохраняю...' : 'Сохранить'}
+              </button>
+            </div>
+          ))}
+
+          {children.length === 0 && (
+            <p className="text-gray-500 text-sm">Нет детей в семье</p>
+          )}
+        </div>
+      )} {/* end activeTab === 'kids' */}
 
       {/* Change PIN */}
       <div className="mt-6 text-right">
