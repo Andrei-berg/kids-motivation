@@ -13,17 +13,17 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-10 — Phase 02.5 Plan 03 COMPLETE (Vercel Cron reminder push notifications)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-11 — Phase 02.5 Plan 04 COMPLETE (missed-tasks daily cron route)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 02.5 IN PROGRESS — notifications-animations (3/4 plans done)
-Next: Phase 02.5-04 (missed-tasks cron)
-Status: Plans 01-03 done. Animations, push streak/badge notifications, and schedule reminder cron all complete.
-Last activity: 2026-04-10 — 02.5-03 COMPLETE — GET /api/cron/reminders + vercel.json cron config
+Phase: 02.5 COMPLETE — notifications-animations (4/4 plans done)
+Next: Phase 03 (next milestone phase)
+Status: All 4 plans done. Coin animations, badge animations, schedule reminder cron, missed-tasks cron all shipped.
+Last activity: 2026-04-11 — 02.5-04 COMPLETE — GET /api/cron/missed-tasks daily parent notification
 ```
 
 Progress bar (M2):
@@ -168,6 +168,13 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | Approved purchases fetch | Direct Supabase query (status='approved') | getPendingPurchases only returns pending rows; no new repo function needed |
 | handleApprove UI update | Moves item from pending list to approved list | Immediate UX feedback; item appears in delivery panel without page reload |
 | Preview bypass | ?preview=true query param (stateless) | No session change needed; middleware checks param before redirecting non-child from /kid/* |
+
+### New decisions (Phase 02.5 plan 04)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| PostgREST cs filter for array containment | .filter('day_of_week', 'cs', JSON.stringify([todayDow])) | .contains() PostgREST operator does not work for integer array containment; cs (contains) filter string does |
+| Separate parent members query | Second query by family_id with role=parent filter | More precise than single-query join; avoids ID set ambiguity between child and parent UUIDs |
 
 ### New decisions (Phase 02.5 plan 03)
 

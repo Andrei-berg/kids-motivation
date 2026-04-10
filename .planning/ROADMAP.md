@@ -114,7 +114,7 @@ Plans:
 - [x] **Phase 2.3: kid-screen** — Full kid UI: bright theme, my day, wallet, achievements, shop browse, leaderboard (completed 2026-04-05)
 - [ ] **Phase 2.4: shop-approval** — Purchase request flow: child requests → parent approves/rejects → coins deducted; parent can preview kid's view
 - [ ] **Phase 2.4.1: kid-screen-v2** — /kid/day redesign with weekly calendar + live coins, kid day-fill form, expenses tab for kids
-- [ ] **Phase 2.5: notifications-animations** — Push notifications, confetti, badge animations, streak alerts
+- [x] **Phase 2.5: notifications-animations** — Push notifications, confetti, badge animations, streak alerts (completed 2026-04-10)
 
 ### Progress Table
 
@@ -125,7 +125,7 @@ Plans:
 | 2.3 kid-screen | 6/6 | Complete   | 2026-04-05 |
 | 2.4 shop-approval | 3/4 | In Progress|  |
 | 2.4.1 kid-screen-v2 | 0/TBD | Not started | - |
-| 2.5 notifications-animations | 2/4 | In Progress|  |
+| 2.5 notifications-animations | 4/4 | Complete   | 2026-04-10 |
 
 ---
 
@@ -273,7 +273,7 @@ Plans:
 4. Child receives a push notification when they set a new streak record
 5. Parent receives a push notification when a child misses a required task
 
-**Plans:** 2/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 - [ ] 02.5-01-PLAN.md — Animations: coin fly-up (CoinFlyup component) + badge confetti (CelebrationOverlay)
