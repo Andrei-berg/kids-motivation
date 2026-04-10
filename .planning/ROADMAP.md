@@ -248,7 +248,13 @@ Plans:
 4. The day-fill form adapts to day type: school day shows schedule-based subjects; weekend/vacation shows reading and home-help options
 5. After saving the form, a celebration screen shows total coins earned
 
-**Plans:** TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 02.4.1-01-PLAN.md — DB migration (filled_by, kid_fill_mode, mood columns) + type extensions + getSectionsForChildExpenses
+- [ ] 02.4.1-02-PLAN.md — KidDayFillForm component (room/mood/activities, live coin counter, day-type detection)
+- [ ] 02.4.1-03-PLAN.md — /kid/day page redesign: 3 tabs, 7-day calendar strip, form wired, expenses tab
+- [ ] 02.4.1-04-PLAN.md — Parent settings fill-mode tab + human verification checkpoint
 
 ---
 
