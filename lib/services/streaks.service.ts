@@ -5,7 +5,19 @@
 import { supabase } from '../supabase'
 import { normalizeDate, addDays } from '@/utils/helpers'
 
-export async function updateStreaks(childId: string, date: string) {
+export interface StreakEvent {
+  type: 'room' | 'study' | 'sport'
+  event: 'broken' | 'record'
+  previousCount: number
+  newCount: number
+}
+
+export interface StreakEvents {
+  broken: StreakEvent[]
+  records: StreakEvent[]
+}
+
+export async function updateStreaks(childId: string, date: string): Promise<StreakEvents> {
   const today = normalizeDate(date)
   const startDate = addDays(today, -30)
 
@@ -17,7 +29,7 @@ export async function updateStreaks(childId: string, date: string) {
     .lte('date', today)
     .order('date')
 
-  if (!days) return
+  if (!days) return { broken: [], records: [] }
 
   const { data: grades } = await supabase
     .from('subject_grades')
@@ -37,9 +49,17 @@ export async function updateStreaks(childId: string, date: string) {
   const studyStreak = calculateStudyStreak(grades || [], today)
   const sportStreak = calculateSportStreak(sports || [], today)
 
-  await updateStreak(childId, 'room', roomStreak.current, roomStreak.best)
-  await updateStreak(childId, 'study', studyStreak.current, studyStreak.best)
-  await updateStreak(childId, 'sport', sportStreak.current, sportStreak.best)
+  const [roomEvent, studyEvent, sportEvent] = await Promise.all([
+    updateStreak(childId, 'room', roomStreak.current, roomStreak.best),
+    updateStreak(childId, 'study', studyStreak.current, studyStreak.best),
+    updateStreak(childId, 'sport', sportStreak.current, sportStreak.best),
+  ])
+
+  const events: StreakEvents = {
+    broken: [roomEvent, studyEvent, sportEvent].filter((e): e is StreakEvent => e?.event === 'broken'),
+    records: [roomEvent, studyEvent, sportEvent].filter((e): e is StreakEvent => e?.event === 'record'),
+  }
+  return events
 }
 
 export function calculateRoomStreak(days: any[], today: string) {
@@ -121,7 +141,12 @@ export function calculateSportStreak(sports: any[], today: string) {
   return { current, best }
 }
 
-async function updateStreak(childId: string, type: string, current: number, best: number) {
+async function updateStreak(
+  childId: string,
+  type: 'room' | 'study' | 'sport',
+  current: number,
+  best: number
+): Promise<StreakEvent | null> {
   const { data: existing } = await supabase
     .from('streaks')
     .select('*')
@@ -129,7 +154,15 @@ async function updateStreak(childId: string, type: string, current: number, best
     .eq('streak_type', type)
     .maybeSingle()
 
+  let event: StreakEvent | null = null
+
   if (existing) {
+    if (existing.current_count > 0 && current === 0) {
+      event = { type, event: 'broken', previousCount: existing.current_count, newCount: 0 }
+    } else if (current > existing.best_count) {
+      event = { type, event: 'record', previousCount: existing.best_count, newCount: current }
+    }
+
     await supabase
       .from('streaks')
       .update({
@@ -140,6 +173,10 @@ async function updateStreak(childId: string, type: string, current: number, best
       })
       .eq('id', existing.id)
   } else {
+    if (current > 0) {
+      event = { type, event: 'record', previousCount: 0, newCount: current }
+    }
+
     await supabase
       .from('streaks')
       .insert({
@@ -151,6 +188,8 @@ async function updateStreak(childId: string, type: string, current: number, best
         active: current > 0
       })
   }
+
+  return event
 }
 
 export async function getStreakBonuses(childId: string) {
