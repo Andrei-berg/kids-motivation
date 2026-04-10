@@ -273,7 +273,13 @@ Plans:
 4. Child receives a push notification when they set a new streak record
 5. Parent receives a push notification when a child misses a required task
 
-**Plans:** TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 02.5-01-PLAN.md — Animations: coin fly-up (CoinFlyup component) + badge confetti (CelebrationOverlay)
+- [ ] 02.5-02-PLAN.md — Streak push notifications: broken streak + new record alerts to child
+- [ ] 02.5-03-PLAN.md — Schedule reminder cron: /api/cron/reminders + vercel.json cron config
+- [ ] 02.5-04-PLAN.md — Missed-task parent notification: /api/cron/missed-tasks end-of-day cron
 
 ---
 
