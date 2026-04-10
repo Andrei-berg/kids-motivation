@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
 import { getChildBadges } from '@/lib/services/badges.service'
+import { triggerGoalConfetti } from '@/utils/confetti'
 
 const STORAGE_KEY = 'kid_last_celebration_check'
 
@@ -33,6 +34,7 @@ export default function CelebrationOverlay() {
           title: recent.title,
           xp_reward: recent.xp_reward,
         })
+        triggerGoalConfetti()
       }
 
       // Update last check time regardless
@@ -55,7 +57,13 @@ export default function CelebrationOverlay() {
       role="dialog"
       aria-label="Новый значок получен"
     >
-      <div className="kid-celebration-badge">{newBadge.icon}</div>
+      <div className="kid-celebration-badge" style={{
+        animation: 'badge-pulse 0.6s ease-out',
+        fontSize: '6rem',
+        lineHeight: 1,
+      }}>
+        {newBadge.icon}
+      </div>
       <h2 className="text-white text-2xl font-extrabold text-center px-4">Новый значок!</h2>
       <p className="text-white/90 text-lg font-bold text-center">{newBadge.title}</p>
       <div className="bg-white/20 text-white text-sm font-semibold px-4 py-2 rounded-full mt-2">
