@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useAppStore } from '@/lib/store'
-import { api } from '@/lib/api'
+import { api, getChildren } from '@/lib/api'
 import type { Child, DayData, SubjectGrade, Goal } from '@/lib/api'
 import { normalizeDate, getWeekRange } from '@/utils/helpers'
 import { getWallet } from '@/lib/repositories/wallet.repo'
@@ -96,7 +96,7 @@ interface Section {
 // ============================================================================
 
 export default function KidDayPage() {
-  const { activeMemberId } = useAppStore()
+  const { activeMemberId, setActiveMemberId } = useAppStore()
 
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('today')
@@ -129,16 +129,34 @@ export default function KidDayPage() {
     }
     setLoading(true)
     try {
-      const [childData, dayData, grades, weekRaw, streaksData, goalsData, walletData, sectionsData] =
+      // Resolve child: try activeMemberId first, fall back to first child
+      // (activeMemberId may be a stale UUID if user went through onboarding)
+      let resolvedId = activeMemberId
+      let childData: Child | null = null
+      try {
+        childData = await api.getChild(activeMemberId)
+      } catch {
+        const all = await getChildren()
+        if (all.length > 0) {
+          childData = all[0]
+          resolvedId = all[0].id
+          setActiveMemberId(resolvedId)
+        }
+      }
+      if (!childData) {
+        setLoading(false)
+        return
+      }
+
+      const [dayData, grades, weekRaw, streaksData, goalsData, walletData, sectionsData] =
         await Promise.all([
-          api.getChild(activeMemberId),
-          api.getDay(activeMemberId, today),
-          api.getSubjectGradesForDate(activeMemberId, today),
-          api.getWeekData(activeMemberId, today),
-          api.getStreaks(activeMemberId),
-          api.getGoals(activeMemberId),
-          getWallet(activeMemberId),
-          getSectionsForChildExpenses(activeMemberId),
+          api.getDay(resolvedId, today),
+          api.getSubjectGradesForDate(resolvedId, today),
+          api.getWeekData(resolvedId, today),
+          api.getStreaks(resolvedId),
+          api.getGoals(resolvedId),
+          getWallet(resolvedId),
+          getSectionsForChildExpenses(resolvedId),
         ])
 
       setChild(childData)
@@ -405,7 +423,7 @@ export default function KidDayPage() {
             </div>
           ) : showFillForm ? (
             <KidDayFillForm
-              childId={activeMemberId}
+              childId={child?.id ?? activeMemberId ?? ''}
               date={today}
               fillMode={fillMode as 1 | 2 | 3}
               dayType={dayType}
