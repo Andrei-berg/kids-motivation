@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { useCoinAnimation, CoinFlyup } from '@/components/kid/CoinAnimation'
 import type { DayData, SubjectGrade } from '@/lib/models/child.types'
 import type { Subject } from '@/lib/models/flexible.types'
 import type { ExtraActivity } from '@/lib/models/expense.types'
@@ -74,6 +75,9 @@ export function KidDayFillForm({
   existingDay,
   onSaved,
 }: KidDayFillFormProps) {
+  // ── Coin animation ───────────────────────────────────────────────────────
+  const { flyups, trigger: triggerCoinFlyup } = useCoinAnimation()
+
   // ── State ────────────────────────────────────────────────────────────────
   const isChildFilled = existingDay?.filled_by === 'child'
 
@@ -258,6 +262,7 @@ export function KidDayFillForm({
         }
       }
 
+      triggerCoinFlyup(coinsPreview)
       onSaved(coinsPreview)
     } catch (err) {
       console.error('KidDayFillForm submit error:', err)
@@ -528,6 +533,9 @@ export function KidDayFillForm({
           )}
         </button>
       )}
+
+      {/* ── Coin fly-up animation ────────────────────────────────────── */}
+      <CoinFlyup flyups={flyups} />
     </div>
   )
 }
