@@ -13,17 +13,17 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-10 — Phase 2.4.1 plan 03 complete (/kid/day rewritten with 3-tab layout: Сегодня/Неделя/Расходы, SVG ring removed)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-10 — Phase 2.4.1 plan 04 Task 1 complete (parent settings Ребёнок tab), paused at checkpoint:human-verify
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 2.4.1 (IN PROGRESS — 3/4 plans done)
-Plan: 02.4.1-03 — COMPLETE (/kid/day 3-tab rewrite: Сегодня hero+form, Неделя 7-day strip, Расходы sections)
-Status: Phase 2.4.1 plan 03 done. Next: 02.4.1-04.
-Last activity: 2026-04-10 — 02.4.1-03 complete: app/kid/day/page.tsx (600+ lines, 3 tabs, SVG ring removed)
+Phase: 2.4.1 (IN PROGRESS — Task 1 of Plan 04 done, paused at checkpoint:human-verify)
+Plan: 02.4.1-04 — PAUSED AT CHECKPOINT (Task 1 done: parent settings Ребёнок tab; awaiting human verification of full phase 2.4.1)
+Status: Awaiting human verification. After approval, phase 2.4.1 will be complete.
+Last activity: 2026-04-10 — 02.4.1-04 Task 1: parent settings Ребёнок tab added (dd683b6)
 ```
 
 Progress bar (M2):
@@ -148,6 +148,12 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | loadData as useCallback | Re-invoked after KidDayFillForm save | Avoids full page reload; refreshes stats post-save inline |
 | Celebration panel inline | Not CelebrationOverlay | Immediate deterministic feedback; CelebrationOverlay uses localStorage timing |
 | kid_fill_mode type cast | (child as any)?.kid_fill_mode | Child type in lib/api.ts does not yet expose kid_fill_mode (added by DB migration, not yet in TypeScript model) |
+
+### New decisions (Phase 2.4.1 plan 04)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| Supabase import in settings | import { supabase } from '@/lib/supabase' (dynamic) | Project has no @/lib/supabase/browser; only singleton export |
 
 ### New decisions (Phase 2.4)
 
