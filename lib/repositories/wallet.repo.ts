@@ -70,7 +70,8 @@ export async function updateWalletCoins(
     description,
     icon,
     balance_after_coins: newCoins,
-    balance_after_money: wallet.money
+    balance_after_money: wallet.money,
+    family_id: wallet.family_id,
   })
 
   return data
@@ -112,7 +113,8 @@ export async function updateWalletMoney(
     description,
     icon,
     balance_after_coins: wallet.coins,
-    balance_after_money: newMoney
+    balance_after_money: newMoney,
+    family_id: wallet.family_id,
   })
 
   return data
@@ -127,7 +129,7 @@ export async function getWalletSettings(): Promise<WalletSettings> {
     .from('wallet_settings')
     .select('*')
     .eq('id', 'default')
-    .single()
+    .maybeSingle()
 
   if (error || !data) {
     return {
@@ -340,7 +342,8 @@ export async function purchaseReward(
     related_id: data.id,
     related_type: 'reward',
     balance_after_coins: newCoins,
-    balance_after_money: newMoney
+    balance_after_money: newMoney,
+    family_id: wallet.family_id,
   })
 
   return data
@@ -685,7 +688,8 @@ export async function exchangeCoins(
     related_id: data.id,
     related_type: 'exchange',
     balance_after_coins: newCoins,
-    balance_after_money: newMoney
+    balance_after_money: newMoney,
+    family_id: wallet.family_id,
   })
 
   return data
@@ -787,7 +791,8 @@ export async function approveWithdrawal(
     related_id: withdrawalId,
     related_type: 'withdrawal',
     balance_after_coins: wallet.coins,
-    balance_after_money: newMoney
+    balance_after_money: newMoney,
+    family_id: wallet.family_id,
   })
 
   return data

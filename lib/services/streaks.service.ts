@@ -49,10 +49,17 @@ export async function updateStreaks(childId: string, date: string): Promise<Stre
   const studyStreak = calculateStudyStreak(grades || [], today)
   const sportStreak = calculateSportStreak(sports || [], today)
 
+  const { data: child } = await supabase
+    .from('children')
+    .select('family_id')
+    .eq('id', childId)
+    .maybeSingle()
+  const familyId = child?.family_id ?? null
+
   const [roomEvent, studyEvent, sportEvent] = await Promise.all([
-    updateStreak(childId, 'room', roomStreak.current, roomStreak.best),
-    updateStreak(childId, 'study', studyStreak.current, studyStreak.best),
-    updateStreak(childId, 'sport', sportStreak.current, sportStreak.best),
+    updateStreak(childId, 'room', roomStreak.current, roomStreak.best, familyId),
+    updateStreak(childId, 'study', studyStreak.current, studyStreak.best, familyId),
+    updateStreak(childId, 'sport', sportStreak.current, sportStreak.best, familyId),
   ])
 
   const events: StreakEvents = {
@@ -145,7 +152,8 @@ async function updateStreak(
   childId: string,
   type: 'room' | 'study' | 'sport',
   current: number,
-  best: number
+  best: number,
+  familyId?: string | null
 ): Promise<StreakEvent | null> {
   const { data: existing } = await supabase
     .from('streaks')
@@ -185,7 +193,8 @@ async function updateStreak(
         current_count: current,
         best_count: best,
         last_updated: normalizeDate(new Date()),
-        active: current > 0
+        active: current > 0,
+        ...(familyId ? { family_id: familyId } : {}),
       })
   }
 
