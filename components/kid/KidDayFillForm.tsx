@@ -92,9 +92,10 @@ export function KidDayFillForm({
   const [saving, setSaving] = useState(false)
   const [noteChild, setNoteChild] = useState<string>(existingDay?.note_child ?? '')
   // Grades (mode 3 only)
+  // saved=true means already in DB — skip on submit to avoid duplicates
+  type GradeEntry = { grade: number | null; isDigital: boolean; saved: boolean }
   const [subjects, setSubjects] = useState<Subject[]>([])
-  const [existingGrades, setExistingGrades] = useState<SubjectGrade[]>([])
-  const [kidGrades, setKidGrades] = useState<Record<string, number | null>>({})
+  const [kidGrades, setKidGrades] = useState<Record<string, GradeEntry[]>>({})
 
   // ── Lock logic ───────────────────────────────────────────────────────────
   const isLocked = useMemo(() => {
@@ -131,11 +132,18 @@ export function KidDayFillForm({
       if (fillMode >= 3 && subs) {
         setSubjects(subs)
         const grades: SubjectGrade[] = gradesData ?? []
-        setExistingGrades(grades)
-        // Pre-fill kid grades from existing data (if child already filled them)
-        const preGrades: Record<string, number | null> = {}
-        grades.forEach((g: SubjectGrade) => { preGrades[g.subject] = g.grade })
-        setKidGrades(preGrades)
+        // Group existing grades by subject — pre-fill as saved entries
+        const bySubject: Record<string, Array<{ grade: number | null; isDigital: boolean; saved: boolean }>> = {}
+        grades.forEach((g: SubjectGrade) => {
+          if (!bySubject[g.subject]) bySubject[g.subject] = []
+          bySubject[g.subject].push({ grade: g.grade, isDigital: g.note === 'цифровое задание', saved: true })
+        })
+        // Ensure every active subject has at least one empty entry for new input
+        ;(subs as Subject[]).forEach((s: Subject) => {
+          if (!bySubject[s.name]) bySubject[s.name] = []
+          bySubject[s.name].push({ grade: null, isDigital: false, saved: false })
+        })
+        setKidGrades(bySubject)
       }
     }
     load()
@@ -152,9 +160,9 @@ export function KidDayFillForm({
       const act = activities.find(a => a.id === id)
       if (act) total += act.coins
     })
-    // Grade coins (mode 3)
-    Object.values(kidGrades).forEach(g => {
-      if (g !== null) total += GRADE_COINS[g] ?? 0
+    // Grade coins (mode 3) — only unsaved (new) entries
+    Object.values(kidGrades).flat().forEach(e => {
+      if (!e.saved && e.grade !== null) total += GRADE_COINS[e.grade] ?? 0
     })
     return total
   }, [roomItems, checkedActivities, activities, settings, fillMode, kidGrades])
@@ -227,24 +235,25 @@ export function KidDayFillForm({
         }
       }
 
-      // Save grades (mode 3) — only subjects the kid actually rated
+      // Save grades (mode 3) — only new (unsaved) entries with a grade set
       if (fillMode >= 3) {
-        const existingSubjectNames = new Set(existingGrades.map(g => g.subject))
-        for (const [subject, grade] of Object.entries(kidGrades)) {
-          if (grade === null) continue
-          // Skip if parent already entered a grade for this subject today
-          if (existingSubjectNames.has(subject)) continue
+        for (const [subject, entries] of Object.entries(kidGrades)) {
           const sub = subjects.find(s => s.name === subject)
-          await saveSubjectGrade({
-            childId,
-            date,
-            subject,
-            subjectId: sub?.id,
-            grade,
-          })
-          const coins = GRADE_COINS[grade] ?? 0
-          if (coins !== 0) {
-            await updateWalletCoins(childId, coins, `Оценка ${grade} — ${subject}`, '📚')
+          for (const entry of entries) {
+            if (entry.saved || entry.grade === null) continue
+            await saveSubjectGrade({
+              childId,
+              date,
+              subject,
+              subjectId: sub?.id,
+              grade: entry.grade,
+              note: entry.isDigital ? 'цифровое задание' : undefined,
+            })
+            const coins = GRADE_COINS[entry.grade] ?? 0
+            if (coins !== 0) {
+              const label = entry.isDigital ? `Цифр. ${entry.grade} — ${subject}` : `Оценка ${entry.grade} — ${subject}`
+              await updateWalletCoins(childId, coins, label, '📚')
+            }
           }
         }
       }
@@ -388,46 +397,89 @@ export function KidDayFillForm({
         <div className="kid-card">
           <div className="font-bold text-base mb-1">📚 Оценки за сегодня</div>
           <p className="text-xs text-gray-400 mb-3">Мы доверяем тебе — родитель проверит по журналу</p>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             {subjects.map(sub => {
-              const existingGrade = existingGrades.find(g => g.subject === sub.name)
-              const kidGrade = kidGrades[sub.name] ?? null
+              const entries = kidGrades[sub.name] ?? []
               return (
-                <div key={sub.id} className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-gray-700 flex-1 min-w-0 truncate">{sub.name}</span>
-                  {existingGrade ? (
-                    // Parent already entered — show read-only
-                    <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500">
-                      {existingGrade.grade} (родитель)
-                    </span>
-                  ) : (
-                    // Kid can enter
-                    <div className="flex gap-1">
-                      {[2, 3, 4, 5].map(g => (
-                        <button
-                          key={g}
-                          type="button"
-                          disabled={isLocked}
-                          onClick={() => setKidGrades(prev => ({
-                            ...prev,
-                            [sub.name]: prev[sub.name] === g ? null : g,
-                          }))}
-                          className={[
-                            'w-8 h-8 rounded-lg text-sm font-bold border-2 transition-all',
-                            kidGrade === g
-                              ? g >= 4
-                                ? 'bg-emerald-400 border-emerald-500 text-white'
-                                : g === 3
-                                  ? 'bg-amber-400 border-amber-500 text-white'
+                <div key={sub.id}>
+                  <div className="text-sm font-semibold text-gray-700 mb-2">{sub.name}</div>
+                  <div className="flex flex-col gap-2">
+                    {entries.map((entry, idx) => (
+                      <div key={idx} className="flex items-center gap-2 flex-wrap">
+                        {/* Grade buttons */}
+                        <div className="flex gap-1">
+                          {[2, 3, 4, 5].map(g => (
+                            <button
+                              key={g}
+                              type="button"
+                              disabled={isLocked || entry.saved}
+                              onClick={() => setKidGrades(prev => {
+                                const next = prev[sub.name].map((e, i) =>
+                                  i === idx ? { ...e, grade: e.grade === g ? null : g } : e
+                                )
+                                return { ...prev, [sub.name]: next }
+                              })}
+                              className={[
+                                'w-8 h-8 rounded-lg text-sm font-bold border-2 transition-all',
+                                entry.grade === g
+                                  ? g >= 4 ? 'bg-emerald-400 border-emerald-500 text-white'
+                                  : g === 3 ? 'bg-amber-400 border-amber-500 text-white'
                                   : 'bg-rose-400 border-rose-500 text-white'
-                              : 'bg-white border-gray-200 text-gray-600',
-                            isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
-                          ].join(' ')}
-                        >
-                          {g}
-                        </button>
-                      ))}
-                    </div>
+                                  : 'bg-white border-gray-200 text-gray-600',
+                                (isLocked || entry.saved) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+                              ].join(' ')}
+                            >{g}</button>
+                          ))}
+                        </div>
+                        {/* Digital toggle */}
+                        {!entry.saved && (
+                          <button
+                            type="button"
+                            disabled={isLocked}
+                            onClick={() => setKidGrades(prev => {
+                              const next = prev[sub.name].map((e, i) =>
+                                i === idx ? { ...e, isDigital: !e.isDigital } : e
+                              )
+                              return { ...prev, [sub.name]: next }
+                            })}
+                            className={[
+                              'text-xs px-2 py-1 rounded-full border transition-all',
+                              entry.isDigital
+                                ? 'bg-blue-100 border-blue-400 text-blue-700 font-semibold'
+                                : 'bg-white border-gray-200 text-gray-400',
+                            ].join(' ')}
+                          >💻 Цифр.</button>
+                        )}
+                        {/* Saved badge */}
+                        {entry.saved && (
+                          <span className="text-xs text-gray-400">
+                            {entry.isDigital ? '💻 цифр.' : ''}
+                          </span>
+                        )}
+                        {/* Remove entry (if more than 1 unsaved) */}
+                        {!entry.saved && entries.filter(e => !e.saved).length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setKidGrades(prev => ({
+                              ...prev,
+                              [sub.name]: prev[sub.name].filter((_, i) => i !== idx),
+                            }))}
+                            className="text-xs text-gray-300 hover:text-rose-400 ml-auto"
+                          >✕</button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {/* Add another grade */}
+                  {!isLocked && (
+                    <button
+                      type="button"
+                      onClick={() => setKidGrades(prev => ({
+                        ...prev,
+                        [sub.name]: [...(prev[sub.name] ?? []), { grade: null, isDigital: false, saved: false }],
+                      }))}
+                      className="mt-2 text-xs text-amber-600 font-semibold"
+                    >+ ещё оценка</button>
                   )}
                 </div>
               )
