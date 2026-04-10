@@ -427,4 +427,4 @@ REQ-SEC-002, REQ-SEC-006, REQ-SCH-006
 | REQ-STR-006 | Phase 2.5 | Complete |
 | REQ-SCH-004 | Phase 2.5 | Complete |
 | REQ-SCH-005 | Phase 2.5 | Complete |
-| REQ-SCH-006 | Phase 2.5 | Pending |
+| REQ-SCH-006 | Phase 2.5 | Complete |
