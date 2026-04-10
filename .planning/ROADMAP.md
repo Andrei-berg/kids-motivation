@@ -243,7 +243,7 @@ Plans:
 
 **Success Criteria:**
 1. /kid/day shows a redesigned hero (coin balance + XP bar), 4 stat cards with coin deltas, and a 7-day weekly calendar strip replacing the SVG ring
-2. Child can tap "Заполнить сегодня" and complete a full day-fill form: grades per subject, room checklist (5 items), behavior/mood, diary, sport exercises, sections — with a live coin counter updating as they fill it in
+2. Child can tap "Заполнить сегодня" and complete a day-fill form: room checklist (5 items), behavior/mood, sport exercises, extra activities — with a live coin counter updating as they fill it in. Grades are always entered by the parent.
 3. A new /kid/expenses tab shows recurring expenses (sections, hobbies) and one-off costs (breakages) so children understand what the family spends on them
 4. The day-fill form adapts to day type: school day shows schedule-based subjects; weekend/vacation shows reading and home-help options
 5. After saving the form, a celebration screen shows total coins earned
