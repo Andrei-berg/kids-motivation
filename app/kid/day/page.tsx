@@ -417,9 +417,16 @@ export default function KidDayPage() {
           )}
 
           {/* C. Fill form or summary */}
-          {todayDay?.filled_by === 'child' ? (
-            <div className="kid-card py-4 text-center">
+          {todayDay?.filled_by === 'child' && !showFillForm ? (
+            <div className="kid-card py-3 flex items-center justify-between">
               <span className="text-base font-semibold text-emerald-600">День заполнен ✅</span>
+              <button
+                type="button"
+                onClick={() => setShowFillForm(true)}
+                className="text-xs text-amber-600 font-semibold underline"
+              >
+                Изменить
+              </button>
             </div>
           ) : showFillForm ? (
             <KidDayFillForm
