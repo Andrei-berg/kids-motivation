@@ -239,7 +239,7 @@ Plans:
 
 **Depends on:** Phase 2.3 (kid-screen foundation), Phase 2.4 (shop-approval for kid shop interaction)
 
-**Requirements:** REQ-KID-001, REQ-KID-002, REQ-KID-003, REQ-DAY-001
+**Requirements:** REQ-KID-001, REQ-DAY-001
 
 **Success Criteria:**
 1. /kid/day shows a redesigned hero (coin balance + XP bar), 4 stat cards with coin deltas, and a 7-day weekly calendar strip replacing the SVG ring

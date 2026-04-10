@@ -13,17 +13,17 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-09 — Phase 2.4 plan 04 complete (middleware preview bypass + Kid View button)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-10 — Phase 2.4.1 plan 01 complete (DB foundation: filled_by, kid_fill_mode, mood columns + TypeScript types)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 2.4 (IN PROGRESS — 4/4 plans done, awaiting human verification checkpoint)
-Plan: 02.4-04 — COMPLETE (middleware preview bypass + Kid View button per ChildCard)
-Status: Phase 2.4 all 4 plans done. Awaiting human verification of full purchase flow + Kid View.
-Last activity: 2026-04-09 — 02.4-04 complete: middleware.ts + app/parent/dashboard/page.tsx updated with preview bypass and Kid View button
+Phase: 2.4.1 (IN PROGRESS — 1/4 plans done)
+Plan: 02.4.1-01 — COMPLETE (DB foundation: days.filled_by, days.mood, children.kid_fill_mode + TypeScript types + getSectionsForChildExpenses)
+Status: Phase 2.4.1 plan 01 done. Next: 02.4.1-02 (kid day fill UI).
+Last activity: 2026-04-10 — 02.4.1-01 complete: supabase-migration-kid-fill-v2.sql + extended types + new repo function
 ```
 
 Progress bar (M2):
@@ -133,6 +133,14 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | PodiumBlock placement | Inlined in leaderboard page file | Single-use sub-component, no external export needed |
 | CelebrationOverlay localStorage | Timestamp updated regardless of badge found | Prevents same badge re-triggering when lastCheckTime is 0 |
 | Leaderboard period scoring | week=weekScore.total, month=wallet.coins, all=child.xp | Three distinct ordering signals per period |
+
+### New decisions (Phase 2.4.1)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| kid_fill_mode default | 1 (most restrictive) | Safe default for existing children — opt-in to more permissions |
+| filled_by column | Allows NULL | Legacy parent-only records remain valid without data migration |
+| mood column | TEXT (not enum) | Flexibility for emoji key values without schema migration per new mood |
 
 ### New decisions (Phase 2.4)
 
