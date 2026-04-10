@@ -457,7 +457,11 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
         await Promise.all(coinAwards)
       }
 
-      await updateStreaks(childId, date)
+      const streakEvents = await updateStreaks(childId, date)
+      // Fire-and-forget: don't block save completion on push delivery
+      import('@/app/actions/push-streaks').then(({ notifyStreakEvents }) => {
+        notifyStreakEvents(childId, '', streakEvents).catch(() => {})
+      })
 
       // Award streak bonus coins if any threshold was crossed (REQ-COIN-007, REQ-COIN-008)
       const bonus = await getStreakBonuses(childId)

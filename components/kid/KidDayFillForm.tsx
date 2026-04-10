@@ -15,6 +15,7 @@ import {
   awardCoinsForRoom,
   updateWalletCoins,
 } from '@/lib/repositories/wallet.repo'
+import { updateStreaks } from '@/lib/streaks'
 
 const GRADE_COINS: Record<number, number> = { 5: 5, 4: 3, 3: -3, 2: -5, 1: -10 }
 
@@ -263,6 +264,12 @@ export function KidDayFillForm({
       }
 
       triggerCoinFlyup(coinsPreview)
+      const streakEvents = await updateStreaks(childId, date)
+      // Fire-and-forget: don't block save completion on push delivery
+      import('@/app/actions/push-streaks').then(({ notifyStreakEvents }) => {
+        notifyStreakEvents(childId, '', streakEvents).catch(() => {})
+      })
+
       onSaved(coinsPreview)
     } catch (err) {
       console.error('KidDayFillForm submit error:', err)
