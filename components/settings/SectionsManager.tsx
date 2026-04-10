@@ -9,12 +9,7 @@ import {
   deleteSection,
   Section,
 } from '@/lib/expenses-api'
-
-// Children in this family
-const CHILDREN = [
-  { id: 'adam', name: 'Адам' },
-  { id: 'alim', name: 'Алим' },
-]
+import { useFamilyMembers } from '@/lib/hooks/useFamilyMembers'
 
 const DAYS = [
   { key: 'mon', label: 'Пн' },
@@ -47,7 +42,13 @@ const EMPTY_FORM: SectionForm = {
 }
 
 export default function SectionsManager() {
-  const [childId, setChildId] = useState('adam')
+  const { members } = useFamilyMembers()
+  const children = members.filter(m => m.role === 'child')
+  const [childId, setChildId] = useState('')
+
+  useEffect(() => {
+    if (!childId && children.length > 0) setChildId(children[0].id)
+  }, [children, childId])
   const [sections, setSections] = useState<Section[]>([])
   const [loading, setLoading] = useState(false)
   const [showForm, setShowForm] = useState(false)
@@ -188,7 +189,7 @@ export default function SectionsManager() {
 
       {/* Child selector */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-        {CHILDREN.map(c => (
+        {children.map(c => (
           <button
             key={c.id}
             onClick={() => { setChildId(c.id); setShowForm(false) }}
@@ -200,7 +201,7 @@ export default function SectionsManager() {
               color: childId === c.id ? '#818CF8' : 'rgba(238,238,255,0.5)',
             }}
           >
-            {c.name}
+            {c.display_name}
           </button>
         ))}
       </div>

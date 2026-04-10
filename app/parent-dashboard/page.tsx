@@ -14,7 +14,7 @@ import { getMonday, addDays, normalizeDate } from '@/utils/helpers'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CHILD_COLORS: Record<string, string> = { adam: '#8b5cf6', alim: '#0ea5e9' }
+const CHILD_COLOR_PALETTE = ['#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#ec4899']
 const GRADE_COINS: Record<number, number>  = { 5: 5, 4: 3, 3: -3, 2: -5, 1: -10 }
 const WEEK_DAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
@@ -107,7 +107,7 @@ export default function ParentDashboard() {
 
       const rawChildren = await getChildren()
 
-      const childStates = await Promise.all(rawChildren.map(async (child: Child) => {
+      const childStates = await Promise.all(rawChildren.map(async (child: Child, idx: number) => {
         const [wallet, streaks, todayDay, todayGrades, weekData, goalsResult] = await Promise.all([
           getWallet(child.id).catch(() => null),
           getStreaks(child.id).catch(() => []),
@@ -150,7 +150,7 @@ export default function ParentDashboard() {
           id: child.id,
           name: child.name,
           avatar: child.emoji || '👤',
-          color: CHILD_COLORS[child.id] ?? '#8b5cf6',
+          color: CHILD_COLOR_PALETTE[idx % CHILD_COLOR_PALETTE.length],
           balance,
           streak,
           todayCoins: calcDayCoins(todayDay, todayGrades),

@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getRewards, addReward, updateReward, deleteReward } from '@/lib/repositories/wallet.repo'
 import type { Reward } from '@/lib/models/wallet.types'
+import { getChildren } from '@/lib/api'
+import type { Child } from '@/lib/api'
 
 // ============================================================================
 // STARTER TEMPLATES
@@ -64,6 +66,7 @@ const DEFAULT_FORM: FormData = {
 
 export default function ParentShopPage() {
   const [rewards, setRewards] = useState<Reward[]>([])
+  const [children, setChildren] = useState<Child[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -98,7 +101,7 @@ export default function ParentShopPage() {
 
   useEffect(() => {
     setLoading(true)
-    reloadRewards().finally(() => setLoading(false))
+    Promise.all([reloadRewards(), getChildren().then(setChildren)]).finally(() => setLoading(false))
   }, [reloadRewards])
 
   // ============================================================================
@@ -364,8 +367,9 @@ export default function ParentShopPage() {
                 className="bg-gray-800 text-white rounded-lg px-3 py-2 w-full border border-gray-700 focus:border-indigo-500 focus:outline-none"
               >
                 <option value="">Для всех</option>
-                <option value="adam">Адам</option>
-                <option value="alim">Алим</option>
+                {children.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
               </select>
             </div>
 
@@ -470,7 +474,7 @@ export default function ParentShopPage() {
                     </span>
                     {reward.for_child && (
                       <span className="text-xs bg-gray-700 text-gray-400 px-2 py-0.5 rounded-full flex-shrink-0">
-                        {reward.for_child === 'adam' ? 'Адам' : 'Алим'}
+                        {children.find(c => c.id === reward.for_child)?.name ?? reward.for_child}
                       </span>
                     )}
                   </div>

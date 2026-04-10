@@ -8,11 +8,7 @@ import {
   deleteExtraActivity,
   ExtraActivity,
 } from '@/lib/expenses-api'
-
-const CHILDREN = [
-  { id: 'adam', name: 'Адам' },
-  { id: 'alim', name: 'Алим' },
-]
+import { useFamilyMembers } from '@/lib/hooks/useFamilyMembers'
 
 const EMOJIS = ['📖', '✏️', '🧮', '🔬', '🌍', '🎨', '🎵', '💻', '♟️', '🏃', '🤸', '🧩', '📝', '🌱', '🍳', '🔧']
 
@@ -35,8 +31,14 @@ const EMPTY_FORM: ActivityForm = {
 }
 
 export default function ActivitiesManager() {
-  const [childId, setChildId] = useState('adam')
+  const { members } = useFamilyMembers()
+  const children = members.filter(m => m.role === 'child')
+  const [childId, setChildId] = useState('')
   const [tab, setTab] = useState<DayTypeTab>('vacation')
+
+  useEffect(() => {
+    if (!childId && children.length > 0) setChildId(children[0].id)
+  }, [children, childId])
   const [activities, setActivities] = useState<ExtraActivity[]>([])
   const [loading, setLoading] = useState(false)
   const [showForm, setShowForm] = useState(false)
@@ -162,7 +164,7 @@ export default function ActivitiesManager() {
 
       {/* Child selector */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-        {CHILDREN.map(c => (
+        {children.map(c => (
           <button
             key={c.id}
             onClick={() => { setChildId(c.id); setShowForm(false) }}
@@ -174,7 +176,7 @@ export default function ActivitiesManager() {
               color: childId === c.id ? '#F59E0B' : 'rgba(238,238,255,0.5)',
             }}
           >
-            {c.name}
+            {c.display_name}
           </button>
         ))}
       </div>
