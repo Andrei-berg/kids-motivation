@@ -3,27 +3,27 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-04-10T00:15:00Z"
+last_updated: "2026-04-10T21:22:00Z"
 progress:
-  total_phases: 8
-  completed_phases: 6
-  total_plans: 25
-  completed_plans: 25
+  total_phases: 11
+  completed_phases: 9
+  total_plans: 39
+  completed_plans: 41
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-10 — Phase 2.4.1 plan 04 Task 1 complete (parent settings Ребёнок tab), paused at checkpoint:human-verify
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-10 — Phase 02.5 Plan 02 COMPLETE (streak push notifications)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 2.4.1 (IN PROGRESS — Task 1 of Plan 04 done, paused at checkpoint:human-verify)
-Plan: 02.4.1-04 — PAUSED AT CHECKPOINT (Task 1 done: parent settings Ребёнок tab; awaiting human verification of full phase 2.4.1)
-Status: Awaiting human verification. After approval, phase 2.4.1 will be complete.
-Last activity: 2026-04-10 — 02.4.1-04 Task 1: parent settings Ребёнок tab added (dd683b6)
+Phase: 02.5 IN PROGRESS — notifications-animations (2/4 plans done)
+Next: Phase 02.5-03 (badge/achievement animations) or 02.5-04
+Status: Plan 02 done. Streak broken/record push notifications wired into both save paths.
+Last activity: 2026-04-10 — 02.5-02 complete: notifyStreakEvents + updateStreaks StreakEvents (154b87e)
 ```
 
 Progress bar (M2):
@@ -168,6 +168,15 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | Approved purchases fetch | Direct Supabase query (status='approved') | getPendingPurchases only returns pending rows; no new repo function needed |
 | handleApprove UI update | Moves item from pending list to approved list | Immediate UX feedback; item appears in delivery panel without page reload |
 | Preview bypass | ?preview=true query param (stateless) | No session change needed; middleware checks param before redirecting non-child from /kid/* |
+
+### New decisions (Phase 02.5 plan 02)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| Server Action dynamic import in client | import('@/app/actions/push-streaks').then(...) | Avoids 'use server' top-level import boundary violation in client components |
+| Push send fire-and-forget | .catch(() => {}) after dynamic import | Push delivery never blocks day-save flow |
+| KidDayFillForm streak update | Added updateStreaks() call (was missing) | KidDayFillForm had no streak update; needed for event detection |
+| childName parameter | Empty string fallback | Notification text doesn't include child name; param kept for API extensibility |
 
 ---
 

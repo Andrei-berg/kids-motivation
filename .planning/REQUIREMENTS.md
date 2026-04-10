@@ -421,10 +421,10 @@ REQ-SEC-002, REQ-SEC-006, REQ-SCH-006
 | REQ-SHOP-007 | Phase 2.4 | Complete |
 | REQ-SHOP-008 | Phase 2.4 | Complete |
 | REQ-PARENT-008 | Phase 2.4 | Complete |
-| REQ-UX-004 | Phase 2.5 | Pending |
-| REQ-BAD-003 | Phase 2.5 | Pending |
-| REQ-STR-005 | Phase 2.5 | Pending |
-| REQ-STR-006 | Phase 2.5 | Pending |
+| REQ-UX-004 | Phase 2.5 | Complete |
+| REQ-BAD-003 | Phase 2.5 | Complete |
+| REQ-STR-005 | Phase 2.5 | Complete |
+| REQ-STR-006 | Phase 2.5 | Complete |
 | REQ-SCH-004 | Phase 2.5 | Pending |
 | REQ-SCH-005 | Phase 2.5 | Pending |
 | REQ-SCH-006 | Phase 2.5 | Pending |

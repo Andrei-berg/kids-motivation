@@ -125,7 +125,7 @@ Plans:
 | 2.3 kid-screen | 6/6 | Complete   | 2026-04-05 |
 | 2.4 shop-approval | 3/4 | In Progress|  |
 | 2.4.1 kid-screen-v2 | 0/TBD | Not started | - |
-| 2.5 notifications-animations | 0/TBD | Not started | - |
+| 2.5 notifications-animations | 2/4 | In Progress|  |
 
 ---
 
@@ -273,7 +273,7 @@ Plans:
 4. Child receives a push notification when they set a new streak record
 5. Parent receives a push notification when a child misses a required task
 
-**Plans:** 4 plans
+**Plans:** 2/4 plans executed
 
 Plans:
 - [ ] 02.5-01-PLAN.md — Animations: coin fly-up (CoinFlyup component) + badge confetti (CelebrationOverlay)
