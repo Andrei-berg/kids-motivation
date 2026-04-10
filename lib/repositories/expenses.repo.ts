@@ -258,6 +258,27 @@ export async function getAllSections(childId: string): Promise<Section[]> {
   return data || []
 }
 
+/**
+ * Returns active sections for a child with their monthly cost.
+ * Used by /kid/day expenses tab to show family spending on the child.
+ */
+export async function getSectionsForChildExpenses(childId: string): Promise<Array<{
+  id: string
+  name: string
+  cost: number | null
+  schedule_days: string[]
+}>> {
+  const { data, error } = await supabase
+    .from('sections')
+    .select('id, name, cost, schedule_days')
+    .eq('child_id', childId)
+    .eq('is_active', true)
+    .order('name')
+
+  if (error) throw error
+  return data || []
+}
+
 export async function addSection(section: {
   childId: string
   name: string

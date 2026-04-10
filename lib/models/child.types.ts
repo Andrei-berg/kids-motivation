@@ -10,6 +10,7 @@ export type Child = {
   xp: number
   level: number
   created_at: string
+  kid_fill_mode: 1 | 2 | 3
 }
 
 export type DayData = {
@@ -31,6 +32,8 @@ export type DayData = {
   home_help: boolean
   home_help_note: string | null
   homework_done: boolean
+  filled_by: 'child' | 'parent' | null
+  mood: string | null
 }
 
 export type SubjectGrade = {

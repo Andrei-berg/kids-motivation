@@ -90,8 +90,10 @@ export async function saveDay(params: {
   homeHelp?: boolean
   homeHelpNote?: string
   homeworkDone?: boolean
+  filledBy?: 'child' | 'parent'
+  mood?: string
 }) {
-  const { childId, date, roomData, goodBehavior, diaryNotDone, noteParent, noteChild, isSick, homeHelp, homeHelpNote, homeworkDone } = params
+  const { childId, date, roomData, goodBehavior, diaryNotDone, noteParent, noteChild, isSick, homeHelp, homeHelpNote, homeworkDone, filledBy, mood } = params
 
   const bed = params.roomBed ?? roomData?.bed ?? false
   const floor = params.roomFloor ?? roomData?.floor ?? false
@@ -123,6 +125,8 @@ export async function saveDay(params: {
     home_help: homeHelp ?? false,
     home_help_note: homeHelpNote || null,
     homework_done: homeworkDone ?? false,
+    filled_by: filledBy ?? null,
+    mood: mood ?? null,
   }
 
   const { data, error } = await supabase
@@ -154,13 +158,10 @@ export async function getDay(childId: string, date: string) {
     .select('*')
     .eq('child_id', childId)
     .eq('date', normalizeDate(date))
-    .single()
+    .maybeSingle()
 
-  if (error) {
-    if (error.code === 'PGRST116') return null
-    throw error
-  }
-  return data as DayData
+  if (error) throw error
+  return data as DayData | null
 }
 
 // ============================================================================
