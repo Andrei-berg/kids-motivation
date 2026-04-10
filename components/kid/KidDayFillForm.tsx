@@ -1,16 +1,21 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import type { DayData } from '@/lib/models/child.types'
+import type { DayData, SubjectGrade } from '@/lib/models/child.types'
+import type { Subject } from '@/lib/models/flexible.types'
 import type { ExtraActivity } from '@/lib/models/expense.types'
 import type { WalletSettings } from '@/lib/models/wallet.types'
 import { saveDay } from '@/lib/repositories/children.repo'
 import { getExtraActivities, getActivityLogs, saveActivityLogs } from '@/lib/repositories/expenses.repo'
+import { getActiveSubjects } from '@/lib/repositories/schedule.repo'
+import { getSubjectGradesForDate, saveSubjectGrade } from '@/lib/repositories/grades.repo'
 import {
   getWalletSettings,
   awardCoinsForRoom,
   updateWalletCoins,
 } from '@/lib/repositories/wallet.repo'
+
+const GRADE_COINS: Record<number, number> = { 5: 5, 4: 3, 3: -3, 2: -5, 1: -10 }
 
 // ============================================================================
 // TYPES
@@ -86,6 +91,10 @@ export function KidDayFillForm({
   const [settings, setSettings] = useState<WalletSettings | null>(null)
   const [saving, setSaving] = useState(false)
   const [noteChild, setNoteChild] = useState<string>(existingDay?.note_child ?? '')
+  // Grades (mode 3 only)
+  const [subjects, setSubjects] = useState<Subject[]>([])
+  const [existingGrades, setExistingGrades] = useState<SubjectGrade[]>([])
+  const [kidGrades, setKidGrades] = useState<Record<string, number | null>>({})
 
   // ── Lock logic ───────────────────────────────────────────────────────────
   const isLocked = useMemo(() => {
@@ -96,26 +105,41 @@ export function KidDayFillForm({
   // ── Load data on mount ───────────────────────────────────────────────────
   useEffect(() => {
     async function load() {
-      const [acts, ws, existingLogs] = await Promise.all([
+      const promises: Promise<any>[] = [
         getExtraActivities(childId, dayType),
         getWalletSettings(),
         getActivityLogs(childId, date),
-      ])
+      ]
+      if (fillMode >= 3) {
+        promises.push(getActiveSubjects(childId), getSubjectGradesForDate(childId, date))
+      }
+      const [acts, ws, existingLogs, subs, gradesData] = await Promise.all(promises)
       setActivities(acts)
       setSettings(ws)
 
       // Pre-check activities that were previously saved
       if (existingLogs.length > 0) {
-        const doneIds = new Set(
+        const doneIds = new Set<string>(
           existingLogs
-            .filter(l => l.done)
-            .map(l => l.activity_id)
+            .filter((l: any) => l.done)
+            .map((l: any) => l.activity_id as string)
         )
         setCheckedActivities(doneIds)
       }
+
+      // Pre-fill grades (mode 3)
+      if (fillMode >= 3 && subs) {
+        setSubjects(subs)
+        const grades: SubjectGrade[] = gradesData ?? []
+        setExistingGrades(grades)
+        // Pre-fill kid grades from existing data (if child already filled them)
+        const preGrades: Record<string, number | null> = {}
+        grades.forEach((g: SubjectGrade) => { preGrades[g.subject] = g.grade })
+        setKidGrades(preGrades)
+      }
     }
     load()
-  }, [childId, dayType, date])
+  }, [childId, dayType, date, fillMode])
 
   // ── Live coin calculation (no state — pure compute) ──────────────────────
   const coinsPreview = useMemo(() => {
@@ -128,8 +152,12 @@ export function KidDayFillForm({
       const act = activities.find(a => a.id === id)
       if (act) total += act.coins
     })
+    // Grade coins (mode 3)
+    Object.values(kidGrades).forEach(g => {
+      if (g !== null) total += GRADE_COINS[g] ?? 0
+    })
     return total
-  }, [roomItems, checkedActivities, activities, settings, fillMode])
+  }, [roomItems, checkedActivities, activities, settings, fillMode, kidGrades])
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   function toggleRoomItem(key: keyof RoomItems) {
@@ -195,6 +223,28 @@ export function KidDayFillForm({
           const act = activities.find(a => a.id === id)
           if (act && act.coins > 0) {
             await updateWalletCoins(childId, act.coins, act.name, act.emoji)
+          }
+        }
+      }
+
+      // Save grades (mode 3) — only subjects the kid actually rated
+      if (fillMode >= 3) {
+        const existingSubjectNames = new Set(existingGrades.map(g => g.subject))
+        for (const [subject, grade] of Object.entries(kidGrades)) {
+          if (grade === null) continue
+          // Skip if parent already entered a grade for this subject today
+          if (existingSubjectNames.has(subject)) continue
+          const sub = subjects.find(s => s.name === subject)
+          await saveSubjectGrade({
+            childId,
+            date,
+            subject,
+            subjectId: sub?.id,
+            grade,
+          })
+          const coins = GRADE_COINS[grade] ?? 0
+          if (coins !== 0) {
+            await updateWalletCoins(childId, coins, `Оценка ${grade} — ${subject}`, '📚')
           }
         }
       }
@@ -327,6 +377,59 @@ export function KidDayFillForm({
                     <span className="text-amber-600 font-semibold text-xs">+{act.coins}💰</span>
                   )}
                 </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Оценки section (mode 3) ─────────────────────────────────── */}
+      {fillMode >= 3 && subjects.length > 0 && (
+        <div className="kid-card">
+          <div className="font-bold text-base mb-1">📚 Оценки за сегодня</div>
+          <p className="text-xs text-gray-400 mb-3">Мы доверяем тебе — родитель проверит по журналу</p>
+          <div className="flex flex-col gap-3">
+            {subjects.map(sub => {
+              const existingGrade = existingGrades.find(g => g.subject === sub.name)
+              const kidGrade = kidGrades[sub.name] ?? null
+              return (
+                <div key={sub.id} className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-gray-700 flex-1 min-w-0 truncate">{sub.name}</span>
+                  {existingGrade ? (
+                    // Parent already entered — show read-only
+                    <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500">
+                      {existingGrade.grade} (родитель)
+                    </span>
+                  ) : (
+                    // Kid can enter
+                    <div className="flex gap-1">
+                      {[2, 3, 4, 5].map(g => (
+                        <button
+                          key={g}
+                          type="button"
+                          disabled={isLocked}
+                          onClick={() => setKidGrades(prev => ({
+                            ...prev,
+                            [sub.name]: prev[sub.name] === g ? null : g,
+                          }))}
+                          className={[
+                            'w-8 h-8 rounded-lg text-sm font-bold border-2 transition-all',
+                            kidGrade === g
+                              ? g >= 4
+                                ? 'bg-emerald-400 border-emerald-500 text-white'
+                                : g === 3
+                                  ? 'bg-amber-400 border-amber-500 text-white'
+                                  : 'bg-rose-400 border-rose-500 text-white'
+                              : 'bg-white border-gray-200 text-gray-600',
+                            isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+                          ].join(' ')}
+                        >
+                          {g}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )
             })}
           </div>
