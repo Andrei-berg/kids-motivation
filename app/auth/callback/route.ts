@@ -15,11 +15,14 @@ export async function GET(request: Request) {
       if (user) {
         const { data: membership } = await supabase
           .from('family_members')
-          .select('id')
+          .select('id, role')
           .eq('user_id', user.id)
           .maybeSingle()
 
-        const next = membership ? '/dashboard' : '/onboarding'
+        let next = '/onboarding'
+        if (membership) {
+          next = membership.role === 'child' ? '/kid' : '/parent/dashboard'
+        }
         return NextResponse.redirect(`${origin}${next}`)
       }
     }
