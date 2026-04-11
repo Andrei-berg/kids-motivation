@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useAppStore } from '@/lib/store'
 
 const TABS = [
   { href: '/kid/day',          label: 'Мой день',   icon: '☀️',  activeColor: 'text-violet-500', activeBg: 'bg-violet-50'  },
@@ -15,8 +16,10 @@ const TABS = [
 export default function KidNav() {
   const pathname = usePathname()
   const router = useRouter()
+  const setActiveMemberId = useAppStore((s) => s.setActiveMemberId)
 
   async function handleLogout() {
+    setActiveMemberId(null)
     await supabase.auth.signOut()
     router.push('/login')
   }
