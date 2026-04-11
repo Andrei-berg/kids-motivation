@@ -295,18 +295,21 @@ Plans:
 
 **Success Criteria:**
 1. Parent registers (Google or email) → family created, parent member row created, redirected to onboarding wizard
-2. Wizard step "Add children": each child creates a `children` row (slug ID), `family_members` row (child_id set), and `wallets` row
-3. Wizard completion writes all config to DB (coin rules, default shop items) and redirects to /parent/dashboard
-4. Parent shares a 6-digit invite code; child registers/logs in, enters code, gets linked to their family_members row
-5. Child logs in → KidLayout resolves correct child_id → /kid/day shows their own data
-6. New family has zero hardcoded references — works identically to adam/alim but for any name
+2. Wizard opens with a philosophy/welcome screen (Step 0) before any data entry
+3. Wizard step "Add children": each child creates a `children` row (slug ID), `family_members` row (child_id set), and `wallets` row
+4. Wizard completion writes all config to DB (coin rules, default shop items) and redirects to /parent/dashboard
+5. Parent shares a 6-digit invite code; child registers/logs in, enters code, gets linked to their family_members row
+6. Child logs in → KidLayout resolves correct child_id → /kid/day shows their own data
+7. Child without email can log in via PIN: family code → pick name → 4-digit PIN → /kid/day
+8. New family has zero hardcoded references — works identically to adam/alim but for any name
 
-**Plans:** 3 plans
+**Plans:** 4 plans
 
 Plans:
 - [ ] 02.6-01-PLAN.md — lib/onboarding-api.ts: generateChildId, createChildWithWallet, completeOnboarding functions
-- [ ] 02.6-02-PLAN.md — /onboarding/v2 wizard: 3-step wizard with real DB writes + /onboarding redirect
+- [ ] 02.6-02-PLAN.md — /onboarding/v2 wizard: 5-step wizard (welcome + family + children + coin rules + done) with real DB writes + /onboarding redirect
 - [ ] 02.6-03-PLAN.md — /onboarding/join polish: role-based redirects, child_id resolution fix
+- [ ] 02.6-04-PLAN.md — PIN login for children: DB migration (child_pin_hash), setChildPin(), /kid/login 3-step page, "Войти как ребёнок" link on /login
 
 ---
 
