@@ -3,16 +3,17 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useCoinAnimation, CoinFlyup } from '@/components/kid/CoinAnimation'
 import type { DayData, SubjectGrade } from '@/lib/models/child.types'
-import type { Subject } from '@/lib/models/flexible.types'
-import type { ExtraActivity } from '@/lib/models/expense.types'
+import type { Subject, ExerciseType } from '@/lib/models/flexible.types'
+import type { ExtraActivity, Section, SectionVisit } from '@/lib/models/expense.types'
 import type { WalletSettings } from '@/lib/models/wallet.types'
 import { saveDay } from '@/lib/repositories/children.repo'
-import { getExtraActivities, getActivityLogs, saveActivityLogs } from '@/lib/repositories/expenses.repo'
-import { getActiveSubjects } from '@/lib/repositories/schedule.repo'
+import { getExtraActivities, getActivityLogs, saveActivityLogs, getSectionsForDate, markSectionVisit } from '@/lib/repositories/expenses.repo'
+import { getActiveSubjects, getExerciseTypes, saveHomeExercise, getHomeExercises } from '@/lib/repositories/schedule.repo'
 import { getSubjectGradesForDate, saveSubjectGrade } from '@/lib/repositories/grades.repo'
 import {
   getWalletSettings,
   awardCoinsForRoom,
+  awardCoinsForSport,
   updateWalletCoins,
 } from '@/lib/repositories/wallet.repo'
 import { updateStreaks } from '@/lib/streaks'
@@ -82,6 +83,11 @@ export function KidDayFillForm({
   // ── State ────────────────────────────────────────────────────────────────
   const isChildFilled = existingDay?.filled_by === 'child'
 
+  const [exerciseTypes, setExerciseTypes] = useState<ExerciseType[]>([])
+  const [exercises, setExercises] = useState<Array<{ exercise_type_id: string; quantity: number | null; unit: string }>>([])
+  const [sections, setSections] = useState<Array<Section & { visit?: SectionVisit }>>([])
+  const [sectionNotes, setSectionNotes] = useState<Record<string, { progress: string; coachRating: number | null }>>({})
+
   const [roomItems, setRoomItems] = useState<RoomItems>({
     bed: isChildFilled ? (existingDay?.room_bed ?? false) : false,
     floor: isChildFilled ? (existingDay?.room_floor ?? false) : false,
@@ -115,13 +121,34 @@ export function KidDayFillForm({
         getExtraActivities(childId, dayType),
         getWalletSettings(),
         getActivityLogs(childId, date),
+        getExerciseTypes(),
+        getHomeExercises(childId, date),
+        getSectionsForDate(childId, date),
       ]
       if (fillMode >= 3 && dayType === 'school') {
         promises.push(getActiveSubjects(childId), getSubjectGradesForDate(childId, date))
       }
-      const [acts, ws, existingLogs, subs, gradesData] = await Promise.all(promises)
+      const [acts, ws, existingLogs, exTypes, existingExercises, sectionsData, subs, gradesData] = await Promise.all(promises)
       setActivities(acts)
       setSettings(ws)
+
+      // Pre-fill exercises
+      setExerciseTypes(exTypes)
+      setExercises((existingExercises ?? []).map((ex: any) => ({
+        exercise_type_id: ex.exercise_type_id,
+        quantity: ex.quantity,
+        unit: ex.exercise_type?.unit ?? 'раз',
+      })))
+
+      // Pre-fill sections
+      setSections(sectionsData ?? [])
+      const notes: Record<string, { progress: string; coachRating: number | null }> = {}
+      ;(sectionsData ?? []).forEach((s: Section & { visit?: SectionVisit }) => {
+        if (s.visit) {
+          notes[s.id] = { progress: s.visit.progress_note ?? '', coachRating: null }
+        }
+      })
+      setSectionNotes(notes)
 
       // Pre-check activities that were previously saved
       if (existingLogs.length > 0) {
@@ -169,8 +196,21 @@ export function KidDayFillForm({
     Object.values(kidGrades).flat().forEach(e => {
       if (!e.saved && e.grade !== null) total += GRADE_COINS[e.grade] ?? 0
     })
+    // Coach rating coins for attended sections
+    if (settings) {
+      sections.forEach(s => {
+        const note = sectionNotes[s.id]
+        if (!note?.coachRating) return
+        const r = note.coachRating
+        if (r === 5) total += settings.coins_per_coach_5
+        else if (r === 4) total += settings.coins_per_coach_4
+        else if (r === 3) total += settings.coins_per_coach_3 // usually 0
+        else if (r === 2) total -= settings.coins_per_coach_2
+        else if (r === 1) total -= settings.coins_per_coach_1
+      })
+    }
     return total
-  }, [roomItems, checkedActivities, activities, settings, fillMode, kidGrades])
+  }, [roomItems, checkedActivities, activities, settings, fillMode, kidGrades, sections, sectionNotes])
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   function toggleRoomItem(key: keyof RoomItems) {
@@ -189,6 +229,35 @@ export function KidDayFillForm({
       }
       return next
     })
+  }
+
+  function toggleExercise(exerciseTypeId: string) {
+    if (isLocked) return
+    setExercises(prev => {
+      const exists = prev.find(e => e.exercise_type_id === exerciseTypeId)
+      if (exists) return prev.filter(e => e.exercise_type_id !== exerciseTypeId)
+      const et = exerciseTypes.find(t => t.id === exerciseTypeId)
+      return [...prev, { exercise_type_id: exerciseTypeId, quantity: null, unit: et?.unit ?? 'раз' }]
+    })
+  }
+
+  function updateExerciseQuantity(exerciseTypeId: string, quantity: number | null) {
+    setExercises(prev => prev.map(e => e.exercise_type_id === exerciseTypeId ? { ...e, quantity } : e))
+  }
+
+  function toggleSectionAttended(sectionId: string) {
+    if (isLocked) return
+    setSections(prev => prev.map(s => {
+      if (s.id !== sectionId) return s
+      if (s.visit) {
+        return { ...s, visit: { ...s.visit, attended: !s.visit.attended } }
+      }
+      return { ...s, visit: { id: '', section_id: sectionId, date, attended: true, progress_note: null, trainer_feedback: null, created_at: '' } as SectionVisit }
+    }))
+  }
+
+  function updateSectionCoachRating(sectionId: string, rating: number | null) {
+    setSectionNotes(prev => ({ ...prev, [sectionId]: { ...(prev[sectionId] ?? { progress: '' }), coachRating: rating } }))
   }
 
   async function handleSubmit() {
@@ -259,6 +328,22 @@ export function KidDayFillForm({
               const label = entry.isDigital ? `Цифр. ${entry.grade} — ${subject}` : `Оценка ${entry.grade} — ${subject}`
               await updateWalletCoins(childId, coins, label, '📚')
             }
+          }
+        }
+      }
+
+      // Save home exercises
+      for (const ex of exercises) {
+        await saveHomeExercise(childId, date, ex.exercise_type_id, ex.quantity, undefined)
+      }
+
+      // Save section visits + award coach rating coins
+      for (const section of sections) {
+        if (section.visit) {
+          const note = sectionNotes[section.id] ?? { progress: '', coachRating: null }
+          await markSectionVisit(section.id, date, section.visit.attended, note.progress || undefined, undefined)
+          if (section.visit.attended && note.coachRating && note.coachRating >= 1 && note.coachRating <= 5) {
+            await awardCoinsForSport(childId, note.coachRating, section.name)
           }
         }
       }
@@ -492,6 +577,121 @@ export function KidDayFillForm({
                       }))}
                       className="mt-2 text-xs text-amber-600 font-semibold"
                     >+ ещё оценка</button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Упражнения section ──────────────────────────────────────── */}
+      {exerciseTypes.length > 0 && (
+        <div className="kid-card">
+          <div className="font-bold text-base mb-3">🏃 Упражнения</div>
+          <div className="flex flex-col gap-2">
+            {exerciseTypes.map(et => {
+              const active = exercises.find(e => e.exercise_type_id === et.id)
+              return (
+                <div key={et.id} className="flex flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={() => toggleExercise(et.id)}
+                    disabled={isLocked}
+                    className={[
+                      'flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all',
+                      active
+                        ? 'bg-amber-50 border-amber-400'
+                        : 'bg-white border-gray-200 text-gray-700',
+                      isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer',
+                    ].join(' ')}
+                  >
+                    <span className={['w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0', active ? 'bg-amber-400 border-amber-500' : 'border-gray-300'].join(' ')}>
+                      {active && <span className="text-white text-xs">✓</span>}
+                    </span>
+                    <span>{et.name}</span>
+                  </button>
+                  {active && (
+                    <div className="flex items-center gap-2 pl-7">
+                      <input
+                        type="number"
+                        min={1}
+                        disabled={isLocked}
+                        value={active.quantity ?? ''}
+                        onChange={e => updateExerciseQuantity(et.id, e.target.value ? Number(e.target.value) : null)}
+                        placeholder="Кол-во"
+                        className="w-20 rounded-lg border border-gray-200 px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-300"
+                      />
+                      <span className="text-xs text-gray-400">{active.unit}</span>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Секции section ───────────────────────────────────────────── */}
+      {sections.length > 0 && (
+        <div className="kid-card">
+          <div className="font-bold text-base mb-3">🏫 Секции</div>
+          <div className="flex flex-col gap-4">
+            {sections.map(section => {
+              const attended = section.visit?.attended ?? false
+              const note = sectionNotes[section.id] ?? { progress: '', coachRating: null }
+              return (
+                <div key={section.id}>
+                  <button
+                    type="button"
+                    onClick={() => toggleSectionAttended(section.id)}
+                    disabled={isLocked}
+                    className={[
+                      'flex items-center gap-2 w-full px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all',
+                      attended
+                        ? 'bg-amber-50 border-amber-400'
+                        : 'bg-white border-gray-200 text-gray-700',
+                      isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer',
+                    ].join(' ')}
+                  >
+                    <span className={['w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0', attended ? 'bg-amber-400 border-amber-500' : 'border-gray-300'].join(' ')}>
+                      {attended && <span className="text-white text-xs">✓</span>}
+                    </span>
+                    <span>{section.name}</span>
+                  </button>
+                  {attended && (
+                    <div className="mt-2 pl-7 flex flex-col gap-2">
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">Оценка тренера</div>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map(r => (
+                            <button
+                              key={r}
+                              type="button"
+                              disabled={isLocked}
+                              onClick={() => updateSectionCoachRating(section.id, note.coachRating === r ? null : r)}
+                              className={[
+                                'w-8 h-8 rounded-lg text-sm font-bold border-2 transition-all',
+                                note.coachRating === r
+                                  ? r >= 4 ? 'bg-emerald-400 border-emerald-500 text-white'
+                                  : r === 3 ? 'bg-amber-400 border-amber-500 text-white'
+                                  : 'bg-rose-400 border-rose-500 text-white'
+                                  : 'bg-white border-gray-200 text-gray-600',
+                                isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+                              ].join(' ')}
+                            >{r}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <textarea
+                        value={note.progress}
+                        onChange={e => setSectionNotes(prev => ({ ...prev, [section.id]: { ...note, progress: e.target.value } }))}
+                        disabled={isLocked}
+                        placeholder="Заметка о тренировке…"
+                        rows={2}
+                        className="w-full rounded-xl border border-gray-200 p-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-300"
+                      />
+                    </div>
                   )}
                 </div>
               )
