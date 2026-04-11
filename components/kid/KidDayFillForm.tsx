@@ -116,7 +116,7 @@ export function KidDayFillForm({
         getWalletSettings(),
         getActivityLogs(childId, date),
       ]
-      if (fillMode >= 3) {
+      if (fillMode >= 3 && dayType === 'school') {
         promises.push(getActiveSubjects(childId), getSubjectGradesForDate(childId, date))
       }
       const [acts, ws, existingLogs, subs, gradesData] = await Promise.all(promises)
@@ -405,7 +405,7 @@ export function KidDayFillForm({
       )}
 
       {/* ── Оценки section (mode 3) ─────────────────────────────────── */}
-      {fillMode >= 3 && subjects.length > 0 && (
+      {fillMode >= 3 && dayType === 'school' && subjects.length > 0 && (
         <div className="kid-card">
           <div className="font-bold text-base mb-1">📚 Оценки за сегодня</div>
           <p className="text-xs text-gray-400 mb-3">Мы доверяем тебе — родитель проверит по журналу</p>

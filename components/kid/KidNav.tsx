@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 
 const TABS = [
   { href: '/kid/day',          label: 'Мой день',   icon: '☀️',  activeColor: 'text-violet-500', activeBg: 'bg-violet-50'  },
@@ -13,9 +14,24 @@ const TABS = [
 
 export default function KidNav() {
   const pathname = usePathname()
+  const router = useRouter()
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
   return (
     <>
+      {/* Mobile logout button — top right */}
+      <button
+        onClick={handleLogout}
+        className="md:hidden fixed top-3 right-3 z-50 bg-white/80 backdrop-blur-sm rounded-full w-9 h-9 flex items-center justify-center text-lg shadow-sm border border-gray-100 text-gray-400 hover:text-gray-600"
+        aria-label="Выйти"
+      >
+        🚪
+      </button>
+
       {/* Mobile bottom bar */}
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-100 kid-nav-bottom"
@@ -57,7 +73,7 @@ export default function KidNav() {
         className="hidden md:flex items-center sticky top-0 z-50 bg-white border-b border-gray-100 px-6 h-16"
         aria-label="Kid navigation"
       >
-        {/* Left: profile placeholder */}
+        {/* Left: placeholder */}
         <span className="text-sm font-medium text-gray-600 mr-8 whitespace-nowrap">
           👦 Мой профиль
         </span>
@@ -81,6 +97,14 @@ export default function KidNav() {
             )
           })}
         </div>
+
+        {/* Right: logout */}
+        <button
+          onClick={handleLogout}
+          className="ml-auto text-sm text-gray-400 hover:text-gray-600 flex items-center gap-1"
+        >
+          🚪 Выйти
+        </button>
       </nav>
     </>
   )
