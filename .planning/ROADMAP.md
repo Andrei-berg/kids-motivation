@@ -115,6 +115,7 @@ Plans:
 - [ ] **Phase 2.4: shop-approval** — Purchase request flow: child requests → parent approves/rejects → coins deducted; parent can preview kid's view
 - [ ] **Phase 2.4.1: kid-screen-v2** — /kid/day redesign with weekly calendar + live coins, kid day-fill form, expenses tab for kids
 - [x] **Phase 2.5: notifications-animations** — Push notifications, confetti, badge animations, streak alerts (completed 2026-04-10)
+- [ ] **Phase 2.6: registration** — Real family registration: onboarding wizard writes to DB, children rows created, invite flow end-to-end
 
 ### Progress Table
 
@@ -126,6 +127,7 @@ Plans:
 | 2.4 shop-approval | 3/4 | In Progress|  |
 | 2.4.1 kid-screen-v2 | 0/TBD | Not started | - |
 | 2.5 notifications-animations | 4/4 | Complete   | 2026-04-10 |
+| 2.6 registration | 0/TBD | Not started | - |
 
 ---
 
@@ -280,6 +282,31 @@ Plans:
 - [ ] 02.5-02-PLAN.md — Streak push notifications: broken streak + new record alerts to child
 - [ ] 02.5-03-PLAN.md — Schedule reminder cron: /api/cron/reminders + vercel.json cron config
 - [ ] 02.5-04-PLAN.md — Missed-task parent notification: /api/cron/missed-tasks end-of-day cron
+
+---
+
+### Phase 2.6: registration
+
+**Goal:** Any new family can fully register, set up children, and start using the app within 3 minutes — all data correctly written to DB (families, children, wallets, family_members with child_id), and children can join via invite code with their own auth account.
+
+**Depends on:** Phase 1.1 (DB schema), Phase 2.1 (role routing)
+
+**Requirements:** REQ-ONB-001, REQ-ONB-002, REQ-ONB-003, REQ-ONB-004, REQ-ONB-005, REQ-ONB-006, REQ-ONB-007, REQ-ONB-008, REQ-ONB-009, REQ-ONB-010, REQ-FAM-008, REQ-FAM-009, REQ-FAM-010
+
+**Success Criteria:**
+1. Parent registers (Google or email) → family created, parent member row created, redirected to onboarding wizard
+2. Wizard step "Add children": each child creates a `children` row (slug ID), `family_members` row (child_id set), and `wallets` row
+3. Wizard completion writes all config to DB (coin rules, default shop items) and redirects to /parent/dashboard
+4. Parent shares a 6-digit invite code; child registers/logs in, enters code, gets linked to their family_members row
+5. Child logs in → KidLayout resolves correct child_id → /kid/day shows their own data
+6. New family has zero hardcoded references — works identically to adam/alim but for any name
+
+**Plans:** 3 plans
+
+Plans:
+- [ ] 02.6-01-PLAN.md — lib/onboarding-api.ts: generateChildId, createChildWithWallet, completeOnboarding functions
+- [ ] 02.6-02-PLAN.md — /onboarding/v2 wizard: 3-step wizard with real DB writes + /onboarding redirect
+- [ ] 02.6-03-PLAN.md — /onboarding/join polish: role-based redirects, child_id resolution fix
 
 ---
 
