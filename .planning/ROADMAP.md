@@ -291,7 +291,7 @@ Plans:
 
 **Depends on:** Phase 1.1 (DB schema), Phase 2.1 (role routing)
 
-**Requirements:** REQ-ONB-001, REQ-ONB-002, REQ-ONB-003, REQ-ONB-004, REQ-ONB-005, REQ-ONB-006, REQ-ONB-007, REQ-ONB-008, REQ-ONB-009, REQ-ONB-010, REQ-FAM-008, REQ-FAM-009, REQ-FAM-010
+**Requirements:** REQ-ONB-001, REQ-ONB-002, REQ-ONB-003, REQ-ONB-004, REQ-ONB-005, REQ-ONB-006, REQ-ONB-008, REQ-ONB-009, REQ-ONB-010, REQ-FAM-008, REQ-FAM-009, REQ-FAM-010
 
 **Success Criteria:**
 1. Parent registers (Google or email) → family created, parent member row created, redirected to onboarding wizard
