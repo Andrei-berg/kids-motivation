@@ -237,7 +237,7 @@ export async function saveHomeExercise(
 ) {
   const { data, error } = await supabase
     .from('home_exercises')
-    .upsert({ child_id: childId, date, exercise_type_id: exerciseTypeId, quantity, note })
+    .upsert({ child_id: childId, date, exercise_type_id: exerciseTypeId, quantity, note }, { onConflict: 'child_id,date,exercise_type_id' })
     .select()
     .single()
 
