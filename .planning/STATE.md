@@ -13,17 +13,17 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-12 — Phase 02.6 Plan 01 COMPLETE (onboarding-api child creation + wallet setup)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-12 — Phase 02.6 Plan 02 COMPLETE (5-step onboarding wizard with real DB writes)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 02.6 IN PROGRESS — registration (1/4 plans done)
-Next: 02.6-02-PLAN.md
-Status: Plan 01 done. onboarding-api: generateChildId + createChildWithWallet + completeOnboarding shipped.
-Last activity: 2026-04-12 — 02.6-01 COMPLETE — lib/onboarding-api.ts child creation + wallet setup functions
+Phase: 02.6 IN PROGRESS — registration (2/4 plans done)
+Next: 02.6-03-PLAN.md
+Status: Plan 02 done. 5-step onboarding wizard at /onboarding/v2 with real DB writes, confetti Done screen, invite code sharing, UPSERT-safe parent family_members.
+Last activity: 2026-04-12 — 02.6-02 COMPLETE — /onboarding/v2 wizard + /onboarding redirect + auth callback verified
 ```
 
 Progress bar (M2):
@@ -168,6 +168,15 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | Approved purchases fetch | Direct Supabase query (status='approved') | getPendingPurchases only returns pending rows; no new repo function needed |
 | handleApprove UI update | Moves item from pending list to approved list | Immediate UX feedback; item appears in delivery panel without page reload |
 | Preview bypass | ?preview=true query param (stateless) | No session change needed; middleware checks param before redirecting non-child from /kid/* |
+
+### New decisions (Phase 02.6 plan 02)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| createFamily() duplicate parent row | UPSERT with onConflict: 'user_id,family_id' | Prevents crash when auth callback pre-inserts parent family_members row before wizard runs |
+| parentDisplayName collection point | Wizard Step 1 (not /register) | /register captures only email+password; wizard is the first place to ask parent's name |
+| /onboarding/page.tsx replacement | Server-side redirect('/onboarding/v2') replaces 1100-line stub | Stub had console.log mock save; real wizard is at /v2; redirect keeps auth callback routing intact |
+| confetti import | Dynamic import in useEffect on step===4 | Prevents canvas-confetti from landing in SSR bundle |
 
 ### New decisions (Phase 02.6 plan 01)
 
