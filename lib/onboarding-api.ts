@@ -126,7 +126,7 @@ export async function saveParentProfile(
 
 export async function createFamily(
   userId: string,
-  family: { name: string }
+  family: { name: string; parentDisplayName?: string }
 ): Promise<FamilyCreateResult> {
   const supabase = createClient()
 
@@ -141,24 +141,33 @@ export async function createFamily(
     throw new Error(`Failed to create family: ${familyError?.message ?? 'no data returned'}`)
   }
 
-  // Step 2: fetch parent's display_name to use in family_members
-  const { data: profileRow } = await supabase
-    .from('user_profiles')
-    .select('display_name')
-    .eq('id', userId)
-    .maybeSingle()
+  // Step 2: resolve display_name — prefer explicit parentDisplayName param,
+  // fall back to user_profiles.display_name if available.
+  let displayName: string | null = family.parentDisplayName?.trim() || null
+  if (!displayName) {
+    const { data: profileRow } = await supabase
+      .from('user_profiles')
+      .select('display_name')
+      .eq('id', userId)
+      .maybeSingle()
+    displayName = profileRow?.display_name ?? null
+  }
 
-  const displayName = profileRow?.display_name ?? null
-
-  // Step 3: insert parent as family member
+  // Step 3: upsert parent as family member.
+  // UPSERT (not bare INSERT) — safe even if auth callback already pre-created
+  // a family_members row for this user (e.g. on conflict for user_id+family_id).
+  // Uses ignoreDuplicates:false so display_name is updated if row already exists.
   const { error: memberError } = await supabase
     .from('family_members')
-    .insert({
-      family_id: familyRow.id,
-      user_id: userId,
-      role: 'parent',
-      display_name: displayName,
-    })
+    .upsert(
+      {
+        family_id: familyRow.id,
+        user_id: userId,
+        role: 'parent',
+        display_name: displayName,
+      },
+      { onConflict: 'user_id,family_id', ignoreDuplicates: false }
+    )
 
   if (memberError) {
     throw new Error(`Failed to add parent to family: ${memberError.message}`)
