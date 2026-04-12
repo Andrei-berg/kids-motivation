@@ -341,6 +341,13 @@ export default function LoginPage() {
           )}
         </form>
 
+        {/* Kid PIN login link */}
+        <div style={{ textAlign: 'center', marginTop: '16px' }}>
+          <a href="/kid/login" style={{ color: '#f59e0b', fontSize: '14px', textDecoration: 'none' }}>
+            Войти как ребёнок (по PIN-коду)
+          </a>
+        </div>
+
         {/* Link to register */}
         <p
           style={{
