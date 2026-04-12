@@ -127,7 +127,7 @@ Plans:
 | 2.4 shop-approval | 3/4 | In Progress|  |
 | 2.4.1 kid-screen-v2 | 0/TBD | Not started | - |
 | 2.5 notifications-animations | 4/4 | Complete   | 2026-04-10 |
-| 2.6 registration | 0/TBD | Not started | - |
+| 2.6 registration | 1/4 | In Progress | - |
 
 ---
 

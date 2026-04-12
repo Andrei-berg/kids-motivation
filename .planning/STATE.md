@@ -13,17 +13,17 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-11 — Phase 02.5 Plan 04 COMPLETE (missed-tasks daily cron route)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-12 — Phase 02.6 Plan 01 COMPLETE (onboarding-api child creation + wallet setup)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 02.5 COMPLETE — notifications-animations (4/4 plans done)
-Next: Phase 03 (next milestone phase)
-Status: All 4 plans done. Coin animations, badge animations, schedule reminder cron, missed-tasks cron all shipped.
-Last activity: 2026-04-11 — 02.5-04 COMPLETE — GET /api/cron/missed-tasks daily parent notification
+Phase: 02.6 IN PROGRESS — registration (1/4 plans done)
+Next: 02.6-02-PLAN.md
+Status: Plan 01 done. onboarding-api: generateChildId + createChildWithWallet + completeOnboarding shipped.
+Last activity: 2026-04-12 — 02.6-01 COMPLETE — lib/onboarding-api.ts child creation + wallet setup functions
 ```
 
 Progress bar (M2):
@@ -168,6 +168,16 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | Approved purchases fetch | Direct Supabase query (status='approved') | getPendingPurchases only returns pending rows; no new repo function needed |
 | handleApprove UI update | Moves item from pending list to approved list | Immediate UX feedback; item appears in delivery panel without page reload |
 | Preview bypass | ?preview=true query param (stateless) | No session change needed; middleware checks param before redirecting non-child from /kid/* |
+
+### New decisions (Phase 02.6 plan 01)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| generateChildId | Not exported (internal utility) | Slug generation is an implementation detail; callers use createChildWithWallet |
+| wallet_settings row | Single global id='default' (not per-family) | Current app behavior; per-family settings deferred |
+| coins_per_grade_3 default | -3 (negative) | Penalty per CLAUDE.md reward rules (3→-3 coins) |
+| coins_per_grade_2 default | -5 (negative) | Penalty per CLAUDE.md reward rules (2→-5 coins) |
+| children id collision retry | One retry with new generateChildId() | Low probability event; single retry sufficient before throwing |
 
 ### New decisions (Phase 02.5 plan 04)
 
