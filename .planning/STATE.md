@@ -13,17 +13,17 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-12 — Phase 02.6 Plan 02 COMPLETE (5-step onboarding wizard with real DB writes)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-12 — Phase 02.6 Plan 03 COMPLETE (join flow with role-based redirects and direct child_id lookup)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 02.6 IN PROGRESS — registration (2/4 plans done)
-Next: 02.6-03-PLAN.md
-Status: Plan 02 done. 5-step onboarding wizard at /onboarding/v2 with real DB writes, confetti Done screen, invite code sharing, UPSERT-safe parent family_members.
-Last activity: 2026-04-12 — 02.6-02 COMPLETE — /onboarding/v2 wizard + /onboarding redirect + auth callback verified
+Phase: 02.6 IN PROGRESS — registration (3/4 plans done)
+Next: 02.6-04-PLAN.md
+Status: Plan 03 done. /onboarding/join now routes child→/kid/day, adult→/parent/dashboard; activeMemberId set from family_members.child_id directly.
+Last activity: 2026-04-12 — 02.6-03 COMPLETE — join flow redirects + child_id resolution fixed
 ```
 
 Progress bar (M2):
@@ -168,6 +168,13 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | Approved purchases fetch | Direct Supabase query (status='approved') | getPendingPurchases only returns pending rows; no new repo function needed |
 | handleApprove UI update | Moves item from pending list to approved list | Immediate UX feedback; item appears in delivery panel without page reload |
 | Preview bypass | ?preview=true query param (stateless) | No session change needed; middleware checks param before redirecting non-child from /kid/* |
+
+### New decisions (Phase 02.6 plan 03)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| child_id resolution after claim | Read child_id from family_members row directly | Avoids name-based resolveLegacyChildId which breaks for new families with slug IDs |
+| Existing-member early-exit routing | role field from same SELECT → /kid/day or /parent/dashboard | No second query needed; child_id already in selected columns |
 
 ### New decisions (Phase 02.6 plan 02)
 
