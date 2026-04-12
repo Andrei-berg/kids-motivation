@@ -346,6 +346,166 @@ export async function joinFamilyAsAdult(
 }
 
 // ---------------------------------------------------------------------------
+// ChildInput / ChildCreateResult
+// ---------------------------------------------------------------------------
+
+export interface ChildInput {
+  name: string
+}
+
+export interface ChildCreateResult {
+  childId: string   // TEXT id in children table e.g. 'sofia_a1b2'
+  memberId: string  // UUID id in family_members table
+}
+
+// ---------------------------------------------------------------------------
+// createChildWithWallet
+// ---------------------------------------------------------------------------
+// Creates a child record in three tables atomically:
+//   1. children (id=generatedSlug, name, family_id, active, xp, level, kid_fill_mode)
+//   2. family_members (family_id, user_id=null, role='child', display_name, child_id)
+//   3. wallets (child_id, family_id, coins=0, total_earned=0)
+// Retries once on children id collision (23505 unique violation).
+
+export async function createChildWithWallet(
+  familyId: string,
+  child: ChildInput
+): Promise<ChildCreateResult> {
+  const supabase = createClient()
+
+  // --- Insert into children (with one retry on id collision) ---
+  let childId = generateChildId(child.name)
+  let childrenError: { code?: string; message: string } | null = null
+
+  const { error: err1 } = await supabase
+    .from('children')
+    .insert({
+      id: childId,
+      name: child.name,
+      family_id: familyId,
+      active: true,
+      xp: 0,
+      level: 1,
+      kid_fill_mode: 1,
+    })
+  childrenError = err1
+
+  if (childrenError) {
+    if (childrenError.code === '23505') {
+      // Retry once with a fresh id
+      childId = generateChildId(child.name)
+      const { error: err2 } = await supabase
+        .from('children')
+        .insert({
+          id: childId,
+          name: child.name,
+          family_id: familyId,
+          active: true,
+          xp: 0,
+          level: 1,
+          kid_fill_mode: 1,
+        })
+      if (err2) {
+        throw new Error(`Failed to create child (retry): ${err2.message}`)
+      }
+    } else {
+      throw new Error(`Failed to create child: ${childrenError.message}`)
+    }
+  }
+
+  // --- Insert into family_members ---
+  const { data: memberRow, error: memberError } = await supabase
+    .from('family_members')
+    .insert({
+      family_id: familyId,
+      user_id: null,
+      role: 'child',
+      display_name: child.name,
+      child_id: childId,
+    })
+    .select('id')
+    .single()
+
+  if (memberError || !memberRow) {
+    throw new Error(`Failed to add child to family_members: ${memberError?.message ?? 'no data returned'}`)
+  }
+
+  // --- Insert into wallets ---
+  const { error: walletError } = await supabase
+    .from('wallets')
+    .insert({
+      child_id: childId,
+      family_id: familyId,
+      coins: 0,
+      total_earned: 0,
+    })
+
+  if (walletError) {
+    throw new Error(`Failed to create wallet: ${walletError.message}`)
+  }
+
+  return {
+    childId,
+    memberId: memberRow.id,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// completeOnboarding
+// ---------------------------------------------------------------------------
+// Upserts the global wallet_settings row (id='default') with reward defaults.
+// Accepts optional coinRules to override grade/room/sport defaults.
+// Safe to call multiple times — upsert handles idempotency.
+
+export async function completeOnboarding(
+  familyId: string,
+  coinRules?: {
+    g5?: number
+    g4?: number
+    g3?: number
+    g2?: number
+    room?: number
+    sport?: number
+  }
+): Promise<void> {
+  const supabase = createClient()
+
+  const { error } = await supabase
+    .from('wallet_settings')
+    .upsert({
+      id: 'default',
+      // Grade coins — negative values mean deductions
+      coins_per_grade_5: coinRules?.g5 ?? 5,
+      coins_per_grade_4: coinRules?.g4 ?? 3,
+      coins_per_grade_3: coinRules?.g3 ?? -3,
+      coins_per_grade_2: coinRules?.g2 ?? -5,
+      // Daily inputs
+      coins_per_room_task: coinRules?.room ?? 3,
+      coins_per_good_behavior: 5,
+      coins_per_exercise: 5,
+      // Coach ratings
+      coins_per_coach_5: coinRules?.sport ?? 10,
+      coins_per_coach_4: 5,
+      coins_per_coach_3: 0,
+      coins_per_coach_2: 3,
+      coins_per_coach_1: 10,
+      // Exchange & P2P limits
+      base_exchange_rate: 10,
+      p2p_max_per_transfer: 100,
+      p2p_max_per_day: 200,
+      p2p_max_per_month: 500,
+      p2p_max_debt: 200,
+      updated_at: new Date().toISOString(),
+    })
+
+  if (error) {
+    throw new Error(`Failed to complete onboarding (wallet_settings): ${error.message}`)
+  }
+
+  void familyId // familyId kept in signature for future per-family settings support
+}
+
+// ---------------------------------------------------------------------------
 // getUserDisplayName
 // ---------------------------------------------------------------------------
 // Returns the current user's display_name from user_profiles, or null.
