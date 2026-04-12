@@ -7,6 +7,23 @@ import { createClient } from '@/lib/supabase/client'
 import { seedDefaultCategories } from '@/lib/categories-api'
 
 // ---------------------------------------------------------------------------
+// Internal utilities
+// ---------------------------------------------------------------------------
+
+/**
+ * Generates a URL-safe text ID for a child row in the children table.
+ * Result always matches /^[a-z0-9][a-z0-9_]{1,18}[a-z0-9]$/ (3–20 chars,
+ * no leading/trailing underscores).
+ * NOT exported — internal use only.
+ */
+function generateChildId(name: string): string {
+  const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 12)
+  const base = slug || 'child'
+  const suffix = Math.random().toString(36).slice(2, 6).padEnd(4, '0')
+  return `${base}_${suffix}`.slice(0, 20)
+}
+
+// ---------------------------------------------------------------------------
 // Exported types
 // ---------------------------------------------------------------------------
 
