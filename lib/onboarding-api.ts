@@ -515,6 +515,26 @@ export async function completeOnboarding(
 }
 
 // ---------------------------------------------------------------------------
+// setChildPin
+// ---------------------------------------------------------------------------
+// Set or update a 4-digit PIN for a child (no-email login).
+// Calls /api/set-child-pin which uses service-role key server-side.
+// Stores SHA-256 hash in family_members.child_pin_hash.
+// Safe to call from client components.
+
+export async function setChildPin(memberId: string, childId: string, pin: string): Promise<void> {
+  const res = await fetch('/api/set-child-pin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ memberId, childId, pin }),
+  })
+  if (!res.ok) {
+    const { error } = await res.json().catch(() => ({ error: 'Unknown error' }))
+    throw new Error(error || 'Failed to set PIN')
+  }
+}
+
+// ---------------------------------------------------------------------------
 // getUserDisplayName
 // ---------------------------------------------------------------------------
 // Returns the current user's display_name from user_profiles, or null.
