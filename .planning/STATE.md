@@ -13,17 +13,17 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-12 — Phase 02.6 Plan 03 COMPLETE (join flow with role-based redirects and direct child_id lookup)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-12 — Phase 02.6 Plan 04 COMPLETE (PIN login for children: synthetic email auth, SHA-256 hash, /kid/login 3-step flow)
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 02.6 IN PROGRESS — registration (3/4 plans done)
-Next: 02.6-04-PLAN.md
-Status: Plan 03 done. /onboarding/join now routes child→/kid/day, adult→/parent/dashboard; activeMemberId set from family_members.child_id directly.
-Last activity: 2026-04-12 — 02.6-03 COMPLETE — join flow redirects + child_id resolution fixed
+Phase: 02.6 COMPLETE — registration (4/4 plans done)
+Next: Phase 2.1 role-routing (02.1-01-PLAN.md)
+Status: Plan 04 done. PIN login for children: /kid/login page, /api/set-child-pin route, setChildPin() export, supabase-migration-pin.sql. Phase 02.6 fully complete.
+Last activity: 2026-04-12 — 02.6-04 COMPLETE — PIN login flow end-to-end
 ```
 
 Progress bar (M2):
@@ -168,6 +168,13 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 | Approved purchases fetch | Direct Supabase query (status='approved') | getPendingPurchases only returns pending rows; no new repo function needed |
 | handleApprove UI update | Moves item from pending list to approved list | Immediate UX feedback; item appears in delivery panel without page reload |
 | Preview bypass | ?preview=true query param (stateless) | No session change needed; middleware checks param before redirecting non-child from /kid/* |
+
+### New decisions (Phase 02.6 plan 04)
+
+| Решение | Выбор | Причина |
+|---|---|---|
+| getUserByEmail | Try createUser first; fall back to listUsers on "already registered" | getUserByEmail absent from installed @supabase/auth-js version |
+| activeMemberId in PIN login | Stores child_id TEXT slug | Kid pages pass activeMemberId to api.getChild/getWallet which expect TEXT child id |
 
 ### New decisions (Phase 02.6 plan 03)
 
