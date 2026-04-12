@@ -18,7 +18,6 @@ import {
   ChildProfile,
 } from '@/lib/onboarding-api'
 import { useAppStore } from '@/lib/store'
-import { getChildren } from '@/lib/repositories/children.repo'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -633,20 +632,6 @@ function ScreenAdultRole({
 
 const SCREEN_ORDER: Screen[] = ['code', 'select', 'adult-role']
 
-// Resolves family_members display_name → old children.id ('adam'/'alim')
-// The rest of the app uses the legacy TEXT primary key from the children table.
-async function resolveLegacyChildId(displayName: string | null): Promise<string | null> {
-  if (!displayName) return null
-  try {
-    const children = await getChildren()
-    const needle = displayName.trim().toLowerCase()
-    const match = children.find(c => c.name.trim().toLowerCase() === needle)
-    return match?.id ?? null
-  } catch {
-    return null
-  }
-}
-
 export default function JoinFamilyPage() {
   const router = useRouter()
   const { setFamilyId: setStoreFamilyId, setActiveMemberId } = useAppStore()
@@ -688,7 +673,7 @@ export default function JoinFamilyPage() {
 
         const { data: existingRows } = await supabase
           .from('family_members')
-          .select('id, family_id, display_name')
+          .select('id, role, family_id, display_name, child_id')
           .eq('user_id', user.id)
           .order('joined_at', { ascending: false })
           .limit(1)
@@ -696,10 +681,14 @@ export default function JoinFamilyPage() {
         const existing = existingRows?.[0]
         if (existing) {
           setStoreFamilyId(existing.family_id)
-          // Map family_members UUID → old children.id by display_name
-          const legacyId = await resolveLegacyChildId(existing.display_name)
-          if (legacyId) setActiveMemberId(legacyId)
-          router.replace('/dashboard')
+          if (existing.role === 'child') {
+            if (existing.child_id) {
+              setActiveMemberId(existing.child_id)
+            }
+            router.replace('/kid/day')
+          } else {
+            router.replace('/parent/dashboard')
+          }
           return
         }
 
@@ -758,10 +747,21 @@ export default function JoinFamilyPage() {
     setError(null)
     try {
       await joinFamilyAsChild(familyId, userId, { memberId: child.memberId, displayName: child.displayName })
+
+      // After claim, read child_id from the now-linked family_members row
+      const supabase = createClient()
+      const { data: claimedRow } = await supabase
+        .from('family_members')
+        .select('child_id')
+        .eq('user_id', userId)
+        .eq('family_id', familyId)
+        .maybeSingle()
+
       setStoreFamilyId(familyId)
-      const legacyId = await resolveLegacyChildId(child.displayName)
-      setActiveMemberId(legacyId ?? child.memberId)
-      router.push('/dashboard')
+      if (claimedRow?.child_id) {
+        setActiveMemberId(claimedRow.child_id)
+      }
+      router.push('/kid/day')  // child lands on kid screen
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось присоединиться. Попробуйте снова.')
     } finally {
@@ -777,7 +777,7 @@ export default function JoinFamilyPage() {
     try {
       await joinFamilyAsAdult(familyId, userId, selectedRole, userDisplayName)
       setStoreFamilyId(familyId)
-      router.push('/dashboard')
+      router.push('/parent/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось присоединиться. Попробуйте снова.')
     } finally {
