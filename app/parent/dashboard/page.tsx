@@ -383,7 +383,8 @@ export default function ParentDashboardPage() {
               onFillDay={() => router.push(`/parent/daily?childId=${child.id}`)}
               onKidView={() => {
                 setActiveMemberId(child.id)
-                router.push(`/kid/day?preview=true`)
+                document.cookie = `kid_preview=${child.id}; path=/; max-age=3600; SameSite=Lax`
+                router.push(`/kid/day`)
               }}
             />
           ))}

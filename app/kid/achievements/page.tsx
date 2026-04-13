@@ -44,12 +44,11 @@ async function computeBadgeProgress(
     .eq('room_ok', true)
   progress['clean_master'] = { current: roomDays ?? 0, target: 14, label: 'дн. уборки' }
 
-  // sportsman: count days where sport_ok=true (target: 14)
+  // sportsman: count sport days from home_sports (sport_ok column doesn't exist in days)
   const { count: sportDays } = await supabase
-    .from('days')
+    .from('home_sports')
     .select('*', { count: 'exact', head: true })
     .eq('child_id', childId)
-    .eq('sport_ok', true)
   progress['sportsman'] = { current: sportDays ?? 0, target: 14, label: 'дн. спорта' }
 
   // week_excellent: count days with grade=5 (target: 7)
