@@ -536,6 +536,20 @@ export async function approvePurchase(
     .single()
 
   if (error) throw error
+
+  // Fire push notification to child — non-blocking, errors swallowed inside notifyChild
+  try {
+    const { notifyChild } = await import('@/app/actions/push-notifications')
+    await notifyChild(
+      purchase.child_id,
+      `Покупка одобрена! ${purchase.reward_icon ?? '🎁'}`,
+      `${purchase.reward_title} — заслужил!`,
+      '/kid/wallet'
+    )
+  } catch (e) {
+    console.warn('[approvePurchase] push failed:', e)
+  }
+
   return data
 }
 
