@@ -9,7 +9,7 @@
 
 - ✅ **v1.0 Foundation** — Phases 1.1–1.4 (shipped 2026-03-08)
 - ✅ **v2.0 Role-Based UI** — Phases 2.1–2.6 (shipped 2026-04-13)
-- 📋 **v3.0 Communication** — Phases 3.1–3.3 (planned)
+- 🚧 **v3.0 Communication** — Phases 3.1–3.3 (in progress)
 - 📋 **v4.0 PWA Polish** — Phases 4.1–4.4 (planned)
 - 📋 **v5.0 Monetization** — Phases 5.1–5.3 (planned)
 - 📋 **v6.0 Social** — Phases 6.1–6.3 (planned)
@@ -50,49 +50,64 @@ See: `.planning/milestones/v2.0-ROADMAP.md`
 
 ## Current Milestone: v3.0 — Communication
 
-**Goal:** Make the family experience alive with real-time chat, push notifications for key events, and media sharing.
+**Goal:** Make the family experience alive with real-time communication. Parents confirm tasks with personal messages; achievements auto-post to family chat; photos provide task proof.
 
-### Phase 3.1: notifications
+### Phases
 
-**Goal:** Family members receive push notifications for achievements, task confirmations, and wallet events.
+- [ ] **Phase 3.1: event-notifications** — Push notifications for task confirmations, badge earnings, wallet events, and Medal of the Day
+- [ ] **Phase 3.2: family-chat** — Real-time group chat with text messages, emoji reactions, sticker pack, and achievement auto-posts
+- [ ] **Phase 3.3: photos** — Photo attachments in chat and photo proof on task completion
 
-**Requirements:** REQ-SCH-004, REQ-SCH-005, REQ-SCH-006
+## Phase Details
 
-**Success Criteria:**
-1. Push notification sent when parent confirms task
-2. Push notification sent when badge earned
-3. Push notification sent when wallet credited
-4. "Medal of the day" message from parent with coins
-5. Notification opens correct screen in app
+### Phase 3.1: event-notifications
+**Goal**: Children and parents receive timely push notifications for every meaningful event — task confirmed, badge earned, wallet credited, Medal of the Day sent
+**Depends on**: Phase 2.5 (existing Web Push + cron infrastructure)
+**Requirements**: NOTIF-01, NOTIF-02, NOTIF-03, NOTIF-04
+**Success Criteria** (what must be TRUE):
+  1. Child receives a push notification when parent confirms a task in the parent dashboard
+  2. Child receives a push notification when a badge is awarded after day save
+  3. Child receives a push notification when coins are credited or deducted from wallet
+  4. Parent can compose and send a Medal of the Day — a personal message with bonus coins — and child receives a push notification with the message text and coin amount
+  5. Tapping any notification opens the correct app screen (task confirmation → /kid/day, badge → /kid/achievements, wallet → /kid/wallet, medal → /kid/day)
+**Plans**: TBD
 
----
+Plans:
+- [ ] 3.1-01: Push trigger for task confirmation (NOTIF-01) — fire Web Push from parent task-confirm action
+- [ ] 3.1-02: Push triggers for badge + wallet events (NOTIF-02, NOTIF-03) — hook into badge award and wallet credit/debit flows
+- [ ] 3.1-03: Medal of the Day feature (NOTIF-04) — parent UI to compose medal, DB storage, push delivery, kid view
 
 ### Phase 3.2: family-chat
+**Goal**: Every family member can send and read messages in a shared real-time group chat; achievements auto-announce themselves; reactions and stickers make the chat feel alive
+**Depends on**: Phase 3.1
+**Requirements**: CHAT-01, CHAT-02, CHAT-03, CHAT-04
+**Success Criteria** (what must be TRUE):
+  1. Any family member (parent or child) can send a text message and all other family members see it appear in under 2 seconds without refreshing
+  2. Any family member can tap a reaction (❤️ 👍 🔥 🏆) on any message and the reaction count updates in real time for everyone
+  3. Any family member can open a sticker picker and send a sticker from the predefined pack; it renders as an image in the chat thread
+  4. When a child earns a badge, hits a streak milestone, or receives wallet coins, an auto-post appears in family chat describing the event
+**Plans**: TBD
 
-**Goal:** Real-time family group chat with reactions and stickers. Achievement events auto-post to chat.
+Plans:
+- [ ] 3.2-01: DB schema + Supabase Realtime subscription — chat_messages table, RLS, real-time channel setup
+- [ ] 3.2-02: Chat UI — message thread, send box, family member avatars, /parent and /kid entry points
+- [ ] 3.2-03: Reactions + sticker pack — reaction upsert table, sticker asset set, picker component
+- [ ] 3.2-04: Achievement auto-posts — hook badge award, streak milestone, and coin credit events to insert system messages into chat
 
-**Requirements:** REQ-CHT-001, REQ-CHT-002, REQ-CHT-003, REQ-CHT-004, REQ-CHT-005, REQ-CHT-006
+### Phase 3.3: photos
+**Goal**: Family members can share photos in chat and children can attach photo proof when completing tasks
+**Depends on**: Phase 3.2
+**Requirements**: PHOTO-01, PHOTO-02
+**Success Criteria** (what must be TRUE):
+  1. Any family member can attach a photo to a chat message; the photo is compressed on the client before upload and renders inline in the chat thread
+  2. Child can take or select a photo when marking a task complete in the day-fill form; the photo is stored as task proof
+  3. Parent sees the task proof photo in the task confirmation view before approving or rejecting the task
+**Plans**: TBD
 
-**Success Criteria:**
-1. Family group chat works in real-time (Supabase Realtime)
-2. Message reactions (❤️ 👍 🔥 🏆) work
-3. Basic sticker pack included
-4. Badge earned → auto-message in family chat
-5. Parent can send "Medal of the Day" with bonus coins
-
----
-
-### Phase 3.3: media-voice
-
-**Goal:** Photos and voice messages in family chat. Photo proof of task completion.
-
-**Requirements:** REQ-CHT-007, REQ-CHT-008, REQ-DAY-012
-
-**Success Criteria:**
-1. Photo can be sent in chat (Supabase Storage)
-2. Voice message can be recorded and played
-3. Child can attach photo as task completion proof
-4. Parent sees photo when reviewing task
+Plans:
+- [ ] 3.3-01: Photo upload to Supabase Storage — client-side compression, storage bucket policy, signed URL delivery
+- [ ] 3.3-02: Photo messages in chat (PHOTO-01) — attach button in chat send box, image render in thread
+- [ ] 3.3-03: Task photo proof (PHOTO-02) — photo attach in kid day-fill form, proof display in parent confirmation view
 
 ---
 
@@ -127,27 +142,27 @@ See: `.planning/milestones/v2.0-ROADMAP.md`
 
 ## Progress Table
 
-| Phase | Milestone | Plans | Status | Completed |
-|-------|-----------|-------|--------|-----------|
-| 1.1 db-schema | v1.0 | 3/3 | ✅ Complete | 2026-03-01 |
-| 1.2 onboarding | v1.0 | 5/5 | ✅ Complete | 2026-03-01 |
-| 1.3 categories-schedule | v1.0 | 4/4 | ✅ Complete | 2026-03-07 |
-| 1.4 dashboard-refactor | v1.0 | 3/3 | ✅ Complete | 2026-03-08 |
-| 2.1 role-routing | v2.0 | 2/2 | ✅ Complete | 2026-04-03 |
-| 2.2 parent-center | v2.0 | 8/8 | ✅ Complete | 2026-04-04 |
-| 2.3 kid-screen | v2.0 | 6/6 | ✅ Complete | 2026-04-05 |
-| 2.4 shop-approval | v2.0 | 4/4 | ✅ Complete | 2026-04-08 |
-| 2.4.1 kid-screen-v2 | v2.0 | 4/4 | ✅ Complete | 2026-04-10 |
-| 2.5 notifications-animations | v2.0 | 4/4 | ✅ Complete | 2026-04-10 |
-| 2.6 registration | v2.0 | 4/4 | ✅ Complete | 2026-04-13 |
-| 3.1 notifications | v3.0 | 0/? | — Not started | - |
-| 3.2 family-chat | v3.0 | 0/? | — Not started | - |
-| 3.3 media-voice | v3.0 | 0/? | — Not started | - |
-| 4.1–4.4 | v4.0 | 0/? | — Planned | - |
-| 5.1–5.3 | v5.0 | 0/? | — Planned | - |
-| 6.1–6.3 | v6.0 | 0/? | — Planned | - |
-| 7.1–7.3 | v7.0 | 0/? | — Planned | - |
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1.1 db-schema | v1.0 | 3/3 | Complete | 2026-03-01 |
+| 1.2 onboarding | v1.0 | 5/5 | Complete | 2026-03-01 |
+| 1.3 categories-schedule | v1.0 | 4/4 | Complete | 2026-03-07 |
+| 1.4 dashboard-refactor | v1.0 | 3/3 | Complete | 2026-03-08 |
+| 2.1 role-routing | v2.0 | 2/2 | Complete | 2026-04-03 |
+| 2.2 parent-center | v2.0 | 8/8 | Complete | 2026-04-04 |
+| 2.3 kid-screen | v2.0 | 6/6 | Complete | 2026-04-05 |
+| 2.4 shop-approval | v2.0 | 4/4 | Complete | 2026-04-08 |
+| 2.4.1 kid-screen-v2 | v2.0 | 4/4 | Complete | 2026-04-10 |
+| 2.5 notifications-animations | v2.0 | 4/4 | Complete | 2026-04-10 |
+| 2.6 registration | v2.0 | 4/4 | Complete | 2026-04-13 |
+| 3.1 event-notifications | v3.0 | 0/3 | Not started | - |
+| 3.2 family-chat | v3.0 | 0/4 | Not started | - |
+| 3.3 photos | v3.0 | 0/3 | Not started | - |
+| 4.1–4.4 | v4.0 | 0/? | Planned | - |
+| 5.1–5.3 | v5.0 | 0/? | Planned | - |
+| 6.1–6.3 | v6.0 | 0/? | Planned | - |
+| 7.1–7.3 | v7.0 | 0/? | Planned | - |
 
 ---
 
-*Created: 2026-03-01. Updated: 2026-04-13 — v2.0 Role-Based UI shipped, v3.0 Communication is next.*
+*Created: 2026-03-01. Updated: 2026-04-13 — v3.0 Communication roadmap created, phases 3.1–3.3 defined.*

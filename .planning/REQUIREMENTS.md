@@ -51,22 +51,22 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| NOTIF-01 | — | Pending |
-| NOTIF-02 | — | Pending |
-| NOTIF-03 | — | Pending |
-| NOTIF-04 | — | Pending |
-| CHAT-01 | — | Pending |
-| CHAT-02 | — | Pending |
-| CHAT-03 | — | Pending |
-| CHAT-04 | — | Pending |
-| PHOTO-01 | — | Pending |
-| PHOTO-02 | — | Pending |
+| NOTIF-01 | Phase 3.1 | Pending |
+| NOTIF-02 | Phase 3.1 | Pending |
+| NOTIF-03 | Phase 3.1 | Pending |
+| NOTIF-04 | Phase 3.1 | Pending |
+| CHAT-01 | Phase 3.2 | Pending |
+| CHAT-02 | Phase 3.2 | Pending |
+| CHAT-03 | Phase 3.2 | Pending |
+| CHAT-04 | Phase 3.2 | Pending |
+| PHOTO-01 | Phase 3.3 | Pending |
+| PHOTO-02 | Phase 3.3 | Pending |
 
 **Coverage:**
 - v3.0 requirements: 10 total
-- Mapped to phases: 0
-- Unmapped: 10 ⚠️
+- Mapped to phases: 10
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-13*
-*Last updated: 2026-04-13 after initial definition*
+*Last updated: 2026-04-13 — traceability filled after roadmap creation*
