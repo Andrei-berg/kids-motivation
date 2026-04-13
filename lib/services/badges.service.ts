@@ -354,6 +354,18 @@ async function awardBadge(childId: string, badgeKey: string) {
       .update({ xp: newXP, level: newLevel })
       .eq('id', childId)
   }
+
+  try {
+    const { notifyChild } = await import('@/app/actions/push-notifications')
+    await notifyChild(
+      childId,
+      `Новый значок: ${badge.icon} ${badge.title}`,
+      badge.description,
+      '/kid/achievements'
+    )
+  } catch (e) {
+    console.warn('[awardBadge] push failed:', e)
+  }
 }
 
 export async function getChildBadges(childId: string) {
