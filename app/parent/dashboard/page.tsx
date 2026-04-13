@@ -14,6 +14,7 @@ import {
   deliverPurchase,
 } from '@/lib/repositories/wallet.repo'
 import { supabase } from '@/lib/supabase'
+import { sendMedal } from '@/app/actions/send-medal'
 import type { Child, DayData } from '@/lib/models/child.types'
 import type { RewardPurchase } from '@/lib/models/wallet.types'
 
@@ -247,6 +248,14 @@ export default function ParentDashboardPage() {
   const [approvedPurchases, setApprovedPurchases] = useState<RewardPurchase[]>([])
   const [purchaseActionInProgress, setPurchaseActionInProgress] = useState<string | null>(null)
   const [childrenList, setChildrenList] = useState<Child[]>([])
+  const [familyId, setFamilyId] = useState<string>('')
+
+  // Medal of the Day state (keyed by child.id)
+  const [medalMessage, setMedalMessage] = useState<Record<string, string>>({})
+  const [medalCoins, setMedalCoins] = useState<Record<string, string>>({})
+  const [medalSending, setMedalSending] = useState<Record<string, boolean>>({})
+  const [medalSent, setMedalSent] = useState<Record<string, boolean>>({})
+  const [medalError, setMedalError] = useState<Record<string, string>>({})
 
   const todayDate = new Date().toISOString().slice(0, 10)
   const weekStart = getWeekRange(new Date()).start
@@ -256,6 +265,19 @@ export default function ParentDashboardPage() {
       try {
         const children = await getChildren()
         setChildrenList(children)
+
+        // Resolve family_id for the current parent
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data: memberRow } = await supabase
+            .from('family_members')
+            .select('family_id')
+            .eq('user_id', user.id)
+            .maybeSingle()
+          if (memberRow?.family_id) {
+            setFamilyId(memberRow.family_id)
+          }
+        }
 
         const [results, pendingData, approvedData] = await Promise.all([
           Promise.all(
@@ -333,6 +355,23 @@ export default function ParentDashboardPage() {
     }
   }
 
+  async function handleSendMedal(childId: string) {
+    setMedalSending(prev => ({ ...prev, [childId]: true }))
+    setMedalError(prev => ({ ...prev, [childId]: '' }))
+    const result = await sendMedal({
+      childId,
+      familyId,
+      message: medalMessage[childId] ?? '',
+      coins: parseInt(medalCoins[childId] ?? '0', 10) || 0,
+    })
+    setMedalSending(prev => ({ ...prev, [childId]: false }))
+    if (result.success) {
+      setMedalSent(prev => ({ ...prev, [childId]: true }))
+    } else {
+      setMedalError(prev => ({ ...prev, [childId]: result.error ?? 'Ошибка' }))
+    }
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       {/* Page header */}
@@ -377,16 +416,57 @@ export default function ParentDashboardPage() {
       {statuses && (
         <div className="flex flex-col gap-4">
           {statuses.map(({ child, dayData, weekScore }) => (
-            <ChildCard
-              key={child.id}
-              status={{ child, dayData, weekScore }}
-              onFillDay={() => router.push(`/parent/daily?childId=${child.id}`)}
-              onKidView={() => {
-                setActiveMemberId(child.id)
-                document.cookie = `kid_preview=${child.id}; path=/; max-age=3600; SameSite=Lax`
-                router.push(`/kid/day`)
-              }}
-            />
+            <div key={child.id} className="flex flex-col gap-0">
+              <ChildCard
+                status={{ child, dayData, weekScore }}
+                onFillDay={() => router.push(`/parent/daily?childId=${child.id}`)}
+                onKidView={() => {
+                  setActiveMemberId(child.id)
+                  document.cookie = `kid_preview=${child.id}; path=/; max-age=3600; SameSite=Lax`
+                  router.push(`/kid/day`)
+                }}
+              />
+              {/* Medal of the Day */}
+              <div className="bg-gray-800 rounded-b-xl px-4 pb-4 -mt-3 pt-5 border-t border-gray-700">
+                <h3 className="text-sm font-semibold text-yellow-400 mb-2">🏅 Медаль дня</h3>
+                {medalSent[child.id] ? (
+                  <p className="text-sm text-green-400">Медаль отправлена!</p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <textarea
+                      className="w-full bg-gray-700 text-white rounded-lg p-2 text-sm resize-none"
+                      rows={2}
+                      maxLength={200}
+                      placeholder="Напишите личное сообщение..."
+                      value={medalMessage[child.id] ?? ''}
+                      onChange={e => setMedalMessage(prev => ({ ...prev, [child.id]: e.target.value }))}
+                    />
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        className="w-20 bg-gray-700 text-white rounded-lg p-2 text-sm"
+                        placeholder="0"
+                        value={medalCoins[child.id] ?? ''}
+                        onChange={e => setMedalCoins(prev => ({ ...prev, [child.id]: e.target.value }))}
+                      />
+                      <span className="text-xs text-gray-400">монет (0–100)</span>
+                      <button
+                        className="ml-auto bg-yellow-500 hover:bg-yellow-400 text-black font-semibold px-3 py-1.5 rounded-lg text-sm disabled:opacity-50"
+                        disabled={medalSending[child.id] || !medalMessage[child.id]?.trim()}
+                        onClick={() => handleSendMedal(child.id)}
+                      >
+                        {medalSending[child.id] ? 'Отправка...' : 'Отправить'}
+                      </button>
+                    </div>
+                    {medalError[child.id] && (
+                      <p className="text-xs text-red-400">{medalError[child.id]}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           ))}
           {statuses.length === 0 && (
             <p className="text-gray-500 text-center py-8">Нет детей в семье</p>

@@ -114,6 +114,7 @@ export default function KidDayPage() {
   const [showFillForm, setShowFillForm] = useState(false)
   const [lastCoinsEarned, setLastCoinsEarned] = useState<number | null>(null)
   const [dayType, setDayType] = useState<'school' | 'weekend' | 'vacation'>('school')
+  const [medal, setMedal] = useState<{ message: string; coins: number; sent_by: string | null } | null>(null)
 
   const today = normalizeDate(new Date())
   const { start: weekStart } = getWeekRange(today)
@@ -172,7 +173,7 @@ export default function KidDayPage() {
         }
       }
 
-      const [dayData, grades, weekRaw, streaksData, goalsData, walletData, sectionsData] =
+      const [dayData, grades, weekRaw, streaksData, goalsData, walletData, sectionsData, medalResult] =
         await Promise.all([
           api.getDay(resolvedId, today),
           api.getSubjectGradesForDate(resolvedId, today),
@@ -181,6 +182,20 @@ export default function KidDayPage() {
           api.getGoals(resolvedId),
           getWallet(resolvedId),
           getSectionsForChildExpenses(resolvedId),
+          (async () => {
+            try {
+              const supabaseClient = (await import('@/lib/supabase/client')).createClient()
+              const { data } = await supabaseClient
+                .from('medals')
+                .select('message, coins, sent_by')
+                .eq('child_id', resolvedId)
+                .eq('date', today)
+                .maybeSingle()
+              return data ?? null
+            } catch {
+              return null
+            }
+          })(),
         ])
 
       setChild(childData)
@@ -188,6 +203,7 @@ export default function KidDayPage() {
       setTodayGrades(grades)
       setWallet(walletData)
       setSections(sectionsData)
+      setMedal(medalResult)
 
       // Build 7-day coin map inline from raw data
       const days: DayData[] = weekRaw?.days ?? []
@@ -371,6 +387,21 @@ export default function KidDayPage() {
               >
                 Посмотреть кошелёк →
               </Link>
+            </div>
+          )}
+
+          {/* Medal of the Day */}
+          {medal && (
+            <div className="bg-yellow-900/40 border border-yellow-600 rounded-xl p-4 mb-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xl">🏅</span>
+                <span className="font-bold text-yellow-400">Медаль дня</span>
+                {medal.sent_by && <span className="text-xs text-gray-400">от {medal.sent_by}</span>}
+              </div>
+              <p className="text-white text-sm">{medal.message}</p>
+              {medal.coins > 0 && (
+                <p className="text-yellow-400 text-xs mt-1">+{medal.coins} монет начислено</p>
+              )}
             </div>
           )}
 
