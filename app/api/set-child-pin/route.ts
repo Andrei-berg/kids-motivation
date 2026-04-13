@@ -3,10 +3,10 @@ import { createHash } from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 
 export async function POST(req: NextRequest) {
-  const { memberId, childId, pin } = await req.json()
+  const { childId, pin } = await req.json()
 
-  if (!memberId || !childId || !pin || !/^\d{4}$/.test(pin)) {
-    return NextResponse.json({ error: 'Invalid input' }, { status: 400 })
+  if (!childId || !pin || !/^\d{4,8}$/.test(pin)) {
+    return NextResponse.json({ error: 'Invalid input: childId and 4–8 digit pin required' }, { status: 400 })
   }
 
   const adminClient = createClient(
@@ -49,9 +49,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Store SHA-256 hash of PIN in family_members.child_pin_hash
-  // This is a UI indicator that PIN is configured (per CONTEXT.md: "PIN хранится как SHA-256 хеш")
-  // Actual auth is via Supabase signInWithPassword — this column is not used for auth verification.
+  // Store SHA-256 hash of PIN in family_members.child_pin_hash (lookup by child_id)
   const pinHash = createHash('sha256').update(pin).digest('hex')
 
   const supabase = createClient(
@@ -61,7 +59,7 @@ export async function POST(req: NextRequest) {
   const { error: dbUpdateError } = await supabase
     .from('family_members')
     .update({ child_pin_hash: pinHash })
-    .eq('id', memberId)
+    .eq('child_id', childId)
 
   if (dbUpdateError) {
     return NextResponse.json({ error: dbUpdateError.message }, { status: 500 })
