@@ -1,68 +1,38 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: milestone
-status: unknown
-last_updated: "2026-04-10T23:03:54.340Z"
+milestone: v3.0
+milestone_name: Communication
+status: planning
+last_updated: "2026-04-13"
 progress:
-  total_phases: 12
-  completed_phases: 10
-  total_plans: 43
-  completed_plans: 43
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-12 — Phase 02.6 Plan 04 COMPLETE (PIN login for children: synthetic email auth, SHA-256 hash, /kid/login 3-step flow)
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-13 — Milestone v2.0 Role-Based UI COMPLETE. Starting v3.0 Communication.
 
 ---
 
 ## Текущая позиция
 
 ```
-Phase: 02.6 COMPLETE — registration (4/4 plans done)
-Next: Phase 2.1 role-routing (02.1-01-PLAN.md)
-Status: Plan 04 done. PIN login for children: /kid/login page, /api/set-child-pin route, setChildPin() export, supabase-migration-pin.sql. Phase 02.6 fully complete.
-Last activity: 2026-04-12 — 02.6-04 COMPLETE — PIN login flow end-to-end
+Milestone v2.0 COMPLETE — all 7 phases shipped (2.1–2.6 + 2.4.1)
+Next: Milestone v3.0 — Communication (Phase 3.1: notifications)
+Status: Between milestones. Run /gsd:new-milestone to plan v3.0.
 ```
-
-Progress bar (M2):
-```
-[>>        ] 1 / 5 phases complete (Phase 2.3 all 6/6 plans done)
-```
-
----
-
-## Milestone 1 — Foundation (COMPLETE)
-
-All 4 phases shipped:
-- Phase 1.1: New multi-tenant DB schema with RLS + Supabase Auth
-- Phase 1.2: Registration, onboarding wizard, child join flow
-- Phase 1.3: Flexible categories, schedule, push notifications
-- Phase 1.4: Full dashboard refactor — zero hardcoded adam/alim
-
----
-
-## Milestone 2 — Role-Based UI (IN PROGRESS)
-
-```
-Phase 2.1  [ ] role-routing         — REQ-ROLE-001–004 (4 reqs)
-Phase 2.2  [ ] parent-center        — REQ-PARENT-001–007, REQ-DAY-002–013, REQ-COIN-001–011, REQ-WAL-001–006, REQ-SHOP-001–002/005–006, REQ-ANL-001–006, REQ-UX-002–003, REQ-SEC-002/006 (46 reqs)
-Phase 2.3  [ ] kid-screen           — REQ-KID-001–007, REQ-SHOP-003, REQ-BAD-001–002/004–006, REQ-STR-001–004 (18 reqs)
-Phase 2.4  [ ] shop-approval        — REQ-SHOP-004/007–008, REQ-PARENT-008 (4 reqs)
-Phase 2.5  [ ] notifications-anims  — REQ-UX-004, REQ-BAD-003, REQ-STR-005–006, REQ-SCH-004–006 (7 reqs)
-```
-
-Total M2 requirements mapped: 79
 
 ---
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-03)
+See: .planning/PROJECT.md (updated 2026-04-13)
 
 **Core value:** Any family can register and use the app — children earn coins for real effort, spend them on real rewards
-**Current focus:** Milestone v2.0 — Role-Based UI → Phase 2.1: role-routing
+**Current focus:** Milestone v3.0 — Communication → real-time family chat, push notifications, media sharing
 
 ---
 

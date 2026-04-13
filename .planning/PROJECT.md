@@ -209,19 +209,90 @@
 
 ---
 
-## Current Milestone: v2.0 — Role-Based UI
+## Shipped: v2.0 — Role-Based UI (2026-04-13)
 
-**Goal:** Split the app into two distinct experiences — Parent Center (dark theme, control, data entry) and Kid Screen (bright theme, gamification, own progress) — while keeping all existing backend (lib/, Supabase tables, Google Auth) untouched.
+Two fully separate experiences now exist — Parent Center (dark, control-focused) and Kid Screen (bright, gamified). Any family can register, add children, and start earning coins in under 3 minutes. Children without email can log in via PIN.
 
-**Target features:**
-- Role detection after Google login → automatic routing (parent→/parent, child→/kid)
-- Parent Center at `/parent/*`: dashboard, daily input, wallets, analytics, shop management, settings
-- Kid Screen at `/kid/*`: my day, wallet, achievements, shop, leaderboard
-- Shared screens at `/family/*`: wallboard, leaderboard
-- Shop + purchase approval flow (child requests → parent approves)
-- Notifications + animations (confetti, streaks, push)
-- Old pages (`/dashboard`, `/wallet`, `/analytics`) removed after new ones are ready
+**What shipped:**
+- `/parent/*` — dark dashboard, daily input, wallets, analytics, shop, PIN-protected settings
+- `/kid/*` — My Day, wallet, achievements (badges/streaks/XP), shop, leaderboard
+- Shop approval flow — freeze → approve/reject; parent preview mode
+- Kid day-fill form — room checklist, mood, activities, live coin counter; configurable fill-mode per child
+- Push notifications + animations — cron reminders, coin fly-up, confetti celebrations
+- 5-step onboarding wizard — writes family, children, wallets to DB end-to-end
+- Child PIN login — family code → pick name → 4-digit PIN → `/kid/day`
+
+**Technical state as of v2.0:**
+- ~14,000 LOC TypeScript/TSX in `app/` + `lib/`
+- Supabase (PostgreSQL + Auth + Storage + Realtime ready)
+- Next.js 14 App Router, Tailwind CSS + custom globals.css
+- Vercel deployment at kids-motivation.vercel.app
 
 ---
 
-*Документ создан: 2026-03-01. Обновлён: 2026-04-03 — старт Milestone v2.0.*
+## Current Milestone: v3.0 — Communication
+
+**Goal:** Make the family experience alive with real-time communication. Parents confirm tasks with personal messages; achievements auto-post to family chat; photos provide task proof.
+
+**Target features:**
+- Push notifications for task confirmations, badge earnings, wallet credits, and "Medal of the Day"
+- Real-time family group chat (Supabase Realtime) with reactions and stickers
+- Achievement events auto-post to chat
+- Photo and voice messages in chat
+- Photo proof of task completion
+
+---
+
+## Requirements
+
+### Validated
+
+- ✓ Multi-tenant DB schema with families, RLS, Supabase Auth — v1.0
+- ✓ Registration + onboarding wizard (email/Google, 3-minute setup) — v1.0
+- ✓ Flexible categories and weekly schedule with push reminders — v1.0
+- ✓ Dashboard and all pages dynamically load from authenticated family context — v1.0
+- ✓ Role-based routing: parent→/parent, child→/kid, middleware guards — v2.0
+- ✓ Parent Center: daily input, wallets, analytics, shop CRUD, PIN-protected settings — v2.0
+- ✓ Kid Screen: My Day, wallet, achievements (10+ badges, streaks, XP/levels), shop, leaderboard — v2.0
+- ✓ Shop approval flow: request→freeze→approve/reject→settle — v2.0
+- ✓ Kid day-fill form with live coin counter and configurable fill-mode — v2.0
+- ✓ Push notifications: streak alerts, schedule reminders, missed-task cron — v2.0
+- ✓ Coin + badge animations (fly-up, confetti) — v2.0
+- ✓ Child PIN login (no email required) — v2.0
+
+### Active (v3.0)
+
+- [ ] Push notifications for task confirmations, badge earnings, wallet credits
+- [ ] "Medal of the Day" — parent sends personal message with bonus coins
+- [ ] Real-time family group chat (Supabase Realtime)
+- [ ] Message reactions (❤️ 👍 🔥 🏆) and sticker pack
+- [ ] Achievement events auto-post to family chat
+- [ ] Photo and voice messages in chat
+- [ ] Photo proof of task completion
+
+### Out of Scope (current)
+
+- Apple ID login — Google + email sufficient for beta
+- Old pages (/dashboard, /wallet, /analytics) — fully replaced by /parent/* and /kid/*
+- Offline mode — real-time Supabase is core requirement
+- B2B teacher/coach accounts — post-product-market-fit
+- Freemium limits + Stripe — v5.0
+- Native mobile (Expo) — v7.0
+
+---
+
+## Key Decisions
+
+| Decision | Outcome | Status |
+|----------|---------|--------|
+| Next.js App Router over Pages Router | Clean auth/layout split per role | ✓ Good |
+| Supabase Auth with synthetic emails for child PIN | No email required; `child_{id}@internal.familycoins.app` pattern | ✓ Good |
+| Separate /parent/* and /kid/* route trees | Middleware enforces roles; no shared layout complexity | ✓ Good |
+| PIN stored as SHA-256 hash in family_members.child_pin_hash | Security without bcrypt overhead | ✓ Good |
+| Kid fill-mode as integer enum (1/2/3) in children table | Flexible per-child config without extra tables | ✓ Good |
+| Zustand store for familyId + activeMemberId | Replaces legacy childId='adam'/'alim' hardcodes | ✓ Good |
+| Coins calculated on-the-fly from days + subject_grades | No finalization step needed; analytics always current | ✓ Good |
+
+---
+
+*Документ создан: 2026-03-01. Обновлён: 2026-04-13 после v2.0 milestone.*
