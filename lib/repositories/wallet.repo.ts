@@ -74,6 +74,20 @@ export async function updateWalletCoins(
     family_id: wallet.family_id,
   })
 
+  try {
+    const { notifyChild } = await import('@/app/actions/push-notifications')
+    const isCredit = coinsChange > 0
+    const sign = isCredit ? '+' : ''
+    await notifyChild(
+      childId,
+      isCredit ? `${icon} Монеты начислены!` : `${icon} Монеты списаны`,
+      `${sign}${coinsChange} монет — ${description}`,
+      '/kid/wallet'
+    )
+  } catch (e) {
+    console.warn('[updateWalletCoins] push failed:', e)
+  }
+
   return data
 }
 
