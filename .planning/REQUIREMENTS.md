@@ -10,8 +10,8 @@ Requirements for Milestone v3.0 — Communication.
 ### Notifications
 
 - [x] **NOTIF-01**: Child receives push notification when parent confirms a task
-- [ ] **NOTIF-02**: Child receives push notification when earning a badge
-- [ ] **NOTIF-03**: Child receives push notification when coins are credited or deducted from wallet
+- [x] **NOTIF-02**: Child receives push notification when earning a badge
+- [x] **NOTIF-03**: Child receives push notification when coins are credited or deducted from wallet
 - [ ] **NOTIF-04**: Parent can send "Medal of the Day" — personal message + bonus coins; child receives push notification
 
 ### Chat
@@ -52,8 +52,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | NOTIF-01 | Phase 3.1 | Complete |
-| NOTIF-02 | Phase 3.1 | Pending |
-| NOTIF-03 | Phase 3.1 | Pending |
+| NOTIF-02 | Phase 3.1 | Complete |
+| NOTIF-03 | Phase 3.1 | Complete |
 | NOTIF-04 | Phase 3.1 | Pending |
 | CHAT-01 | Phase 3.2 | Pending |
 | CHAT-02 | Phase 3.2 | Pending |

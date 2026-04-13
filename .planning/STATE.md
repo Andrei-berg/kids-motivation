@@ -21,12 +21,12 @@ progress:
 
 ```
 Milestone v3.0 Communication — Phase 3.1 of 3 (event-notifications)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-04-13 — Plan 3.1-01 complete
+Last activity: 2026-04-13 — Plan 3.1-02 complete
 ```
 
-Progress: [█░░░░░░░░░] 10% (1/10 plans complete)
+Progress: [██░░░░░░░░] 20% (2/10 plans complete)
 
 ---
 
@@ -71,7 +71,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-13
-Stopped at: Completed 3.1-01-PLAN.md — notifyChild push helper + approvePurchase hook
+Stopped at: Completed 3.1-02-PLAN.md — badge push + wallet coin push hooks
 Resume file: None
 
 ---
@@ -81,3 +81,5 @@ Resume file: None
 - **[3.1-01]** Dynamic import used in wallet.repo.ts to call server action without circular dependency
 - **[3.1-01]** notifyChild silently swallows all errors — push must never break business logic
 - **[3.1-01]** child_id resolved via family_members.maybeSingle() — silent fail if child not linked to member
+- **[3.1-02]** Push call in awardBadge placed after XP update — badge saved regardless of push outcome
+- **[3.1-02]** Single hook in updateWalletCoins covers all coin operations — grades, room, behavior, sport, P2P, approvals
