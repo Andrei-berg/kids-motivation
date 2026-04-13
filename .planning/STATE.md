@@ -21,12 +21,12 @@ progress:
 
 ```
 Milestone v3.0 Communication — Phase 3.1 of 3 (event-notifications)
-Plan: 0 of 3 in current phase
-Status: Ready to plan
-Last activity: 2026-04-13 — Roadmap created, requirements mapped
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-04-13 — Plan 3.1-01 complete
 ```
 
-Progress: [░░░░░░░░░░] 0% (0/10 plans complete)
+Progress: [█░░░░░░░░░] 10% (1/10 plans complete)
 
 ---
 
@@ -71,5 +71,13 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-13
-Stopped at: Roadmap v3.0 created. Next step: `/gsd:plan-phase 3.1`
+Stopped at: Completed 3.1-01-PLAN.md — notifyChild push helper + approvePurchase hook
 Resume file: None
+
+---
+
+## Decisions
+
+- **[3.1-01]** Dynamic import used in wallet.repo.ts to call server action without circular dependency
+- **[3.1-01]** notifyChild silently swallows all errors — push must never break business logic
+- **[3.1-01]** child_id resolved via family_members.maybeSingle() — silent fail if child not linked to member
