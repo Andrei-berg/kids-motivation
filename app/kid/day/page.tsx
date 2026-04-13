@@ -9,6 +9,7 @@ import { normalizeDate, getWeekRange } from '@/utils/helpers'
 import { getWallet } from '@/lib/repositories/wallet.repo'
 import { getSectionsForChildExpenses } from '@/lib/repositories/expenses.repo'
 import { KidDayFillForm } from '@/components/kid/KidDayFillForm'
+import { getVacationPeriods } from '@/lib/vacation-api'
 import type { Wallet } from '@/lib/models/wallet.types'
 
 // ============================================================================
@@ -112,15 +113,10 @@ export default function KidDayPage() {
   const [weekStats, setWeekStats] = useState({ roomDays: 0, behaviorDays: 0, gradedDays: 0 })
   const [showFillForm, setShowFillForm] = useState(false)
   const [lastCoinsEarned, setLastCoinsEarned] = useState<number | null>(null)
+  const [dayType, setDayType] = useState<'school' | 'weekend' | 'vacation'>('school')
 
   const today = normalizeDate(new Date())
   const { start: weekStart } = getWeekRange(today)
-
-  // Derive dayType from day-of-week
-  const todayDate = new Date(today)
-  const dow = todayDate.getDay() // 0=Sun, 6=Sat
-  const dayType: 'school' | 'weekend' | 'vacation' =
-    dow === 0 || dow === 6 ? 'weekend' : 'school'
 
   const loadData = useCallback(async () => {
     if (!activeMemberId) {
@@ -146,6 +142,34 @@ export default function KidDayPage() {
       if (!childData) {
         setLoading(false)
         return
+      }
+
+      // Determine day type: weekend by day-of-week, vacation by DB lookup
+      const todayDate = new Date(today)
+      const dow = todayDate.getDay() // 0=Sun, 6=Sat
+      if (dow === 0 || dow === 6) {
+        setDayType('weekend')
+      } else {
+        // Check vacation periods for this family
+        try {
+          const { data: memberRow } = await (await import('@/lib/supabase/client')).createClient()
+            .from('family_members')
+            .select('family_id')
+            .eq('child_id', resolvedId)
+            .maybeSingle()
+          if (memberRow?.family_id) {
+            const periods = await getVacationPeriods(memberRow.family_id)
+            const isVacation = periods.some(p =>
+              (p.child_filter === 'all' || p.child_filter === resolvedId) &&
+              today >= p.start_date && today <= p.end_date
+            )
+            setDayType(isVacation ? 'vacation' : 'school')
+          } else {
+            setDayType('school')
+          }
+        } catch {
+          setDayType('school')
+        }
       }
 
       const [dayData, grades, weekRaw, streaksData, goalsData, walletData, sectionsData] =

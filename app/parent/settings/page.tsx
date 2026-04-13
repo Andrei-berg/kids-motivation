@@ -7,8 +7,10 @@ import type { WalletSettings, AuditLog } from '@/lib/wallet-api'
 import type { Child } from '@/lib/models/child.types'
 import FamilyManager from '@/components/settings/FamilyManager'
 import SubjectsManager from '@/components/settings/SubjectsManager'
+import SectionsManager from '@/components/settings/SectionsManager'
+import PeriodsManager from '@/components/settings/PeriodsManager'
 
-type Tab = 'family' | 'subjects' | 'coins' | 'audit' | 'kids'
+type Tab = 'family' | 'subjects' | 'coins' | 'audit' | 'kids' | 'sections' | 'vacation'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'family', label: '👨‍👩‍👧 Семья' },
@@ -16,6 +18,8 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'coins', label: '🪙 Монеты' },
   { id: 'audit', label: '📋 Журнал' },
   { id: 'kids', label: '🧒 Ребёнок' },
+  { id: 'sections', label: '🏃 Секции' },
+  { id: 'vacation', label: '🌴 Каникулы' },
 ]
 
 // ============================================================================
@@ -669,6 +673,10 @@ export default function ParentSettingsPage() {
           )}
         </div>
       )} {/* end activeTab === 'kids' */}
+
+      {activeTab === 'sections' && <SectionsManager />}
+
+      {activeTab === 'vacation' && <PeriodsManager />}
 
       {/* Change PIN */}
       <div className="mt-6 text-right">

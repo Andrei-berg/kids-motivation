@@ -17,6 +17,7 @@ import {
   updateWalletCoins,
 } from '@/lib/repositories/wallet.repo'
 import { updateStreaks } from '@/lib/streaks'
+import { getReadingLog, saveReadingLog } from '@/lib/vacation-api'
 
 const GRADE_COINS: Record<number, number> = { 5: 5, 4: 3, 3: -3, 2: -5, 1: -10 }
 
@@ -108,6 +109,17 @@ export function KidDayFillForm({
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [kidGrades, setKidGrades] = useState<Record<string, GradeEntry[]>>({})
 
+  // ── Reading state ────────────────────────────────────────────────────────
+  const [reading, setReading] = useState({
+    bookTitle: '',
+    pagesRead: '',
+    minutesRead: '',
+    currentPage: '',
+    bookFinished: false,
+    note: '',
+  })
+  const [readingActive, setReadingActive] = useState(false) // toggle "читал сегодня"
+
   // ── Lock logic ───────────────────────────────────────────────────────────
   const isLocked = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10)
@@ -149,6 +161,20 @@ export function KidDayFillForm({
         }
       })
       setSectionNotes(notes)
+
+      // Pre-fill reading log
+      const existingReading = await getReadingLog(childId, date)
+      if (existingReading) {
+        setReadingActive(true)
+        setReading({
+          bookTitle: existingReading.book_title ?? '',
+          pagesRead: String(existingReading.pages_read ?? ''),
+          minutesRead: String(existingReading.minutes_read ?? ''),
+          currentPage: String((existingReading as any).current_page ?? ''),
+          bookFinished: existingReading.book_finished ?? false,
+          note: existingReading.note ?? '',
+        })
+      }
 
       // Pre-check activities that were previously saved
       if (existingLogs.length > 0) {
@@ -209,8 +235,12 @@ export function KidDayFillForm({
         else if (r === 1) total -= settings.coins_per_coach_1
       })
     }
+    // Book finished bonus
+    if (readingActive && reading.bookFinished) {
+      total += (settings as any)?.coins_per_book ?? 20
+    }
     return total
-  }, [roomItems, checkedActivities, activities, settings, fillMode, kidGrades, sections, sectionNotes])
+  }, [roomItems, checkedActivities, activities, settings, fillMode, kidGrades, sections, sectionNotes, reading, readingActive])
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   function toggleRoomItem(key: keyof RoomItems) {
@@ -344,6 +374,28 @@ export function KidDayFillForm({
           await markSectionVisit(section.id, date, section.visit.attended, note.progress || undefined, undefined)
           if (section.visit.attended && note.coachRating && note.coachRating >= 1 && note.coachRating <= 5) {
             await awardCoinsForSport(childId, note.coachRating, section.name)
+          }
+        }
+      }
+
+      // Save reading log
+      if (readingActive && reading.bookTitle.trim()) {
+        await saveReadingLog({
+          child_id: childId,
+          date,
+          book_title: reading.bookTitle.trim(),
+          pages_read: Number(reading.pagesRead) || 0,
+          minutes_read: Number(reading.minutesRead) || 0,
+          book_finished: reading.bookFinished,
+          note: reading.note.trim(),
+          // current_page added via migration
+          ...(reading.currentPage ? { current_page: Number(reading.currentPage) } : {}),
+        } as any)
+        // Award coins for finishing a book
+        if (reading.bookFinished) {
+          const bookCoins = (settings as any)?.coins_per_book ?? 20
+          if (bookCoins > 0) {
+            await updateWalletCoins(childId, bookCoins, `Книга: ${reading.bookTitle.trim()}`, '📚')
           }
         }
       }
@@ -699,6 +751,105 @@ export function KidDayFillForm({
           </div>
         </div>
       )}
+
+      {/* ── Reading section ─────────────────────────────────────────── */}
+      <div className="kid-card">
+        <div className="flex items-center justify-between mb-3">
+          <div className="font-bold text-base">📚 Чтение</div>
+          <button
+            type="button"
+            disabled={isLocked}
+            onClick={() => setReadingActive(v => !v)}
+            className={[
+              'px-3 py-1 rounded-xl text-sm font-semibold border-2 transition-all',
+              readingActive
+                ? 'bg-emerald-400 border-emerald-500 text-white'
+                : 'bg-white border-gray-200 text-gray-500',
+              isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+            ].join(' ')}
+          >
+            {readingActive ? '✓ Читал' : 'Читал сегодня?'}
+          </button>
+        </div>
+
+        {readingActive && (
+          <div className="flex flex-col gap-3">
+            <input
+              type="text"
+              placeholder="Название книги"
+              value={reading.bookTitle}
+              disabled={isLocked}
+              onChange={e => setReading(r => ({ ...r, bookTitle: e.target.value }))}
+              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+            />
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <div className="text-xs text-gray-500 mb-1">Страниц</div>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  placeholder="0"
+                  value={reading.pagesRead}
+                  disabled={isLocked}
+                  onChange={e => setReading(r => ({ ...r, pagesRead: e.target.value }))}
+                  className="w-full rounded-xl border border-gray-200 px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-300"
+                />
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 mb-1">Минут</div>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  placeholder="0"
+                  value={reading.minutesRead}
+                  disabled={isLocked}
+                  onChange={e => setReading(r => ({ ...r, minutesRead: e.target.value }))}
+                  className="w-full rounded-xl border border-gray-200 px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-300"
+                />
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 mb-1">Стр. закладка</div>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  placeholder="0"
+                  value={reading.currentPage}
+                  disabled={isLocked}
+                  onChange={e => setReading(r => ({ ...r, currentPage: e.target.value }))}
+                  className="w-full rounded-xl border border-gray-200 px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-300"
+                />
+              </div>
+            </div>
+
+            {/* Finished book toggle */}
+            <button
+              type="button"
+              disabled={isLocked}
+              onClick={() => setReading(r => ({ ...r, bookFinished: !r.bookFinished }))}
+              className={[
+                'flex items-center gap-2 w-full px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all',
+                reading.bookFinished
+                  ? 'bg-amber-50 border-amber-400 text-amber-700'
+                  : 'bg-white border-gray-200 text-gray-600',
+                isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+              ].join(' ')}
+            >
+              <span className={['w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0', reading.bookFinished ? 'bg-amber-400 border-amber-500' : 'border-gray-300'].join(' ')}>
+                {reading.bookFinished && <span className="text-white text-xs">✓</span>}
+              </span>
+              🏆 Дочитал книгу до конца!
+              {reading.bookFinished && (
+                <span className="ml-auto text-amber-600 font-bold">
+                  +{(settings as any)?.coins_per_book ?? 20} 💰
+                </span>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* ── Note section (mode 1 — diary) ───────────────────────────── */}
       {fillMode === 1 && (
