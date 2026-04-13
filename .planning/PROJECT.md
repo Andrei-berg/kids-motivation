@@ -238,7 +238,7 @@ Two fully separate experiences now exist — Parent Center (dark, control-focuse
 - Push notifications for task confirmations, badge earnings, wallet credits, and "Medal of the Day"
 - Real-time family group chat (Supabase Realtime) with reactions and stickers
 - Achievement events auto-post to chat
-- Photo and voice messages in chat
+- Photo messages in chat
 - Photo proof of task completion
 
 ---
@@ -267,7 +267,7 @@ Two fully separate experiences now exist — Parent Center (dark, control-focuse
 - [ ] Real-time family group chat (Supabase Realtime)
 - [ ] Message reactions (❤️ 👍 🔥 🏆) and sticker pack
 - [ ] Achievement events auto-post to family chat
-- [ ] Photo and voice messages in chat
+- [ ] Photo messages in chat
 - [ ] Photo proof of task completion
 
 ### Out of Scope (current)
