@@ -108,6 +108,10 @@ export default function ParentSettingsPage() {
   // Kid fill mode state
   const [kidFillModes, setKidFillModes] = useState<Record<string, 1 | 2 | 3>>({})
   const [savingKidMode, setSavingKidMode] = useState<Record<string, boolean>>({})
+  const [childPinInputs, setChildPinInputs] = useState<Record<string, string>>({})
+  const [childPinConfirm, setChildPinConfirm] = useState<Record<string, string>>({})
+  const [childPinStatus, setChildPinStatus] = useState<Record<string, 'idle' | 'saving' | 'ok' | 'error'>>({})
+  const [childPinError, setChildPinError] = useState<Record<string, string>>({})
 
   // Check PIN on mount
   useEffect(() => {
@@ -267,6 +271,38 @@ export default function ParentSettingsPage() {
   // ============================================================================
   // KID FILL MODE SAVE
   // ============================================================================
+
+  async function handleSetChildPin(childId: string) {
+    const pin = childPinInputs[childId] ?? ''
+    const confirm = childPinConfirm[childId] ?? ''
+    if (pin.length < 4) {
+      setChildPinError(prev => ({ ...prev, [childId]: 'PIN должен быть минимум 4 цифры' }))
+      return
+    }
+    if (pin !== confirm) {
+      setChildPinError(prev => ({ ...prev, [childId]: 'PIN-коды не совпадают' }))
+      return
+    }
+    setChildPinStatus(prev => ({ ...prev, [childId]: 'saving' }))
+    setChildPinError(prev => ({ ...prev, [childId]: '' }))
+    try {
+      const res = await fetch('/api/set-child-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ childId, pin }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error ?? 'Ошибка сервера')
+      }
+      setChildPinStatus(prev => ({ ...prev, [childId]: 'ok' }))
+      setChildPinInputs(prev => ({ ...prev, [childId]: '' }))
+      setChildPinConfirm(prev => ({ ...prev, [childId]: '' }))
+    } catch (e: any) {
+      setChildPinStatus(prev => ({ ...prev, [childId]: 'error' }))
+      setChildPinError(prev => ({ ...prev, [childId]: e.message ?? 'Ошибка' }))
+    }
+  }
 
   async function handleSaveKidFillMode(childId: string) {
     setSavingKidMode(prev => ({ ...prev, [childId]: true }))
@@ -579,6 +615,52 @@ export default function ParentSettingsPage() {
               >
                 {savingKidMode[child.id] ? 'Сохраняю...' : 'Сохранить'}
               </button>
+
+              {/* PIN setup */}
+              <div className="mt-3 pt-3 border-t border-gray-700 space-y-2">
+                <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">
+                  PIN для входа ребёнка
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    placeholder="Новый PIN"
+                    maxLength={8}
+                    value={childPinInputs[child.id] ?? ''}
+                    onChange={e => {
+                      setChildPinInputs(prev => ({ ...prev, [child.id]: e.target.value.replace(/\D/g, '') }))
+                      setChildPinStatus(prev => ({ ...prev, [child.id]: 'idle' }))
+                    }}
+                    className="px-3 py-2 bg-gray-700 rounded-lg text-white text-sm border border-gray-600 focus:border-amber-400 focus:outline-none"
+                  />
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    placeholder="Повторить PIN"
+                    maxLength={8}
+                    value={childPinConfirm[child.id] ?? ''}
+                    onChange={e => {
+                      setChildPinConfirm(prev => ({ ...prev, [child.id]: e.target.value.replace(/\D/g, '') }))
+                      setChildPinStatus(prev => ({ ...prev, [child.id]: 'idle' }))
+                    }}
+                    className="px-3 py-2 bg-gray-700 rounded-lg text-white text-sm border border-gray-600 focus:border-amber-400 focus:outline-none"
+                  />
+                </div>
+                {childPinError[child.id] && (
+                  <p className="text-xs text-rose-400">{childPinError[child.id]}</p>
+                )}
+                {childPinStatus[child.id] === 'ok' && (
+                  <p className="text-xs text-green-400">PIN установлен успешно</p>
+                )}
+                <button
+                  onClick={() => handleSetChildPin(child.id)}
+                  disabled={childPinStatus[child.id] === 'saving'}
+                  className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg disabled:opacity-50"
+                >
+                  {childPinStatus[child.id] === 'saving' ? 'Сохраняю...' : 'Установить PIN'}
+                </button>
+              </div>
             </div>
           ))}
 
