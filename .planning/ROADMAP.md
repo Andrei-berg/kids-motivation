@@ -70,7 +70,7 @@ See: `.planning/milestones/v2.0-ROADMAP.md`
   3. Child receives a push notification when coins are credited or deducted from wallet
   4. Parent can compose and send a Medal of the Day — a personal message with bonus coins — and child receives a push notification with the message text and coin amount
   5. Tapping any notification opens the correct app screen (task confirmation → /kid/day, badge → /kid/achievements, wallet → /kid/wallet, medal → /kid/day)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 - [ ] 3.1-01: Push trigger for task confirmation (NOTIF-01) — fire Web Push from parent task-confirm action
@@ -86,7 +86,7 @@ Plans:
   2. Any family member can tap a reaction (❤️ 👍 🔥 🏆) on any message and the reaction count updates in real time for everyone
   3. Any family member can open a sticker picker and send a sticker from the predefined pack; it renders as an image in the chat thread
   4. When a child earns a badge, hits a streak milestone, or receives wallet coins, an auto-post appears in family chat describing the event
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 - [ ] 3.2-01: DB schema + Supabase Realtime subscription — chat_messages table, RLS, real-time channel setup
@@ -102,7 +102,7 @@ Plans:
   1. Any family member can attach a photo to a chat message; the photo is compressed on the client before upload and renders inline in the chat thread
   2. Child can take or select a photo when marking a task complete in the day-fill form; the photo is stored as task proof
   3. Parent sees the task proof photo in the task confirmation view before approving or rejecting the task
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 - [ ] 3.3-01: Photo upload to Supabase Storage — client-side compression, storage bucket policy, signed URL delivery
