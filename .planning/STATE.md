@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
 milestone: v3.0
-milestone_name: Communication
-status: ready_to_plan
-last_updated: "2026-04-13"
+milestone_name: — Communication
+status: unknown
+last_updated: "2026-04-13T12:54:00.621Z"
 progress:
-  total_phases: 3
-  completed_phases: 0
-  total_plans: 10
-  completed_plans: 0
+  total_phases: 14
+  completed_phases: 12
+  total_plans: 50
+  completed_plans: 50
 ---
 
 # STATE.md — Текущее состояние проекта
@@ -83,3 +83,6 @@ Resume file: None
 - **[3.1-01]** child_id resolved via family_members.maybeSingle() — silent fail if child not linked to member
 - **[3.1-02]** Push call in awardBadge placed after XP update — badge saved regardless of push outcome
 - **[3.1-02]** Single hook in updateWalletCoins covers all coin operations — grades, room, behavior, sport, P2P, approvals
+- [Phase 3.1-03]: family_id fetched from family_members on page load in parent dashboard (Child type lacks it)
+- [Phase 3.1-03]: Medal UI rendered as separate div below ChildCard using per-child Record<string,T> state maps
+- [Phase 3.1-03]: medalResult loaded in parallel with other data in loadData via dynamic import of supabase/client
