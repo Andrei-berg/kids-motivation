@@ -281,6 +281,7 @@ export async function getSectionsForChildExpenses(childId: string): Promise<Arra
 
 export async function addSection(section: {
   childId: string
+  familyId?: string
   name: string
   schedule?: any
   cost?: number
@@ -294,6 +295,7 @@ export async function addSection(section: {
     .from('sections')
     .insert({
       child_id: section.childId,
+      family_id: section.familyId || null,
       name: section.name,
       schedule: section.schedule || null,
       cost: section.cost || null,

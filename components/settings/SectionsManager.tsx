@@ -43,6 +43,7 @@ const EMPTY_FORM: SectionForm = {
 
 export default function SectionsManager() {
   const { members } = useFamilyMembers()
+  const { familyId } = useAppStore()
   const children = members.filter(m => m.role === 'child')
   const [childId, setChildId] = useState('')
 
@@ -129,6 +130,7 @@ export default function SectionsManager() {
       } else {
         await addSection({
           childId,
+          familyId: familyId ?? undefined,
           name: form.name.trim(),
           trainer: form.trainer.trim() || undefined,
           address: form.address.trim() || undefined,
