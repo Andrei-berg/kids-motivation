@@ -145,6 +145,23 @@ export async function deleteReaction(params: {
   }
 }
 
+export async function postSystemMessage(params: {
+  familyId: string
+  content: string
+}): Promise<void> {
+  const { error } = await supabase
+    .from('chat_messages')
+    .insert({
+      family_id: params.familyId,
+      sender_id: 'system',
+      sender_name: 'FamilyCoins',
+      sender_role: 'parent',
+      message_type: 'system',
+      content: params.content,
+    })
+  if (error) throw error
+}
+
 export function subscribeToReactions(
   familyId: string,
   onUpdate: (reaction: ChatReaction, eventType: 'INSERT' | 'DELETE') => void

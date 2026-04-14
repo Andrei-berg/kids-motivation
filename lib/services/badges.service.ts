@@ -341,7 +341,7 @@ async function awardBadge(childId: string, badgeKey: string) {
 
   const { data: child } = await supabase
     .from('children')
-    .select('xp, level')
+    .select('xp, level, family_id, name')
     .eq('id', childId)
     .single()
 
@@ -365,6 +365,18 @@ async function awardBadge(childId: string, badgeKey: string) {
     )
   } catch (e) {
     console.warn('[awardBadge] push failed:', e)
+  }
+
+  try {
+    if (child?.family_id) {
+      const { postSystemMessage } = await import('@/lib/repositories/chat.repo')
+      await postSystemMessage({
+        familyId: child.family_id,
+        content: `${badge.icon} ${child.name} получил значок «${badge.title}»!`,
+      })
+    }
+  } catch (e) {
+    console.warn('[awardBadge] chat post failed:', e)
   }
 }
 

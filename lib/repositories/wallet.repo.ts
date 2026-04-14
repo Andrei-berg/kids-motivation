@@ -88,6 +88,28 @@ export async function updateWalletCoins(
     console.warn('[updateWalletCoins] push failed:', e)
   }
 
+  if (coinsChange > 0) {
+    try {
+      const familyId = wallet.family_id
+      if (familyId) {
+        const { data: childRow } = await supabase
+          .from('children')
+          .select('name')
+          .eq('id', childId)
+          .maybeSingle()
+        if (childRow?.name) {
+          const { postSystemMessage } = await import('@/lib/repositories/chat.repo')
+          await postSystemMessage({
+            familyId,
+            content: `💰 ${childRow.name} получил +${coinsChange} монет — ${description}`,
+          })
+        }
+      }
+    } catch (e) {
+      console.warn('[updateWalletCoins] chat post failed:', e)
+    }
+  }
+
   return data
 }
 
