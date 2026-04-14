@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useCoinAnimation, CoinFlyup } from '@/components/kid/CoinAnimation'
 import type { DayData, SubjectGrade } from '@/lib/models/child.types'
 import type { Subject, ExerciseType } from '@/lib/models/flexible.types'
@@ -17,6 +17,8 @@ import {
   updateWalletCoins,
 } from '@/lib/repositories/wallet.repo'
 import { updateStreaks } from '@/lib/streaks'
+import { compressImage, uploadPhoto, getSignedPhotoUrl } from '@/lib/photo-upload'
+import { supabase } from '@/lib/supabase'
 import { getReadingLog, saveReadingLog } from '@/lib/vacation-api'
 
 const GRADE_COINS: Record<number, number> = { 5: 5, 4: 3, 3: -3, 2: -5, 1: -10 }
@@ -98,6 +100,9 @@ export function KidDayFillForm({
   })
 
   const [mood, setMood] = useState<string | null>(existingDay?.mood ?? null)
+  const [proofFile, setProofFile] = useState<File | null>(null)
+  const [proofLocalUrl, setProofLocalUrl] = useState<string | null>(null)
+  const proofInputRef = useRef<HTMLInputElement>(null)
   const [checkedActivities, setCheckedActivities] = useState<Set<string>>(new Set())
   const [activities, setActivities] = useState<ExtraActivity[]>([])
   const [settings, setSettings] = useState<WalletSettings | null>(null)
@@ -248,6 +253,26 @@ export function KidDayFillForm({
     setRoomItems(prev => ({ ...prev, [key]: !prev[key] }))
   }
 
+  function handleProofCapture(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    // Revoke previous preview URL to avoid memory leak
+    if (proofLocalUrl) URL.revokeObjectURL(proofLocalUrl)
+    const url = URL.createObjectURL(file)
+    setProofFile(file)
+    setProofLocalUrl(url)
+    // Reset input so the same file can trigger onChange again (retake)
+    e.target.value = ''
+  }
+
+  function handleProofRetake() {
+    if (proofLocalUrl) URL.revokeObjectURL(proofLocalUrl)
+    setProofFile(null)
+    setProofLocalUrl(null)
+    // Re-open camera
+    setTimeout(() => proofInputRef.current?.click(), 50)
+  }
+
   function toggleActivity(id: string) {
     if (isLocked) return
     setCheckedActivities(prev => {
@@ -315,7 +340,27 @@ export function KidDayFillForm({
         dayParams.roomTrash = roomItems.trash
       }
 
-      await saveDay(dayParams)
+      // Upload room proof photo if captured
+      let roomProofSignedUrl: string | undefined
+      if (proofFile) {
+        try {
+          // Fetch family_id for the storage path
+          const { data: childRow } = await supabase
+            .from('children')
+            .select('family_id')
+            .eq('id', childId)
+            .single()
+          const familyId = childRow?.family_id ?? childId
+          const compressed = await compressImage(proofFile)
+          const path = `${familyId}/proof/${childId}/${date}.jpg`
+          await uploadPhoto(compressed, path)
+          roomProofSignedUrl = await getSignedPhotoUrl(path)
+        } catch (err) {
+          console.warn('[KidDayFillForm] proof upload failed (continuing without proof):', err)
+        }
+      }
+
+      await saveDay({ ...dayParams, roomProofUrl: roomProofSignedUrl })
 
       // Award room coins if applicable
       if (fillMode >= 2 && roomOk) {
@@ -407,6 +452,7 @@ export function KidDayFillForm({
         notifyStreakEvents(childId, '', streakEvents).catch(() => {})
       })
 
+      if (proofLocalUrl) URL.revokeObjectURL(proofLocalUrl)
       onSaved(coinsPreview)
     } catch (err) {
       console.error('KidDayFillForm submit error:', err)
@@ -473,6 +519,49 @@ export function KidDayFillForm({
               Ещё {3 - roomCount} пункта для получения монет
             </p>
           )}
+          {/* Proof photo — optional, camera-only */}
+          <div className="mt-3 pt-3 border-t border-amber-100">
+            {proofLocalUrl ? (
+              <div className="flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={proofLocalUrl}
+                  alt="Фото подтверждения"
+                  className="w-16 h-16 rounded-xl object-cover border-2 border-amber-300"
+                />
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-green-600 font-medium">Фото приложено ✓</span>
+                  <button
+                    type="button"
+                    onClick={handleProofRetake}
+                    disabled={isLocked}
+                    className="text-xs text-amber-600 underline disabled:opacity-50"
+                  >
+                    Переснять
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => proofInputRef.current?.click()}
+                disabled={isLocked}
+                className="flex items-center gap-2 text-sm text-amber-600 disabled:opacity-50"
+              >
+                <span className="text-lg">📷</span>
+                <span>Сфотографировать комнату (необязательно)</span>
+              </button>
+            )}
+            {/* Hidden file input — camera only, no gallery */}
+            <input
+              ref={proofInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleProofCapture}
+            />
+          </div>
         </div>
       )}
 
