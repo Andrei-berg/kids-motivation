@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: — Communication
 status: unknown
-last_updated: "2026-04-14T14:29:32.610Z"
+last_updated: "2026-04-14T14:38:29.479Z"
 progress:
   total_phases: 16
-  completed_phases: 13
+  completed_phases: 14
   total_plans: 57
-  completed_plans: 56
+  completed_plans: 57
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-14 — Plan 3.3-02 photo messages in chat complete.
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-14 — Plan 3.3-03 task photo proof complete.
 
 ---
 
@@ -21,12 +21,12 @@ progress:
 
 ```
 Milestone v3.0 Communication — Phase 3.3 (photos)
-Plan: 2 of 3 in current phase (3.3-01 and 3.3-02 complete)
-Status: Phase 3.3 in progress
-Last activity: 2026-04-14 — Plan 3.3-02 photo messages in chat complete
+Plan: 3 of 3 in current phase (3.3-01, 3.3-02, 3.3-03 complete)
+Status: Phase 3.3 COMPLETE
+Last activity: 2026-04-14 — Plan 3.3-03 task photo proof complete
 ```
 
-Progress: [█████░░░░░] 55% (7/11 plans complete — estimated)
+Progress: [█████░░░░░] 57% (8/11 plans complete — estimated)
 
 ---
 
@@ -71,7 +71,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-14
-Stopped at: Plan 3.3-02 complete — photo messages in chat (PhotoLightbox, ChatThread photo send/render)
+Stopped at: Plan 3.3-03 complete — task photo proof (KidDayFillForm camera, DailyModal thumbnail+lightbox)
 Resume file: None
 
 ---
@@ -106,3 +106,6 @@ Resume file: None
 - **[3.3-02]** Optimistic UI shows local blob URL immediately; replaced with signed URL after upload — avoids visible delay for sender
 - **[3.3-02]** photo_url stored as signed URL (1h expiry) in DB — adequate for MVP; long-lived URL management deferred
 - **[3.3-02]** Camera and gallery share one handlePhotoSelect handler via two separate hidden file inputs
+- [Phase 3.3-03]: roomProofUrl upload is fire-and-try — failure logged, never blocks form
+- [Phase 3.3-03]: DailyModal loads room_proof_url into dedicated roomProofUrl state to match existing component pattern
+- [Phase 3.3-03]: PhotoLightbox reused from plan 3.3-02 — no new component needed
