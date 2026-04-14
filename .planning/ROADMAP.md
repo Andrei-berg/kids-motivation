@@ -86,13 +86,13 @@ Plans:
   2. Any family member can tap a reaction (❤️ 👍 🔥 🏆) on any message and the reaction count updates in real time for everyone
   3. Any family member can open a sticker picker and send a sticker from the predefined pack; it renders as an image in the chat thread
   4. When a child earns a badge, hits a streak milestone, or receives wallet coins, an auto-post appears in family chat describing the event
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
-- [ ] 3.2-01: DB schema + Supabase Realtime subscription — chat_messages table, RLS, real-time channel setup
-- [ ] 3.2-02: Chat UI — message thread, send box, family member avatars, /parent and /kid entry points
-- [ ] 3.2-03: Reactions + sticker pack — reaction upsert table, sticker asset set, picker component
-- [ ] 3.2-04: Achievement auto-posts — hook badge award, streak milestone, and coin credit events to insert system messages into chat
+- [ ] 3.2-01-db-schema-PLAN.md — chat_messages table, RLS, Realtime publication, TypeScript types and repo
+- [ ] 3.2-02-chat-ui-PLAN.md — ChatThread + SendBox components, /parent/chat and /kid/chat pages, nav entries
+- [ ] 3.2-03-reactions-stickers-PLAN.md — chat_reactions table, MessageReactions component, StickerPicker with 12 emoji stickers
+- [ ] 3.2-04-achievement-autoposts-PLAN.md — postSystemMessage hook in badge award, wallet coin credit, and streak milestone events
 
 ### Phase 3.3: photos
 **Goal**: Family members can share photos in chat and children can attach photo proof when completing tasks
@@ -165,4 +165,4 @@ Plans:
 
 ---
 
-*Created: 2026-03-01. Updated: 2026-04-13 — Plan 3.1-03 complete (Medal of the Day verified). Phase 3.1 event-notifications complete.*
+*Created: 2026-03-01. Updated: 2026-04-14 — Phase 3.2 family-chat planned (4 plans). Phase 3.1 event-notifications complete.*
