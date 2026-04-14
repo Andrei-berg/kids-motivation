@@ -24,6 +24,7 @@ import {
   calcHomeHelpCoins,
   readingCoinHint,
 } from '@/lib/day-type'
+import { PhotoLightbox } from '@/components/chat/PhotoLightbox'
 
 // ─── Local Types ──────────────────────────────────────────────────────────────
 
@@ -112,6 +113,8 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   const [roomDesk, setRoomDesk] = useState(false)
   const [roomCloset, setRoomCloset] = useState(false)
   const [roomTrash, setRoomTrash] = useState(false)
+  const [roomProofUrl, setRoomProofUrl] = useState<string | null>(null)
+  const [lightboxProofUrl, setLightboxProofUrl] = useState<string | null>(null)
 
   // ДЕНЬ
   const [goodBehavior, setGoodBehavior] = useState(true)
@@ -197,6 +200,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
           setRoomDesk(dayData.room_desk)
           setRoomCloset(dayData.room_closet)
           setRoomTrash(dayData.room_trash)
+          setRoomProofUrl(dayData.room_proof_url ?? null)
           setGoodBehavior(dayData.good_behavior)
           setDiaryNotDone(dayData.diary_not_done)
           setDayNote(dayData.note_child || '')
@@ -949,6 +953,19 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                   ))}
                 </div>
               )}
+              {/* Proof photo — shown only when present (proof is optional) */}
+              {roomProofUrl && (
+                <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(238,238,255,0.08)' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={roomProofUrl}
+                    alt="Фото комнаты"
+                    className="w-20 h-20 rounded-xl object-cover cursor-pointer"
+                    style={{ border: '2px solid rgba(238,238,255,0.15)' }}
+                    onClick={() => setLightboxProofUrl(roomProofUrl)}
+                  />
+                </div>
+              )}
             </div>
 
             {/* ── ДЕНЬ / ПОВЕДЕНИЕ ─────────────────────────────── */}
@@ -1107,6 +1124,9 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
           </div>
         )}
       </div>
+      {lightboxProofUrl && (
+        <PhotoLightbox url={lightboxProofUrl} onClose={() => setLightboxProofUrl(null)} />
+      )}
     </div>
   )
 }
