@@ -25,6 +25,7 @@ export async function sendMessage(params: {
   messageType: MessageType
   content?: string
   stickerId?: string
+  photoUrl?: string
 }): Promise<ChatMessage> {
   const { data, error } = await supabase
     .from('chat_messages')
@@ -36,6 +37,7 @@ export async function sendMessage(params: {
       message_type: params.messageType,
       content: params.content ?? null,
       sticker_id: params.stickerId ?? null,
+      photo_url: params.photoUrl ?? null,
     })
     .select()
     .single()

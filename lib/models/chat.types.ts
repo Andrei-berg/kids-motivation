@@ -1,4 +1,4 @@
-export type MessageType = 'text' | 'sticker' | 'system'
+export type MessageType = 'text' | 'sticker' | 'system' | 'photo'
 
 export interface ChatMessage {
   id: string
@@ -9,6 +9,7 @@ export interface ChatMessage {
   message_type: MessageType
   content: string | null   // text or system event text
   sticker_id: string | null
+  photo_url: string | null
   created_at: string
 }
 
