@@ -402,9 +402,9 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
         })
       )
 
-      // Save reading log and extra lessons for non-school days
+      // Save reading log for any day type when a book title is provided
       const nonSchool = isNonSchoolDay(dayType) || isSickDay
-      const saveReading = nonSchool && bookTitle.trim()
+      const saveReading = bookTitle.trim()
         ? saveReadingLog({ child_id: childId, date, book_title: bookTitle, pages_read: pagesRead, minutes_read: minutesRead, book_finished: bookFinished, note: readingNote })
         : Promise.resolve()
 
@@ -563,8 +563,8 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
               </div>
             )}
 
-            {/* ── ЧТЕНИЕ (vacation + weekend + sick) ──────────── */}
-            {(nonSchool) && (
+            {/* ── ЧТЕНИЕ (all day types) ──────────── */}
+            {(
               <div className="scroll-section">
                 <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
                   <span className="scroll-section-icon">📚</span>

@@ -13,6 +13,8 @@ import {
   rejectPurchase,
   deliverPurchase,
 } from '@/lib/repositories/wallet.repo'
+import { getSectionsForDate } from '@/lib/expenses-api'
+import { getReadingLog } from '@/lib/vacation-api'
 import { supabase } from '@/lib/supabase'
 import { sendMedal } from '@/app/actions/send-medal'
 import type { Child, DayData } from '@/lib/models/child.types'
@@ -33,6 +35,8 @@ type ChildStatus = {
   dayData: DayData | null
   weekScore: WeekScore
   sportDone: boolean
+  sectionsDone: boolean
+  readingDone: boolean
 }
 
 function SkeletonCard() {
@@ -50,7 +54,7 @@ function StatusDot({ ok }: { ok: boolean }) {
 }
 
 function ChildCard({ status, onFillDay, onKidView }: { status: ChildStatus; onFillDay: () => void; onKidView: () => void }) {
-  const { child, dayData, weekScore, sportDone } = status
+  const { child, dayData, weekScore, sportDone, sectionsDone, readingDone } = status
   const roomOk = !!(dayData?.room_ok)
   const behaviorOk = !!(dayData?.good_behavior)
 
@@ -80,12 +84,20 @@ function ChildCard({ status, onFillDay, onKidView }: { status: ChildStatus; onFi
           <span>Поведение</span>
         </div>
         <div className="flex items-center gap-1.5 text-gray-300">
-          <StatusDot ok={weekScore.gradedDays > 0} />
-          <span>{weekScore.gradedDays} дн. оценок</span>
+          <StatusDot ok={sportDone} />
+          <span>Спорт домашний</span>
         </div>
         <div className="flex items-center gap-1.5 text-gray-300">
-          <StatusDot ok={sportDone} />
-          <span>Активности</span>
+          <StatusDot ok={sectionsDone} />
+          <span>Тренировки</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-gray-300">
+          <StatusDot ok={readingDone} />
+          <span>Чтение</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-gray-300">
+          <StatusDot ok={weekScore.gradedDays > 0} />
+          <span>{weekScore.gradedDays} дн. оценок</span>
         </div>
       </div>
 
@@ -287,7 +299,7 @@ export default function ParentDashboardPage() {
         const [results, pendingData, approvedData] = await Promise.all([
           Promise.all(
             children.map(async (child) => {
-              const [dayData, weekScore, sportData] = await Promise.all([
+              const [dayData, weekScore, sportData, sections, readingData] = await Promise.all([
                 getDay(child.id, todayDate).catch(() => null),
                 getWeekScore(child.id, weekStart).catch(() => ({
                   coinsFromGrades: 0,
@@ -299,9 +311,13 @@ export default function ParentDashboardPage() {
                   filledDays: 0,
                 })),
                 getHomeSportForDate(child.id, todayDate).catch(() => null),
+                getSectionsForDate(child.id, todayDate).catch(() => []),
+                getReadingLog(child.id, todayDate).catch(() => null),
               ])
               const sportDone = !!(sportData && (sportData.running || sportData.exercises || sportData.outdoor_games || sportData.stretching || sportData.total_minutes > 0))
-              return { child, dayData, weekScore, sportDone }
+              const sectionsDone = sections.some(s => s.visit?.attended)
+              const readingDone = !!(readingData && (readingData.pages_read > 0 || readingData.minutes_read > 0))
+              return { child, dayData, weekScore, sportDone, sectionsDone, readingDone }
             })
           ),
           getPendingPurchases().catch(() => [] as RewardPurchase[]),
@@ -422,10 +438,10 @@ export default function ParentDashboardPage() {
       {/* Child status cards */}
       {statuses && (
         <div className="flex flex-col gap-4">
-          {statuses.map(({ child, dayData, weekScore, sportDone }) => (
+          {statuses.map(({ child, dayData, weekScore, sportDone, sectionsDone, readingDone }) => (
             <div key={child.id} className="flex flex-col gap-0">
               <ChildCard
-                status={{ child, dayData, weekScore, sportDone }}
+                status={{ child, dayData, weekScore, sportDone, sectionsDone, readingDone }}
                 onFillDay={() => router.push(`/parent/daily?childId=${child.id}`)}
                 onKidView={() => {
                   setActiveMemberId(child.id)
