@@ -89,8 +89,8 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 3.2-01-db-schema-PLAN.md — chat_messages table, RLS, Realtime publication, TypeScript types and repo
-- [ ] 3.2-02-chat-ui-PLAN.md — ChatThread + SendBox components, /parent/chat and /kid/chat pages, nav entries
+- [x] 3.2-01-db-schema-PLAN.md — chat_messages table, RLS, Realtime publication, TypeScript types and repo (completed 2026-04-14)
+- [x] 3.2-02-chat-ui-PLAN.md — ChatThread + SendBox components, /parent/chat and /kid/chat pages, nav entries (completed 2026-04-14)
 - [ ] 3.2-03-reactions-stickers-PLAN.md — chat_reactions table, MessageReactions component, StickerPicker with 12 emoji stickers
 - [ ] 3.2-04-achievement-autoposts-PLAN.md — postSystemMessage hook in badge award, wallet coin credit, and streak milestone events
 
@@ -156,7 +156,7 @@ Plans:
 | 2.5 notifications-animations | v2.0 | 4/4 | Complete | 2026-04-10 |
 | 2.6 registration | v2.0 | 4/4 | Complete | 2026-04-13 |
 | 3.1 event-notifications | v3.0 | 3/3 | Complete | 2026-04-13 |
-| 3.2 family-chat | 1/4 | In Progress|  | - |
+| 3.2 family-chat | v3.0 | 2/4 | In Progress | - |
 | 3.3 photos | v3.0 | 0/3 | Not started | - |
 | 4.1–4.4 | v4.0 | 0/? | Planned | - |
 | 5.1–5.3 | v5.0 | 0/? | Planned | - |
@@ -165,4 +165,4 @@ Plans:
 
 ---
 
-*Created: 2026-03-01. Updated: 2026-04-14 — Phase 3.2 family-chat planned (4 plans). Phase 3.1 event-notifications complete.*
+*Created: 2026-03-01. Updated: 2026-04-14 — Phase 3.2 plans 3.2-01 and 3.2-02 complete. Realtime chat UI verified end-to-end.*

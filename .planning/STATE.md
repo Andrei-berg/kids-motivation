@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: — Communication
 status: unknown
-last_updated: "2026-04-14T09:21:55.586Z"
+last_updated: "2026-04-14T10:30:00Z"
 progress:
   total_phases: 15
   completed_phases: 12
   total_plans: 54
-  completed_plans: 52
+  completed_plans: 53
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-14 — Plan 3.2-01 db-schema завершён.
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-14 — Plan 3.2-02 chat-ui завершён.
 
 ---
 
@@ -21,12 +21,12 @@ progress:
 
 ```
 Milestone v3.0 Communication — Phase 3.2 of 3 (family-chat)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-04-14 — Plan 3.2-01 complete (chat_messages DB schema, types, repo)
+Last activity: 2026-04-14 — Plan 3.2-02 complete (chat UI, Realtime verified end-to-end)
 ```
 
-Progress: [████░░░░░░] 40% (4/10 plans complete)
+Progress: [█████░░░░░] 50% (5/10 plans complete)
 
 ---
 
@@ -71,7 +71,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-14
-Stopped at: Plan 3.2-01 complete. Next: execute plan 3.2-02 (chat UI)
+Stopped at: Plan 3.2-02 complete. Next: execute plan 3.2-03 (reactions + stickers)
 Resume file: None
 
 ---
@@ -89,5 +89,7 @@ Resume file: None
 - **[3.2-01]** sender_id is TEXT not UUID — matches family_members.id convention in this codebase
 - **[3.2-01]** ALTER PUBLICATION wrapped in idempotent DO block — safe to run migration multiple times
 - **[3.2-01]** subscribeToMessages returns () => void cleanup — callers must call it on unmount to prevent channel leaks
-- [Phase 3.2-02]: ChatThread accepts props not context — makes it reusable for sticker extension in plan 3.2-03
-- [Phase 3.2-02]: Duplicate guard in Realtime callback prevents double-render after optimistic insert
+- **[3.2-02]** ChatThread accepts props not context — makes it reusable for sticker extension in plan 3.2-03
+- **[3.2-02]** Duplicate guard in Realtime callback prevents double-render after optimistic insert
+- **[3.2-02]** Kid chat page queries family_members by id (activeMemberId IS family_members.id from Zustand store)
+- **[3.2-02]** Optimistic message replaced with real message from sendMessage response before Realtime fires
