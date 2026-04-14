@@ -198,6 +198,25 @@ async function updateStreak(
       })
   }
 
+  if (event?.event === 'record' && familyId && [7, 14, 30].includes(current)) {
+    try {
+      const typeLabel = type === 'room' ? 'Комната' : type === 'study' ? 'Учёба' : 'Спорт'
+      const { data: childRow } = await supabase
+        .from('children')
+        .select('name')
+        .eq('id', childId)
+        .maybeSingle()
+      const childName = childRow?.name ?? childId
+      const { postSystemMessage } = await import('@/lib/repositories/chat.repo')
+      await postSystemMessage({
+        familyId,
+        content: `🔥 ${childName} держит серию ${current} дней (${typeLabel})!`,
+      })
+    } catch (e) {
+      console.warn('[updateStreak] chat post failed:', e)
+    }
+  }
+
   return event
 }
 
