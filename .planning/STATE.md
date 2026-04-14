@@ -8,12 +8,12 @@ progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 10
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-14 — Phase 3.1 event-notifications завершена и верифицирована.
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-14 — Plan 3.2-01 db-schema завершён.
 
 ---
 
@@ -21,12 +21,12 @@ progress:
 
 ```
 Milestone v3.0 Communication — Phase 3.2 of 3 (family-chat)
-Plan: 0 of 4 in current phase
+Plan: 1 of 4 in current phase
 Status: In progress
-Last activity: 2026-04-13 — Plan 3.1-03 complete (Medal of the Day verified)
+Last activity: 2026-04-14 — Plan 3.2-01 complete (chat_messages DB schema, types, repo)
 ```
 
-Progress: [███░░░░░░░] 30% (3/10 plans complete)
+Progress: [████░░░░░░] 40% (4/10 plans complete)
 
 ---
 
@@ -71,7 +71,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-14
-Stopped at: Phase 3.1 complete and verified. Next: /gsd:plan-phase 3.2
+Stopped at: Plan 3.2-01 complete. Next: execute plan 3.2-02 (chat UI)
 Resume file: None
 
 ---
@@ -86,3 +86,6 @@ Resume file: None
 - [Phase 3.1-03]: family_id fetched from family_members on page load in parent dashboard (Child type lacks it)
 - [Phase 3.1-03]: Medal UI rendered as separate div below ChildCard using per-child Record<string,T> state maps
 - [Phase 3.1-03]: medalResult loaded in parallel with other data in loadData via dynamic import of supabase/client
+- **[3.2-01]** sender_id is TEXT not UUID — matches family_members.id convention in this codebase
+- **[3.2-01]** ALTER PUBLICATION wrapped in idempotent DO block — safe to run migration multiple times
+- **[3.2-01]** subscribeToMessages returns () => void cleanup — callers must call it on unmount to prevent channel leaks

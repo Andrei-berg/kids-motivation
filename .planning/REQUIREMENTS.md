@@ -16,7 +16,7 @@ Requirements for Milestone v3.0 — Communication.
 
 ### Chat
 
-- [ ] **CHAT-01**: Family members can send text messages in a shared family group chat in real time (Supabase Realtime)
+- [x] **CHAT-01**: Family members can send text messages in a shared family group chat in real time (Supabase Realtime)
 - [ ] **CHAT-02**: Family members can react to messages with ❤️ 👍 🔥 🏆
 - [ ] **CHAT-03**: Family members can send stickers from a predefined sticker pack
 - [ ] **CHAT-04**: Achievement events (badge earned, streak milestone, coins credited) auto-post to family chat
@@ -55,7 +55,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NOTIF-02 | Phase 3.1 | Complete |
 | NOTIF-03 | Phase 3.1 | Complete |
 | NOTIF-04 | Phase 3.1 | Complete |
-| CHAT-01 | Phase 3.2 | Pending |
+| CHAT-01 | Phase 3.2 | Complete |
 | CHAT-02 | Phase 3.2 | Pending |
 | CHAT-03 | Phase 3.2 | Pending |
 | CHAT-04 | Phase 3.2 | Pending |
