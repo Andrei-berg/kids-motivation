@@ -2,7 +2,7 @@
 
 CREATE TABLE IF NOT EXISTS medals (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  family_id   TEXT NOT NULL REFERENCES families(id) ON DELETE CASCADE,
+  family_id   UUID NOT NULL REFERENCES families(id) ON DELETE CASCADE,
   child_id    TEXT NOT NULL REFERENCES children(id) ON DELETE CASCADE,
   date        DATE NOT NULL,
   message     TEXT NOT NULL,
