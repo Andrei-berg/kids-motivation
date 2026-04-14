@@ -26,7 +26,7 @@ CREATE POLICY "Family members can insert reactions" ON chat_reactions
 
 CREATE POLICY "Members can delete own reactions" ON chat_reactions
   FOR DELETE USING (
-    member_id IN (SELECT id FROM family_members WHERE user_id = auth.uid())
+    member_id IN (SELECT id::text FROM family_members WHERE user_id = auth.uid())
   );
 
 ALTER PUBLICATION supabase_realtime ADD TABLE chat_reactions;
