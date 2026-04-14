@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: — Communication
 status: unknown
-last_updated: "2026-04-14T10:30:00Z"
+last_updated: "2026-04-14T09:52:00Z"
 progress:
   total_phases: 15
   completed_phases: 12
@@ -13,7 +13,7 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-14 — Plan 3.2-02 chat-ui завершён.
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-14 — Plan 3.2-03 reactions+stickers (awaiting human verify).
 
 ---
 
@@ -21,9 +21,9 @@ progress:
 
 ```
 Milestone v3.0 Communication — Phase 3.2 of 3 (family-chat)
-Plan: 2 of 4 in current phase
+Plan: 3 of 4 in current phase (awaiting human-verify checkpoint)
 Status: In progress
-Last activity: 2026-04-14 — Plan 3.2-02 complete (chat UI, Realtime verified end-to-end)
+Last activity: 2026-04-14 — Plan 3.2-03 tasks 1-2 complete, checkpoint:human-verify pending
 ```
 
 Progress: [█████░░░░░] 50% (5/10 plans complete)
@@ -71,7 +71,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-14
-Stopped at: Plan 3.2-02 complete. Next: execute plan 3.2-03 (reactions + stickers)
+Stopped at: Plan 3.2-03 checkpoint:human-verify (tasks 1-2 done, need DB migration + human test)
 Resume file: None
 
 ---
@@ -93,3 +93,7 @@ Resume file: None
 - **[3.2-02]** Duplicate guard in Realtime callback prevents double-render after optimistic insert
 - **[3.2-02]** Kid chat page queries family_members by id (activeMemberId IS family_members.id from Zustand store)
 - **[3.2-02]** Optimistic message replaced with real message from sendMessage response before Realtime fires
+- **[3.2-03]** ReactionPickerBar always renders inline (no long-press required) — simpler UX for web
+- **[3.2-03]** Sticker emoji stored in content column — direct render without lookup table needed
+- **[3.2-03]** Separate Realtime channel for reactions vs messages avoids payload type confusion
+- **[3.2-03]** StickerPicker closes on outside mousedown with 50ms delay to avoid same-click dismiss
