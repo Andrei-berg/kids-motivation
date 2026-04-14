@@ -84,6 +84,25 @@ export async function getReactions(messageId: string): Promise<ChatReaction[]> {
   return data ?? []
 }
 
+export async function getReactionsByFamily(familyId: string): Promise<Record<string, ChatReaction[]>> {
+  const { data, error } = await supabase
+    .from('chat_reactions')
+    .select('*')
+    .eq('family_id', familyId)
+
+  if (error) {
+    console.error('[chat.repo] getReactionsByFamily error:', error)
+    return {}
+  }
+
+  const grouped: Record<string, ChatReaction[]> = {}
+  for (const r of data ?? []) {
+    if (!grouped[r.message_id]) grouped[r.message_id] = []
+    grouped[r.message_id].push(r)
+  }
+  return grouped
+}
+
 export async function upsertReaction(params: {
   messageId: string
   familyId: string

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { ChatMessage, ChatReaction } from '@/lib/models/chat.types'
 import {
   getMessages,
+  getReactionsByFamily,
   sendMessage,
   subscribeToMessages,
   subscribeToReactions,
@@ -42,9 +43,13 @@ export default function ChatThread({
     let cancelled = false
 
     async function load() {
-      const data = await getMessages(familyId)
+      const [data, rxns] = await Promise.all([
+        getMessages(familyId),
+        getReactionsByFamily(familyId),
+      ])
       if (!cancelled) {
         setMessages(data)
+        setReactions(rxns)
         setLoading(false)
       }
     }
