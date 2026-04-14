@@ -1,9 +1,17 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import type { ChatMessage } from '@/lib/models/chat.types'
-import { getMessages, sendMessage, subscribeToMessages } from '@/lib/repositories/chat.repo'
+import type { ChatMessage, ChatReaction } from '@/lib/models/chat.types'
+import {
+  getMessages,
+  sendMessage,
+  subscribeToMessages,
+  subscribeToReactions,
+} from '@/lib/repositories/chat.repo'
+import type { Sticker } from '@/lib/chat-stickers'
 import SendBox from './SendBox'
+import { ReactionPickerBar } from './MessageReactions'
+import StickerPicker from './StickerPicker'
 
 interface ChatThreadProps {
   familyId: string
@@ -24,7 +32,9 @@ export default function ChatThread({
   senderRole,
 }: ChatThreadProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [reactions, setReactions] = useState<Record<string, ChatReaction[]>>({})
   const [loading, setLoading] = useState(true)
+  const [showStickerPicker, setShowStickerPicker] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Load messages and subscribe on mount
@@ -41,7 +51,7 @@ export default function ChatThread({
 
     load()
 
-    const unsubscribe = subscribeToMessages(familyId, (msg) => {
+    const unsubMessages = subscribeToMessages(familyId, (msg) => {
       setMessages((prev) => {
         // Avoid duplicate if optimistic message already inserted
         if (prev.some((m) => m.id === msg.id)) return prev
@@ -49,9 +59,25 @@ export default function ChatThread({
       })
     })
 
+    const unsubReactions = subscribeToReactions(familyId, (reaction, eventType) => {
+      setReactions((prev) => {
+        const msgId = reaction.message_id
+        const existing = prev[msgId] ?? []
+        if (eventType === 'INSERT') {
+          // Avoid duplicates
+          if (existing.some((r) => r.id === reaction.id)) return prev
+          return { ...prev, [msgId]: [...existing, reaction] }
+        } else {
+          // DELETE
+          return { ...prev, [msgId]: existing.filter((r) => r.id !== reaction.id) }
+        }
+      })
+    })
+
     return () => {
       cancelled = true
-      unsubscribe()
+      unsubMessages()
+      unsubReactions()
     }
   }, [familyId])
 
@@ -93,6 +119,37 @@ export default function ChatThread({
     }
   }
 
+  async function handleStickerSelect(sticker: Sticker) {
+    const optimistic: ChatMessage = {
+      id: `optimistic-sticker-${Date.now()}`,
+      family_id: familyId,
+      sender_id: currentMemberId,
+      sender_name: senderName,
+      sender_role: senderRole,
+      message_type: 'sticker',
+      content: sticker.emoji,
+      sticker_id: sticker.id,
+      created_at: new Date().toISOString(),
+    }
+    setMessages((prev) => [...prev, optimistic])
+
+    try {
+      const saved = await sendMessage({
+        familyId,
+        senderId: currentMemberId,
+        senderName,
+        senderRole,
+        messageType: 'sticker',
+        content: sticker.emoji,
+        stickerId: sticker.id,
+      })
+      setMessages((prev) => prev.map((m) => m.id === optimistic.id ? saved : m))
+    } catch (err) {
+      console.warn('[ChatThread] sendSticker failed:', err)
+      setMessages((prev) => prev.filter((m) => m.id !== optimistic.id))
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -129,22 +186,31 @@ export default function ChatThread({
                 <span className="text-xs font-semibold text-gray-500 mb-0.5 px-1">
                   {msg.sender_name}
                 </span>
-                <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl text-sm ${
-                    isOwn
-                      ? 'bg-blue-500 text-white rounded-br-sm'
-                      : 'bg-gray-200 text-gray-900 rounded-bl-sm'
-                  }`}
-                >
-                  {msg.message_type === 'sticker' ? (
-                    <span className="text-lg">[sticker]</span>
-                  ) : (
-                    msg.content
-                  )}
-                </div>
+                {msg.message_type === 'sticker' ? (
+                  <span style={{ fontSize: '3rem' }} className="leading-none">
+                    {msg.content}
+                  </span>
+                ) : (
+                  <div
+                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl text-sm ${
+                      isOwn
+                        ? 'bg-blue-500 text-white rounded-br-sm'
+                        : 'bg-gray-200 text-gray-900 rounded-bl-sm'
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
+                )}
                 <span className="text-xs text-gray-400 mt-0.5 px-1">
                   {formatTime(msg.created_at)}
                 </span>
+                {/* Reaction picker bar */}
+                <ReactionPickerBar
+                  message={msg}
+                  reactions={reactions[msg.id] ?? []}
+                  currentMemberId={currentMemberId}
+                  familyId={familyId}
+                />
               </div>
             )
           })
@@ -152,8 +218,30 @@ export default function ChatThread({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Send box */}
-      <SendBox onSend={handleSend} />
+      {/* Send area */}
+      <div className="relative">
+        {showStickerPicker && (
+          <StickerPicker
+            onSelect={(sticker) => {
+              handleStickerSelect(sticker)
+              setShowStickerPicker(false)
+            }}
+            onClose={() => setShowStickerPicker(false)}
+          />
+        )}
+        <div className="flex items-end gap-2 px-4 pb-4">
+          <button
+            onClick={() => setShowStickerPicker((v) => !v)}
+            className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-xl transition-colors"
+            title="Стикеры"
+          >
+            🎭
+          </button>
+          <div className="flex-1">
+            <SendBox onSend={handleSend} />
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
