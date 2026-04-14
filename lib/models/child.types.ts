@@ -34,6 +34,7 @@ export type DayData = {
   homework_done: boolean
   filled_by: 'child' | 'parent' | null
   mood: string | null
+  room_proof_url: string | null
 }
 
 export type SubjectGrade = {

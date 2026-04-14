@@ -92,8 +92,9 @@ export async function saveDay(params: {
   homeworkDone?: boolean
   filledBy?: 'child' | 'parent'
   mood?: string
+  roomProofUrl?: string
 }) {
-  const { childId, date, roomData, goodBehavior, diaryNotDone, noteParent, noteChild, isSick, homeHelp, homeHelpNote, homeworkDone, filledBy, mood } = params
+  const { childId, date, roomData, goodBehavior, diaryNotDone, noteParent, noteChild, isSick, homeHelp, homeHelpNote, homeworkDone, filledBy, mood, roomProofUrl } = params
 
   const bed = params.roomBed ?? roomData?.bed ?? false
   const floor = params.roomFloor ?? roomData?.floor ?? false
@@ -127,6 +128,7 @@ export async function saveDay(params: {
     homework_done: homeworkDone ?? false,
     filled_by: filledBy ?? null,
     mood: mood ?? null,
+    room_proof_url: roomProofUrl ?? null,
   }
 
   const { data, error } = await supabase
