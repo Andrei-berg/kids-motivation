@@ -22,7 +22,7 @@ export default function KidChatPage() {
       const { data: member } = await supabase
         .from('family_members')
         .select('family_id, display_name')
-        .eq('id', activeMemberId)
+        .eq('child_id', activeMemberId)
         .maybeSingle()
 
       if (member) {
