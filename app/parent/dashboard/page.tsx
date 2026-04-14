@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/lib/store'
-import { getChildren } from '@/lib/repositories/children.repo'
+import { getChildren, getHomeSportForDate } from '@/lib/repositories/children.repo'
 import { getDay } from '@/lib/repositories/children.repo'
 import { getWeekScore } from '@/lib/services/coins.service'
 import { getWeekRange } from '@/utils/helpers'
@@ -32,6 +32,7 @@ type ChildStatus = {
   child: Child
   dayData: DayData | null
   weekScore: WeekScore
+  sportDone: boolean
 }
 
 function SkeletonCard() {
@@ -49,7 +50,7 @@ function StatusDot({ ok }: { ok: boolean }) {
 }
 
 function ChildCard({ status, onFillDay, onKidView }: { status: ChildStatus; onFillDay: () => void; onKidView: () => void }) {
-  const { child, dayData, weekScore } = status
+  const { child, dayData, weekScore, sportDone } = status
   const roomOk = !!(dayData?.room_ok)
   const behaviorOk = !!(dayData?.good_behavior)
 
@@ -69,7 +70,7 @@ function ChildCard({ status, onFillDay, onKidView }: { status: ChildStatus; onFi
       </div>
 
       {/* Status indicators */}
-      <div className="grid grid-cols-3 gap-2 text-sm">
+      <div className="grid grid-cols-2 gap-2 text-sm">
         <div className="flex items-center gap-1.5 text-gray-300">
           <StatusDot ok={roomOk} />
           <span>Комната</span>
@@ -81,6 +82,10 @@ function ChildCard({ status, onFillDay, onKidView }: { status: ChildStatus; onFi
         <div className="flex items-center gap-1.5 text-gray-300">
           <StatusDot ok={weekScore.gradedDays > 0} />
           <span>{weekScore.gradedDays} дн. оценок</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-gray-300">
+          <StatusDot ok={sportDone} />
+          <span>Активности</span>
         </div>
       </div>
 
@@ -282,7 +287,7 @@ export default function ParentDashboardPage() {
         const [results, pendingData, approvedData] = await Promise.all([
           Promise.all(
             children.map(async (child) => {
-              const [dayData, weekScore] = await Promise.all([
+              const [dayData, weekScore, sportData] = await Promise.all([
                 getDay(child.id, todayDate).catch(() => null),
                 getWeekScore(child.id, weekStart).catch(() => ({
                   coinsFromGrades: 0,
@@ -293,8 +298,10 @@ export default function ParentDashboardPage() {
                   roomOkDays: 0,
                   filledDays: 0,
                 })),
+                getHomeSportForDate(child.id, todayDate).catch(() => null),
               ])
-              return { child, dayData, weekScore }
+              const sportDone = !!(sportData && (sportData.running || sportData.exercises || sportData.outdoor_games || sportData.stretching || sportData.total_minutes > 0))
+              return { child, dayData, weekScore, sportDone }
             })
           ),
           getPendingPurchases().catch(() => [] as RewardPurchase[]),
@@ -415,15 +422,15 @@ export default function ParentDashboardPage() {
       {/* Child status cards */}
       {statuses && (
         <div className="flex flex-col gap-4">
-          {statuses.map(({ child, dayData, weekScore }) => (
+          {statuses.map(({ child, dayData, weekScore, sportDone }) => (
             <div key={child.id} className="flex flex-col gap-0">
               <ChildCard
-                status={{ child, dayData, weekScore }}
+                status={{ child, dayData, weekScore, sportDone }}
                 onFillDay={() => router.push(`/parent/daily?childId=${child.id}`)}
                 onKidView={() => {
                   setActiveMemberId(child.id)
                   document.cookie = `kid_preview=${child.id}; path=/; max-age=3600; SameSite=Lax`
-                  router.push(`/kid/day`)
+                  router.push(`/kid/day?preview=true`)
                 }}
               />
               {/* Medal of the Day */}
