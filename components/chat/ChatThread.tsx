@@ -76,7 +76,7 @@ export default function ChatThread({
     setMessages((prev) => [...prev, optimistic])
 
     try {
-      await sendMessage({
+      const saved = await sendMessage({
         familyId,
         senderId: currentMemberId,
         senderName,
@@ -84,6 +84,8 @@ export default function ChatThread({
         messageType: 'text',
         content: text,
       })
+      // Replace optimistic entry with the real message so Realtime dedup works
+      setMessages((prev) => prev.map((m) => m.id === optimistic.id ? saved : m))
     } catch (err) {
       console.warn('[ChatThread] sendMessage failed:', err)
       // Remove optimistic message on failure
