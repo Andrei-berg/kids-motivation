@@ -11,6 +11,7 @@ const TABS = [
   { href: '/kid/achievements', label: 'Достижения', icon: '🏆',  activeColor: 'text-emerald-500', activeBg: 'bg-emerald-50' },
   { href: '/kid/shop',         label: 'Магазин',    icon: '🛍️',  activeColor: 'text-rose-500',   activeBg: 'bg-rose-50'    },
   { href: '/kid/leaderboard',  label: 'Рейтинг',    icon: '👑',  activeColor: 'text-cyan-500',   activeBg: 'bg-cyan-50'    },
+  { href: '/kid/chat',         label: 'Чат',        icon: '💬',  activeColor: 'text-blue-500',   activeBg: 'bg-blue-50'    },
 ]
 
 export default function KidNav() {
