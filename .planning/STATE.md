@@ -8,12 +8,12 @@ progress:
   total_phases: 16
   completed_phases: 13
   total_plans: 57
-  completed_plans: 55
+  completed_plans: 56
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-14 — Plan 3.3-01 photo upload infrastructure complete.
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-14 — Plan 3.3-02 photo messages in chat complete.
 
 ---
 
@@ -21,9 +21,9 @@ progress:
 
 ```
 Milestone v3.0 Communication — Phase 3.3 (photos)
-Plan: 1 of 3 in current phase (3.3-01 complete)
+Plan: 2 of 3 in current phase (3.3-01 and 3.3-02 complete)
 Status: Phase 3.3 in progress
-Last activity: 2026-04-14 — Plan 3.3-01 photo upload infrastructure complete
+Last activity: 2026-04-14 — Plan 3.3-02 photo messages in chat complete
 ```
 
 Progress: [█████░░░░░] 55% (7/11 plans complete — estimated)
@@ -71,7 +71,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-14
-Stopped at: Plan 3.3-01 complete — photo upload infrastructure (compressImage, uploadPhoto, getSignedPhotoUrl)
+Stopped at: Plan 3.3-02 complete — photo messages in chat (PhotoLightbox, ChatThread photo send/render)
 Resume file: None
 
 ---
@@ -103,3 +103,6 @@ Resume file: None
 - **[3.2-04]** Streak milestone posts only fire on event='record' AND milestone count (7/14/30) — not every record
 - [Phase 3.3-01]: compressImage skips unit tests — canvas requires heavy DOM mocking; TypeScript type-check is sufficient verification
 - [Phase 3.3-01]: family-photos bucket is private (public=false); all access via signed URLs to prevent enumeration
+- **[3.3-02]** Optimistic UI shows local blob URL immediately; replaced with signed URL after upload — avoids visible delay for sender
+- **[3.3-02]** photo_url stored as signed URL (1h expiry) in DB — adequate for MVP; long-lived URL management deferred
+- **[3.3-02]** Camera and gallery share one handlePhotoSelect handler via two separate hidden file inputs
