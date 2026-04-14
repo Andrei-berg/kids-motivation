@@ -23,8 +23,8 @@ Requirements for Milestone v3.0 — Communication.
 
 ### Photos
 
-- [ ] **PHOTO-01**: Family members can attach a photo to a chat message
-- [ ] **PHOTO-02**: Child can attach a photo as proof when marking a task complete; parent sees photo in task confirmation view
+- [x] **PHOTO-01**: Family members can attach a photo to a chat message
+- [x] **PHOTO-02**: Child can attach a photo as proof when marking a task complete; parent sees photo in task confirmation view
 
 ## v4.0 Requirements
 
@@ -59,8 +59,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CHAT-02 | Phase 3.2 | Complete |
 | CHAT-03 | Phase 3.2 | Complete |
 | CHAT-04 | Phase 3.2 | Complete |
-| PHOTO-01 | Phase 3.3 | Pending |
-| PHOTO-02 | Phase 3.3 | Pending |
+| PHOTO-01 | Phase 3.3 | Complete |
+| PHOTO-02 | Phase 3.3 | Complete |
 
 **Coverage:**
 - v3.0 requirements: 10 total

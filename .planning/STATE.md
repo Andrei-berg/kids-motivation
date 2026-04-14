@@ -3,30 +3,30 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: — Communication
 status: unknown
-last_updated: "2026-04-14T10:16:40.880Z"
+last_updated: "2026-04-14T14:29:32.610Z"
 progress:
-  total_phases: 15
+  total_phases: 16
   completed_phases: 13
-  total_plans: 54
-  completed_plans: 54
+  total_plans: 57
+  completed_plans: 55
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-14 — Plan 3.2-04 achievement-autoposts complete.
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-14 — Plan 3.3-01 photo upload infrastructure complete.
 
 ---
 
 ## Текущая позиция
 
 ```
-Milestone v3.0 Communication — Phase 3.2 of 3 (family-chat)
-Plan: 4 of 4 in current phase (3.2-04 complete — PHASE 3.2 DONE)
-Status: Phase 3.2 complete
-Last activity: 2026-04-14 — Plan 3.2-04 achievement-autoposts complete
+Milestone v3.0 Communication — Phase 3.3 (photos)
+Plan: 1 of 3 in current phase (3.3-01 complete)
+Status: Phase 3.3 in progress
+Last activity: 2026-04-14 — Plan 3.3-01 photo upload infrastructure complete
 ```
 
-Progress: [█████░░░░░] 52% (6/11 plans complete — estimated)
+Progress: [█████░░░░░] 55% (7/11 plans complete — estimated)
 
 ---
 
@@ -71,7 +71,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-14
-Stopped at: Plan 3.2-04 complete — Phase 3.2 family-chat fully done
+Stopped at: Plan 3.3-01 complete — photo upload infrastructure (compressImage, uploadPhoto, getSignedPhotoUrl)
 Resume file: None
 
 ---
@@ -101,3 +101,5 @@ Resume file: None
 - **[3.2-04]** wallet.family_id used directly from already-fetched Wallet object — avoids extra DB query for familyId in wallet hook
 - **[3.2-04]** awardBadge children query extended to include family_id and name — merged to avoid second round-trip
 - **[3.2-04]** Streak milestone posts only fire on event='record' AND milestone count (7/14/30) — not every record
+- [Phase 3.3-01]: compressImage skips unit tests — canvas requires heavy DOM mocking; TypeScript type-check is sufficient verification
+- [Phase 3.3-01]: family-photos bucket is private (public=false); all access via signed URLs to prevent enumeration

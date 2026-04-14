@@ -157,7 +157,7 @@ Plans:
 | 2.6 registration | v2.0 | 4/4 | Complete | 2026-04-13 |
 | 3.1 event-notifications | v3.0 | 3/3 | Complete | 2026-04-13 |
 | 3.2 family-chat | 4/4 | Complete    | 2026-04-14 | - |
-| 3.3 photos | v3.0 | 0/3 | Not started | - |
+| 3.3 photos | 1/3 | In Progress|  | - |
 | 4.1–4.4 | v4.0 | 0/? | Planned | - |
 | 5.1–5.3 | v5.0 | 0/? | Planned | - |
 | 6.1–6.3 | v6.0 | 0/? | Planned | - |
