@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
 milestone: v3.0
-milestone_name: Communication
-status: in_progress
-last_updated: "2026-04-14"
+milestone_name: — Communication
+status: unknown
+last_updated: "2026-04-14T09:21:55.586Z"
 progress:
-  total_phases: 3
-  completed_phases: 1
-  total_plans: 10
-  completed_plans: 4
+  total_phases: 15
+  completed_phases: 12
+  total_plans: 54
+  completed_plans: 52
 ---
 
 # STATE.md — Текущее состояние проекта
@@ -89,3 +89,5 @@ Resume file: None
 - **[3.2-01]** sender_id is TEXT not UUID — matches family_members.id convention in this codebase
 - **[3.2-01]** ALTER PUBLICATION wrapped in idempotent DO block — safe to run migration multiple times
 - **[3.2-01]** subscribeToMessages returns () => void cleanup — callers must call it on unmount to prevent channel leaks
+- [Phase 3.2-02]: ChatThread accepts props not context — makes it reusable for sticker extension in plan 3.2-03
+- [Phase 3.2-02]: Duplicate guard in Realtime callback prevents double-render after optimistic insert
