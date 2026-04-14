@@ -13,7 +13,7 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-14 — Plan 3.2-03 reactions+stickers complete (human-verified).
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-14 — Plan 3.2-04 achievement-autoposts complete.
 
 ---
 
@@ -21,9 +21,9 @@ progress:
 
 ```
 Milestone v3.0 Communication — Phase 3.2 of 3 (family-chat)
-Plan: 4 of 4 in current phase (3.2-03 complete, starting 3.2-04)
-Status: In progress
-Last activity: 2026-04-14 — Plan 3.2-03 reactions+stickers complete and human-verified
+Plan: 4 of 4 in current phase (3.2-04 complete — PHASE 3.2 DONE)
+Status: Phase 3.2 complete
+Last activity: 2026-04-14 — Plan 3.2-04 achievement-autoposts complete
 ```
 
 Progress: [█████░░░░░] 52% (6/11 plans complete — estimated)
@@ -71,7 +71,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-14
-Stopped at: Plan 3.2-03 complete — ready for Plan 3.2-04 achievement-autoposts
+Stopped at: Plan 3.2-04 complete — Phase 3.2 family-chat fully done
 Resume file: None
 
 ---
@@ -97,3 +97,7 @@ Resume file: None
 - **[3.2-03]** Sticker emoji stored in content column — direct render without lookup table needed
 - **[3.2-03]** Separate Realtime channel for reactions vs messages avoids payload type confusion
 - **[3.2-03]** StickerPicker closes on outside mousedown with 50ms delay to avoid same-click dismiss
+- **[3.2-04]** postSystemMessage uses sender_role='parent' to satisfy check constraint — system messages are not child-authored
+- **[3.2-04]** wallet.family_id used directly from already-fetched Wallet object — avoids extra DB query for familyId in wallet hook
+- **[3.2-04]** awardBadge children query extended to include family_id and name — merged to avoid second round-trip
+- **[3.2-04]** Streak milestone posts only fire on event='record' AND milestone count (7/14/30) — not every record

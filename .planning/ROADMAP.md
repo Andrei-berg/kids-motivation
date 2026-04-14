@@ -55,7 +55,7 @@ See: `.planning/milestones/v2.0-ROADMAP.md`
 ### Phases
 
 - [x] **Phase 3.1: event-notifications** — Push notifications for task confirmations, badge earnings, wallet events, and Medal of the Day
-- [ ] **Phase 3.2: family-chat** — Real-time group chat with text messages, emoji reactions, sticker pack, and achievement auto-posts
+- [x] **Phase 3.2: family-chat** — Real-time group chat with text messages, emoji reactions, sticker pack, and achievement auto-posts (completed 2026-04-14)
 - [ ] **Phase 3.3: photos** — Photo attachments in chat and photo proof on task completion
 
 ## Phase Details
@@ -156,7 +156,7 @@ Plans:
 | 2.5 notifications-animations | v2.0 | 4/4 | Complete | 2026-04-10 |
 | 2.6 registration | v2.0 | 4/4 | Complete | 2026-04-13 |
 | 3.1 event-notifications | v3.0 | 3/3 | Complete | 2026-04-13 |
-| 3.2 family-chat | v3.0 | 3/4 | In Progress | - |
+| 3.2 family-chat | 4/4 | Complete   | 2026-04-14 | - |
 | 3.3 photos | v3.0 | 0/3 | Not started | - |
 | 4.1–4.4 | v4.0 | 0/? | Planned | - |
 | 5.1–5.3 | v5.0 | 0/? | Planned | - |
