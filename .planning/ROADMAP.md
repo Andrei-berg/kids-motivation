@@ -54,7 +54,7 @@ See: `.planning/milestones/v2.0-ROADMAP.md`
 
 ### Phases
 
-- [ ] **Phase 3.1: event-notifications** — Push notifications for task confirmations, badge earnings, wallet events, and Medal of the Day
+- [x] **Phase 3.1: event-notifications** — Push notifications for task confirmations, badge earnings, wallet events, and Medal of the Day
 - [ ] **Phase 3.2: family-chat** — Real-time group chat with text messages, emoji reactions, sticker pack, and achievement auto-posts
 - [ ] **Phase 3.3: photos** — Photo attachments in chat and photo proof on task completion
 
@@ -75,7 +75,7 @@ See: `.planning/milestones/v2.0-ROADMAP.md`
 Plans:
 - [x] 3.1-01: Push trigger for purchase approval (NOTIF-01) — notifyChild helper + approvePurchase hook (completed 2026-04-13)
 - [x] 3.1-02: Push triggers for badge + wallet events (NOTIF-02, NOTIF-03) — hook into badge award and wallet credit/debit flows (completed 2026-04-13)
-- [ ] 3.1-03: Medal of the Day feature (NOTIF-04) — parent UI to compose medal, DB storage, push delivery, kid view
+- [x] 3.1-03: Medal of the Day feature (NOTIF-04) — parent UI to compose medal, DB storage, push delivery, kid view (completed 2026-04-13)
 
 ### Phase 3.2: family-chat
 **Goal**: Every family member can send and read messages in a shared real-time group chat; achievements auto-announce themselves; reactions and stickers make the chat feel alive
@@ -155,7 +155,7 @@ Plans:
 | 2.4.1 kid-screen-v2 | v2.0 | 4/4 | Complete | 2026-04-10 |
 | 2.5 notifications-animations | v2.0 | 4/4 | Complete | 2026-04-10 |
 | 2.6 registration | v2.0 | 4/4 | Complete | 2026-04-13 |
-| 3.1 event-notifications | v3.0 | 2/3 | In progress | - |
+| 3.1 event-notifications | v3.0 | 3/3 | Complete | 2026-04-13 |
 | 3.2 family-chat | v3.0 | 0/4 | Not started | - |
 | 3.3 photos | v3.0 | 0/3 | Not started | - |
 | 4.1–4.4 | v4.0 | 0/? | Planned | - |
@@ -165,4 +165,4 @@ Plans:
 
 ---
 
-*Created: 2026-03-01. Updated: 2026-04-13 — Plan 3.1-02 complete (badge push + wallet coin push hooks).*
+*Created: 2026-03-01. Updated: 2026-04-13 — Plan 3.1-03 complete (Medal of the Day verified). Phase 3.1 event-notifications complete.*

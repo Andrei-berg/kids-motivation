@@ -20,13 +20,13 @@ progress:
 ## Текущая позиция
 
 ```
-Milestone v3.0 Communication — Phase 3.1 of 3 (event-notifications)
-Plan: 2 of 3 in current phase
+Milestone v3.0 Communication — Phase 3.2 of 3 (family-chat)
+Plan: 0 of 4 in current phase
 Status: In progress
-Last activity: 2026-04-13 — Plan 3.1-02 complete
+Last activity: 2026-04-13 — Plan 3.1-03 complete (Medal of the Day verified)
 ```
 
-Progress: [██░░░░░░░░] 20% (2/10 plans complete)
+Progress: [███░░░░░░░] 30% (3/10 plans complete)
 
 ---
 
@@ -71,7 +71,7 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-13
-Stopped at: Completed 3.1-02-PLAN.md — badge push + wallet coin push hooks
+Stopped at: Completed 3.1-03-PLAN.md — Medal of the Day (human-verified)
 Resume file: None
 
 ---
