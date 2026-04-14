@@ -9,6 +9,8 @@ import {
   subscribeToMessages,
   subscribeToReactions,
 } from '@/lib/repositories/chat.repo'
+import { compressImage, uploadPhoto, getSignedPhotoUrl } from '@/lib/photo-upload'
+import { PhotoLightbox } from './PhotoLightbox'
 import type { Sticker } from '@/lib/chat-stickers'
 import SendBox from './SendBox'
 import { ReactionPickerBar } from './MessageReactions'
@@ -36,7 +38,13 @@ export default function ChatThread({
   const [reactions, setReactions] = useState<Record<string, ChatReaction[]>>({})
   const [loading, setLoading] = useState(true)
   const [showStickerPicker, setShowStickerPicker] = useState(false)
+  const [photoPreview, setPhotoPreview] = useState<{ file: File; localUrl: string } | null>(null)
+  const [photoCaption, setPhotoCaption] = useState('')
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
 
   // Load messages and subscribe on mount
   useEffect(() => {
@@ -102,6 +110,7 @@ export default function ChatThread({
       message_type: 'text',
       content: text,
       sticker_id: null,
+      photo_url: null,
       created_at: new Date().toISOString(),
     }
     setMessages((prev) => [...prev, optimistic])
@@ -134,6 +143,7 @@ export default function ChatThread({
       message_type: 'sticker',
       content: sticker.emoji,
       sticker_id: sticker.id,
+      photo_url: null,
       created_at: new Date().toISOString(),
     }
     setMessages((prev) => [...prev, optimistic])
@@ -155,6 +165,68 @@ export default function ChatThread({
     }
   }
 
+  function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const localUrl = URL.createObjectURL(file)
+    setPhotoPreview({ file, localUrl })
+    setPhotoCaption('')
+    // Reset input so same file can be re-selected
+    e.target.value = ''
+  }
+
+  async function handlePhotoSend() {
+    if (!photoPreview) return
+    setPhotoUploading(true)
+
+    // Optimistic: show message with local blob URL immediately
+    const optimisticId = `optimistic-photo-${Date.now()}`
+    const optimistic: ChatMessage = {
+      id: optimisticId,
+      family_id: familyId,
+      sender_id: currentMemberId,
+      sender_name: senderName,
+      sender_role: senderRole,
+      message_type: 'photo',
+      content: photoCaption.trim() || null,
+      sticker_id: null,
+      photo_url: photoPreview.localUrl,
+      created_at: new Date().toISOString(),
+    }
+    setMessages((prev) => [...prev, optimistic])
+
+    // Clear preview immediately so UI feels responsive
+    const { file, localUrl } = photoPreview
+    setPhotoPreview(null)
+    setPhotoCaption('')
+
+    try {
+      const compressed = await compressImage(file)
+      const path = `${familyId}/chat/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
+      await uploadPhoto(compressed, path)
+      const signedUrl = await getSignedPhotoUrl(path)
+
+      const saved = await sendMessage({
+        familyId,
+        senderId: currentMemberId,
+        senderName,
+        senderRole,
+        messageType: 'photo',
+        content: photoCaption.trim() || undefined,
+        photoUrl: signedUrl,
+      })
+      // Replace optimistic with real message
+      setMessages((prev) => prev.map((m) => (m.id === optimisticId ? saved : m)))
+      URL.revokeObjectURL(localUrl)
+    } catch (err) {
+      console.warn('[ChatThread] photo send failed:', err)
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticId))
+      URL.revokeObjectURL(localUrl)
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -165,6 +237,23 @@ export default function ChatThread({
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
+      {/* Hidden file inputs */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handlePhotoSelect}
+      />
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handlePhotoSelect}
+      />
+
       {/* Message list */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.length === 0 ? (
@@ -191,7 +280,20 @@ export default function ChatThread({
                 <span className="text-xs font-semibold text-gray-500 mb-0.5 px-1">
                   {msg.sender_name}
                 </span>
-                {msg.message_type === 'sticker' ? (
+                {msg.message_type === 'photo' ? (
+                  <div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={msg.photo_url ?? ''}
+                      alt="photo"
+                      className="w-36 rounded-xl cursor-pointer object-cover"
+                      onClick={() => msg.photo_url && setLightboxUrl(msg.photo_url)}
+                    />
+                    {msg.content && (
+                      <p className="text-xs mt-1 text-gray-600">{msg.content}</p>
+                    )}
+                  </div>
+                ) : msg.message_type === 'sticker' ? (
                   <span style={{ fontSize: '3rem' }} className="leading-none">
                     {msg.content}
                   </span>
@@ -223,6 +325,40 @@ export default function ChatThread({
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Photo preview area */}
+      {photoPreview && (
+        <div className="px-4 py-2 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-start gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photoPreview.localUrl} alt="preview" className="w-20 h-20 rounded-lg object-cover" />
+            <div className="flex-1 flex flex-col gap-1">
+              <input
+                type="text"
+                value={photoCaption}
+                onChange={(e) => setPhotoCaption(e.target.value)}
+                placeholder="Подпись (необязательно)…"
+                className="text-sm px-3 py-1.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setPhotoPreview(null); setPhotoCaption('') }}
+                  className="text-xs text-gray-500 hover:text-gray-700"
+                >
+                  Отмена
+                </button>
+                <button
+                  onClick={handlePhotoSend}
+                  disabled={photoUploading}
+                  className="text-xs bg-blue-500 text-white px-3 py-1 rounded-full disabled:opacity-50"
+                >
+                  {photoUploading ? 'Отправка…' : 'Отправить'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Send area */}
       <div className="relative">
         {showStickerPicker && (
@@ -242,11 +378,30 @@ export default function ChatThread({
           >
             🎭
           </button>
+          <button
+            onClick={() => cameraInputRef.current?.click()}
+            className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-xl transition-colors"
+            title="Камера"
+          >
+            📷
+          </button>
+          <button
+            onClick={() => galleryInputRef.current?.click()}
+            className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-xl transition-colors"
+            title="Галерея"
+          >
+            🖼️
+          </button>
           <div className="flex-1">
             <SendBox onSend={handleSend} />
           </div>
         </div>
       </div>
+
+      {/* Lightbox */}
+      {lightboxUrl && (
+        <PhotoLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+      )}
     </div>
   )
 }
