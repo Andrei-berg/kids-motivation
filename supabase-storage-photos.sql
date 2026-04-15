@@ -24,7 +24,7 @@ BEGIN
     ON storage.objects FOR INSERT TO authenticated
     WITH CHECK (
       bucket_id = 'family-photos'
-      AND storage.foldername(name)[1] = (
+      AND (storage.foldername(name))[1] = (
         SELECT family_id::text FROM family_members
         WHERE user_id = auth.uid()
         LIMIT 1
@@ -46,7 +46,7 @@ BEGIN
     ON storage.objects FOR SELECT TO authenticated
     USING (
       bucket_id = 'family-photos'
-      AND storage.foldername(name)[1] = (
+      AND (storage.foldername(name))[1] = (
         SELECT family_id::text FROM family_members
         WHERE user_id = auth.uid()
         LIMIT 1
