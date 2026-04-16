@@ -1020,20 +1020,23 @@ export async function awardCoinsForSport(
 }
 
 export async function logSettingsChange(childId: string, description: string): Promise<void> {
-  const wallet = await getWallet(childId)
-  await supabase.from('wallet_transactions').insert({
-    child_id: childId,
-    family_id: wallet?.family_id ?? null,
-    transaction_type: 'settings_change',
-    coins_change: 0,
-    money_change: 0,
-    description,
-    icon: '⚙️',
-    related_id: null,
-    related_type: null,
-    balance_after_coins: wallet?.coins ?? 0,
-    balance_after_money: wallet?.money ?? 0,
-  })
+  try {
+    const wallet = await getWallet(childId)
+    const { error } = await supabase.from('wallet_transactions').insert({
+      child_id: childId,
+      family_id: wallet?.family_id ?? null,
+      transaction_type: 'earn_coins',
+      coins_change: 0,
+      money_change: 0,
+      description,
+      icon: '⚙️',
+      balance_after_coins: wallet?.coins ?? 0,
+      balance_after_money: wallet?.money ?? 0,
+    })
+    if (error) console.warn('[logSettingsChange] failed:', error.message)
+  } catch (e) {
+    console.warn('[logSettingsChange] failed:', e)
+  }
 }
 
 // ============================================================================
