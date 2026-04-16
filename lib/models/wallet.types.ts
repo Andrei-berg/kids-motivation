@@ -101,6 +101,8 @@ export interface WalletSettings {
   coins_per_grade_5: number
   coins_per_grade_4: number
   coins_per_grade_3: number
+  coins_per_grade_2: number
+  coins_per_grade_1: number
   coins_per_room_task: number
   coins_per_good_behavior: number
   coins_per_exercise: number

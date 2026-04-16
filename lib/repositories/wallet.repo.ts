@@ -176,15 +176,17 @@ export async function getWalletSettings(): Promise<WalletSettings> {
       bonus_1000_coins: 50,
       coins_per_grade_5: 10,
       coins_per_grade_4: 5,
-      coins_per_grade_3: 2,
+      coins_per_grade_3: -3,
+      coins_per_grade_2: -5,
+      coins_per_grade_1: -10,
       coins_per_room_task: 3,
       coins_per_good_behavior: 5,
       coins_per_exercise: 5,
       coins_per_coach_5: 10,
       coins_per_coach_4: 5,
       coins_per_coach_3: 0,
-      coins_per_coach_2: 3,
-      coins_per_coach_1: 10,
+      coins_per_coach_2: -3,
+      coins_per_coach_1: -10,
       p2p_max_per_transfer: 100,
       p2p_max_per_day: 200,
       p2p_max_per_month: 500,
@@ -942,10 +944,9 @@ export async function awardCoinsForGrade(
 
   if (grade === 5) { coins = settings.coins_per_grade_5; icon = '🎉' }
   else if (grade === 4) { coins = settings.coins_per_grade_4; icon = '👍' }
-  else if (grade === 3) { coins = -settings.coins_per_grade_3; icon = '⚠️' }
-  else if (grade === 2) { coins = -5; icon = '❌' }
-  else if (grade === 1) { coins = -10; icon = '💥' }
-  // grades 2 and 1 keep hardcoded penalties — wallet_settings has no fields for them
+  else if (grade === 3) { coins = settings.coins_per_grade_3; icon = '⚠️' }
+  else if (grade === 2) { coins = settings.coins_per_grade_2; icon = '❌' }
+  else if (grade === 1) { coins = settings.coins_per_grade_1; icon = '💥' }
 
   if (coins !== 0) {
     const description = coins > 0
@@ -984,8 +985,8 @@ export async function awardCoinsForSport(
   if (coachRating === 5) coins = settings.coins_per_coach_5
   else if (coachRating === 4) coins = settings.coins_per_coach_4
   else if (coachRating === 3) coins = settings.coins_per_coach_3
-  else if (coachRating === 2) coins = -settings.coins_per_coach_2
-  else if (coachRating === 1) coins = -settings.coins_per_coach_1
+  else if (coachRating === 2) coins = settings.coins_per_coach_2
+  else if (coachRating === 1) coins = settings.coins_per_coach_1
 
   let icon = '💪'
   if (coachRating === 5) icon = '🔥'

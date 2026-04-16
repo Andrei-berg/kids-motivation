@@ -39,6 +39,8 @@ type SettingsForm = {
   coins_per_grade_5: number
   coins_per_grade_4: number
   coins_per_grade_3: number
+  coins_per_grade_2: number
+  coins_per_grade_1: number
   coins_per_room_task: number
   coins_per_good_behavior: number
   coins_per_exercise: number
@@ -54,7 +56,9 @@ function defaultForm(): SettingsForm {
   return {
     coins_per_grade_5: 10,
     coins_per_grade_4: 5,
-    coins_per_grade_3: 2,
+    coins_per_grade_3: -3,
+    coins_per_grade_2: -5,
+    coins_per_grade_1: -10,
     coins_per_room_task: 3,
     coins_per_good_behavior: 5,
     coins_per_exercise: 5,
@@ -62,8 +66,8 @@ function defaultForm(): SettingsForm {
     coins_per_coach_5: 10,
     coins_per_coach_4: 5,
     coins_per_coach_3: 0,
-    coins_per_coach_2: 3,
-    coins_per_coach_1: 10,
+    coins_per_coach_2: -3,
+    coins_per_coach_1: -10,
   }
 }
 
@@ -139,15 +143,17 @@ export default function ParentSettingsPage() {
         coins_per_grade_5: settings.coins_per_grade_5,
         coins_per_grade_4: settings.coins_per_grade_4,
         coins_per_grade_3: settings.coins_per_grade_3,
+        coins_per_grade_2: settings.coins_per_grade_2 ?? -5,
+        coins_per_grade_1: settings.coins_per_grade_1 ?? -10,
         coins_per_room_task: settings.coins_per_room_task,
         coins_per_good_behavior: settings.coins_per_good_behavior,
         coins_per_exercise: settings.coins_per_exercise,
         base_exchange_rate: settings.base_exchange_rate,
-        coins_per_coach_5: settings.coins_per_coach_5,
-        coins_per_coach_4: settings.coins_per_coach_4,
-        coins_per_coach_3: settings.coins_per_coach_3,
-        coins_per_coach_2: settings.coins_per_coach_2,
-        coins_per_coach_1: settings.coins_per_coach_1,
+        coins_per_coach_5: settings.coins_per_coach_5 ?? 10,
+        coins_per_coach_4: settings.coins_per_coach_4 ?? 5,
+        coins_per_coach_3: settings.coins_per_coach_3 ?? 0,
+        coins_per_coach_2: settings.coins_per_coach_2 ?? -3,
+        coins_per_coach_1: settings.coins_per_coach_1 ?? -10,
       })
 
       setChildren(kids)
@@ -393,7 +399,9 @@ export default function ParentSettingsPage() {
   const fields: { label: string; key: keyof SettingsForm }[] = [
     { label: 'Оценка 5', key: 'coins_per_grade_5' },
     { label: 'Оценка 4', key: 'coins_per_grade_4' },
-    { label: 'Оценка 3', key: 'coins_per_grade_3' },
+    { label: 'Оценка 3 (штраф — отрицательное)', key: 'coins_per_grade_3' },
+    { label: 'Оценка 2 (штраф — отрицательное)', key: 'coins_per_grade_2' },
+    { label: 'Оценка 1 (штраф — отрицательное)', key: 'coins_per_grade_1' },
     { label: 'Уборка комнаты (за чекбокс)', key: 'coins_per_room_task' },
     { label: 'Хорошее поведение', key: 'coins_per_good_behavior' },
     { label: 'Упражнение', key: 'coins_per_exercise' },
@@ -450,7 +458,7 @@ export default function ParentSettingsPage() {
               <label className="text-sm text-gray-300 flex-1">{label}</label>
               <input
                 type="number"
-                min={0}
+                min={-50}
                 max={50}
                 value={form[key]}
                 onChange={e => setForm(prev => ({ ...prev, [key]: Number(e.target.value) }))}
@@ -467,17 +475,17 @@ export default function ParentSettingsPage() {
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {([
-              { label: 'Оценка 5 (награда)', field: 'coins_per_coach_5' as const },
-              { label: 'Оценка 4 (награда)', field: 'coins_per_coach_4' as const },
-              { label: 'Оценка 3 (нейтрально)', field: 'coins_per_coach_3' as const },
-              { label: 'Оценка 2 (штраф)', field: 'coins_per_coach_2' as const },
-              { label: 'Оценка 1 (штраф)', field: 'coins_per_coach_1' as const },
+              { label: 'Оценка 5', field: 'coins_per_coach_5' as const },
+              { label: 'Оценка 4', field: 'coins_per_coach_4' as const },
+              { label: 'Оценка 3', field: 'coins_per_coach_3' as const },
+              { label: 'Оценка 2 (штраф — отрицательное)', field: 'coins_per_coach_2' as const },
+              { label: 'Оценка 1 (штраф — отрицательное)', field: 'coins_per_coach_1' as const },
             ] as { label: string; field: keyof SettingsForm }[]).map(({ label, field }) => (
               <div key={field} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <label className="text-sm text-gray-300">{label}</label>
                 <input
                   type="number"
-                  min={0}
+                  min={-50}
                   max={50}
                   value={form[field]}
                   onChange={e => setForm(prev => ({ ...prev, [field]: Number(e.target.value) }))}
@@ -486,7 +494,6 @@ export default function ParentSettingsPage() {
               </div>
             ))}
           </div>
-          <p className="text-xs text-gray-500 mt-2">Оценки 1 и 2 применяются как штраф (значение вычитается)</p>
         </div>
 
         <div className="mt-6 flex items-center gap-4">
