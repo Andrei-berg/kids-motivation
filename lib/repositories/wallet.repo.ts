@@ -1023,6 +1023,7 @@ export async function logSettingsChange(childId: string, description: string): P
   const wallet = await getWallet(childId)
   await supabase.from('wallet_transactions').insert({
     child_id: childId,
+    family_id: wallet?.family_id ?? null,
     transaction_type: 'settings_change',
     coins_change: 0,
     money_change: 0,
