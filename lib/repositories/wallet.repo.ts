@@ -160,12 +160,25 @@ export async function updateWalletMoney(
 // WALLET SETTINGS
 // ============================================================================
 
-export async function getWalletSettings(): Promise<WalletSettings> {
-  const { data, error } = await supabase
-    .from('wallet_settings')
-    .select('*')
-    .eq('id', 'default')
+async function getCurrentFamilyId(): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+  const { data } = await supabase
+    .from('family_members')
+    .select('family_id')
+    .eq('user_id', user.id)
+    .limit(1)
     .maybeSingle()
+  return data?.family_id ?? null
+}
+
+export async function getWalletSettings(): Promise<WalletSettings> {
+  const familyId = await getCurrentFamilyId()
+
+  const query = supabase.from('wallet_settings').select('*')
+  const { data, error } = await (familyId
+    ? query.eq('family_id', familyId).maybeSingle()
+    : query.eq('id', 'default').maybeSingle())
 
   if (error || !data) {
     return {
@@ -201,9 +214,12 @@ export async function getWalletSettings(): Promise<WalletSettings> {
 export async function updateWalletSettings(
   updates: Partial<Omit<WalletSettings, 'id' | 'updated_at'>>
 ): Promise<WalletSettings> {
+  const familyId = await getCurrentFamilyId()
+  if (!familyId) throw new Error('Not authenticated')
+
   const { data, error } = await supabase
     .from('wallet_settings')
-    .upsert({ id: 'default', ...updates, updated_at: new Date().toISOString() })
+    .upsert({ id: familyId, family_id: familyId, ...updates, updated_at: new Date().toISOString() })
     .select()
     .single()
   if (error) throw error
