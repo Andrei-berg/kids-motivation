@@ -16,7 +16,8 @@ import {
   awardCoinsForSport,
   updateWalletCoins,
 } from '@/lib/repositories/wallet.repo'
-import { updateStreaks } from '@/lib/streaks'
+import { updateStreaks, getStreakBonuses } from '@/lib/streaks'
+import { checkAndAwardBadges } from '@/lib/badges'
 import { compressImage, uploadPhoto, getSignedPhotoUrl } from '@/lib/photo-upload'
 import { supabase } from '@/lib/supabase'
 import { getReadingLog, saveReadingLog } from '@/lib/vacation-api'
@@ -451,6 +452,13 @@ export function KidDayFillForm({
       import('@/app/actions/push-streaks').then(({ notifyStreakEvents }) => {
         notifyStreakEvents(childId, '', streakEvents).catch(() => {})
       })
+
+      const streakBonus = await getStreakBonuses(childId)
+      if (streakBonus > 0) {
+        await updateWalletCoins(childId, streakBonus, 'streak_bonus', '🔥')
+      }
+
+      await checkAndAwardBadges(childId, date)
 
       if (proofLocalUrl) URL.revokeObjectURL(proofLocalUrl)
       onSaved(coinsPreview)
