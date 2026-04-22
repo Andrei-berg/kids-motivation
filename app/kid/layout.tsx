@@ -5,6 +5,7 @@ import KidNav from '@/components/kid/KidNav'
 import KidInitializer from '@/components/kid/KidInitializer'
 import CelebrationOverlay from '@/components/kid/CelebrationOverlay'
 import ParentPreviewBanner from '@/components/kid/ParentPreviewBanner'
+import KidChatFAB from '@/components/kid/KidChatFAB'
 
 export default async function KidLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -18,18 +19,18 @@ export default async function KidLayout({ children }: { children: React.ReactNod
     .eq('user_id', user.id)
     .maybeSingle()
 
-  // Parent preview mode: parent set kid_preview cookie before navigating here
   const cookieStore = await cookies()
   const previewChildId = cookieStore.get('kid_preview')?.value
 
   if (previewChildId && membership?.role === 'parent') {
     return (
-      <div className="min-h-screen bg-amber-50 text-gray-800">
+      <div className="min-h-screen" style={{ background: '#FFFBF5', color: '#1A1423' }}>
         <KidInitializer memberId={previewChildId} />
         <ParentPreviewBanner />
         <KidNav />
         <CelebrationOverlay />
-        <main className="pb-20 md:pb-0 md:pt-16">
+        <KidChatFAB />
+        <main className="pb-24 md:pb-0 md:pl-16">
           {children}
         </main>
       </div>
@@ -41,11 +42,12 @@ export default async function KidLayout({ children }: { children: React.ReactNod
   const resolvedChildId = membership.child_id
 
   return (
-    <div className="min-h-screen bg-amber-50 text-gray-800">
+    <div className="min-h-screen" style={{ background: '#FFFBF5', color: '#1A1423' }}>
       <KidInitializer memberId={resolvedChildId} />
       <KidNav />
       <CelebrationOverlay />
-      <main className="pb-20 md:pb-0 md:pt-16">
+      <KidChatFAB />
+      <main className="pb-24 md:pb-0 md:pl-16">
         {children}
       </main>
     </div>

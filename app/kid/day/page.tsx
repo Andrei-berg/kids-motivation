@@ -1,73 +1,24 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import Link from 'next/link'
 import { useAppStore } from '@/lib/store'
 import { api, getChildren } from '@/lib/api'
 import type { Child, DayData, SubjectGrade, Goal } from '@/lib/api'
 import { normalizeDate, getWeekRange } from '@/utils/helpers'
 import { getWallet } from '@/lib/repositories/wallet.repo'
-import { getSectionsForChildExpenses } from '@/lib/repositories/expenses.repo'
 import { KidDayFillForm } from '@/components/kid/KidDayFillForm'
 import { getVacationPeriods } from '@/lib/vacation-api'
 import type { Wallet } from '@/lib/models/wallet.types'
+import { T } from '@/components/kid/design/tokens'
+import {
+  Avatar, Coin, CoinPill, XPBar, StreakFlame, ProgressRing,
+  KMButton, AnimatedNum, Confetti, SectionHeader,
+} from '@/components/kid/design/atoms'
 
-// ============================================================================
-// Level title helper
-// ============================================================================
-
-const LEVEL_TITLES: Record<number, { title: string; emoji: string }> = {
-  1: { title: 'Новичок',   emoji: '🥚' },
-  2: { title: 'Ученик',    emoji: '🌱' },
-  3: { title: 'Старатель', emoji: '⭐' },
-  4: { title: 'Мастер',    emoji: '✨' },
-  5: { title: 'Эксперт',   emoji: '💎' },
-  6: { title: 'Чемпион',   emoji: '🏆' },
-  7: { title: 'Легенда',   emoji: '👑' },
-}
-
-function getLevelTitle(level: number) {
-  return LEVEL_TITLES[level] ?? { title: 'Супергерой', emoji: '🦸' }
-}
-
-// ============================================================================
-// Grade chip color helper
-// ============================================================================
-
-function gradeChipClass(grade: number): string {
-  switch (grade) {
-    case 5: return 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-    case 4: return 'bg-blue-100 text-blue-700 border border-blue-200'
-    case 3: return 'bg-amber-100 text-amber-700 border border-amber-200'
-    case 2: return 'bg-rose-100 text-rose-700 border border-rose-200'
-    default: return 'bg-red-100 text-red-700 border border-red-200'
-  }
-}
-
-// ============================================================================
-// Streak type label helper
-// ============================================================================
-
-function streakLabel(type: string): string {
-  switch (type) {
-    case 'room':         return '🏠 Комната'
-    case 'study':        return '📖 Учёба'
-    case 'sport':        return '💪 Спорт'
-    case 'strong_week':  return '💪 Сильная неделя'
-    default:             return type
-  }
-}
-
-// ============================================================================
-// Coin calculation constant
-// ============================================================================
-
+// ─── Reward constants ────────────────────────────────────────────────────────
 const GRADE_COINS: Record<number, number> = { 5: 5, 4: 3, 3: -3, 2: -5, 1: -10 }
 
-// ============================================================================
-// Build 7-day array for current week (Mon–Sun)
-// ============================================================================
-
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 function buildWeekDays(weekStart: string): string[] {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart)
@@ -76,58 +27,60 @@ function buildWeekDays(weekStart: string): string[] {
   })
 }
 
-// Russian short day letters Mon=П, Tue=В, Wed=С, Thu=Ч, Fri=П, Sat=С, Sun=В
-const RU_DAY_LETTERS = ['П', 'В', 'С', 'Ч', 'П', 'С', 'В']
+const RU_DAY = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']
+const RU_MONTH_SHORT = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
 
-// ============================================================================
-// Types
-// ============================================================================
-
-type Tab = 'today' | 'week' | 'expenses'
-
-interface Section {
-  id: string
-  name: string
-  cost: number | null
-  schedule_days: string[]
+function todayLabel(): string {
+  const d = new Date()
+  return `${RU_DAY[d.getDay()]}, ${d.getDate()} ${RU_MONTH_SHORT[d.getMonth()]}`
 }
 
-// ============================================================================
-// Page
-// ============================================================================
+// ─── Task item type ───────────────────────────────────────────────────────────
+interface TaskItem {
+  id: string
+  title: string
+  cat: string
+  catColor: string
+  coins: number
+  done: boolean
+  xp?: number
+  boss?: boolean
+  time?: string
+}
 
+// ─── Skeleton ────────────────────────────────────────────────────────────────
+function LoadingSkeleton() {
+  return (
+    <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {[240, 56, 100, 80, 80, 80].map((h, i) => (
+        <div key={i} className="kid-skeleton" style={{ height: h, borderRadius: 24 }}/>
+      ))}
+    </div>
+  )
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function KidDayPage() {
   const { activeMemberId, setActiveMemberId } = useAppStore()
-
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<Tab>('today')
   const [child, setChild] = useState<Child | null>(null)
   const [todayDay, setTodayDay] = useState<DayData | null>(null)
   const [todayGrades, setTodayGrades] = useState<SubjectGrade[]>([])
   const [streaks, setStreaks] = useState<any[]>([])
-  const [activeGoal, setActiveGoal] = useState<Goal | null>(null)
   const [wallet, setWallet] = useState<Wallet | null>(null)
-  const [sections, setSections] = useState<Section[]>([])
-  const [weekDayCoins, setWeekDayCoins] = useState<Record<string, number>>({})
-  const [weekDays, setWeekDays] = useState<string[]>([])
-  const [weekStats, setWeekStats] = useState({ roomDays: 0, behaviorDays: 0, gradedDays: 0 })
-  const [showFillForm, setShowFillForm] = useState(false)
-  const [lastCoinsEarned, setLastCoinsEarned] = useState<number | null>(null)
-  const [dayType, setDayType] = useState<'school' | 'weekend' | 'vacation'>('school')
   const [medal, setMedal] = useState<{ message: string; coins: number; sent_by: string | null } | null>(null)
+  const [showFillForm, setShowFillForm] = useState(false)
+  const [dayType, setDayType] = useState<'school' | 'weekend' | 'vacation'>('school')
+  const [confetti, setConfetti] = useState(0)
+  const [confettiPos, setConfettiPos] = useState({ x: '50%', y: '50%' })
 
   const today = normalizeDate(new Date())
   const { start: weekStart } = getWeekRange(today)
 
   const loadData = useCallback(async () => {
-    if (!activeMemberId) {
-      setLoading(false)
-      return
-    }
+    if (!activeMemberId) { setLoading(false); return }
     setLoading(true)
     try {
-      // Resolve child: try activeMemberId first, fall back to first child
-      // (activeMemberId may be a stale UUID if user went through onboarding)
       let resolvedId = activeMemberId
       let childData: Child | null = null
       try {
@@ -140,552 +93,404 @@ export default function KidDayPage() {
           setActiveMemberId(resolvedId)
         }
       }
-      if (!childData) {
-        setLoading(false)
-        return
-      }
+      if (!childData) { setLoading(false); return }
 
-      // Determine day type: weekend by day-of-week, vacation by DB lookup
-      const todayDate = new Date(today)
-      const dow = todayDate.getDay() // 0=Sun, 6=Sat
-      if (dow === 0 || dow === 6) {
-        setDayType('weekend')
-      } else {
-        // Check vacation periods for this family
-        try {
-          const { data: memberRow } = await (await import('@/lib/supabase/client')).createClient()
-            .from('family_members')
-            .select('family_id')
-            .eq('child_id', resolvedId)
-            .maybeSingle()
-          if (memberRow?.family_id) {
-            const periods = await getVacationPeriods(memberRow.family_id)
-            const isVacation = periods.some(p =>
-              (p.child_filter === 'all' || p.child_filter === resolvedId) &&
-              today >= p.start_date && today <= p.end_date
-            )
-            setDayType(isVacation ? 'vacation' : 'school')
-          } else {
-            setDayType('school')
-          }
-        } catch {
-          setDayType('school')
-        }
-      }
-
-      const [dayData, grades, weekRaw, streaksData, goalsData, walletData, sectionsData, medalResult] =
-        await Promise.all([
-          api.getDay(resolvedId, today),
-          api.getSubjectGradesForDate(resolvedId, today),
-          api.getWeekData(resolvedId, today),
-          api.getStreaks(resolvedId),
-          api.getGoals(resolvedId),
-          getWallet(resolvedId),
-          getSectionsForChildExpenses(resolvedId),
-          (async () => {
-            try {
-              const supabaseClient = (await import('@/lib/supabase/client')).createClient()
-              const { data } = await supabaseClient
-                .from('medals')
-                .select('message, coins, sent_by')
-                .eq('child_id', resolvedId)
-                .eq('date', today)
-                .maybeSingle()
-              return data ?? null
-            } catch {
-              return null
-            }
-          })(),
-        ])
+      const [dayData, grades, streaksData, walletData, medalResult] = await Promise.all([
+        api.getDay(resolvedId, today),
+        api.getSubjectGradesForDate(resolvedId, today),
+        api.getStreaks(resolvedId),
+        getWallet(resolvedId),
+        (async () => {
+          try {
+            const { createClient } = await import('@/lib/supabase/client')
+            const { data } = await createClient()
+              .from('medals')
+              .select('message, coins, sent_by')
+              .eq('child_id', resolvedId)
+              .eq('date', today)
+              .maybeSingle()
+            return data ?? null
+          } catch { return null }
+        })(),
+      ])
 
       setChild(childData)
       setTodayDay(dayData)
       setTodayGrades(grades)
       setWallet(walletData)
-      setSections(sectionsData)
       setMedal(medalResult)
-
-      // Build 7-day coin map inline from raw data
-      const days: DayData[] = weekRaw?.days ?? []
-      const weekGrades: SubjectGrade[] = weekRaw?.grades ?? []
-
-      const dayCoins: Record<string, number> = {}
-      days.forEach((d: DayData) => {
-        const base = (d.room_ok ? 3 : 0) + (d.good_behavior ? 5 : 0)
-        dayCoins[d.date] = base
-      })
-      weekGrades.forEach((g: SubjectGrade) => {
-        dayCoins[g.date] = (dayCoins[g.date] ?? 0) + (GRADE_COINS[g.grade] ?? 0)
-      })
-      setWeekDayCoins(dayCoins)
-
-      // Week stats
-      const gradedDates = new Set(weekGrades.map((g: SubjectGrade) => g.date))
-      setWeekStats({
-        roomDays: days.filter((d: DayData) => d.room_ok).length,
-        behaviorDays: days.filter((d: DayData) => d.good_behavior).length,
-        gradedDays: gradedDates.size,
-      })
-
-      // Week days strip
-      setWeekDays(buildWeekDays(weekStart))
-
-      // Active streaks
       const activeStreaks = (streaksData ?? []).filter((s: any) => s.current_count > 0)
       setStreaks(activeStreaks)
-      setActiveGoal(goalsData?.active ?? null)
     } catch (err) {
-      console.error('KidDayPage: loadData error', err)
+      console.error('KidDayPage error', err)
     } finally {
       setLoading(false)
     }
-  }, [activeMemberId, today, weekStart])
+  }, [activeMemberId, today])
 
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  useEffect(() => { loadData() }, [loadData])
 
-  // Auto-dismiss celebration after 8 seconds
-  useEffect(() => {
-    if (lastCoinsEarned === null) return
-    const timer = setTimeout(() => setLastCoinsEarned(null), 8000)
-    return () => clearTimeout(timer)
-  }, [lastCoinsEarned])
+  if (loading) return <LoadingSkeleton/>
+  if (!activeMemberId) return (
+    <div className="flex items-center justify-center min-h-screen px-6 text-center" style={{ color: T.ink3 }}>
+      Ребёнок не определён
+    </div>
+  )
 
-  // ========== Loading skeleton ==========
-  if (loading) {
-    return (
-      <div className="px-4 py-4 max-w-lg mx-auto space-y-4">
-        <div className="kid-skeleton h-32 w-full rounded-2xl" />
-        <div className="grid grid-cols-2 gap-3">
-          <div className="kid-skeleton h-24 rounded-2xl" />
-          <div className="kid-skeleton h-24 rounded-2xl" />
-          <div className="kid-skeleton h-24 rounded-2xl" />
-          <div className="kid-skeleton h-24 rounded-2xl" />
-        </div>
-        <div className="kid-skeleton h-36 w-full rounded-2xl" />
-      </div>
-    )
+  // ─── Build tasks from real data ───────────────────────────────────────────
+  const tasks: TaskItem[] = []
+
+  if (todayDay?.room_ok !== undefined || todayDay === null) {
+    tasks.push({
+      id: 'room',
+      title: 'Убрать комнату',
+      cat: 'Дом',
+      catColor: T.teal,
+      coins: 3,
+      done: todayDay?.room_ok ?? false,
+    })
   }
 
-  // ========== Guard — no active member ==========
-  if (!activeMemberId) {
-    return (
-      <div className="flex items-center justify-center min-h-screen px-6 text-center text-gray-500">
-        Ребёнок не определён — войди через родительский аккаунт
-      </div>
-    )
+  if (todayDay?.good_behavior !== undefined || todayDay === null) {
+    tasks.push({
+      id: 'behavior',
+      title: 'Хорошее поведение',
+      cat: 'Поведение',
+      catColor: T.mint,
+      coins: 5,
+      done: todayDay?.good_behavior ?? false,
+    })
   }
 
-  const levelInfo = getLevelTitle(child?.level ?? 1)
-  const xpInLevel = (child?.xp ?? 0) % 1000
+  todayGrades.forEach((g, i) => {
+    const c = GRADE_COINS[g.grade] ?? 0
+    tasks.push({
+      id: `grade-${i}`,
+      title: g.subject,
+      cat: 'Учёба',
+      catColor: T.plum,
+      coins: c,
+      done: true,
+      xp: g.grade === 5 ? 25 : g.grade === 4 ? 15 : 0,
+      boss: g.grade === 5,
+    })
+  })
 
-  // Grade average for today
-  const gradeAvg =
-    todayGrades.length > 0
-      ? todayGrades.reduce((sum, g) => sum + g.grade, 0) / todayGrades.length
-      : null
-
-  function gradeAvgColor(avg: number): string {
-    if (avg >= 4.5) return 'text-emerald-600'
-    if (avg >= 3.5) return 'text-blue-600'
-    return 'text-amber-600'
+  if (todayGrades.length === 0 && todayDay === null) {
+    tasks.push({
+      id: 'homework',
+      title: 'Домашнее задание',
+      cat: 'Учёба',
+      catColor: T.plum,
+      coins: 5,
+      done: false,
+      xp: 25,
+      boss: true,
+    })
   }
 
-  function handleFormSaved(coinsEarned: number) {
+  const done = tasks.filter(t => t.done).length
+  const total = tasks.length
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0
+
+  const coins = wallet?.coins ?? 0
+  const xp = child?.xp ?? 0
+  const xpToNext = 1000
+  const level = child?.level ?? 1
+  const streakDays = streaks.reduce((max, s) => Math.max(max, s.current_count), 0)
+  const avatarSkin = '#F5C9A1'
+  const avatarHair = '#2B1810'
+  const avatarShirt = T.coral
+
+  function handleFillSaved(coinsEarned: number) {
     setShowFillForm(false)
-    setLastCoinsEarned(coinsEarned)
-    // Reload page data so stats reflect the saved day
+    if (coinsEarned > 0) setConfetti(c => c + 1)
     loadData()
   }
-
-  const weekTotal = Object.values(weekDayCoins).reduce((sum, c) => sum + c, 0)
-  const totalMonthlyExpenses = sections.reduce((sum, s) => sum + (s.cost ?? 0), 0)
-
-  const fillMode = (child as any)?.kid_fill_mode ?? 1
 
   return (
-    <div className="px-4 py-4 max-w-lg mx-auto space-y-4 pb-24">
+    <div style={{ paddingBottom: 110, position: 'relative', maxWidth: 500, margin: '0 auto' }}>
+      <Confetti trigger={confetti} origin={confettiPos}/>
 
-      {/* ====================================================
-          A. Hero Banner
-      ==================================================== */}
-      <div className="kid-hero-gradient rounded-2xl p-5">
-        {/* Top row: greeting + emoji */}
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-2xl font-extrabold text-white leading-tight">
-              Привет, {child?.name ?? ''}!
-            </p>
-            {/* Level badge pill */}
-            <span className="mt-2 inline-block bg-white/20 backdrop-blur text-white text-xs font-bold px-3 py-1 rounded-full">
-              {levelInfo.emoji} Уровень {child?.level ?? 1} — {levelInfo.title}
-            </span>
+      {/* ═══ Hero card ════════════════════════════════════════════════════════ */}
+      <div style={{ padding: '12px 16px 0' }}>
+        <div style={{
+          background: `linear-gradient(135deg, ${T.coral} 0%, #FF9547 55%, ${T.sunDeep} 100%)`,
+          borderRadius: 28, padding: 20, position: 'relative', overflow: 'hidden',
+          boxShadow: `0 10px 30px ${T.coral}40`,
+        }}>
+          <div style={{ position: 'absolute', top: -30, right: -30, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.15)' }}/>
+          <div style={{ position: 'absolute', bottom: -40, left: -40, width: 110, height: 110, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }}/>
+
+          <div style={{ display: 'flex', gap: 14, alignItems: 'center', position: 'relative' }}>
+            <Avatar size={66} skin={avatarSkin} hair={avatarHair} shirt="#6C5CE7"/>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: T.fBody, fontSize: 13, color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>
+                Привет,
+              </div>
+              <div style={{ fontFamily: T.fDisp, fontSize: 26, fontWeight: 900, color: '#fff', lineHeight: 1.1 }}>
+                {child?.name ?? '...'} 👋
+              </div>
+              <div style={{
+                marginTop: 6, display: 'inline-flex', gap: 6, alignItems: 'center',
+                padding: '3px 10px', borderRadius: 999, background: 'rgba(255,255,255,0.25)',
+                backdropFilter: 'blur(8px)',
+              }}>
+                <span style={{ fontSize: 11 }}>✨</span>
+                <span style={{ fontFamily: T.fBody, fontSize: 12, fontWeight: 700, color: '#fff' }}>
+                  Уровень {level}
+                </span>
+              </div>
+            </div>
           </div>
-          <span className="text-5xl select-none">{child?.emoji ?? '🧒'}</span>
-        </div>
 
-        {/* Coin balance row */}
-        <div className="mt-3 flex items-center gap-2 bg-white/10 rounded-xl px-3 py-2">
-          <span className="text-xl">🪙</span>
-          <span className="text-white font-extrabold text-lg">{wallet?.coins ?? 0}</span>
-          <span className="text-white/80 text-sm">монет</span>
-        </div>
-
-        {/* XP progress bar */}
-        <div className="kid-xp-bar mt-3">
-          <div
-            className="kid-xp-bar-fill"
-            style={{ width: `${Math.round(xpInLevel / 10)}%` }}
-          />
-        </div>
-        <div className="flex justify-between text-xs text-white/70 mt-1">
-          <span>{xpInLevel} / 1000 XP</span>
-          <span>до следующего уровня</span>
-        </div>
-      </div>
-
-      {/* ====================================================
-          Tab Bar
-      ==================================================== */}
-      <div className="flex gap-2 bg-gray-100 rounded-full p-1">
-        {([
-          { key: 'today',    label: 'Сегодня' },
-          { key: 'week',     label: 'Неделя'  },
-          { key: 'expenses', label: 'Расходы' },
-        ] as { key: Tab; label: string }[]).map(({ key, label }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setTab(key)}
-            className={[
-              'flex-1 py-1.5 rounded-full text-sm font-semibold transition-all',
-              tab === key
-                ? 'bg-amber-400 text-white font-bold shadow-sm'
-                : 'text-gray-500',
-            ].join(' ')}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* ====================================================
-          TODAY TAB
-      ==================================================== */}
-      {tab === 'today' && (
-        <>
-          {/* Celebration panel */}
-          {lastCoinsEarned !== null && (
-            <div className="rounded-2xl p-4 text-center" style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)' }}>
-              <p className="text-2xl font-extrabold text-white">
-                🎉 Отлично! Ты заработал {lastCoinsEarned} монет!
-              </p>
-              <Link
-                href="/kid/wallet"
-                className="mt-3 inline-block bg-white text-amber-600 font-bold px-6 py-2 rounded-xl text-sm"
-              >
-                Посмотреть кошелёк →
-              </Link>
-            </div>
-          )}
-
-          {/* Medal of the Day */}
-          {medal && (
-            <div className="bg-yellow-900/40 border border-yellow-600 rounded-xl p-4 mb-4">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xl">🏅</span>
-                <span className="font-bold text-yellow-400">Медаль дня</span>
-                {medal.sent_by && <span className="text-xs text-gray-400">от {medal.sent_by}</span>}
-              </div>
-              <p className="text-white text-sm">{medal.message}</p>
-              {medal.coins > 0 && (
-                <p className="text-yellow-400 text-xs mt-1">+{medal.coins} монет начислено</p>
-              )}
-            </div>
-          )}
-
-          {/* B. 4 stat cards */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* Card 1: Room */}
-            <div className={`kid-card text-center ${todayDay?.room_ok ? 'bg-emerald-50' : ''}`}>
-              <div className="text-3xl">
-                {todayDay?.room_ok ? '✅' : <span className="text-gray-300">❌</span>}
-              </div>
-              <p className="text-xs text-gray-500 mt-1">Комната</p>
-              <p className={`text-xs font-semibold mt-0.5 ${todayDay?.room_ok ? 'text-emerald-600' : 'text-gray-400'}`}>
-                {todayDay?.room_ok ? '+3💰' : '+0💰'}
-              </p>
-            </div>
-
-            {/* Card 2: Behavior */}
-            <div className={`kid-card text-center ${todayDay?.good_behavior ? 'bg-emerald-50' : ''}`}>
-              <div className="text-3xl">
-                {todayDay?.good_behavior
-                  ? <span className="text-emerald-500">👍</span>
-                  : <span className="text-gray-300">👎</span>}
-              </div>
-              <p className="text-xs text-gray-500 mt-1">Поведение</p>
-              <p className={`text-xs font-semibold mt-0.5 ${todayDay?.good_behavior ? 'text-emerald-600' : 'text-gray-400'}`}>
-                {todayDay?.good_behavior ? '+5💰' : '+0💰'}
-              </p>
-            </div>
-
-            {/* Card 3: Grades */}
-            <div className="kid-card text-center">
-              {gradeAvg !== null ? (
-                <div className={`text-2xl font-extrabold ${gradeAvgColor(gradeAvg)}`}>
-                  {gradeAvg.toFixed(1)}
+          {/* XP bar */}
+          <div style={{ marginTop: 16, position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                <div style={{
+                  width: 30, height: 30, borderRadius: 9, background: '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: T.fDisp, fontWeight: 900, fontSize: 14, color: T.coral,
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)', flexShrink: 0,
+                }}>{level}</div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontFamily: T.fBody, fontSize: 10, color: 'rgba(255,255,255,0.8)', fontWeight: 700, letterSpacing: 0.8, whiteSpace: 'nowrap' }}>УРОВЕНЬ {level}</div>
+                  <div style={{ fontFamily: T.fDisp, fontSize: 12, color: '#fff', fontWeight: 800, marginTop: 2, whiteSpace: 'nowrap' }}>до следующего: {xpToNext - (xp % xpToNext)} XP</div>
                 </div>
-              ) : (
-                <div className="text-3xl text-gray-300">📚</div>
-              )}
-              <p className="text-xs text-gray-500 mt-1">
-                {todayGrades.length > 0 ? `${todayGrades.length} оценок` : 'Оценок нет'}
-              </p>
-            </div>
-
-            {/* Card 4: Streaks */}
-            <div className="kid-card text-center">
-              <div className="text-2xl font-extrabold text-orange-500">
-                {streaks.length > 0 ? streaks.length : '—'}
               </div>
-              <p className="text-xs text-gray-500 mt-1">🔥 Серии</p>
+              <div style={{ fontFamily: T.fNum, fontSize: 12, color: 'rgba(255,255,255,0.9)', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                {xp % xpToNext}/{xpToNext}
+              </div>
+            </div>
+            <div style={{ height: 10, background: 'rgba(0,0,0,0.25)', borderRadius: 999, overflow: 'hidden', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.3)' }}>
+              <div style={{
+                width: `${((xp % xpToNext) / xpToNext) * 100}%`, height: '100%',
+                background: `linear-gradient(90deg, ${T.sun}, #fff)`,
+                borderRadius: 999, boxShadow: `0 0 10px ${T.sun}`,
+              }}/>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Today grades chips */}
-          {todayGrades.length > 0 && (
-            <div>
-              <p className="text-sm font-bold text-gray-700 mb-2">📚 Сегодняшние оценки</p>
-              <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-                {todayGrades.map((grade) => (
-                  <span
-                    key={grade.id}
-                    className={`text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap ${gradeChipClass(grade.grade)}`}
-                  >
-                    {grade.subject} {grade.grade}
-                  </span>
-                ))}
-              </div>
+      {/* ═══ Stats row ════════════════════════════════════════════════════════ */}
+      <div style={{ display: 'flex', gap: 10, padding: '14px 16px 0' }}>
+        <StreakFlame days={streakDays}/>
+        <div style={{
+          flex: 1, background: '#fff', borderRadius: 999, padding: '10px 14px',
+          display: 'flex', alignItems: 'center', gap: 8,
+          border: `1.5px solid ${T.sunDeep}`, boxShadow: `0 4px 14px rgba(0,0,0,0.04)`,
+        }}>
+          <Coin size={24}/>
+          <span style={{ fontFamily: T.fNum, fontSize: 17, fontWeight: 800, color: T.ink }}>
+            <AnimatedNum value={coins}/>
+          </span>
+          <span style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 600, marginLeft: 'auto' }}>монет</span>
+        </div>
+      </div>
+
+      {/* ═══ Progress + ring ══════════════════════════════════════════════════ */}
+      <div style={{ padding: '18px 16px 0' }}>
+        <div style={{
+          background: '#fff', borderRadius: 24, padding: 18,
+          display: 'flex', gap: 16, alignItems: 'center',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: `1.5px solid ${T.line}`,
+        }}>
+          <ProgressRing pct={pct} size={92} stroke={10} color={T.teal} bg={T.tealSoft}>
+            <div style={{ fontFamily: T.fDisp, fontSize: 24, fontWeight: 900, color: T.ink, lineHeight: 1 }}>
+              {pct}<span style={{ fontSize: 14 }}>%</span>
             </div>
-          )}
-
-          {/* C. Fill form or summary */}
-          {todayDay?.filled_by === 'child' && !showFillForm ? (
-            <div className="kid-card py-3 flex items-center justify-between">
-              <span className="text-base font-semibold text-emerald-600">День заполнен ✅</span>
+            <div style={{ fontFamily: T.fBody, fontSize: 10, color: T.ink3, fontWeight: 700, letterSpacing: 0.5, marginTop: 2 }}>СЕГОДНЯ</div>
+          </ProgressRing>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 700, letterSpacing: 1 }}>{todayLabel().toUpperCase()}</div>
+            <div style={{ fontFamily: T.fDisp, fontSize: 22, fontWeight: 900, color: T.ink, lineHeight: 1.1, marginTop: 2 }}>
+              {done}/{total} задач
+            </div>
+            {todayDay === null ? (
               <button
-                type="button"
                 onClick={() => setShowFillForm(true)}
-                className="text-xs text-amber-600 font-semibold underline"
-              >
-                Изменить
-              </button>
-            </div>
-          ) : showFillForm ? (
+                style={{
+                  marginTop: 8, height: 32, padding: '0 16px', borderRadius: 999,
+                  background: T.coral, color: '#fff', border: 'none',
+                  fontFamily: T.fDisp, fontSize: 12, fontWeight: 800, cursor: 'pointer',
+                  boxShadow: `0 3px 10px ${T.coral}55`,
+                }}
+              >Заполнить день →</button>
+            ) : (
+              <div style={{ fontFamily: T.fBody, fontSize: 13, color: T.ink3, marginTop: 6, lineHeight: 1.3 }}>
+                {total - done > 0
+                  ? <>Осталось <b style={{ color: T.ink }}>{total - done}</b> задачи</>
+                  : <span style={{ color: T.teal, fontWeight: 700 }}>Всё выполнено! 🎉</span>
+                }
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ═══ Tasks ════════════════════════════════════════════════════════════ */}
+      <div style={{ padding: '20px 16px 0' }}>
+        <SectionHeader title="Задания на сегодня" sub={`${total - done} осталось`}/>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
+          {tasks.map(t => (
+            <TaskCard key={t.id} t={t}/>
+          ))}
+          {todayDay === null && (
+            <button
+              onClick={() => setShowFillForm(true)}
+              style={{
+                height: 56, borderRadius: 20, border: `2px dashed ${T.line}`,
+                background: T.lineSoft, cursor: 'pointer',
+                fontFamily: T.fDisp, fontSize: 15, fontWeight: 800, color: T.ink3,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              }}
+            >
+              <span style={{ fontSize: 20 }}>+</span> Добавить результаты
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ═══ Notifications ════════════════════════════════════════════════════ */}
+      {(streaks.length > 0 || medal) && (
+        <div style={{ padding: '24px 16px 0' }}>
+          <SectionHeader title="Уведомления"/>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
+            {medal && (
+              <NotifCard
+                icon="🏅"
+                type="bonus"
+                title={`Награда: ${medal.coins} монет`}
+                sub={medal.message}
+                time="Сегодня"
+              />
+            )}
+            {streaks.map((s, i) => (
+              <NotifCard
+                key={i}
+                icon="🔥"
+                type="level"
+                title={`Серия: ${s.current_count} дней`}
+                sub={`Тип: ${s.streak_type} · Рекорд: ${s.best_count}`}
+                time={`${s.current_count}д`}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Fill form modal ══════════════════════════════════════════════════ */}
+      {showFillForm && activeMemberId && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-end" onClick={() => setShowFillForm(false)}>
+          <div
+            className="w-full bg-white rounded-t-3xl"
+            style={{ animation: 'slideUp 0.3s cubic-bezier(.2,.9,.3,1.1)', maxHeight: '90vh', overflowY: 'auto' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ width: 40, height: 4, background: T.line, borderRadius: 999, margin: '14px auto 0' }}/>
             <KidDayFillForm
-              childId={child?.id ?? activeMemberId ?? ''}
+              childId={activeMemberId}
               date={today}
-              fillMode={fillMode as 1 | 2 | 3}
+              fillMode={child?.kid_fill_mode ?? 1}
               dayType={dayType}
               existingDay={todayDay}
-              onSaved={handleFormSaved}
+              onSaved={handleFillSaved}
             />
-          ) : fillMode ? (
-            <button
-              type="button"
-              onClick={() => setShowFillForm(true)}
-              className="kid-hero-gradient w-full py-3 rounded-2xl text-white font-bold text-base shadow-md"
-            >
-              ✏️ Заполнить сегодня
-            </button>
-          ) : null}
-
-          {/* E. Active Streaks Bar */}
-          {streaks.length > 0 && (
-            <div>
-              <p className="text-sm font-bold text-gray-700 mb-2">🔥 Активные серии</p>
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {streaks.map((streak: any) => {
-                  const fireClasses = [
-                    streak.current_count > 10 ? 'kid-fire-glow' : '',
-                    streak.current_count > 5  ? 'kid-fire-pulse' : '',
-                  ].filter(Boolean).join(' ')
-
-                  return (
-                    <span
-                      key={streak.id}
-                      className={`bg-orange-50 text-orange-700 border border-orange-200 px-3 py-2 rounded-2xl flex items-center gap-2 text-sm font-semibold whitespace-nowrap ${fireClasses}`}
-                    >
-                      <span>🔥</span>
-                      <span>{streakLabel(streak.streak_type)}</span>
-                      <span className="font-extrabold">{streak.current_count}</span>
-                    </span>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* F. Active Goal Widget */}
-          {activeGoal && (
-            <div
-              className={`kid-card ${
-                activeGoal.current / activeGoal.target > 0.75 ? 'kid-goal-glow' : ''
-              }`}
-            >
-              <p className="text-sm font-bold text-gray-700">🎯 Моя цель</p>
-              <p className="text-sm font-bold text-gray-900 mt-1">{activeGoal.title}</p>
-              <div className="bg-gray-100 rounded-full h-3 mt-2">
-                <div
-                  className="h-3 rounded-full"
-                  style={{
-                    background: 'var(--kid-gradient-coin)',
-                    width: `${Math.min(100, Math.round((activeGoal.current / activeGoal.target) * 100))}%`,
-                    transition: 'width 0.5s ease',
-                  }}
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                {activeGoal.current} / {activeGoal.target} монет
-              </p>
-            </div>
-          )}
-        </>
+          </div>
+        </div>
       )}
+    </div>
+  )
+}
 
-      {/* ====================================================
-          WEEK TAB
-      ==================================================== */}
-      {tab === 'week' && (
-        <>
-          {/* A. 7-day calendar strip */}
-          <div className="kid-card">
-            <p className="text-sm font-bold text-gray-700 mb-3">📅 Эта неделя</p>
-            <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-              {weekDays.map((dateStr) => {
-                const d = new Date(dateStr)
-                const dayIndex = (d.getDay() + 6) % 7 // Mon=0, Sun=6
-                const letter = RU_DAY_LETTERS[dayIndex]
-                const dayNum = d.getDate()
-                const isToday = dateStr === today
-                const coins = weekDayCoins[dateStr]
-                const isFilled = coins !== undefined
-                const isPast = dateStr < today
-
-                let cellClass = 'rounded-2xl p-2 text-center min-w-[44px] flex-shrink-0 '
-                if (isToday) {
-                  cellClass += 'bg-amber-400 text-white'
-                } else if (isPast && isFilled) {
-                  cellClass += 'bg-emerald-50 border border-emerald-200 text-gray-700'
-                } else {
-                  cellClass += 'bg-white border border-gray-100 text-gray-700'
-                }
-
-                return (
-                  <div key={dateStr} className={cellClass}>
-                    <p className={`text-xs font-bold ${isToday ? 'text-white/80' : 'text-gray-400'}`}>
-                      {letter}
-                    </p>
-                    <p className="text-base font-extrabold">{dayNum}</p>
-                    {isFilled ? (
-                      <p className={`text-xs font-semibold ${coins >= 0 ? 'text-emerald-600' : 'text-rose-500'} ${isToday ? '!text-white' : ''}`}>
-                        {coins >= 0 ? '+' : ''}{coins}💰
-                      </p>
-                    ) : (
-                      <p className={`text-xs ${isToday ? 'text-white/70' : 'text-gray-300'}`}>—</p>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* B. Week summary cards */}
-          <div className="grid grid-cols-3 gap-2">
-            <div className="kid-card text-center py-3">
-              <p className="text-base font-extrabold text-gray-800">{weekStats.roomDays}/7</p>
-              <p className="text-xs text-gray-500 mt-0.5">🏠 Комната</p>
-            </div>
-            <div className="kid-card text-center py-3">
-              <p className="text-base font-extrabold text-gray-800">{weekStats.behaviorDays}/7</p>
-              <p className="text-xs text-gray-500 mt-0.5">😊 Поведение</p>
-            </div>
-            <div className="kid-card text-center py-3">
-              <p className="text-base font-extrabold text-gray-800">{weekStats.gradedDays}/7</p>
-              <p className="text-xs text-gray-500 mt-0.5">📖 Оценки</p>
-            </div>
-          </div>
-
-          {/* C. Week total */}
-          <div className="kid-card text-center py-3">
-            <p className="text-lg font-extrabold text-gray-800">
-              Итого за неделю: {weekTotal}💰
-            </p>
-          </div>
-        </>
+// ─── Task card ───────────────────────────────────────────────────────────────
+function TaskCard({ t }: { t: TaskItem }) {
+  return (
+    <div style={{
+      background: t.done ? T.lineSoft : '#fff',
+      borderRadius: 20, padding: '14px 14px 14px 16px',
+      display: 'flex', alignItems: 'center', gap: 12,
+      border: t.boss && !t.done ? `2px solid ${T.coral}` : `1.5px solid ${t.done ? 'transparent' : T.line}`,
+      boxShadow: t.done ? 'none' : '0 2px 10px rgba(0,0,0,0.03)',
+      position: 'relative', overflow: 'hidden',
+      opacity: t.done ? 0.65 : 1,
+    }}>
+      {t.boss && !t.done && (
+        <div style={{
+          position: 'absolute', top: 0, right: 0,
+          background: T.coral, color: '#fff',
+          fontFamily: T.fDisp, fontSize: 9, fontWeight: 900, letterSpacing: 1,
+          padding: '2px 10px', borderBottomLeftRadius: 8,
+        }}>ГЛАВНОЕ</div>
       )}
-
-      {/* ====================================================
-          EXPENSES TAB
-      ==================================================== */}
-      {tab === 'expenses' && (
-        <>
-          {/* A. Header card */}
-          <div
-            className="rounded-2xl p-5 text-center"
-            style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)' }}
-          >
-            <p className="text-xl font-extrabold text-white">Семья тратит на тебя</p>
-            <p className="text-white/80 text-sm mt-1">Это инвестиция в твоё будущее 💛</p>
-          </div>
-
-          {/* B. Sections list */}
-          {sections.length === 0 ? (
-            <div className="kid-card py-6 text-center text-gray-400">
-              Секций не найдено — спроси родителей
-            </div>
-          ) : (
-            <div className="kid-card">
-              <div className="flex flex-col divide-y divide-gray-100">
-                {sections.map((section) => (
-                  <div key={section.id} className="py-3 first:pt-0 last:pb-0">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-gray-800">{section.name}</span>
-                      <span className="text-sm font-bold text-amber-600">
-                        {section.cost ? `${section.cost} ₽/мес` : 'бесплатно'}
-                      </span>
-                    </div>
-                    {section.schedule_days.length > 0 && (
-                      <div className="flex gap-1 mt-1 flex-wrap">
-                        {section.schedule_days.map((day) => (
-                          <span
-                            key={day}
-                            className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full"
-                          >
-                            {day}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+      <div style={{
+        width: 32, height: 32, borderRadius: 12,
+        background: t.done ? T.teal : '#fff',
+        border: `2.5px solid ${t.done ? T.teal : T.line}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+      }}>
+        {t.done && (
+          <svg width="16" height="16" viewBox="0 0 16 16">
+            <path d="M3 8l3.5 3.5L13 5" stroke="#fff" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontFamily: T.fDisp, fontSize: 15, fontWeight: 800, color: T.ink,
+          textDecoration: t.done ? 'line-through' : 'none', lineHeight: 1.2,
+        }}>{t.title}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
+          <span style={{
+            fontFamily: T.fBody, fontSize: 11, fontWeight: 700,
+            color: t.catColor, padding: '1px 7px', borderRadius: 5,
+            background: t.catColor + '18',
+          }}>{t.cat}</span>
+          {t.time && (
+            <span style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, fontWeight: 600 }}>{t.time}</span>
           )}
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-end' }}>
+        <CoinPill value={t.coins} size="sm"/>
+        {t.xp && t.xp > 0 && (
+          <span style={{ fontFamily: T.fNum, fontSize: 10, fontWeight: 800, color: T.plum, letterSpacing: 0.3 }}>
+            +{t.xp} XP
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
 
-          {/* C. Total monthly */}
-          {sections.length > 0 && (
-            <div className="kid-card text-center py-3">
-              <p className="text-lg font-extrabold text-gray-800">
-                Итого в месяц: {totalMonthlyExpenses} ₽
-              </p>
-            </div>
-          )}
-        </>
-      )}
-
+// ─── Notification card ────────────────────────────────────────────────────────
+function NotifCard({ icon, type, title, sub, time }: {
+  icon: string; type: string; title: string; sub: string; time: string
+}) {
+  const bgs: Record<string, string> = {
+    bonus: `linear-gradient(135deg, ${T.sun}, ${T.sunDeep})`,
+    level: `linear-gradient(135deg, ${T.plumSoft}, #D4CDFA)`,
+    mom:   `linear-gradient(135deg, ${T.pinkSoft}, #FFD0DE)`,
+  }
+  return (
+    <div style={{
+      background: bgs[type] ?? bgs.level, borderRadius: 20, padding: 14,
+      display: 'flex', gap: 12, alignItems: 'flex-start',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+    }}>
+      <div style={{
+        width: 40, height: 40, borderRadius: 12, background: '#fff',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 20, flexShrink: 0, boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+      }}>{icon}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: T.fDisp, fontSize: 15, fontWeight: 800, color: T.ink, lineHeight: 1.2 }}>{title}</div>
+        <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink2, marginTop: 2, lineHeight: 1.3 }}>{sub}</div>
+      </div>
+      <span style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 600 }}>{time}</span>
     </div>
   )
 }

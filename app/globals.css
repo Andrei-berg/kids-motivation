@@ -6,6 +6,7 @@
    ============================================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@600;700;800&display=swap');
 
 :root {
   /* Colors - Primary */
@@ -4393,3 +4394,52 @@ textarea::placeholder {
   60%  { transform: scale(1.2); opacity: 1; }
   100% { transform: scale(1);   opacity: 1; }
 }
+
+/* ============================================================================
+   KID SCREEN v2 — Design System Animations (Phase 3.2)
+   ============================================================================ */
+
+@keyframes flamePulse {
+  0%, 100% { transform: scale(1) rotate(-2deg); }
+  50%       { transform: scale(1.15) rotate(2deg); }
+}
+
+@keyframes confettiFly {
+  0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes popIn {
+  0%   { transform: scale(0.7); opacity: 0; }
+  80%  { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes typingDot {
+  0%, 60%, 100% { transform: translateY(0);    opacity: 0.4; }
+  30%            { transform: translateY(-4px); opacity: 1; }
+}
+
+@keyframes shimmerXP {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+/* Scroll container that hides scrollbar */
+.km-scroll::-webkit-scrollbar { display: none; }
+.km-scroll { -ms-overflow-style: none; scrollbar-width: none; }

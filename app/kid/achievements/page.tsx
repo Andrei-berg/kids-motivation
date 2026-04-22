@@ -5,119 +5,63 @@ import { useAppStore } from '@/lib/store'
 import { getChildBadges, getAvailableBadges } from '@/lib/services/badges.service'
 import { api } from '@/lib/api'
 import type { Child } from '@/lib/api'
-import { getWallet } from '@/lib/repositories/wallet.repo'
 import { supabase } from '@/lib/supabase'
+import { T } from '@/components/kid/design/tokens'
+import { XPBar, SectionHeader } from '@/components/kid/design/atoms'
 
-// ============================================================================
-// LEVEL SYSTEM
-// ============================================================================
-
-const LEVEL_TITLES: Record<number, { title: string; emoji: string }> = {
-  1: { title: 'Новичок',   emoji: '🥚' },
-  2: { title: 'Ученик',    emoji: '🌱' },
-  3: { title: 'Старатель', emoji: '⭐' },
-  4: { title: 'Мастер',    emoji: '✨' },
-  5: { title: 'Эксперт',   emoji: '💎' },
-  6: { title: 'Чемпион',   emoji: '🏆' },
-  7: { title: 'Легенда',   emoji: '👑' },
-}
-
-function getLevelTitle(level: number) {
-  return LEVEL_TITLES[level] ?? { title: 'Супергерой', emoji: '🦸' }
-}
-
-// ============================================================================
-// BADGE PROGRESS COMPUTATION
-// ============================================================================
-
-async function computeBadgeProgress(
-  childId: string,
-  streaks: Array<{ streak_type: string; current_count: number; best_count: number }>
-): Promise<Record<string, { current: number; target: number; label: string }>> {
-  const progress: Record<string, { current: number; target: number; label: string }> = {}
-
-  // clean_master: count days where room_ok=true (target: 14)
-  const { count: roomDays } = await supabase
-    .from('days')
-    .select('*', { count: 'exact', head: true })
-    .eq('child_id', childId)
-    .eq('room_ok', true)
-  progress['clean_master'] = { current: roomDays ?? 0, target: 14, label: 'дн. уборки' }
-
-  // sportsman: count sport days from home_sports (sport_ok column doesn't exist in days)
-  const { count: sportDays } = await supabase
-    .from('home_sports')
-    .select('*', { count: 'exact', head: true })
-    .eq('child_id', childId)
-  progress['sportsman'] = { current: sportDays ?? 0, target: 14, label: 'дн. спорта' }
-
-  // week_excellent: count days with grade=5 (target: 7)
-  const { count: grade5Days } = await supabase
-    .from('subject_grades')
-    .select('*', { count: 'exact', head: true })
-    .eq('child_id', childId)
-    .eq('grade', 5)
-  progress['week_excellent'] = { current: grade5Days ?? 0, target: 7, label: 'отл. оценок' }
-
-  // full_week_grades: count distinct days with grades this week (target: 5)
-  const today = new Date()
-  const dayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1
-  const weekStart = new Date(today)
-  weekStart.setDate(today.getDate() - dayOfWeek)
-  const weekStartStr = weekStart.toISOString().split('T')[0]
-  const weekEndStr = today.toISOString().split('T')[0]
-  const { data: weekGrades } = await supabase
-    .from('subject_grades')
-    .select('date')
-    .eq('child_id', childId)
-    .gte('date', weekStartStr)
-    .lte('date', weekEndStr)
-  const uniqueDaysThisWeek = new Set((weekGrades ?? []).map((g: any) => g.date)).size
-  progress['full_week_grades'] = { current: uniqueDaysThisWeek, target: 5, label: 'дн. этой нед.' }
-
-  // coin_saver: net saved coins (target: 500)
-  const wallet = await getWallet(childId)
-  const netSaved = (wallet?.total_earned_coins ?? 0) - (wallet?.total_spent_coins ?? 0)
-  progress['coin_saver'] = { current: Math.max(0, netSaved), target: 500, label: 'монет накоп.' }
-
-  // streak_30: best streak across all types (target: 30)
+// ─── Badge progress computation ───────────────────────────────────────────────
+async function computeBadgeProgress(childId: string, streaks: any[]) {
+  const progress: Record<string, { current: number; target: number }> = {}
+  const [{ count: roomDays }, { count: sportDays }, { count: grade5Days }] = await Promise.all([
+    supabase.from('days').select('*', { count: 'exact', head: true }).eq('child_id', childId).eq('room_ok', true),
+    supabase.from('home_sports').select('*', { count: 'exact', head: true }).eq('child_id', childId),
+    supabase.from('subject_grades').select('*', { count: 'exact', head: true }).eq('child_id', childId).eq('grade', 5),
+  ])
+  progress['clean_master'] = { current: roomDays ?? 0, target: 30 }
+  progress['sportsman'] = { current: sportDays ?? 0, target: 14 }
+  progress['week_excellent'] = { current: grade5Days ?? 0, target: 7 }
   const bestStreak = streaks.reduce((max, s) => Math.max(max, s.best_count), 0)
-  progress['streak_30'] = { current: bestStreak, target: 30, label: 'дн. серии' }
-
-  // first_purchase: 0 or 1 (target: 1)
-  const { count: purchaseCount } = await supabase
-    .from('reward_purchases')
-    .select('*', { count: 'exact', head: true })
-    .eq('child_id', childId)
-  progress['first_purchase'] = { current: Math.min(purchaseCount ?? 0, 1), target: 1, label: 'покупка' }
-
-  // study_lover: count days with any subject grades (target: 10)
-  const { data: gradeDays } = await supabase
-    .from('subject_grades')
-    .select('date')
-    .eq('child_id', childId)
-  const uniqueGradeDays = new Set((gradeDays ?? []).map((g: any) => g.date)).size
-  progress['study_lover'] = { current: uniqueGradeDays, target: 10, label: 'дн. с оценками' }
-
+  progress['streak_30'] = { current: bestStreak, target: 30 }
   return progress
 }
 
-// ============================================================================
-// PAGE COMPONENT
-// ============================================================================
+// ─── Rarity config ────────────────────────────────────────────────────────────
+const RARITY = [
+  { bg: '#F5F0E4', ring: '#D9CFB8', label: 'Обычный', labelBg: '#B8AE92' },
+  { bg: '#D6F5F2', ring: T.teal,    label: 'Редкий',  labelBg: T.teal    },
+  { bg: '#E9E5FB', ring: T.plum,    label: 'Эпик',    labelBg: T.plum    },
+  { bg: '#FFE4D6', ring: T.coral,   label: 'Легенда', labelBg: T.coral   },
+]
+function getRarity(xp: number) {
+  if (xp >= 1000) return RARITY[3]
+  if (xp >= 600) return RARITY[2]
+  if (xp >= 400) return RARITY[1]
+  return RARITY[0]
+}
 
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+function LoadingSkeleton() {
+  return (
+    <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {[200, 72, 72, 200, 150].map((h, i) => (
+        <div key={i} className="kid-skeleton" style={{ height: h, borderRadius: 24 }}/>
+      ))}
+    </div>
+  )
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 export default function AchievementsPage() {
   const { activeMemberId } = useAppStore()
   const [loading, setLoading] = useState(true)
   const [child, setChild] = useState<Child | null>(null)
   const [earnedBadges, setEarnedBadges] = useState<any[]>([])
   const [streaks, setStreaks] = useState<any[]>([])
-  const [selectedBadge, setSelectedBadge] = useState<any | null>(null)
-  const [badgeProgress, setBadgeProgress] = useState<Record<string, { current: number; target: number; label: string }>>({})
+  const [badgeProgress, setBadgeProgress] = useState<Record<string, { current: number; target: number }>>({})
+  const [focused, setFocused] = useState<any | null>(null)
 
   useEffect(() => {
     if (!activeMemberId) return
-
     const load = async () => {
       setLoading(true)
       try {
@@ -129,208 +73,199 @@ export default function AchievementsPage() {
         setChild(childData)
         setEarnedBadges(earned)
         setStreaks(streaksData ?? [])
-
         const prog = await computeBadgeProgress(activeMemberId, streaksData ?? [])
         setBadgeProgress(prog)
       } catch (err) {
-        console.error('Error loading achievements:', err)
+        console.error('Achievements error:', err)
       } finally {
         setLoading(false)
       }
     }
-
     load()
   }, [activeMemberId])
 
-  // Computed values
+  if (loading) return <LoadingSkeleton/>
+
   const allBadges = getAvailableBadges()
   const earnedKeys = new Set(earnedBadges.map(b => b.badge_key))
-  const totalXP = earnedBadges.reduce((sum, b) => sum + (b.xp_reward || 0), 0)
-  const longestStreak = streaks.reduce((max, s) => Math.max(max, s.best_count), 0)
-  const levelInfo = getLevelTitle(child?.level ?? 1)
+  const level = child?.level ?? 1
   const xpInLevel = (child?.xp ?? 0) % 1000
-  const nextLevelXP = 1000
 
-  // ============================================================================
-  // LOADING STATE
-  // ============================================================================
-
-  if (loading) {
-    return (
-      <div className="px-4 py-4 max-w-lg mx-auto space-y-4">
-        <div className="kid-skeleton h-40 rounded-2xl" />
-        <div className="grid grid-cols-2 gap-3">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="kid-skeleton h-20 rounded-xl" />
-          ))}
-        </div>
-        <div className="kid-skeleton h-8 rounded-xl w-40" />
-        <div className="grid grid-cols-3 gap-3">
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="kid-skeleton h-24 rounded-2xl" />
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  // ============================================================================
-  // RENDER
-  // ============================================================================
+  const cats = [
+    { n: 'Учёба',    icon: '📚', type: 'study',  col: T.plum  },
+    { n: 'Дом',      icon: '🏠', type: 'room',   col: T.teal  },
+    { n: 'Спорт',    icon: '💪', type: 'sport',  col: T.coral },
+    { n: 'Поведение',icon: '⭐', type: 'strong_week', col: T.pink },
+  ]
 
   return (
-    <div className="px-4 py-4 max-w-lg mx-auto space-y-4">
-
-      {/* A. Level Card */}
-      <div className="kid-xp-gradient rounded-2xl p-6 text-white text-center">
-        <div
-          className="text-7xl font-extrabold"
-          style={{ textShadow: '0 2px 8px rgba(0,0,0,0.25)' }}
-        >
-          {child?.level ?? 1}
-        </div>
-        <div className="text-4xl mt-1">{levelInfo.emoji}</div>
-        <div className="text-xl font-bold mt-2">{levelInfo.title}</div>
-
-        {/* XP bar */}
-        <div className="kid-xp-bar mt-4 w-full">
-          <div
-            className="kid-xp-bar-fill"
-            style={{ width: `${Math.round(xpInLevel / nextLevelXP * 100)}%` }}
-          />
-        </div>
-        <div className="text-white/70 text-sm mt-2">
-          {xpInLevel} / {nextLevelXP} XP до уровня {(child?.level ?? 1) + 1}
-        </div>
-      </div>
-
-      {/* B. Stats Row */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="kid-card text-center border-t-4 border-violet-400">
-          <div className="text-2xl font-extrabold text-gray-800">⭐ {totalXP}</div>
-          <div className="text-xs text-gray-500 mt-1">XP всего</div>
-        </div>
-        <div className="kid-card text-center border-t-4 border-amber-400">
-          <div className="text-2xl font-extrabold text-gray-800">{earnedBadges.length} / {allBadges.length}</div>
-          <div className="text-xs text-gray-500 mt-1">Значков</div>
-        </div>
-        <div className="kid-card text-center border-t-4 border-orange-400">
-          <div className="text-2xl font-extrabold text-gray-800">🔥 {longestStreak}</div>
-          <div className="text-xs text-gray-500 mt-1">Лучшая серия</div>
-        </div>
-        <div className="kid-card text-center border-t-4 border-emerald-400">
-          <div className="text-2xl font-extrabold text-gray-800">
-            🏆 {earnedBadges.length > 0 ? 'Есть!' : 'Пока нет'}
+    <div style={{ paddingBottom: 110, maxWidth: 500, margin: '0 auto' }}>
+      {/* ═══ Hero ═════════════════════════════════════════════════════════════ */}
+      <div style={{ padding: '12px 16px 0' }}>
+        <div style={{
+          borderRadius: 28, padding: 20, position: 'relative', overflow: 'hidden',
+          background: `linear-gradient(135deg, ${T.teal} 0%, #3DB8B0 60%, ${T.plum} 100%)`,
+          boxShadow: `0 10px 30px ${T.teal}40`,
+        }}>
+          <div style={{ position: 'absolute', top: -30, right: -30, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.12)' }}/>
+          <div style={{ position: 'relative' }}>
+            <div style={{ fontFamily: T.fBody, fontSize: 11, color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: 1.5 }}>ТРОФЕЙНАЯ КОМНАТА</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4, whiteSpace: 'nowrap' }}>
+              <span style={{ fontFamily: T.fNum, fontSize: 40, fontWeight: 800, color: '#fff', letterSpacing: -2, lineHeight: 1 }}>{earnedBadges.length}</span>
+              <span style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 800, color: 'rgba(255,255,255,0.7)' }}>/ {allBadges.length} значков</span>
+            </div>
+            <div style={{ marginTop: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6, gap: 8 }}>
+                <span style={{ fontFamily: T.fDisp, fontSize: 12, color: '#fff', fontWeight: 800, letterSpacing: 0.5, whiteSpace: 'nowrap' }}>
+                  УР. {level} · {child?.name ?? ''}
+                </span>
+                <span style={{ fontFamily: T.fNum, fontSize: 11, color: 'rgba(255,255,255,0.8)', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  {xpInLevel}/1000 XP
+                </span>
+              </div>
+              <div style={{ height: 10, background: 'rgba(0,0,0,0.25)', borderRadius: 999, overflow: 'hidden', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.3)' }}>
+                <div style={{ width: `${(xpInLevel / 1000) * 100}%`, height: '100%', background: `linear-gradient(90deg, ${T.sun}, #fff)`, borderRadius: 999, boxShadow: `0 0 10px ${T.sun}` }}/>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
+                <span style={{ fontFamily: T.fBody, fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>Уровень {level}</span>
+                <span style={{ fontFamily: T.fBody, fontSize: 11, color: T.sun, fontWeight: 800 }}>Следующий: {level + 1}</span>
+              </div>
+            </div>
           </div>
-          <div className="text-xs text-gray-500 mt-1">Достижения</div>
         </div>
       </div>
 
-      {/* C. Badge Gallery */}
-      <div className="kid-card">
-        <p className="text-sm font-bold text-gray-700">🏅 Мои значки</p>
-        <div className="grid grid-cols-3 gap-3 mt-3 md:grid-cols-4">
+      {/* ═══ Category streaks ═════════════════════════════════════════════════ */}
+      <div style={{ padding: '20px 16px 0' }}>
+        <h3 style={{ margin: '0 0 12px', fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>Серии по категориям</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          {cats.map(c => {
+            const streak = streaks.find(s => s.streak_type === c.type)
+            return (
+              <div key={c.type} style={{
+                background: '#fff', borderRadius: 18, padding: '12px 14px',
+                border: `1.5px solid ${T.line}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+                display: 'flex', gap: 10, alignItems: 'center',
+              }}>
+                <div style={{
+                  width: 42, height: 42, borderRadius: 12, background: c.col + '18',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
+                }}>{c.icon}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: T.fDisp, fontSize: 14, fontWeight: 800, color: T.ink }}>{c.n}</div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginTop: 1 }}>
+                    <span style={{ fontFamily: T.fNum, fontSize: 18, fontWeight: 800, color: c.col, lineHeight: 1 }}>
+                      {streak?.current_count ?? 0}
+                    </span>
+                    <span style={{ fontFamily: T.fBody, fontSize: 10, color: T.ink3, fontWeight: 700 }}>дн. 🔥</span>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ═══ Badges grid ══════════════════════════════════════════════════════ */}
+      <div style={{ padding: '22px 16px 0' }}>
+        <SectionHeader title="Все значки"/>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 12 }}>
           {allBadges.map(badge => {
             const earned = earnedBadges.find(e => e.badge_key === badge.key)
             const isEarned = !!earned
             const prog = badgeProgress[badge.key]
-
+            const r = getRarity(badge.xp ?? 0)
+            const progress01 = prog ? Math.min(1, prog.current / prog.target) : 0
             return (
-              <div
-                key={badge.key}
-                className={`flex flex-col items-center p-3 rounded-2xl border-2 cursor-pointer transition-all
-                  ${isEarned
-                    ? 'border-amber-300 bg-amber-50 shadow-sm hover:shadow-md'
-                    : 'border-gray-100 bg-gray-50 kid-badge-locked'
-                  }`}
-                onClick={() => isEarned && setSelectedBadge(earned)}
-                aria-label={badge.title}
-              >
-                <span className="text-3xl">{badge.icon}</span>
-                <span className={`text-xs font-semibold mt-1 text-center leading-tight
-                  ${isEarned ? 'text-gray-800' : 'text-gray-400'}`}>
-                  {badge.title}
-                </span>
+              <div key={badge.key} onClick={() => setFocused({ ...badge, earned, isEarned, progress01, r })}
+                style={{
+                  background: isEarned ? r.bg : '#F5F0E4',
+                  borderRadius: 18, padding: '12px 8px 10px',
+                  border: isEarned ? `2px solid ${r.ring}` : `1.5px dashed ${T.line}`,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  position: 'relative', cursor: 'pointer', overflow: 'hidden',
+                }}>
+                <div style={{
+                  width: 54, height: 54, borderRadius: '50%',
+                  background: isEarned ? '#fff' : '#EFE8D9',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 28, position: 'relative',
+                  filter: isEarned ? 'none' : 'grayscale(1) opacity(0.4)',
+                  boxShadow: isEarned ? `0 3px 10px ${r.ring}66, inset 0 2px 4px rgba(255,255,255,0.8)` : 'none',
+                  border: isEarned ? `2px solid ${r.ring}` : 'none',
+                }}>{badge.icon}</div>
+                <div style={{
+                  marginTop: 6, fontFamily: T.fDisp, fontSize: 11, fontWeight: 800,
+                  color: isEarned ? T.ink : T.ink3, textAlign: 'center', lineHeight: 1.15,
+                }}>{badge.title}</div>
                 {isEarned ? (
-                  <span className="text-xs text-amber-600 font-bold mt-1">+{earned.xp_reward} XP</span>
+                  <div style={{
+                    marginTop: 4, padding: '1px 7px', borderRadius: 999,
+                    background: r.labelBg, color: '#fff',
+                    fontFamily: T.fDisp, fontSize: 9, fontWeight: 800, letterSpacing: 0.8,
+                  }}>{r.label.toUpperCase()}</div>
                 ) : (
-                  <>
-                    <span className="text-lg mt-1">🔒</span>
-                    {prog && (
-                      <div className="w-full mt-1">
-                        <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
-                          <div
-                            className="h-1 rounded-full bg-violet-400"
-                            style={{ width: `${Math.min(100, Math.round(prog.current / prog.target * 100))}%` }}
-                          />
-                        </div>
-                        <span className="text-[10px] text-gray-400 mt-0.5 block text-center">
-                          {prog.current}/{prog.target} {prog.label}
-                        </span>
-                      </div>
-                    )}
-                  </>
+                  <div style={{ width: '100%', marginTop: 6, height: 4, background: '#E8DFC9', borderRadius: 999, overflow: 'hidden' }}>
+                    <div style={{ width: `${progress01 * 100}%`, height: '100%', background: T.ink3, borderRadius: 999 }}/>
+                  </div>
                 )}
               </div>
             )
           })}
         </div>
-
-        {earnedBadges.length === 0 && (
-          <p className="text-sm text-gray-400 text-center mt-4">
-            Собери первый значок! Начни убирать комнату каждый день 🏠
-          </p>
-        )}
       </div>
 
-      {/* D. Streak Records */}
-      <div className="kid-card">
-        <p className="text-sm font-bold text-gray-700">🔥 Рекорды серий</p>
-        {(['room', 'study', 'sport'] as const).map(type => {
-          const streak = streaks.find(s => s.streak_type === type)
-          const typeConfig = {
-            room:  { label: '🏠 Комната', color: 'bg-emerald-50 border-emerald-200 text-emerald-700' },
-            study: { label: '📖 Учёба',   color: 'bg-blue-50 border-blue-200 text-blue-700' },
-            sport: { label: '💪 Спорт',   color: 'bg-orange-50 border-orange-200 text-orange-700' },
-          }[type]
-          return (
-            <div key={type} className={`flex items-center justify-between p-3 rounded-xl border ${typeConfig.color} mt-2`}>
-              <span className="text-sm font-semibold">{typeConfig.label}</span>
-              <div className="text-right">
-                <div className="text-lg font-extrabold">{streak?.current_count ?? 0} 🔥</div>
-                <div className="text-xs opacity-70">Рекорд: {streak?.best_count ?? 0}</div>
-              </div>
+      {/* ═══ Badge bottom sheet ═══════════════════════════════════════════════ */}
+      {focused && (
+        <div onClick={() => setFocused(null)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex',
+          alignItems: 'flex-end', zIndex: 200, animation: 'fadeIn 0.2s',
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            width: '100%', background: '#fff',
+            borderTopLeftRadius: 32, borderTopRightRadius: 32,
+            padding: '20px 20px 40px', animation: 'slideUp 0.3s cubic-bezier(.2,.9,.3,1.1)',
+          }}>
+            <div style={{ width: 40, height: 4, background: T.line, borderRadius: 999, margin: '0 auto 16px' }}/>
+            <div style={{
+              width: 110, height: 110, borderRadius: '50%', margin: '0 auto',
+              background: focused.isEarned ? focused.r.bg : '#F5F0E4',
+              border: `3px solid ${focused.isEarned ? focused.r.ring : T.line}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 56, filter: focused.isEarned ? 'none' : 'grayscale(1) opacity(0.5)',
+              boxShadow: focused.isEarned ? `0 8px 24px ${focused.r.ring}55` : 'none',
+            }}>{focused.icon}</div>
+            <div style={{ textAlign: 'center', marginTop: 14 }}>
+              <div style={{
+                display: 'inline-block', padding: '3px 12px', borderRadius: 999,
+                background: focused.r.labelBg, color: '#fff',
+                fontFamily: T.fDisp, fontSize: 10, fontWeight: 900, letterSpacing: 1,
+              }}>{focused.r.label.toUpperCase()}</div>
+              <div style={{ fontFamily: T.fDisp, fontSize: 24, fontWeight: 900, color: T.ink, marginTop: 8 }}>{focused.title}</div>
+              <div style={{ fontFamily: T.fBody, fontSize: 14, color: T.ink3, marginTop: 4 }}>{focused.description}</div>
+              {focused.isEarned ? (
+                <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.teal, fontWeight: 700, marginTop: 12 }}>
+                  ✓ Получен {focused.earned?.earned_at ? new Date(focused.earned.earned_at).toLocaleDateString('ru-RU') : ''}
+                </div>
+              ) : (
+                <div style={{ marginTop: 14, padding: '0 20px' }}>
+                  <div style={{ height: 8, background: T.lineSoft, borderRadius: 999 }}>
+                    <div style={{ width: `${focused.progress01 * 100}%`, height: '100%', background: focused.r.ring, borderRadius: 999 }}/>
+                  </div>
+                  <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, marginTop: 6, fontWeight: 600 }}>
+                    {Math.round(focused.progress01 * 100)}% — продолжай!
+                  </div>
+                </div>
+              )}
             </div>
-          )
-        })}
-      </div>
-
-      {/* E. Badge Detail Bottom Sheet */}
-      {selectedBadge && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-end" onClick={() => setSelectedBadge(null)}>
-          <div
-            className="kid-bottom-sheet bg-white w-full rounded-t-3xl p-6 text-center"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="text-6xl mb-3">{selectedBadge.icon}</div>
-            <h3 className="text-xl font-bold text-gray-800">{selectedBadge.title}</h3>
-            <p className="text-sm text-gray-500 mt-1">{selectedBadge.description}</p>
-            <div className="mt-3 inline-block bg-amber-100 text-amber-700 text-sm font-bold px-4 py-1 rounded-full">
-              +{selectedBadge.xp_reward} XP
-            </div>
-            <p className="text-xs text-gray-400 mt-2">
-              Получено: {new Date(selectedBadge.earned_at).toLocaleDateString('ru-RU')}
-            </p>
-            <button
-              className="mt-4 w-full bg-violet-500 text-white font-bold py-3 rounded-xl"
-              onClick={() => setSelectedBadge(null)}
-            >
-              Закрыть
-            </button>
+            <button onClick={() => setFocused(null)} style={{
+              marginTop: 20, width: '100%', height: 48, borderRadius: 24,
+              background: T.ink, color: '#fff', border: 'none',
+              fontFamily: T.fDisp, fontSize: 16, fontWeight: 800, cursor: 'pointer',
+            }}>Закрыть</button>
           </div>
         </div>
       )}
-
     </div>
   )
 }
