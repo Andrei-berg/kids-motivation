@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/lib/store'
 import { getWallet, getTransactions } from '@/lib/repositories/wallet.repo'
 import { api } from '@/lib/api'
@@ -21,7 +22,15 @@ function LoadingSkeleton() {
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
+const QUICK_ACTIONS = [
+  { icon: '💸', label: 'Сохранить', href: '/kid/wallet#goals' },
+  { icon: '🎁', label: 'Потратить', href: '/kid/shop' },
+  { icon: '📤', label: 'Подарить', href: '/kid/wallet#gift' },
+  { icon: '📊', label: 'Статистика', href: '/kid/analytics' },
+]
+
 export default function KidWalletPage() {
+  const router = useRouter()
   const { activeMemberId } = useAppStore()
   const [loading, setLoading] = useState(true)
   const [wallet, setWallet] = useState<Wallet | null>(null)
@@ -114,6 +123,23 @@ export default function KidWalletPage() {
               <div style={{ fontFamily: T.fNum, fontSize: 18, fontWeight: 800, color: T.sun, marginTop: 2 }}>{saved.toLocaleString('ru-RU')}</div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ═══ Quick Actions ════════════════════════════════════════════════════ */}
+      <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>
+          {QUICK_ACTIONS.map(a => (
+            <button key={a.label} onClick={() => router.push(a.href)} style={{
+              background: '#fff', borderRadius: 20, padding: '14px 6px 12px',
+              border: `1.5px solid ${T.line}`, boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+              cursor: 'pointer',
+            }}>
+              <span style={{ fontSize: 26 }}>{a.icon}</span>
+              <span style={{ fontFamily: T.fDisp, fontSize: 11, fontWeight: 800, color: T.ink }}>{a.label}</span>
+            </button>
+          ))}
         </div>
       </div>
 

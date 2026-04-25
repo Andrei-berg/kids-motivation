@@ -17,8 +17,18 @@ function LoadingSkeleton() {
   )
 }
 
+const VIRTUAL_ITEMS = [
+  { id: 'v1', icon: '🚀', title: 'Костюм космонавта', price_coins: 400, tag: 'Аватар' },
+  { id: 'v2', icon: '🌈', title: 'Неон тема', price_coins: 250, tag: 'Тема' },
+  { id: 'v3', icon: '🐉', title: 'Дракон питомец', price_coins: 600, tag: 'Питомец' },
+  { id: 'v4', icon: '🤖', title: 'Робот-аватар', price_coins: 350, tag: 'Аватар' },
+  { id: 'v5', icon: '🌙', title: 'Тёмная тема', price_coins: 200, tag: 'Тема' },
+  { id: 'v6', icon: '🦄', title: 'Единорог питомец', price_coins: 500, tag: 'Питомец' },
+]
+
 export default function KidShopPage() {
   const { activeMemberId } = useAppStore()
+  const [tab, setTab] = useState<'real' | 'virtual'>('real')
   const [loading, setLoading] = useState(true)
   const [wallet, setWallet] = useState<Wallet | null>(null)
   const [rewards, setRewards] = useState<Reward[]>([])
@@ -95,10 +105,56 @@ export default function KidShopPage() {
         </div>
       </div>
 
+      {/* ═══ Tabs ═════════════════════════════════════════════════════════════ */}
+      <div style={{ padding: '14px 16px 0' }}>
+        <div style={{ display: 'flex', background: T.lineSoft, borderRadius: 18, padding: 3, gap: 3 }}>
+          {(['real', 'virtual'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)} style={{
+              flex: 1, height: 40, borderRadius: 15, border: 'none', cursor: 'pointer',
+              background: tab === t ? '#fff' : 'transparent',
+              fontFamily: T.fDisp, fontSize: 13, fontWeight: 800,
+              color: tab === t ? T.ink : T.ink3,
+              boxShadow: tab === t ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+              transition: 'all 0.2s',
+            }}>
+              {t === 'real' ? '🎁 Реальные' : '✨ Виртуальные'}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* ═══ Rewards grid ═════════════════════════════════════════════════════ */}
       <div style={{ padding: '16px 16px 0' }}>
-        <h3 style={{ margin: '0 0 12px', fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>Награды</h3>
-        {rewards.length === 0 ? (
+        <h3 style={{ margin: '0 0 12px', fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>{tab === 'real' ? 'Награды' : 'Виртуальный магазин'}</h3>
+        {tab === 'virtual' ? (
+          <>
+            <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, marginBottom: 12, lineHeight: 1.4 }}>
+              Скоро! Виртуальные предметы пока в разработке. Копи монеты! 🚀
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {VIRTUAL_ITEMS.map(item => {
+                const canAfford = coins >= item.price_coins
+                return (
+                  <div key={item.id} style={{
+                    background: '#fff', borderRadius: 20, padding: 12,
+                    border: `1.5px solid ${T.line}`, boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                    display: 'flex', flexDirection: 'column', opacity: 0.7,
+                  }}>
+                    <div style={{ height: 88, borderRadius: 14, background: `linear-gradient(135deg, ${T.plum}30, ${T.plum}10)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 44, position: 'relative' }}>
+                      {item.icon}
+                      <div style={{ position: 'absolute', top: 6, right: 6, padding: '2px 7px', borderRadius: 999, background: T.plum + '20', fontFamily: T.fBody, fontSize: 9, fontWeight: 800, color: T.plum }}>{item.tag}</div>
+                    </div>
+                    <div style={{ fontFamily: T.fDisp, fontSize: 13, fontWeight: 800, color: T.ink, marginTop: 10, lineHeight: 1.2, minHeight: 30 }}>{item.title}</div>
+                    <div style={{ marginTop: 8 }}><CoinPill value={item.price_coins} size="sm"/></div>
+                    <button disabled style={{ marginTop: 8, height: 34, borderRadius: 12, border: 'none', background: T.lineSoft, color: T.ink3, fontFamily: T.fDisp, fontSize: 12, fontWeight: 800, cursor: 'not-allowed' }}>
+                      Скоро
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        ) : rewards.length === 0 ? (
           <div style={{ background: '#fff', borderRadius: 22, padding: 40, textAlign: 'center', border: `1.5px solid ${T.line}` }}>
             <div style={{ fontSize: 40 }}>🛍️</div>
             <div style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 800, color: T.ink3, marginTop: 12 }}>
@@ -147,6 +203,26 @@ export default function KidShopPage() {
           </div>
         )}
       </div>
+
+      {/* ═══ Featured banner (real tab only) ════════════════════════════════ */}
+      {tab === 'real' && (
+        <div style={{ padding: '16px 16px 0' }}>
+          <div style={{
+            borderRadius: 22, padding: '18px 20px',
+            background: `linear-gradient(135deg, ${T.teal}, #3DB8B0)`,
+            display: 'flex', alignItems: 'center', gap: 16,
+            boxShadow: `0 8px 20px ${T.teal}44`, position: 'relative', overflow: 'hidden',
+          }}>
+            <div style={{ position: 'absolute', top: -30, right: -10, width: 130, height: 130, borderRadius: '50%', background: 'rgba(255,255,255,0.12)' }}/>
+            <div style={{ fontSize: 44, position: 'relative' }}>🌟</div>
+            <div style={{ position: 'relative' }}>
+              <div style={{ fontFamily: T.fBody, fontSize: 10, color: 'rgba(255,255,255,0.8)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>Заработай больше</div>
+              <div style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 900, color: '#fff', lineHeight: 1.2, marginTop: 2 }}>Заполняй каждый день</div>
+              <div style={{ fontFamily: T.fBody, fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 4 }}>Получай монеты и трать на награды!</div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ═══ Recent purchases ═════════════════════════════════════════════════ */}
       {purchases.length > 0 && (

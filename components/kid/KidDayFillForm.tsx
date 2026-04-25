@@ -96,7 +96,6 @@ function FillSection({ title, icon, sub, children }: { title: string; icon: stri
 export function KidDayFillForm({
   childId,
   date,
-  fillMode,
   dayType,
   existingDay,
   onSaved,
@@ -167,7 +166,7 @@ export function KidDayFillForm({
         getHomeExercises(childId, date),
         getSectionsForDate(childId, date),
       ]
-      if (fillMode >= 3 && dayType === 'school') {
+      if (dayType === 'school') {
         promises.push(getActiveSubjects(childId), getSubjectGradesForDate(childId, date))
       }
       const [acts, ws, existingLogs, exTypes, existingExercises, sectionsData, subs, gradesData] = await Promise.all(promises)
@@ -216,8 +215,8 @@ export function KidDayFillForm({
         setCheckedActivities(doneIds)
       }
 
-      // Pre-fill grades (mode 3)
-      if (fillMode >= 3 && subs) {
+      // Pre-fill grades for school days
+      if (subs) {
         setSubjects(subs)
         const grades: SubjectGrade[] = gradesData ?? []
         // Group existing grades by subject — pre-fill as saved entries
@@ -235,13 +234,13 @@ export function KidDayFillForm({
       }
     }
     load()
-  }, [childId, dayType, date, fillMode])
+  }, [childId, dayType, date])
 
   // ── Live coin calculation (no state — pure compute) ──────────────────────
   const coinsPreview = useMemo(() => {
     let total = 0
     const roomCount = Object.values(roomItems).filter(Boolean).length
-    if (roomCount >= 3 && fillMode >= 2) {
+    if (roomCount >= 3) {
       total += settings?.coins_per_room_task ?? 3
     }
     checkedActivities.forEach(id => {
@@ -270,7 +269,7 @@ export function KidDayFillForm({
       total += (settings as any)?.coins_per_book ?? 20
     }
     return total
-  }, [roomItems, checkedActivities, activities, settings, fillMode, kidGrades, sections, sectionNotes, reading, readingActive])
+  }, [roomItems, checkedActivities, activities, settings, kidGrades, sections, sectionNotes, reading, readingActive])
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   function toggleRoomItem(key: keyof RoomItems) {
@@ -357,13 +356,11 @@ export function KidDayFillForm({
         noteChild: noteChild.trim() || undefined,
       }
 
-      if (fillMode >= 2) {
-        dayParams.roomBed = roomItems.bed
-        dayParams.roomFloor = roomItems.floor
-        dayParams.roomDesk = roomItems.desk
-        dayParams.roomCloset = roomItems.closet
-        dayParams.roomTrash = roomItems.trash
-      }
+      dayParams.roomBed = roomItems.bed
+      dayParams.roomFloor = roomItems.floor
+      dayParams.roomDesk = roomItems.desk
+      dayParams.roomCloset = roomItems.closet
+      dayParams.roomTrash = roomItems.trash
 
       // Upload room proof photo if captured
       let roomProofSignedUrl: string | undefined
@@ -388,7 +385,7 @@ export function KidDayFillForm({
       await saveDay({ ...dayParams, roomProofUrl: roomProofSignedUrl })
 
       // Award room coins if applicable
-      if (fillMode >= 2 && roomOk) {
+      if (roomOk) {
         await awardCoinsForRoom(childId)
       }
 
@@ -409,8 +406,8 @@ export function KidDayFillForm({
         }
       }
 
-      // Save grades (mode 3) — only new (unsaved) entries with a grade set
-      if (fillMode >= 3) {
+      // Save grades — only new (unsaved) entries with a grade set
+      if (dayType === 'school') {
         for (const [subject, entries] of Object.entries(kidGrades)) {
           const sub = subjects.find(s => s.name === subject)
           for (const entry of entries) {
@@ -531,8 +528,7 @@ export function KidDayFillForm({
       </div>
 
       {/* ─── Room ─── */}
-      {fillMode >= 2 && (
-        <FillSection title="Комната" icon="🏠" sub={`${Object.values(roomItems).filter(Boolean).length}/${ROOM_ITEM_LABELS.length}`}>
+      <FillSection title="Комната" icon="🏠" sub={`${Object.values(roomItems).filter(Boolean).length}/${ROOM_ITEM_LABELS.length}`}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             {ROOM_ITEM_LABELS.map(({ key, emoji, label }) => {
               const on = roomItems[key]
@@ -576,7 +572,6 @@ export function KidDayFillForm({
           )}
           <input ref={proofInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleProofCapture}/>
         </FillSection>
-      )}
 
       {/* ─── Mood ─── */}
       <FillSection title="Настроение" icon="✨">
@@ -629,7 +624,7 @@ export function KidDayFillForm({
       )}
 
       {/* ─── Grades ─── */}
-      {fillMode >= 3 && dayType === 'school' && subjects.length > 0 && (
+      {dayType === 'school' && subjects.length > 0 && (
         <FillSection title="Оценки за сегодня" icon="📚" sub="Школа">
           <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, marginBottom: 10, lineHeight: 1.4 }}>
             Можно ставить несколько оценок по одному предмету. <b style={{ color: T.coral }}>📱 Цифр</b> — задание с приставкой.
@@ -756,8 +751,12 @@ export function KidDayFillForm({
       )}
 
       {/* ─── Clubs / Sections ─── */}
-      {sections.length > 0 && (
-        <FillSection title="Секции" icon="🏆" sub="Тренер">
+      <FillSection title="Секции" icon="🏆" sub="Тренер">
+        {sections.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '12px 0', fontFamily: T.fBody, fontSize: 13, color: T.ink3 }}>
+            Секций пока нет. Попроси родителей добавить!
+          </div>
+        ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {sections.map(section => {
               const attended = section.visit?.attended ?? false
@@ -805,8 +804,8 @@ export function KidDayFillForm({
               )
             })}
           </div>
-        </FillSection>
-      )}
+        )}
+      </FillSection>
 
       {/* ─── Reading ─── */}
       <FillSection title="Чтение" icon="📖" sub="Каждый день">
