@@ -9,6 +9,7 @@ import { T } from '@/components/kid/design/tokens'
 export default function KidChatPage() {
   const activeMemberId = useAppStore((s) => s.activeMemberId)
   const [familyId, setFamilyId] = useState<string | null>(null)
+  const [memberId, setMemberId] = useState<string | null>(null)
   const [senderName, setSenderName] = useState<string>('Ребёнок')
   const [loading, setLoading] = useState(true)
 
@@ -17,10 +18,14 @@ export default function KidChatPage() {
       if (!activeMemberId) { setLoading(false); return }
       const { data: member } = await supabase
         .from('family_members')
-        .select('family_id, display_name')
+        .select('id, family_id, display_name')
         .eq('child_id', activeMemberId)
         .maybeSingle()
-      if (member) { setFamilyId(member.family_id); setSenderName(member.display_name || 'Ребёнок') }
+      if (member) {
+        setFamilyId(member.family_id)
+        setMemberId(member.id)
+        setSenderName(member.display_name || 'Ребёнок')
+      }
       setLoading(false)
     }
     init()
@@ -57,11 +62,11 @@ export default function KidChatPage() {
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ width: 32, height: 32, borderRadius: '50%', border: `3px solid ${T.coral}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }}/>
           </div>
-        ) : familyId && activeMemberId ? (
+        ) : familyId && memberId ? (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <ChatThread
               familyId={familyId}
-              currentMemberId={activeMemberId}
+              currentMemberId={memberId}
               senderName={senderName}
               senderRole="child"
             />

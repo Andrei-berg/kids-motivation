@@ -11,11 +11,22 @@ import type { Child } from '@/lib/api'
 // ============================================================================
 
 const STARTER_TEMPLATES = [
-  { title: 'Кино', icon: '🎬', category: 'experience', price_coins: 150, description: 'Поход в кинотеатр' },
-  { title: 'Игра на телефоне 1 час', icon: '📱', category: 'virtual', price_coins: 50, description: 'Дополнительный час экранного времени' },
-  { title: 'Поздний отбой', icon: '🌙', category: 'virtual', price_coins: 80, description: 'Лечь спать на 1 час позже' },
-  { title: 'Пицца', icon: '🍕', category: 'material', price_coins: 120, description: 'Заказать пиццу' },
-  { title: 'Поездка в парк', icon: '🎡', category: 'experience', price_coins: 200, description: 'Поездка в парк аттракционов' },
+  { title: '+1 час на планшете', icon: '📱', category: 'virtual', price_coins: 150, description: 'Дополнительный час экранного времени' },
+  { title: 'Пицца на ужин — твой выбор', icon: '🍕', category: 'material', price_coins: 300, description: 'Заказать любимую пиццу' },
+  { title: 'Кино-вечер · твой фильм', icon: '🎬', category: 'experience', price_coins: 250, description: 'Выбираешь фильм на вечер' },
+  { title: '+30 минут не спать', icon: '🌙', category: 'virtual', price_coins: 180, description: 'Лечь спать на полчаса позже' },
+  { title: 'Друг с ночёвкой', icon: '🏕️', category: 'experience', price_coins: 500, description: 'Пригласить друга переночевать' },
+  { title: 'Пропустить 1 дело', icon: '🎟️', category: 'virtual', price_coins: 220, description: 'Отмена одного домашнего задания' },
+  { title: 'Поход в Бургер-Кинг', icon: '🍔', category: 'experience', price_coins: 350, description: 'Поход в фастфуд' },
+  { title: 'Аквапарк с семьёй', icon: '🏊', category: 'experience', price_coins: 1200, description: 'Поездка в аквапарк' },
+  { title: 'Новая Lego-фигурка', icon: '🧱', category: 'material', price_coins: 450, description: 'Купить новую фигурку Lego' },
+  { title: 'Новая книга на выбор', icon: '📚', category: 'material', price_coins: 400, description: 'Купить любую книгу на выбор' },
+  { title: '500₸ карманных', icon: '💵', category: 'money', price_coins: 333, description: 'Карманные деньги' },
+  { title: 'Картинг 15 минут', icon: '🏎️', category: 'experience', price_coins: 800, description: 'Поездка на картинге' },
+  { title: 'Поход в кино с попкорном', icon: '🍿', category: 'experience', price_coins: 600, description: 'Кино + попкорн' },
+  { title: 'Боулинг на выходных', icon: '🎳', category: 'experience', price_coins: 700, description: 'Игра в боулинг' },
+  { title: 'Купить любой стикер-пак', icon: '✨', category: 'material', price_coins: 120, description: 'Любой пак стикеров' },
+  { title: 'Заказ суши на двоих', icon: '🍣', category: 'material', price_coins: 550, description: 'Заказать суши' },
 ]
 
 // ============================================================================
@@ -215,28 +226,23 @@ export default function ParentShopPage() {
   // ============================================================================
 
   async function loadStarterTemplates() {
-    const confirmed = window.confirm('Загрузить 5 стандартных позиций в магазин?')
+    const confirmed = window.confirm(`Загрузить ${STARTER_TEMPLATES.length} шаблонов в магазин?`)
     if (!confirmed) return
 
     setLoadingTemplates(true)
-    try {
-      await Promise.all(
-        STARTER_TEMPLATES.map(t =>
-          addReward({
-            ...t,
-            reward_type: 'coins',
-            is_active: true,
-            for_child: null,
-          })
-        )
-      )
-      await reloadRewards()
-      setTemplatesLoaded(true)
-    } catch (e) {
-      setError('Ошибка загрузки шаблонов')
-    } finally {
-      setLoadingTemplates(false)
+    setError(null)
+    const errors: string[] = []
+    for (const t of STARTER_TEMPLATES) {
+      try {
+        await addReward({ ...t, reward_type: 'coins', is_active: true, for_child: null })
+      } catch (e: any) {
+        errors.push(t.title + ': ' + (e?.message ?? 'ошибка'))
+      }
     }
+    await reloadRewards()
+    setTemplatesLoaded(true)
+    if (errors.length) setError('Не добавлены: ' + errors.slice(0, 3).join('; '))
+    setLoadingTemplates(false)
   }
 
   // ============================================================================
