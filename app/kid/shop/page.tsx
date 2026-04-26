@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
-import { getWallet, getRewards, createPurchaseRequest, getPurchases } from '@/lib/repositories/wallet.repo'
+import { getWallet, getRewards, getPurchases } from '@/lib/repositories/wallet.repo'
+import { requestPurchase } from '@/app/kid/shop/actions'
 import type { Wallet, Reward, RewardPurchase } from '@/lib/models/wallet.types'
 import { T } from '@/components/kid/design/tokens'
 import { AnimatedNum, CoinPill, KMButton } from '@/components/kid/design/atoms'
@@ -66,7 +67,7 @@ export default function KidShopPage() {
     if (!activeMemberId || !pending) return
     setPurchasing(true)
     try {
-      await createPurchaseRequest(activeMemberId, pending.id)
+      await requestPurchase(activeMemberId, pending.id)
       const [w, p] = await Promise.all([getWallet(activeMemberId), getPurchases(activeMemberId)])
       setWallet(w); setPurchases(p)
       setApproving(pending)
