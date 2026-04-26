@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: PWA Polish
 status: in_progress
-last_updated: "2026-04-26T18:02:00Z"
+last_updated: "2026-04-26T18:05:29Z"
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
 phases:
   - id: "4.1"
     name: pwa
     status: in_progress
     plans_total: 3
-    plans_complete: 1
+    plans_complete: 2
   - id: "4.2"
     name: ux-polish
     status: not_started
@@ -31,7 +31,7 @@ phases:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-26 — v4.0 roadmap created.
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-26 — executed 04.1-02 (offline caching + OfflineBanner).
 
 ---
 
@@ -39,11 +39,11 @@ phases:
 
 ```
 Milestone v4.0 PWA Polish — In Progress
-Phase 4.1 (pwa): Plan 1/3 complete
-Last activity: 2026-04-26 — executed 04.1-01 (PWA installability: meta tags + InstallPrompt)
+Phase 4.1 (pwa): Plan 2/3 complete
+Last activity: 2026-04-26 — executed 04.1-02 (offline caching: sw.js + OfflineBanner)
 ```
 
-Progress: [█░░░░░░░░░] 7% (0/5 phases complete, 1/3 plans in phase 4.1)
+Progress: [██░░░░░░░░] 13% (0/5 phases complete, 2/3 plans in phase 4.1)
 
 ---
 
@@ -97,8 +97,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-26T18:02:00Z
-Stopped at: Completed 04.1-01-PLAN.md — ready to execute 04.1-02
+Last session: 2026-04-26T18:05:29Z
+Stopped at: Completed 04.1-02-PLAN.md — ready to execute 04.1-03
 Resume file: None
 
 ---
@@ -109,3 +109,9 @@ Resume file: None
 - Used Next.js Metadata API `appleWebApp` field for Apple meta tags (not manual `<head>` tags) — idiomatic with App Router
 - InstallPrompt uses inline styles for reliability — renders before Tailwind CSS hydration
 - iOS install detection: `/iPad|iPhone|iPod/.test(navigator.userAgent)` + non-standalone check — covers all iOS Safari variants
+
+### Phase 4.1 — Plan 02 (2026-04-26)
+- Three-strategy fetch handler: passthrough for /api/ and supabase.co, cache-first for /_next/static/, network-first for pages
+- addAll in install handler wrapped in catch() — pre-caching failures don't abort SW install
+- OfflineBanner uses inline styles (consistent with InstallPrompt) — renders before Tailwind hydration
+- Never cache API routes or Supabase requests in service worker

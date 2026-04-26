@@ -11,7 +11,7 @@ Requirements for v4.0 PWA Polish milestone. Each maps to roadmap phases.
 
 - [x] **PWA-01**: User can install the app on iPhone/Android via Add to Home Screen prompt
 - [ ] **PWA-02**: Web Push notifications are delivered when the app is closed (service worker background push)
-- [ ] **PWA-03**: Basic offline support — cached shell loads without internet; graceful degradation shown
+- [x] **PWA-03**: Basic offline support — cached shell loads without internet; graceful degradation shown
 
 ### UX Polish
 
@@ -66,7 +66,7 @@ Updated during roadmap creation.
 |-------------|-------|--------|
 | PWA-01 | Phase 4.1 (pwa) | Complete |
 | PWA-02 | Phase 4.1 (pwa) | Pending |
-| PWA-03 | Phase 4.1 (pwa) | Pending |
+| PWA-03 | Phase 4.1 (pwa) | Complete |
 | UX-01 | Phase 4.2 (ux-polish) | Pending |
 | UX-02 | Phase 4.2 (ux-polish) | Pending |
 | LOC-01 | Phase 4.3 (localization) | Pending |
@@ -83,4 +83,4 @@ Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-04-26*
-*Last updated: 2026-04-26 — traceability updated for 5-phase roadmap (4.1–4.5)*
+*Last updated: 2026-04-26 — PWA-03 marked complete (04.1-02: offline caching + OfflineBanner)*
