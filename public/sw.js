@@ -132,3 +132,14 @@ self.addEventListener('fetch', function (event) {
       })
   )
 })
+
+// Handle push subscription token expiry
+// When the browser rotates push credentials, log a warning.
+// The app will detect the stale subscription on next load and re-prompt.
+self.addEventListener('pushsubscriptionchange', function (event) {
+  console.warn('[SW] pushsubscriptionchange — subscription expired, re-subscribe needed')
+  // Note: Full auto-resubscription requires VAPID public key which is not available
+  // in SW context without extra setup. The NotificationSettings component handles
+  // re-subscription on next app open.
+  event.waitUntil(Promise.resolve())
+})

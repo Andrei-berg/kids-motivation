@@ -51,3 +51,53 @@ export async function notifyChild(
     console.warn('[notifyChild]', err)
   }
 }
+
+/**
+ * Send a push notification to all PARENT members of a family.
+ * Used when a child takes an action requiring parent attention (e.g. shop request).
+ *
+ * Never throws — push failures are logged as warnings but must never
+ * break the calling flow.
+ *
+ * @param familyId  families.id (UUID)
+ * @param title     Notification title
+ * @param body      Notification body
+ * @param url       URL to open when notification is tapped (default: /parent-center)
+ */
+export async function notifyParent(
+  familyId: string,
+  title: string,
+  body: string,
+  url: string = '/parent-center'
+): Promise<void> {
+  try {
+    const supabase = await createClient()
+
+    // Get all parent member IDs for this family
+    const { data: parents } = await supabase
+      .from('family_members')
+      .select('id')
+      .eq('family_id', familyId)
+      .eq('role', 'parent')
+
+    if (!parents || parents.length === 0) return
+
+    const parentMemberIds = parents.map((p) => p.id)
+
+    // Fetch all push subscriptions for these parents
+    const { data: subs } = await supabase
+      .from('push_subscriptions')
+      .select('subscription')
+      .in('member_id', parentMemberIds)
+
+    if (!subs || subs.length === 0) return
+
+    await Promise.allSettled(
+      subs.map((row) =>
+        sendPushToSubscription(JSON.stringify(row.subscription), title, body, url)
+      )
+    )
+  } catch (err) {
+    console.warn('[notifyParent]', err)
+  }
+}
