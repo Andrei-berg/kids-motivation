@@ -1,32 +1,14 @@
 ---
 gsd_state_version: 1.0
 milestone: v4.0
-milestone_name: PWA Polish
-status: in_progress
-last_updated: "2026-04-26T18:09:33Z"
+milestone_name: — PWA Polish
+status: unknown
+last_updated: "2026-04-26T18:13:43.785Z"
 progress:
-  total_phases: 5
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-phases:
-  - id: "4.1"
-    name: pwa
-    status: complete
-    plans_total: 3
-    plans_complete: 3
-  - id: "4.2"
-    name: ux-polish
-    status: not_started
-  - id: "4.3"
-    name: localization
-    status: not_started
-  - id: "4.4"
-    name: security-compliance
-    status: not_started
-  - id: "4.5"
-    name: desktop
-    status: not_started
+  total_phases: 17
+  completed_phases: 15
+  total_plans: 60
+  completed_plans: 60
 ---
 
 # STATE.md — Текущее состояние проекта
