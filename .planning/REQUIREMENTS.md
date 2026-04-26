@@ -1,72 +1,86 @@
-# Requirements: KidsCoins
+# Requirements: FamilyCoins
 
-**Defined:** 2026-04-13
+**Defined:** 2026-04-26
 **Core Value:** Any family can register and use the app — children earn coins for real effort, spend them on real rewards
-
-## v3.0 Requirements
-
-Requirements for Milestone v3.0 — Communication.
-
-### Notifications
-
-- [x] **NOTIF-01**: Child receives push notification when parent confirms a task
-- [x] **NOTIF-02**: Child receives push notification when earning a badge
-- [x] **NOTIF-03**: Child receives push notification when coins are credited or deducted from wallet
-- [x] **NOTIF-04**: Parent can send "Medal of the Day" — personal message + bonus coins; child receives push notification
-
-### Chat
-
-- [x] **CHAT-01**: Family members can send text messages in a shared family group chat in real time (Supabase Realtime)
-- [x] **CHAT-02**: Family members can react to messages with ❤️ 👍 🔥 🏆
-- [x] **CHAT-03**: Family members can send stickers from a predefined sticker pack
-- [x] **CHAT-04**: Achievement events (badge earned, streak milestone, coins credited) auto-post to family chat
-
-### Photos
-
-- [x] **PHOTO-01**: Family members can attach a photo to a chat message
-- [x] **PHOTO-02**: Child can attach a photo as proof when marking a task complete; parent sees photo in task confirmation view
 
 ## v4.0 Requirements
 
-Deferred to future release.
+Requirements for v4.0 PWA Polish milestone. Each maps to roadmap phases.
 
-### Voice
+### PWA
 
-- **VOICE-01**: Family members can send voice messages in chat
-- **VOICE-02**: Child can attach voice note as task proof
+- [ ] **PWA-01**: User can install the app on iPhone/Android via Add to Home Screen prompt
+- [ ] **PWA-02**: Web Push notifications are delivered when the app is closed (service worker background push)
+- [ ] **PWA-03**: Basic offline support — cached shell loads without internet; graceful degradation shown
+
+### UX Polish
+
+- [ ] **UX-01**: Pages transition with Framer Motion animations; skeleton loaders shown during data fetch (no layout shifts)
+- [ ] **UX-02**: All interactive elements are ≥44px touch targets throughout the app
+
+### Localization
+
+- [ ] **LOC-01**: App is available in Russian and English; language auto-detected from browser with manual switcher
+
+### Security / Compliance
+
+- [ ] **SEC-01**: User can delete account with full data cascade; data export available; consent gate shown for children under 13 (COPPA/GDPR)
+- [ ] **SEC-02**: Parent actions are recorded in an audit log (shop confirmations, settings changes, coin adjustments)
+
+### Desktop
+
+- [ ] **DSK-01**: App has a dedicated desktop layout (≥1024px): sidebar navigation, multi-column content areas, full-width chat
+- [ ] **DSK-02**: Parent Center pages are fully designed for wide screen — no stretched mobile cards
+- [ ] **DSK-03**: Kid Screen pages are fully designed for wide screen — no stretched mobile cards
+
+## Future Requirements
+
+Requirements acknowledged but deferred beyond v4.0.
+
+### Social
+
+- Voice messages in chat — storage cost, defer to v5.0+
+- Family friendship and cross-family challenges — v6.0
+
+### Native
+
+- iOS / Android native apps (Expo) — v7.0
 
 ## Out of Scope
 
+Explicitly excluded from v4.0.
+
 | Feature | Reason |
 |---------|--------|
-| Voice messages in v3.0 | Requires Supabase Pro (storage costs); defer to v4.0 |
+| Apple ID login | Google + email sufficient for beta |
 | Video messages | High storage/bandwidth cost |
-| Private 1-on-1 chat | Group chat sufficient for family; lower complexity |
-| Message delete/edit | Nice-to-have, not core to communication value |
-| Read receipts | Adds complexity; lower priority |
+| Offline Realtime chat | Real-time is core; graceful degradation is sufficient |
+| B2B teacher/coach accounts | Post-product-market-fit |
+| Freemium limits + Stripe | v5.0 |
 
 ## Traceability
 
-Which phases cover which requirements. Updated during roadmap creation.
+Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| NOTIF-01 | Phase 3.1 | Complete |
-| NOTIF-02 | Phase 3.1 | Complete |
-| NOTIF-03 | Phase 3.1 | Complete |
-| NOTIF-04 | Phase 3.1 | Complete |
-| CHAT-01 | Phase 3.2 | Complete |
-| CHAT-02 | Phase 3.2 | Complete |
-| CHAT-03 | Phase 3.2 | Complete |
-| CHAT-04 | Phase 3.2 | Complete |
-| PHOTO-01 | Phase 3.3 | Complete |
-| PHOTO-02 | Phase 3.3 | Complete |
+| PWA-01 | Phase 4.1 | Pending |
+| PWA-02 | Phase 4.1 | Pending |
+| PWA-03 | Phase 4.1 | Pending |
+| UX-01 | Phase 4.2 | Pending |
+| UX-02 | Phase 4.2 | Pending |
+| LOC-01 | Phase 4.3 | Pending |
+| SEC-01 | Phase 4.4 | Pending |
+| SEC-02 | Phase 4.4 | Pending |
+| DSK-01 | Phase 4.5 | Pending |
+| DSK-02 | Phase 4.5 | Pending |
+| DSK-03 | Phase 4.5 | Pending |
 
 **Coverage:**
-- v3.0 requirements: 10 total
-- Mapped to phases: 10
+- v4.0 requirements: 11 total
+- Mapped to phases: 11
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-04-13*
-*Last updated: 2026-04-13 — traceability filled after roadmap creation*
+*Requirements defined: 2026-04-26*
+*Last updated: 2026-04-26 after initial definition*
