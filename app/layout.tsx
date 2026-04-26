@@ -2,6 +2,7 @@ import './globals.css'
 import type { Metadata, Viewport } from 'next'
 import { PushInit } from '@/components/PushInit'
 import { InstallPrompt } from '@/components/InstallPrompt'
+import { OfflineBanner } from '@/components/OfflineBanner'
 
 export const metadata: Metadata = {
   title: 'FamilyCoins — Мотивация для детей',
@@ -29,6 +30,7 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body>
+        <OfflineBanner />
         <PushInit />
         <InstallPrompt />
         {children}
