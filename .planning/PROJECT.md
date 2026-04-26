@@ -209,37 +209,45 @@
 
 ---
 
-## Shipped: v2.0 — Role-Based UI (2026-04-13)
+## Shipped: v3.0 — Communication (2026-04-26)
 
-Two fully separate experiences now exist — Parent Center (dark, control-focused) and Kid Screen (bright, gamified). Any family can register, add children, and start earning coins in under 3 minutes. Children without email can log in via PIN.
+Family experience is now alive with real-time communication. Push notifications fire for every meaningful event; family chat with reactions, stickers, and achievement auto-posts connects all members; photos provide task proof and share moments.
 
 **What shipped:**
+- Push notifications — `notifyChild` action covers purchase approval, badge award, wallet credit/debit
+- "Medal of the Day" — parent composes personal message + bonus coins; child gets push notification
+- Real-time family chat — ChatThread on `/parent/chat` and `/kid/chat` via Supabase Realtime
+- Reactions + stickers — real-time reaction counts; StickerPicker with 12 emoji stickers
+- Achievement auto-posts — badges, streak milestones (7/14/30 days), wallet credits post system messages to chat
+- Photo messages — client-side compression, Supabase Storage (private bucket), signed URL delivery, inline lightbox
+- Task photo proof — camera capture in kid day-fill form; proof display in parent confirmation view
+
+**Technical state as of v3.0:**
+- ~26,930 LOC TypeScript/TSX
+- New tables: `chat_messages`, `chat_reactions`, `medal_of_day`; Supabase Storage bucket `family-photos`
+- Supabase Realtime active (messages + reactions channels); free tier sufficient for beta
+- Vercel deployment at kids-motivation.vercel.app
+
+<details>
+<summary>v2.0 — Role-Based UI (shipped 2026-04-13)</summary>
+
+Two fully separate experiences — Parent Center (dark, control-focused) and Kid Screen (bright, gamified). Any family can register, add children, and start earning coins in under 3 minutes. Children without email can log in via PIN.
+
 - `/parent/*` — dark dashboard, daily input, wallets, analytics, shop, PIN-protected settings
-- `/kid/*` — My Day, wallet, achievements (badges/streaks/XP), shop, leaderboard
+- `/kid/*` — My Day, wallet, achievements (badges/streaks/XP/levels), shop, leaderboard
 - Shop approval flow — freeze → approve/reject; parent preview mode
 - Kid day-fill form — room checklist, mood, activities, live coin counter; configurable fill-mode per child
 - Push notifications + animations — cron reminders, coin fly-up, confetti celebrations
 - 5-step onboarding wizard — writes family, children, wallets to DB end-to-end
 - Child PIN login — family code → pick name → 4-digit PIN → `/kid/day`
 
-**Technical state as of v2.0:**
-- ~14,000 LOC TypeScript/TSX in `app/` + `lib/`
-- Supabase (PostgreSQL + Auth + Storage + Realtime ready)
-- Next.js 14 App Router, Tailwind CSS + custom globals.css
-- Vercel deployment at kids-motivation.vercel.app
+</details>
 
 ---
 
-## Current Milestone: v3.0 — Communication
+## Current Milestone: v4.0 — PWA Polish
 
-**Goal:** Make the family experience alive with real-time communication. Parents confirm tasks with personal messages; achievements auto-post to family chat; photos provide task proof.
-
-**Target features:**
-- Push notifications for task confirmations, badge earnings, wallet credits, and "Medal of the Day"
-- Real-time family group chat (Supabase Realtime) with reactions and stickers
-- Achievement events auto-post to chat
-- Photo messages in chat
-- Photo proof of task completion
+**Goal:** Make FamilyCoins installable and production-ready for the first 1,000 families — PWA install, offline support, UX polish, localization, and security/compliance.
 
 ---
 
@@ -259,22 +267,31 @@ Two fully separate experiences now exist — Parent Center (dark, control-focuse
 - ✓ Push notifications: streak alerts, schedule reminders, missed-task cron — v2.0
 - ✓ Coin + badge animations (fly-up, confetti) — v2.0
 - ✓ Child PIN login (no email required) — v2.0
+- ✓ Push notifications for task confirmations, badge earnings, wallet credits — v3.0
+- ✓ "Medal of the Day" — parent sends personal message with bonus coins — v3.0
+- ✓ Real-time family group chat (Supabase Realtime) — v3.0
+- ✓ Message reactions (❤️ 👍 🔥 🏆) and sticker pack — v3.0
+- ✓ Achievement events auto-post to family chat — v3.0
+- ✓ Photo messages in chat — v3.0
+- ✓ Photo proof of task completion — v3.0
 
-### Active (v3.0)
+### Active (v4.0)
 
-- [ ] Push notifications for task confirmations, badge earnings, wallet credits
-- [ ] "Medal of the Day" — parent sends personal message with bonus coins
-- [ ] Real-time family group chat (Supabase Realtime)
-- [ ] Message reactions (❤️ 👍 🔥 🏆) and sticker pack
-- [ ] Achievement events auto-post to family chat
-- [ ] Photo messages in chat
-- [ ] Photo proof of task completion
+- [ ] PWA install prompt (iOS + Android) — manifest, service worker, Add to Home Screen
+- [ ] Web Push when app is closed — service worker handles background push
+- [ ] Basic offline support — cached shell loads when offline; graceful degradation
+- [ ] Skeleton loaders + Framer Motion transitions — no layout shifts
+- [ ] 44px touch targets throughout — mobile-first interaction quality
+- [ ] Russian + English localization — auto-detect from browser, i18n files
+- [ ] COPPA/GDPR compliance — account deletion, data export, consent gate
+- [ ] Audit log for parent actions
 
 ### Out of Scope (current)
 
 - Apple ID login — Google + email sufficient for beta
-- Old pages (/dashboard, /wallet, /analytics) — fully replaced by /parent/* and /kid/*
-- Offline mode — real-time Supabase is core requirement
+- Voice messages in chat — Supabase Pro storage cost; defer to v5.0+
+- Video messages — high storage/bandwidth cost
+- Offline mode for Realtime chat — real-time is core; degradation is sufficient
 - B2B teacher/coach accounts — post-product-market-fit
 - Freemium limits + Stripe — v5.0
 - Native mobile (Expo) — v7.0
@@ -292,7 +309,12 @@ Two fully separate experiences now exist — Parent Center (dark, control-focuse
 | Kid fill-mode as integer enum (1/2/3) in children table | Flexible per-child config without extra tables | ✓ Good |
 | Zustand store for familyId + activeMemberId | Replaces legacy childId='adam'/'alim' hardcodes | ✓ Good |
 | Coins calculated on-the-fly from days + subject_grades | No finalization step needed; analytics always current | ✓ Good |
+| Supabase Realtime for chat (not Socket.io/Pusher) | Built into stack; free tier (200 concurrent, 2M msg/month) sufficient for beta | ✓ Good |
+| notifyChild swallows all push errors silently | Push must never break business logic (approval, badge award, wallet) | ✓ Good |
+| sender_id TEXT matches family_members.id convention | Consistent with existing id column type; no UUID conversion needed | ✓ Good |
+| Photo URLs stored as 1h signed URLs in DB | Simple for MVP; long-lived URL management deferred | — Pending revisit |
+| family-photos bucket is private (public=false) | Prevents enumeration; all access via signed URLs | ✓ Good |
 
 ---
 
-*Документ создан: 2026-03-01. Обновлён: 2026-04-13 после v2.0 milestone.*
+*Документ создан: 2026-03-01. Обновлён: 2026-04-26 после v3.0 milestone.*

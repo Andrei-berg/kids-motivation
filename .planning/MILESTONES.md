@@ -1,5 +1,24 @@
 # Milestones
 
+## v3.0 Communication (Shipped: 2026-04-26)
+
+**Phases completed:** 3 phases, 10 plans
+**Timeline:** 2026-04-13 → 2026-04-26 (13 days)
+**Code:** ~26,930 LOC TypeScript/TSX total
+
+**Key accomplishments:**
+1. Push notifications for all child events — reusable `notifyChild` action wires purchase approval, badge award, wallet credit/debit to Web Push
+2. "Medal of the Day" — parent composes personal message + bonus coins; child receives push with deep link to `/kid/day`
+3. Real-time family group chat — ChatThread + SendBox components on `/parent/chat` and `/kid/chat` with Supabase Realtime subscription
+4. Message reactions + sticker pack — chat_reactions table with real-time updates; 12 emoji stickers via StickerPicker
+5. Achievement auto-posts — badge awards, streak milestones (7/14/30 days), and wallet coin credits auto-post system messages to family chat
+6. Photo messages in chat — client-side compression (canvas API), Supabase Storage with signed URLs, inline lightbox display
+7. Task photo proof — camera/gallery capture in kid day-fill form; proof thumbnail + lightbox in parent confirmation view
+
+**Archive:** `.planning/milestones/v3.0-ROADMAP.md`, `.planning/milestones/v3.0-REQUIREMENTS.md`
+
+---
+
 ## v2.0 Role-Based UI (Shipped: 2026-04-13)
 
 **Phases completed:** 7 phases (2.1–2.6 incl. 2.4.1), 32 plans

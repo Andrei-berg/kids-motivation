@@ -1,111 +1,78 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.0
-milestone_name: — Communication
-status: unknown
-last_updated: "2026-04-14T14:41:45.607Z"
+milestone: v4.0
+milestone_name: PWA Polish
+status: planning
+last_updated: "2026-04-26T00:00:00.000Z"
 progress:
-  total_phases: 16
-  completed_phases: 14
-  total_plans: 57
-  completed_plans: 57
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-14 — Plan 3.3-03 task photo proof complete.
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-26 — v3.0 Communication milestone complete.
 
 ---
 
 ## Текущая позиция
 
 ```
-Milestone v3.0 Communication — Phase 3.3 (photos)
-Plan: 3 of 3 in current phase (3.3-01, 3.3-02, 3.3-03 complete)
-Status: Phase 3.3 COMPLETE
-Last activity: 2026-04-14 — Plan 3.3-03 task photo proof complete
+Milestone v4.0 PWA Polish — Planning
+Status: Starting new milestone
+Last activity: 2026-04-26 — v3.0 archived, ready for /gsd:new-milestone
 ```
 
-Progress: [█████░░░░░] 57% (8/11 plans complete — estimated)
+Progress: [░░░░░░░░░░] 0% — new milestone
 
 ---
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-13)
+See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Any family can register and use the app — children earn coins for real effort, spend them on real rewards
-**Current focus:** Milestone v3.0 — Communication → event notifications, real-time family chat, photo sharing
+**Current focus:** Milestone v4.0 — PWA Polish → installable, offline-capable, localized, COPPA/GDPR compliant
 
 ---
 
 ## Accumulated Context
 
-### Key technical facts for v3.0
+### Carry-forward from v3.0
 
-- Web Push already set up (Phase 2.5): VAPID keys, service worker, subscription storage, Vercel Cron for schedule/streak/missed-task reminders
-- Push send helper exists: `app/actions/push-streaks.ts` — reuse pattern for new event triggers
-- Supabase Realtime is on free tier: 200 concurrent connections, 2M messages/month — sufficient for beta
-- Supabase Storage is available — use for photos; compress on client before upload
-- No voice messages in v3.0 — deferred to v4.0 (storage cost concern)
+- `notifyChild(childId, title, body, url)` is the canonical push dispatch — reuse for any new event notifications in v4.0
+- Supabase Realtime channels must return cleanup function; callers must call on unmount (channel leak risk)
+- photo_url signed URLs expire in 1h — revisit if v4.0 adds photo galleries or longer-lived views
+- family-photos Storage bucket is private; all access via signed URLs
 
-### Decisions from v1.0–v2.0
+### Key architecture facts for v4.0
 
-See full decision log above in original STATE.md — preserved in `.planning/milestones/v2.0-STATE.md` if needed.
-
-Key decisions relevant to v3.0:
-- Supabase Realtime chosen for chat (built into stack, free tier sufficient)
-- /parent/* and /kid/* are separate route trees — chat must be accessible from both
-- Zustand store holds familyId + activeMemberId — chat channel = family_id
+- Service worker already exists (for Web Push in v2.5) — extend it for offline caching and background push
+- PWA manifest needs `display: standalone`, proper icons (192px, 512px), theme_color
+- Next.js 14 App Router: static shell caching requires careful `cache: 'force-cache'` + ISR strategy
+- i18n: Next.js has built-in i18n routing; evaluate `next-intl` vs. simple JSON translation files
+- COPPA requires parental consent gate for children under 13; data deletion must cascade across all tables
 
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
-None yet.
+None.
 
 ---
 
 ## Session Continuity
 
-Last session: 2026-04-14
-Stopped at: Plan 3.3-03 complete — task photo proof (KidDayFillForm camera, DailyModal thumbnail+lightbox)
+Last session: 2026-04-26
+Stopped at: v3.0 milestone archived — ready to start v4.0 planning
 Resume file: None
 
 ---
 
 ## Decisions
 
-- **[3.1-01]** Dynamic import used in wallet.repo.ts to call server action without circular dependency
-- **[3.1-01]** notifyChild silently swallows all errors — push must never break business logic
-- **[3.1-01]** child_id resolved via family_members.maybeSingle() — silent fail if child not linked to member
-- **[3.1-02]** Push call in awardBadge placed after XP update — badge saved regardless of push outcome
-- **[3.1-02]** Single hook in updateWalletCoins covers all coin operations — grades, room, behavior, sport, P2P, approvals
-- [Phase 3.1-03]: family_id fetched from family_members on page load in parent dashboard (Child type lacks it)
-- [Phase 3.1-03]: Medal UI rendered as separate div below ChildCard using per-child Record<string,T> state maps
-- [Phase 3.1-03]: medalResult loaded in parallel with other data in loadData via dynamic import of supabase/client
-- **[3.2-01]** sender_id is TEXT not UUID — matches family_members.id convention in this codebase
-- **[3.2-01]** ALTER PUBLICATION wrapped in idempotent DO block — safe to run migration multiple times
-- **[3.2-01]** subscribeToMessages returns () => void cleanup — callers must call it on unmount to prevent channel leaks
-- **[3.2-02]** ChatThread accepts props not context — makes it reusable for sticker extension in plan 3.2-03
-- **[3.2-02]** Duplicate guard in Realtime callback prevents double-render after optimistic insert
-- **[3.2-02]** Kid chat page queries family_members by id (activeMemberId IS family_members.id from Zustand store)
-- **[3.2-02]** Optimistic message replaced with real message from sendMessage response before Realtime fires
-- **[3.2-03]** ReactionPickerBar always renders inline (no long-press required) — simpler UX for web
-- **[3.2-03]** Sticker emoji stored in content column — direct render without lookup table needed
-- **[3.2-03]** Separate Realtime channel for reactions vs messages avoids payload type confusion
-- **[3.2-03]** StickerPicker closes on outside mousedown with 50ms delay to avoid same-click dismiss
-- **[3.2-04]** postSystemMessage uses sender_role='parent' to satisfy check constraint — system messages are not child-authored
-- **[3.2-04]** wallet.family_id used directly from already-fetched Wallet object — avoids extra DB query for familyId in wallet hook
-- **[3.2-04]** awardBadge children query extended to include family_id and name — merged to avoid second round-trip
-- **[3.2-04]** Streak milestone posts only fire on event='record' AND milestone count (7/14/30) — not every record
-- [Phase 3.3-01]: compressImage skips unit tests — canvas requires heavy DOM mocking; TypeScript type-check is sufficient verification
-- [Phase 3.3-01]: family-photos bucket is private (public=false); all access via signed URLs to prevent enumeration
-- **[3.3-02]** Optimistic UI shows local blob URL immediately; replaced with signed URL after upload — avoids visible delay for sender
-- **[3.3-02]** photo_url stored as signed URL (1h expiry) in DB — adequate for MVP; long-lived URL management deferred
-- **[3.3-02]** Camera and gallery share one handlePhotoSelect handler via two separate hidden file inputs
-- [Phase 3.3-03]: roomProofUrl upload is fire-and-try — failure logged, never blocks form
-- [Phase 3.3-03]: DailyModal loads room_proof_url into dedicated roomProofUrl state to match existing component pattern
-- [Phase 3.3-03]: PhotoLightbox reused from plan 3.3-02 — no new component needed
+(Decisions will accumulate here as v4.0 executes)

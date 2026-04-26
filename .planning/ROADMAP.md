@@ -9,7 +9,7 @@
 
 - ✅ **v1.0 Foundation** — Phases 1.1–1.4 (shipped 2026-03-08)
 - ✅ **v2.0 Role-Based UI** — Phases 2.1–2.6 (shipped 2026-04-13)
-- 🚧 **v3.0 Communication** — Phases 3.1–3.3 (in progress)
+- ✅ **v3.0 Communication** — Phases 3.1–3.3 (shipped 2026-04-26)
 - 📋 **v4.0 PWA Polish** — Phases 4.1–4.4 (planned)
 - 📋 **v5.0 Monetization** — Phases 5.1–5.3 (planned)
 - 📋 **v6.0 Social** — Phases 6.1–6.3 (planned)
@@ -46,68 +46,16 @@ See: `.planning/milestones/v2.0-ROADMAP.md`
 
 </details>
 
----
+<details>
+<summary>✅ v3.0 Communication (Phases 3.1–3.3) — SHIPPED 2026-04-26</summary>
 
-## Current Milestone: v3.0 — Communication
+- [x] **Phase 3.1: event-notifications** — Push notifications for purchase approval, badge award, wallet events, Medal of the Day (completed 2026-04-13)
+- [x] **Phase 3.2: family-chat** — Real-time group chat with text, reactions (❤️ 👍 🔥 🏆), sticker pack, achievement auto-posts (completed 2026-04-14)
+- [x] **Phase 3.3: photos** — Photo messages in chat (client compression + signed URLs) and task photo proof in kid day-fill (completed 2026-04-14)
 
-**Goal:** Make the family experience alive with real-time communication. Parents confirm tasks with personal messages; achievements auto-post to family chat; photos provide task proof.
+See: `.planning/milestones/v3.0-ROADMAP.md`
 
-### Phases
-
-- [x] **Phase 3.1: event-notifications** — Push notifications for task confirmations, badge earnings, wallet events, and Medal of the Day
-- [x] **Phase 3.2: family-chat** — Real-time group chat with text messages, emoji reactions, sticker pack, and achievement auto-posts (completed 2026-04-14)
-- [x] **Phase 3.3: photos** — Photo attachments in chat and photo proof on task completion (completed 2026-04-14)
-
-## Phase Details
-
-### Phase 3.1: event-notifications
-**Goal**: Children and parents receive timely push notifications for every meaningful event — task confirmed, badge earned, wallet credited, Medal of the Day sent
-**Depends on**: Phase 2.5 (existing Web Push + cron infrastructure)
-**Requirements**: NOTIF-01, NOTIF-02, NOTIF-03, NOTIF-04
-**Success Criteria** (what must be TRUE):
-  1. Child receives a push notification when parent confirms a task in the parent dashboard
-  2. Child receives a push notification when a badge is awarded after day save
-  3. Child receives a push notification when coins are credited or deducted from wallet
-  4. Parent can compose and send a Medal of the Day — a personal message with bonus coins — and child receives a push notification with the message text and coin amount
-  5. Tapping any notification opens the correct app screen (task confirmation → /kid/day, badge → /kid/achievements, wallet → /kid/wallet, medal → /kid/day)
-**Plans**: 3 plans
-
-Plans:
-- [x] 3.1-01: Push trigger for purchase approval (NOTIF-01) — notifyChild helper + approvePurchase hook (completed 2026-04-13)
-- [x] 3.1-02: Push triggers for badge + wallet events (NOTIF-02, NOTIF-03) — hook into badge award and wallet credit/debit flows (completed 2026-04-13)
-- [x] 3.1-03: Medal of the Day feature (NOTIF-04) — parent UI to compose medal, DB storage, push delivery, kid view (completed 2026-04-13)
-
-### Phase 3.2: family-chat
-**Goal**: Every family member can send and read messages in a shared real-time group chat; achievements auto-announce themselves; reactions and stickers make the chat feel alive
-**Depends on**: Phase 3.1
-**Requirements**: CHAT-01, CHAT-02, CHAT-03, CHAT-04
-**Success Criteria** (what must be TRUE):
-  1. Any family member (parent or child) can send a text message and all other family members see it appear in under 2 seconds without refreshing
-  2. Any family member can tap a reaction (❤️ 👍 🔥 🏆) on any message and the reaction count updates in real time for everyone
-  3. Any family member can open a sticker picker and send a sticker from the predefined pack; it renders as an image in the chat thread
-  4. When a child earns a badge, hits a streak milestone, or receives wallet coins, an auto-post appears in family chat describing the event
-**Plans**: 4 plans
-
-Plans:
-- [x] 3.2-01-db-schema-PLAN.md — chat_messages table, RLS, Realtime publication, TypeScript types and repo (completed 2026-04-14)
-- [x] 3.2-02-chat-ui-PLAN.md — ChatThread + SendBox components, /parent/chat and /kid/chat pages, nav entries (completed 2026-04-14)
-- [x] 3.2-03-reactions-stickers-PLAN.md — chat_reactions table, MessageReactions component, StickerPicker with 12 emoji stickers (completed 2026-04-14)
-- [ ] 3.2-04-achievement-autoposts-PLAN.md — postSystemMessage hook in badge award, wallet coin credit, and streak milestone events
-
-### Phase 3.3: photos
-**Goal**: Family members can share photos in chat and children can attach photo proof when completing tasks
-**Depends on**: Phase 3.2
-**Requirements**: PHOTO-01, PHOTO-02
-**Success Criteria** (what must be TRUE):
-  1. Any family member can attach a photo to a chat message; the photo is compressed on the client before upload and renders inline in the chat thread
-  2. Child can take or select a photo when marking a task complete in the day-fill form; the photo is stored as task proof
-  3. Parent sees the task proof photo in the task confirmation view before approving or rejecting the task
-**Plans**: 3 plans
-
-Plans:
-- [ ] 3.3-01: Photo upload to Supabase Storage — client-side compression, storage bucket policy, signed URL delivery
-- [ ] 3.3-02: Photo messages in chat (PHOTO-01) — attach button in chat send box, image render in thread
-- [ ] 3.3-03: Task photo proof (PHOTO-02) — photo attach in kid day-fill form, proof display in parent confirmation view
+</details>
 
 ---
 
@@ -156,8 +104,8 @@ Plans:
 | 2.5 notifications-animations | v2.0 | 4/4 | Complete | 2026-04-10 |
 | 2.6 registration | v2.0 | 4/4 | Complete | 2026-04-13 |
 | 3.1 event-notifications | v3.0 | 3/3 | Complete | 2026-04-13 |
-| 3.2 family-chat | 4/4 | Complete    | 2026-04-14 | - |
-| 3.3 photos | 3/3 | Complete   | 2026-04-14 | - |
+| 3.2 family-chat | v3.0 | 4/4 | Complete | 2026-04-14 |
+| 3.3 photos | v3.0 | 3/3 | Complete | 2026-04-14 |
 | 4.1–4.4 | v4.0 | 0/? | Planned | - |
 | 5.1–5.3 | v5.0 | 0/? | Planned | - |
 | 6.1–6.3 | v6.0 | 0/? | Planned | - |
@@ -165,4 +113,4 @@ Plans:
 
 ---
 
-*Created: 2026-03-01. Updated: 2026-04-14 — Phase 3.2 plans 3.2-01, 3.2-02, 3.2-03 complete. Reactions + sticker pack verified end-to-end.*
+*Created: 2026-03-01. Updated: 2026-04-26 — v3.0 Communication milestone shipped.*
