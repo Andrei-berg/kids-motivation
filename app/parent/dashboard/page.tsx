@@ -1,5 +1,2 @@
 import { redirect } from 'next/navigation'
-
-export default function ParentDashboardPage() {
-  redirect('/parent-center')
-}
+export default function Page() { redirect('/parent-center') }

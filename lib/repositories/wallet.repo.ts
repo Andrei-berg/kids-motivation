@@ -289,9 +289,10 @@ export async function getRewards(filters?: {
 // Run in Supabase SQL Editor before auto-approve takes effect.
 // The field is passed through here; the column must exist in Supabase to persist.
 export async function addReward(reward: Partial<Reward> & { auto_approve?: boolean }): Promise<Reward> {
+  const { data: { user } } = await supabase.auth.getUser()
   const { data, error } = await supabase
     .from('rewards')
-    .insert([reward])
+    .insert([{ ...reward, created_by: user?.id ?? null }])
     .select()
     .single()
 
