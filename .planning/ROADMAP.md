@@ -87,7 +87,7 @@ See: `.planning/milestones/v3.0-ROADMAP.md`
   5. When offline, data-dependent sections show a clear "you are offline" degradation state rather than a broken blank screen
 **Plans**: 3 plans
 Plans:
-- [ ] 04.1-01-PLAN.md — PWA manifest + Apple meta tags + install prompt (Android/iOS)
+- [x] 04.1-01-PLAN.md — PWA manifest + Apple meta tags + install prompt (Android/iOS)
 - [ ] 04.1-02-PLAN.md — Offline caching in SW + OfflineBanner component
 - [ ] 04.1-03-PLAN.md — notifyParent server action + wire into purchase request flow
 
@@ -175,7 +175,7 @@ Plans:
 | 3.1 event-notifications | v3.0 | 3/3 | Complete | 2026-04-13 |
 | 3.2 family-chat | v3.0 | 4/4 | Complete | 2026-04-14 |
 | 3.3 photos | v3.0 | 3/3 | Complete | 2026-04-14 |
-| 4.1 pwa | v4.0 | 0/3 | Planning | - |
+| 4.1 pwa | v4.0 | 1/3 | In Progress | - |
 | 4.2 ux-polish | v4.0 | 0/? | Not started | - |
 | 4.3 localization | v4.0 | 0/? | Not started | - |
 | 4.4 security-compliance | v4.0 | 0/? | Not started | - |
@@ -186,4 +186,4 @@ Plans:
 
 ---
 
-*Created: 2026-03-01. Updated: 2026-04-26 — v4.0 PWA Polish roadmap created (5 phases: 4.1–4.5). Phase 4.1 planned: 3 plans.*
+*Created: 2026-03-01. Updated: 2026-04-26 — 04.1-01 complete: PWA manifest + Apple meta tags + install prompt.*

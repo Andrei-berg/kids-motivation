@@ -2,17 +2,19 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: PWA Polish
-status: planning
-last_updated: "2026-04-26T00:00:00.000Z"
+status: in_progress
+last_updated: "2026-04-26T18:02:00Z"
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 3
+  completed_plans: 1
 phases:
   - id: "4.1"
     name: pwa
-    status: not_started
+    status: in_progress
+    plans_total: 3
+    plans_complete: 1
   - id: "4.2"
     name: ux-polish
     status: not_started
@@ -36,12 +38,12 @@ phases:
 ## Текущая позиция
 
 ```
-Milestone v4.0 PWA Polish — Planning
-Status: Roadmap created, ready to plan Phase 4.1
-Last activity: 2026-04-26 — roadmap created (5 phases: 4.1–4.5)
+Milestone v4.0 PWA Polish — In Progress
+Phase 4.1 (pwa): Plan 1/3 complete
+Last activity: 2026-04-26 — executed 04.1-01 (PWA installability: meta tags + InstallPrompt)
 ```
 
-Progress: [░░░░░░░░░░] 0% (0/5 phases complete)
+Progress: [█░░░░░░░░░] 7% (0/5 phases complete, 1/3 plans in phase 4.1)
 
 ---
 
@@ -95,12 +97,15 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-26
-Stopped at: v4.0 roadmap created — ready to plan Phase 4.1
+Last session: 2026-04-26T18:02:00Z
+Stopped at: Completed 04.1-01-PLAN.md — ready to execute 04.1-02
 Resume file: None
 
 ---
 
 ## Decisions
 
-(Decisions will accumulate here as v4.0 executes)
+### Phase 4.1 — Plan 01 (2026-04-26)
+- Used Next.js Metadata API `appleWebApp` field for Apple meta tags (not manual `<head>` tags) — idiomatic with App Router
+- InstallPrompt uses inline styles for reliability — renders before Tailwind CSS hydration
+- iOS install detection: `/iPad|iPhone|iPod/.test(navigator.userAgent)` + non-standalone check — covers all iOS Safari variants
