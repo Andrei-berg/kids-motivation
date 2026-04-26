@@ -10,7 +10,7 @@
 - ✅ **v1.0 Foundation** — Phases 1.1–1.4 (shipped 2026-03-08)
 - ✅ **v2.0 Role-Based UI** — Phases 2.1–2.6 (shipped 2026-04-13)
 - ✅ **v3.0 Communication** — Phases 3.1–3.3 (shipped 2026-04-26)
-- 📋 **v4.0 PWA Polish** — Phases 4.1–4.4 (planned)
+- 📋 **v4.0 PWA Polish** — Phases 4.1–4.5 (planned)
 - 📋 **v5.0 Monetization** — Phases 5.1–5.3 (planned)
 - 📋 **v6.0 Social** — Phases 6.1–6.3 (planned)
 - 📋 **v7.0 Native Apps** — Phases 7.1–7.3 (planned)
@@ -63,10 +63,75 @@ See: `.planning/milestones/v3.0-ROADMAP.md`
 
 ### v4.0 — PWA Polish
 
-- [ ] **Phase 4.1: pwa** — Install on iPhone/Android, Web Push when closed, basic offline
-- [ ] **Phase 4.2: ux-animations** — Skeleton loaders, Framer Motion transitions, 44px touch targets
-- [ ] **Phase 4.3: localization** — Russian + English, auto-detect, i18n files
-- [ ] **Phase 4.4: security-compliance** — COPPA/GDPR, account deletion, parent PIN, audit log
+## Phases
+
+- [ ] **Phase 4.1: pwa** — Install prompt on iOS/Android, background Web Push via service worker, basic offline shell
+- [ ] **Phase 4.2: ux-polish** — Skeleton loaders, Framer Motion page transitions, 44px touch targets throughout
+- [ ] **Phase 4.3: localization** — Russian + English, browser auto-detect, manual language switcher
+- [ ] **Phase 4.4: security-compliance** — Account deletion with data cascade, data export, COPPA/GDPR consent gate, parent audit log
+- [ ] **Phase 4.5: desktop** — Dedicated wide-screen layout (≥1024px): sidebar nav, multi-column Parent Center, wide-screen Kid Screen
+
+---
+
+## Phase Details
+
+### Phase 4.1: pwa
+**Goal**: Users can install the app on their phone and receive push notifications even when the app is closed
+**Depends on**: Nothing (first v4.0 phase)
+**Requirements**: PWA-01, PWA-02, PWA-03
+**Success Criteria** (what must be TRUE):
+  1. On iOS Safari and Android Chrome, "Add to Home Screen" prompt appears and the app installs as a standalone icon
+  2. The installed app opens without browser chrome (standalone display mode)
+  3. A Web Push notification arrives on a locked phone when a parent approves a purchase or awards a badge
+  4. When the device has no internet, opening the app shows the cached shell instead of a browser error page
+  5. When offline, data-dependent sections show a clear "you are offline" degradation state rather than a broken blank screen
+**Plans**: TBD
+
+### Phase 4.2: ux-polish
+**Goal**: Every page feels instant and every tap target is easy to hit on a phone
+**Depends on**: Phase 4.1
+**Requirements**: UX-01, UX-02
+**Success Criteria** (what must be TRUE):
+  1. Navigating between pages shows a Framer Motion transition — no hard flash or blank white frame
+  2. While data is loading, skeleton placeholder shapes appear in place of content — no layout shift when data arrives
+  3. Every button, link, and interactive element in the app measures at least 44×44px on a 375px-wide screen
+  4. Tapping any element on a mobile device feels responsive — no missed taps due to undersized hit areas
+**Plans**: TBD
+
+### Phase 4.3: localization
+**Goal**: Russian-speaking and English-speaking families each see the app in their language without any manual setup
+**Depends on**: Phase 4.2
+**Requirements**: LOC-01
+**Success Criteria** (what must be TRUE):
+  1. A browser set to English loads the app entirely in English — all labels, buttons, and error messages
+  2. A browser set to Russian loads the app entirely in Russian — all labels, buttons, and error messages
+  3. A user can switch language at any time via a visible language toggle and the UI updates immediately without page reload
+  4. No hardcoded Russian or English strings remain in the codebase — all text passes through the i18n layer
+**Plans**: TBD
+
+### Phase 4.4: security-compliance
+**Goal**: Families can trust their data is protected and parents have full visibility into account changes
+**Depends on**: Phase 4.3
+**Requirements**: SEC-01, SEC-02
+**Success Criteria** (what must be TRUE):
+  1. A parent can delete their account from Settings and all family data (children, coins, chat, photos) is removed from the database
+  2. A parent can export all family data as a downloadable file from Settings
+  3. When a child under 13 is registered, a parental consent screen appears and must be completed before the child account activates
+  4. Every parent action — shop confirmation, coin adjustment, settings change — appears as a timestamped entry in an audit log visible to the parent
+**Plans**: TBD
+
+### Phase 4.5: desktop
+**Goal**: Families using the app on a laptop or desktop get a purpose-built wide-screen layout — not a stretched phone screen
+**Depends on**: Phase 4.4
+**Requirements**: DSK-01, DSK-02, DSK-03
+**Success Criteria** (what must be TRUE):
+  1. On a screen wider than 1024px, a persistent sidebar navigation replaces the mobile bottom bar
+  2. Parent Center pages (dashboard, wallets, analytics, shop, settings) use multi-column content areas — no single-column mobile cards stretched wide
+  3. Kid Screen pages (My Day, wallet, achievements, shop) display in a wide-screen layout designed for the space — content fills the screen purposefully
+  4. The family chat panel occupies full available height on desktop without scroll gaps or dead whitespace
+**Plans**: TBD
+
+---
 
 ### v5.0 — Monetization
 
@@ -106,11 +171,15 @@ See: `.planning/milestones/v3.0-ROADMAP.md`
 | 3.1 event-notifications | v3.0 | 3/3 | Complete | 2026-04-13 |
 | 3.2 family-chat | v3.0 | 4/4 | Complete | 2026-04-14 |
 | 3.3 photos | v3.0 | 3/3 | Complete | 2026-04-14 |
-| 4.1–4.4 | v4.0 | 0/? | Planned | - |
+| 4.1 pwa | v4.0 | 0/? | Not started | - |
+| 4.2 ux-polish | v4.0 | 0/? | Not started | - |
+| 4.3 localization | v4.0 | 0/? | Not started | - |
+| 4.4 security-compliance | v4.0 | 0/? | Not started | - |
+| 4.5 desktop | v4.0 | 0/? | Not started | - |
 | 5.1–5.3 | v5.0 | 0/? | Planned | - |
 | 6.1–6.3 | v6.0 | 0/? | Planned | - |
 | 7.1–7.3 | v7.0 | 0/? | Planned | - |
 
 ---
 
-*Created: 2026-03-01. Updated: 2026-04-26 — v3.0 Communication milestone shipped.*
+*Created: 2026-03-01. Updated: 2026-04-26 — v4.0 PWA Polish roadmap created (5 phases: 4.1–4.5).*

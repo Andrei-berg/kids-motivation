@@ -5,15 +5,31 @@ milestone_name: PWA Polish
 status: planning
 last_updated: "2026-04-26T00:00:00.000Z"
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
+phases:
+  - id: "4.1"
+    name: pwa
+    status: not_started
+  - id: "4.2"
+    name: ux-polish
+    status: not_started
+  - id: "4.3"
+    name: localization
+    status: not_started
+  - id: "4.4"
+    name: security-compliance
+    status: not_started
+  - id: "4.5"
+    name: desktop
+    status: not_started
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-26 — v3.0 Communication milestone complete.
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-26 — v4.0 roadmap created.
 
 ---
 
@@ -21,11 +37,11 @@ progress:
 
 ```
 Milestone v4.0 PWA Polish — Planning
-Status: Starting new milestone
-Last activity: 2026-04-26 — v3.0 archived, ready for /gsd:new-milestone
+Status: Roadmap created, ready to plan Phase 4.1
+Last activity: 2026-04-26 — roadmap created (5 phases: 4.1–4.5)
 ```
 
-Progress: [░░░░░░░░░░] 0% — new milestone
+Progress: [░░░░░░░░░░] 0% (0/5 phases complete)
 
 ---
 
@@ -34,7 +50,19 @@ Progress: [░░░░░░░░░░] 0% — new milestone
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Any family can register and use the app — children earn coins for real effort, spend them on real rewards
-**Current focus:** Milestone v4.0 — PWA Polish → installable, offline-capable, localized, COPPA/GDPR compliant
+**Current focus:** Milestone v4.0 — PWA Polish → installable, offline-capable, localized, COPPA/GDPR compliant, desktop-ready
+
+---
+
+## Phase Overview
+
+| Phase | Name | Requirements | Status |
+|-------|------|--------------|--------|
+| 4.1 | pwa | PWA-01, PWA-02, PWA-03 | Not started |
+| 4.2 | ux-polish | UX-01, UX-02 | Not started |
+| 4.3 | localization | LOC-01 | Not started |
+| 4.4 | security-compliance | SEC-01, SEC-02 | Not started |
+| 4.5 | desktop | DSK-01, DSK-02, DSK-03 | Not started |
 
 ---
 
@@ -68,7 +96,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-26
-Stopped at: v3.0 milestone archived — ready to start v4.0 planning
+Stopped at: v4.0 roadmap created — ready to plan Phase 4.1
 Resume file: None
 
 ---

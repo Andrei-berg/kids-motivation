@@ -64,17 +64,17 @@ Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PWA-01 | Phase 4.1 | Pending |
-| PWA-02 | Phase 4.1 | Pending |
-| PWA-03 | Phase 4.1 | Pending |
-| UX-01 | Phase 4.2 | Pending |
-| UX-02 | Phase 4.2 | Pending |
-| LOC-01 | Phase 4.3 | Pending |
-| SEC-01 | Phase 4.4 | Pending |
-| SEC-02 | Phase 4.4 | Pending |
-| DSK-01 | Phase 4.5 | Pending |
-| DSK-02 | Phase 4.5 | Pending |
-| DSK-03 | Phase 4.5 | Pending |
+| PWA-01 | Phase 4.1 (pwa) | Pending |
+| PWA-02 | Phase 4.1 (pwa) | Pending |
+| PWA-03 | Phase 4.1 (pwa) | Pending |
+| UX-01 | Phase 4.2 (ux-polish) | Pending |
+| UX-02 | Phase 4.2 (ux-polish) | Pending |
+| LOC-01 | Phase 4.3 (localization) | Pending |
+| SEC-01 | Phase 4.4 (security-compliance) | Pending |
+| SEC-02 | Phase 4.4 (security-compliance) | Pending |
+| DSK-01 | Phase 4.5 (desktop) | Pending |
+| DSK-02 | Phase 4.5 (desktop) | Pending |
+| DSK-03 | Phase 4.5 (desktop) | Pending |
 
 **Coverage:**
 - v4.0 requirements: 11 total
@@ -83,4 +83,4 @@ Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-04-26*
-*Last updated: 2026-04-26 after initial definition*
+*Last updated: 2026-04-26 — traceability updated for 5-phase roadmap (4.1–4.5)*
