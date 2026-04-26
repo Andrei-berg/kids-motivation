@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: PWA Polish
 status: in_progress
-last_updated: "2026-04-26T18:05:29Z"
+last_updated: "2026-04-26T18:09:33Z"
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
 phases:
   - id: "4.1"
     name: pwa
-    status: in_progress
+    status: complete
     plans_total: 3
-    plans_complete: 2
+    plans_complete: 3
   - id: "4.2"
     name: ux-polish
     status: not_started
@@ -31,7 +31,7 @@ phases:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-26 — executed 04.1-02 (offline caching + OfflineBanner).
+> Обновляется после каждой фазы. Последнее обновление: 2026-04-26 — executed 04.1-03 (notifyParent + shop push notification flow).
 
 ---
 
@@ -39,11 +39,11 @@ phases:
 
 ```
 Milestone v4.0 PWA Polish — In Progress
-Phase 4.1 (pwa): Plan 2/3 complete
-Last activity: 2026-04-26 — executed 04.1-02 (offline caching: sw.js + OfflineBanner)
+Phase 4.1 (pwa): Plan 3/3 complete (phase done)
+Last activity: 2026-04-26 — executed 04.1-03 (notifyParent + shop push notification flow)
 ```
 
-Progress: [██░░░░░░░░] 13% (0/5 phases complete, 2/3 plans in phase 4.1)
+Progress: [████░░░░░░] 20% (1/5 phases complete)
 
 ---
 
@@ -97,8 +97,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-26T18:05:29Z
-Stopped at: Completed 04.1-02-PLAN.md — ready to execute 04.1-03
+Last session: 2026-04-26T18:09:33Z
+Stopped at: Completed 04.1-03-PLAN.md — phase 4.1 complete, ready for phase 4.2
 Resume file: None
 
 ---
@@ -115,3 +115,9 @@ Resume file: None
 - addAll in install handler wrapped in catch() — pre-caching failures don't abort SW install
 - OfflineBanner uses inline styles (consistent with InstallPrompt) — renders before Tailwind hydration
 - Never cache API routes or Supabase requests in service worker
+
+### Phase 4.1 — Plan 03 (2026-04-26)
+- notifyParent only fires for pending-status purchases — auto-approved purchases skip push to avoid noise
+- Push failure in requestPurchase is non-blocking — caught in try/catch, purchase flow always succeeds
+- pushsubscriptionchange logs warning only — full auto-resubscription requires VAPID key unavailable in SW context
+- requestPurchase must be a 'use server' file so notifyParent runs server-side (not in browser context)
