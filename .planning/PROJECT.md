@@ -247,7 +247,7 @@ Two fully separate experiences — Parent Center (dark, control-focused) and Kid
 
 ## Current Milestone: v4.0 — PWA Polish
 
-**Goal:** Make FamilyCoins installable and production-ready for the first 1,000 families — PWA install, offline support, UX polish, localization, and security/compliance.
+**Goal:** Make FamilyCoins installable and production-ready for the first 1,000 families — PWA install, offline support, UX polish, localization, security/compliance, and a dedicated desktop layout.
 
 ---
 
@@ -285,6 +285,7 @@ Two fully separate experiences — Parent Center (dark, control-focused) and Kid
 - [ ] Russian + English localization — auto-detect from browser, i18n files
 - [ ] COPPA/GDPR compliance — account deletion, data export, consent gate
 - [ ] Audit log for parent actions
+- [ ] Desktop UI redesign — separate layout for wide screens (sidebar nav, multi-column dashboard, full-screen chat); designed with Claude design
 
 ### Out of Scope (current)
 
