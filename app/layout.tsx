@@ -1,6 +1,7 @@
 import './globals.css'
 import type { Metadata, Viewport } from 'next'
 import { PushInit } from '@/components/PushInit'
+import { InstallPrompt } from '@/components/InstallPrompt'
 
 export const metadata: Metadata = {
   title: 'FamilyCoins — Мотивация для детей',
@@ -29,6 +30,7 @@ export default function RootLayout({
     <html lang="ru">
       <body>
         <PushInit />
+        <InstallPrompt />
         {children}
       </body>
     </html>
