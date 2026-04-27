@@ -27,6 +27,7 @@ export interface Reward {
   created_by: string
   created_at: string
   purchase_count: number
+  family_id?: string | null
 }
 
 export interface RewardPurchase {

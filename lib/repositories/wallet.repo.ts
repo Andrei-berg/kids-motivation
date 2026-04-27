@@ -290,9 +290,10 @@ export async function getRewards(filters?: {
 // The field is passed through here; the column must exist in Supabase to persist.
 export async function addReward(reward: Partial<Reward> & { auto_approve?: boolean }): Promise<Reward> {
   const { data: { user } } = await supabase.auth.getUser()
+  const familyId = await getCurrentFamilyId()
   const { data, error } = await supabase
     .from('rewards')
-    .insert([{ ...reward, created_by: user?.id ?? null }])
+    .insert([{ ...reward, created_by: user?.id ?? null, family_id: reward.family_id ?? familyId }])
     .select()
     .single()
 
