@@ -90,9 +90,14 @@ self.addEventListener('activate', function (event) {
 self.addEventListener('fetch', function (event) {
   const url = event.request.url
 
+  // Passthrough: cross-origin requests (fonts, analytics, external APIs)
+  if (!url.startsWith(self.location.origin)) {
+    return
+  }
+
   // Passthrough: API routes and Supabase (never cache)
   if (url.includes('/api/') || url.includes('supabase.co')) {
-    return // let browser handle natively
+    return
   }
 
   // Only handle GET requests

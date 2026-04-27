@@ -210,7 +210,7 @@ export default function ParentCenter() {
       overflow: 'hidden', fontFamily: T.fBody, color: T.text,
       maxWidth: 480, margin: '0 auto',
     }}>
-      <style>{`
+      <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 0; height: 0; }
@@ -218,7 +218,7 @@ export default function ParentCenter() {
         input[type="number"]::-webkit-outer-spin-button,
         input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input[type="number"] { -moz-appearance: textfield; }
-      `}</style>
+      `}} />
 
       {/* Top bar */}
       <div style={{
