@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Critical Rules
+
+IMPORTANT: Preserve the original code and logic as much as possible. Only change what is necessary.
+
+State your assumptions explicitly before writing code. If ambiguous, propose interpretations and ask.
+
 ## Commands
 
 ```bash
@@ -92,12 +98,7 @@ Children have `id TEXT PRIMARY KEY` — values are `'adam'` and `'alim'`.
 ## Methodology
 
 ### Before Starting Any Task
-Load context from `ai-context/` — 7 concise files (≤200 lines each):
-- `current-wave.md` — what phase is next
-- `architecture-summary.md` — file tree + patterns
-- `api-rules.md` — how to call lib/
-- `coding-rules.md` — forbidden patterns
-- `constraints.md` — tech debt + known issues
+Read DESIGN_DECISIONS.md and .planning/ROADMAP.md for architecture and phase context.
 
 ### Documentation Source of Truth
 `project-docs/` — 10 files covering overview, requirements, architecture, tech stack, data model, API spec, security, coding standards, testing, deployment. Update when making architectural changes.
