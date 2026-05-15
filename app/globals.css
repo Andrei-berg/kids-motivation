@@ -208,6 +208,10 @@ body {
   position: relative;
   overflow: hidden;
   font-family: inherit;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn:hover {
@@ -279,7 +283,7 @@ body {
 
 .pill {
   border-radius: 999px;
-  padding: 8px 16px;
+  padding: 10px 16px;
   font-size: 14px;
   font-weight: 600;
   border: 1.5px solid var(--line);
@@ -287,6 +291,10 @@ body {
   cursor: pointer;
   transition: all var(--transition-fast);
   white-space: nowrap;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .pill:hover {
@@ -1162,6 +1170,8 @@ textarea::placeholder {
   transition: all 0.2s;
   background: white;
   color: var(--gray-400);
+  position: relative;
+  overflow: hidden;
 }
 
 .premium-grade-btn:hover {
@@ -1173,6 +1183,26 @@ textarea::placeholder {
   color: white;
   border-color: transparent;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Ripple feedback for grade buttons */
+.premium-grade-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease-out, height 0.3s ease-out, opacity 0.3s ease-out;
+  opacity: 0;
+}
+.premium-grade-btn:active::after {
+  width: 160px;
+  height: 160px;
+  opacity: 1;
 }
 
 /* Room Score */
@@ -4469,3 +4499,18 @@ textarea::placeholder {
 /* Scroll container that hides scrollbar */
 .km-scroll::-webkit-scrollbar { display: none; }
 .km-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Touch target utility — use on small interactive elements */
+.touch-target {
+  position: relative;
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.touch-target::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+}
