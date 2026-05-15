@@ -4234,6 +4234,32 @@ textarea::placeholder {
   border-radius: 1rem;
 }
 
+/* Parent dark-theme skeleton — matches T.card/T.cardHi colors */
+@keyframes parent-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+.parent-skeleton {
+  background: linear-gradient(90deg, #1A1A28 25%, #20202E 50%, #1A1A28 75%);
+  background-size: 200% 100%;
+  animation: parent-shimmer 1.5s ease-in-out infinite;
+  border-radius: 12px;
+}
+
+/* Skeleton layout utilities */
+.skeleton-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.skeleton-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 /* XP bar shimmer on leading edge */
 .kid-xp-bar {
   position: relative;
