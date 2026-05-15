@@ -23,9 +23,15 @@ function todayLabel(): string {
 function LoadingSkeleton() {
   return (
     <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {[240, 56, 100, 80, 80, 80].map((h, i) => (
-        <div key={i} className="kid-skeleton" style={{ height: h, borderRadius: 24 }}/>
-      ))}
+      {/* Hero card: avatar + coins + XP bar */}
+      <div className="kid-skeleton" style={{ height: 200, borderRadius: 24 }}/>
+      {/* Good-behavior / coin-of-day bar */}
+      <div className="kid-skeleton" style={{ height: 56, borderRadius: 16 }}/>
+      {/* Day fill form sections: subjects, room, sport */}
+      <div className="kid-skeleton" style={{ height: 100, borderRadius: 20 }}/>
+      <div className="kid-skeleton" style={{ height: 80, borderRadius: 20 }}/>
+      <div className="kid-skeleton" style={{ height: 80, borderRadius: 20 }}/>
+      <div className="kid-skeleton" style={{ height: 80, borderRadius: 20 }}/>
     </div>
   )
 }

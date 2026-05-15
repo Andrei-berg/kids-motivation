@@ -43,9 +43,14 @@ function getRarity(xp: number) {
 function LoadingSkeleton() {
   return (
     <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {[200, 72, 72, 200, 150].map((h, i) => (
-        <div key={i} className="kid-skeleton" style={{ height: h, borderRadius: 24 }}/>
-      ))}
+      {/* Profile + level card */}
+      <div className="kid-skeleton" style={{ height: 200, borderRadius: 24 }}/>
+      {/* Streaks row */}
+      <div className="kid-skeleton" style={{ height: 72, borderRadius: 20 }}/>
+      {/* Badges grid */}
+      <div className="kid-skeleton" style={{ height: 200, borderRadius: 20 }}/>
+      {/* Badge progress list */}
+      <div className="kid-skeleton" style={{ height: 150, borderRadius: 20 }}/>
     </div>
   )
 }

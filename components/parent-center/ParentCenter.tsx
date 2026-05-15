@@ -19,6 +19,35 @@ import { getWeekScore } from '@/lib/services/coins.service'
 import { getWeekRange } from '@/utils/helpers'
 import { getSubjects } from '@/lib/flexible-api'
 
+function ParentCenterSkeleton() {
+  return (
+    <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* Header tabs row */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
+        {[80, 60, 50, 60, 48].map((w, i) => (
+          <div key={i} className="parent-skeleton" style={{ width: w, height: 32, borderRadius: 999 }}/>
+        ))}
+      </div>
+      {/* Child card 1 */}
+      <div className="parent-skeleton" style={{ height: 140, borderRadius: 16 }}/>
+      {/* Child card 2 */}
+      <div className="parent-skeleton" style={{ height: 140, borderRadius: 16 }}/>
+      {/* Activity feed header */}
+      <div className="parent-skeleton" style={{ height: 20, width: 120, borderRadius: 8 }}/>
+      {/* Activity rows */}
+      {[1, 2, 3].map(i => (
+        <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div className="parent-skeleton" style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0 }}/>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div className="parent-skeleton" style={{ height: 14, width: '70%', borderRadius: 6 }}/>
+            <div className="parent-skeleton" style={{ height: 12, width: '40%', borderRadius: 6 }}/>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function ParentCenter() {
   const [route, setRoute] = useState<Route>('dashboard')
   const [openChild, setOpenChild] = useState<string | null>(null)
@@ -169,16 +198,7 @@ export default function ParentCenter() {
 
   const renderScreen = () => {
     if (loading) {
-      return (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: T.muted, flexDirection: 'column', gap: 12 }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: '50%',
-            border: `2px solid ${T.indigo}`, borderTopColor: 'transparent',
-            animation: 'spin 0.8s linear infinite',
-          }}/>
-          <span style={{ fontSize: 13 }}>Loading...</span>
-        </div>
-      )
+      return <ParentCenterSkeleton />
     }
     switch (route) {
       case 'dashboard':

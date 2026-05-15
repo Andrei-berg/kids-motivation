@@ -14,9 +14,14 @@ import { Coin, CoinPill, AnimatedNum, SectionHeader, KMButton } from '@/componen
 function LoadingSkeleton() {
   return (
     <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {[200, 72, 120, 120, 200].map((h, i) => (
-        <div key={i} className="kid-skeleton" style={{ height: h, borderRadius: 24 }}/>
-      ))}
+      {/* Wallet hero: balance display */}
+      <div className="kid-skeleton" style={{ height: 180, borderRadius: 24 }}/>
+      {/* Quick actions row */}
+      <div className="kid-skeleton" style={{ height: 64, borderRadius: 20 }}/>
+      {/* Week summary */}
+      <div className="kid-skeleton" style={{ height: 120, borderRadius: 20 }}/>
+      {/* Transaction list */}
+      <div className="kid-skeleton" style={{ height: 200, borderRadius: 20 }}/>
     </div>
   )
 }
