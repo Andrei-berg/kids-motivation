@@ -124,7 +124,7 @@ export default function ParentNav() {
             <Link
               key={link.href}
               href={link.href}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors min-w-0 ${
+              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 min-h-[44px] rounded-lg text-xs font-medium transition-colors min-w-0 ${
                 isActive
                   ? 'text-indigo-400'
                   : 'text-gray-400 hover:text-white'
@@ -137,7 +137,7 @@ export default function ParentNav() {
         })}
         <button
           onClick={handleSignOut}
-          className="flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-white transition-colors min-w-0"
+          className="flex flex-col items-center gap-0.5 px-2 py-1.5 min-h-[44px] rounded-lg text-xs font-medium text-gray-400 hover:text-white transition-colors min-w-0"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />

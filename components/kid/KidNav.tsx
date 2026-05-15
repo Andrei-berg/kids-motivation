@@ -113,7 +113,7 @@ export default function KidNav() {
               <Link key={tab.href} href={tab.href} style={{
                 flex: 1, padding: '6px 2px', textDecoration: 'none',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-                position: 'relative',
+                position: 'relative', minHeight: 44,
               }}>
                 {isActive && (
                   <div style={{
@@ -137,7 +137,7 @@ export default function KidNav() {
         onClick={handleLogout}
         className="md:hidden fixed top-3 right-3 z-50 flex items-center justify-center"
         style={{
-          width: 36, height: 36, borderRadius: 12,
+          width: 44, height: 44, borderRadius: 12,
           background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)',
           border: `1.5px solid ${T.line}`,
           boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
