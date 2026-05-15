@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next'
 import { PushInit } from '@/components/PushInit'
 import { InstallPrompt } from '@/components/InstallPrompt'
 import { OfflineBanner } from '@/components/OfflineBanner'
+import { PageTransition } from '@/components/PageTransition'
 
 export const metadata: Metadata = {
   title: 'FamilyCoins — Мотивация для детей',
@@ -33,7 +34,9 @@ export default function RootLayout({
         <OfflineBanner />
         <PushInit />
         <InstallPrompt />
-        {children}
+        <PageTransition>
+          {children}
+        </PageTransition>
       </body>
     </html>
   )
