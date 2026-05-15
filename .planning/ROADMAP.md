@@ -100,7 +100,12 @@ Plans:
   2. While data is loading, skeleton placeholder shapes appear in place of content — no layout shift when data arrives
   3. Every button, link, and interactive element in the app measures at least 44×44px on a 375px-wide screen
   4. Tapping any element on a mobile device feels responsive — no missed taps due to undersized hit areas
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 04.2-01-PLAN.md — Install framer-motion + PageTransition wrapper in root layout
+- [ ] 04.2-02-PLAN.md — Touch targets: .btn/.pill min-height 44px, KidNav/ParentNav bumps, grade button ripple
+- [ ] 04.2-03-PLAN.md — Pixel-accurate skeleton loaders: dark theme for ParentCenter, structured kid page skeletons
+- [ ] 04.2-04-PLAN.md — Animation personality: count-up coin balances, stagger-in lists (achievements, transactions, activity feed)
 
 ### Phase 4.3: localization
 **Goal**: Russian-speaking and English-speaking families each see the app in their language without any manual setup
@@ -175,8 +180,8 @@ Plans:
 | 3.1 event-notifications | v3.0 | 3/3 | Complete | 2026-04-13 |
 | 3.2 family-chat | v3.0 | 4/4 | Complete | 2026-04-14 |
 | 3.3 photos | v3.0 | 3/3 | Complete | 2026-04-14 |
-| 4.1 pwa | 3/3 | Complete   | 2026-04-26 | - |
-| 4.2 ux-polish | v4.0 | 0/? | Not started | - |
+| 4.1 pwa | v4.0 | 3/3 | Complete | 2026-04-26 |
+| 4.2 ux-polish | v4.0 | 0/4 | Not started | - |
 | 4.3 localization | v4.0 | 0/? | Not started | - |
 | 4.4 security-compliance | v4.0 | 0/? | Not started | - |
 | 4.5 desktop | v4.0 | 0/? | Not started | - |
@@ -186,4 +191,4 @@ Plans:
 
 ---
 
-*Created: 2026-03-01. Updated: 2026-04-26 — 04.1-02 complete: offline caching (sw.js fetch handler + OfflineBanner).*
+*Created: 2026-03-01. Updated: 2026-05-16 — 04.2 planned: 4 plans (page transitions, touch targets, skeleton loaders, animation personality).*
