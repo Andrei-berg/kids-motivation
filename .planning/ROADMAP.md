@@ -116,7 +116,13 @@ Plans:
   2. A browser set to Russian loads the app entirely in Russian — all labels, buttons, and error messages
   3. A user can switch language at any time via a visible language toggle and the UI updates immediately without page reload
   4. No hardcoded Russian or English strings remain in the codebase — all text passes through the i18n layer
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 04.3-01-PLAN.md — i18n foundation: lib/i18n.tsx context + Zustand language slice + translation files (en/ru JSON) + LanguageToggle
+- [ ] 04.3-02-PLAN.md — Apply t() to navigation (NavBar, KidNav, ParentNav), auth pages, InstallPrompt, OfflineBanner, chat components
+- [ ] 04.3-03-PLAN.md — Apply t() to kid pages (achievements, wallet, shop, day, leaderboard) + KidDayFillForm
+- [ ] 04.3-04-PLAN.md — Apply t() to modal components (DailyModal, CoachRatingModal, P2PTransfer, Goals, Shop, Exchange, Withdraw, Bulk) + WalletDashboard + AuditLogViewer
+- [ ] 04.3-05-PLAN.md — Apply t() to settings components (10 managers), wallboard, parent shop, onboarding, remaining pages
 
 ### Phase 4.4: security-compliance
 **Goal**: Families can trust their data is protected and parents have full visibility into account changes
@@ -181,8 +187,8 @@ Plans:
 | 3.2 family-chat | v3.0 | 4/4 | Complete | 2026-04-14 |
 | 3.3 photos | v3.0 | 3/3 | Complete | 2026-04-14 |
 | 4.1 pwa | v4.0 | 3/3 | Complete | 2026-04-26 |
-| 4.2 ux-polish | 4/4 | Complete   | 2026-05-16 | - |
-| 4.3 localization | v4.0 | 0/? | Not started | - |
+| 4.2 ux-polish | v4.0 | 4/4 | Complete | 2026-05-16 |
+| 4.3 localization | v4.0 | 0/5 | Not started | - |
 | 4.4 security-compliance | v4.0 | 0/? | Not started | - |
 | 4.5 desktop | v4.0 | 0/? | Not started | - |
 | 5.1–5.3 | v5.0 | 0/? | Planned | - |
@@ -191,4 +197,4 @@ Plans:
 
 ---
 
-*Created: 2026-03-01. Updated: 2026-05-16 — 04.2 planned: 4 plans (page transitions, touch targets, skeleton loaders, animation personality).*
+*Created: 2026-03-01. Updated: 2026-05-16 — 04.3 planned: 5 plans (i18n foundation, nav/auth, kid pages, modals, settings/remaining).*
