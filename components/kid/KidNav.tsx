@@ -5,13 +5,15 @@ import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAppStore } from '@/lib/store'
 import { T } from './design/tokens'
+import { useT } from '@/lib/i18n'
+import { LanguageToggle } from '@/components/LanguageToggle'
 
-const TABS = [
-  { href: '/kid/day',          label: 'Мой день',   icon: 'home',   color: T.coral  },
-  { href: '/kid/wallet',       label: 'Кошелёк',    icon: 'wallet', color: T.plum   },
-  { href: '/kid/achievements', label: 'Трофеи',     icon: 'trophy', color: T.sunDeep },
-  { href: '/kid/shop',         label: 'Магазин',    icon: 'shop',   color: T.teal   },
-  { href: '/kid/leaderboard',  label: 'Рейтинг',    icon: 'vs',     color: T.pink   },
+const TAB_DEFS = [
+  { href: '/kid/day',          labelKey: 'kidNav.myDay',    icon: 'home',   color: T.coral  },
+  { href: '/kid/wallet',       labelKey: 'kidNav.wallet',   icon: 'wallet', color: T.plum   },
+  { href: '/kid/achievements', labelKey: 'kidNav.trophies', icon: 'trophy', color: T.sunDeep },
+  { href: '/kid/shop',         labelKey: 'kidNav.shop',     icon: 'shop',   color: T.teal   },
+  { href: '/kid/leaderboard',  labelKey: 'kidNav.rating',   icon: 'vs',     color: T.pink   },
 ]
 
 function TabIcon({ name, active, col }: { name: string; active: boolean; col: string }) {
@@ -61,6 +63,9 @@ export default function KidNav() {
   const pathname = usePathname()
   const router = useRouter()
   const setActiveMemberId = useAppStore((s) => s.setActiveMemberId)
+  const t = useT()
+
+  const TABS = TAB_DEFS.map((tab) => ({ ...tab, label: t(tab.labelKey) }))
 
   async function handleLogout() {
     setActiveMemberId(null)
@@ -83,7 +88,8 @@ export default function KidNav() {
           )
         })}
         <div className="flex-1"/>
-        <button onClick={handleLogout} title="Выйти"
+        <LanguageToggle />
+        <button onClick={handleLogout} title={t('kidNav.logout')}
           className="flex items-center justify-center w-10 h-10 rounded-2xl text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -95,7 +101,7 @@ export default function KidNav() {
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 z-50"
         style={{ padding: '0 10px calc(10px + env(safe-area-inset-bottom, 0px))' }}
-        aria-label="Навигация"
+        aria-label={t('nav.navigation')}
       >
         <div style={{
           background: 'rgba(255,255,255,0.92)',
@@ -143,7 +149,7 @@ export default function KidNav() {
           boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
           color: T.ink3,
         }}
-        aria-label="Выйти"
+        aria-label={t('kidNav.logout')}
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
           <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

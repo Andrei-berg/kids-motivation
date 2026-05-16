@@ -33,7 +33,8 @@
     "shop": "Магазин",
     "rating": "Рейтинг",
     "logout": "Выйти",
-    "navigation": "Навигация"
+    "navigation": "Навигация",
+    "chat": "Чат"
   },
   "layout": {
     "appTitle": "FamilyCoins — Мотивация для детей",

@@ -4,11 +4,14 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAppStore } from '@/lib/store'
 import { useFamilyMembers } from '@/lib/hooks/useFamilyMembers'
+import { useT } from '@/lib/i18n'
+import { LanguageToggle } from './LanguageToggle'
 
 export default function NavBar() {
   const pathname = usePathname()
   const { activeMemberId, setActiveMemberId } = useAppStore()
   const { members, loading } = useFamilyMembers()
+  const t = useT()
 
   return (
     <div className="nav">
@@ -34,32 +37,35 @@ export default function NavBar() {
           )
         })}
 
-        {/* Навигация — 5 пунктов */}
+        {/* Navigation — 5 items */}
         <Link href="/dashboard" className={`pill ${pathname === '/dashboard' ? 'active' : ''}`}>
-          🏠 Dashboard
+          🏠 {t('nav.dashboard')}
         </Link>
         <Link href="/wallet" className={`pill ${pathname === '/wallet' ? 'active' : ''}`}>
-          💰 Кошелёк
+          💰 {t('nav.wallet')}
         </Link>
         <Link href="/analytics" className={`pill ${pathname === '/analytics' ? 'active' : ''}`}>
-          📊 Analytics
+          📊 {t('nav.analytics')}
         </Link>
         <Link href="/wallboard" className={`pill ${pathname === '/wallboard' ? 'active' : ''}`}>
-          📺 Wallboard
+          📺 {t('nav.wallboard')}
         </Link>
         <Link href="/expenses" className={`pill ${pathname === '/expenses' ? 'active' : ''}`}>
-          💸 Расходы
+          💸 {t('nav.expenses')}
         </Link>
 
-        {/* Родительский центр */}
-        <Link href="/parent-dashboard" className={`pill ${pathname === '/parent-dashboard' ? 'active' : ''}`} title="Родительский центр">
+        {/* Parent center */}
+        <Link href="/parent-dashboard" className={`pill ${pathname === '/parent-dashboard' ? 'active' : ''}`} title={t('nav.parentCenter')}>
           🛡️
         </Link>
 
-        {/* Settings — иконка в углу */}
-        <Link href="/settings" className={`pill ${pathname === '/settings' ? 'active' : ''}`} title="Settings">
+        {/* Settings */}
+        <Link href="/settings" className={`pill ${pathname === '/settings' ? 'active' : ''}`} title={t('nav.settings')}>
           ⚙️
         </Link>
+
+        {/* Language toggle */}
+        <LanguageToggle />
       </div>
     </div>
   )
