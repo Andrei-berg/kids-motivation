@@ -697,7 +697,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                             <input
                               className="premium-input"
                               type="text"
-                              placeholder="Заметка (необязательно)"
+                              placeholder={t('dailyModal.activityNotePlaceholder')}
                               value={activityNote[a.id] || ''}
                               onChange={e => setActivityNote(prev => ({ ...prev, [a.id]: e.target.value }))}
                               style={{ marginTop: '8px', fontSize: '13px', padding: '8px 10px' }}
@@ -726,8 +726,8 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                 <div style={{ padding: '12px 0 0' }}>
                   <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
                     {[
-                      { val: true, label: '✅ Помог', green: true },
-                      { val: false, label: '❌ Не помог', green: false },
+                      { val: true, label: t('dailyModal.homeHelpDone'), green: true },
+                      { val: false, label: t('dailyModal.homeHelpNotDone'), green: false },
                     ].map(opt => (
                       <button
                         key={String(opt.val)}
@@ -754,7 +754,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                     <input
                       className="premium-input"
                       type="text"
-                      placeholder="Что сделал? (помыл посуду, убрался...)"
+                      placeholder={t('dailyModal.homeHelpNotePlaceholder')}
                       value={homeHelpNote}
                       onChange={e => setHomeHelpNote(e.target.value)}
                       style={{ fontSize: '14px', padding: '10px 12px' }}
@@ -779,8 +779,8 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                 <div style={{ padding: '12px 0 0' }}>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     {[
-                      { val: true, label: '✅ Сделал', green: true },
-                      { val: false, label: '❌ Не сделал', green: false },
+                      { val: true, label: t('dailyModal.homeworkDone'), green: true },
+                      { val: false, label: t('dailyModal.homeworkNotDone'), green: false },
                     ].map(opt => (
                       <button
                         key={String(opt.val)}
@@ -823,12 +823,12 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
                   {scheduleForToday.length > 0 && !showSchedulePanel && (
                     <button className="premium-btn-gradient" onClick={openSchedulePanel} style={{ flex: 1 }}>
-                      📅 Расписание ({scheduleForToday.length})
+                      {t('dailyModal.scheduleBtn', { count: scheduleForToday.length })}
                     </button>
                   )}
                   {!showQuickAdd && (
                     <button className="premium-btn-primary" onClick={() => setShowQuickAdd(true)} style={{ flex: scheduleForToday.length === 0 ? 1 : undefined }}>
-                      + Предмет
+                      {t('dailyModal.addSubjectBtn')}
                     </button>
                   )}
                 </div>
@@ -836,7 +836,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                 {showSchedulePanel && (
                   <div className="schedule-panel">
                     <div className="schedule-panel-header">
-                      <div className="schedule-panel-title">📅 Выберите оценки</div>
+                      <div className="schedule-panel-title">{t('dailyModal.schedulePanelTitle')}</div>
                       <button className="schedule-panel-close" onClick={() => setShowSchedulePanel(false)}>✕</button>
                     </div>
                     <div className="schedule-panel-content">
@@ -856,8 +856,8 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                       ))}
                     </div>
                     <div className="schedule-panel-footer">
-                      <button className="premium-btn-secondary" onClick={() => setShowSchedulePanel(false)}>Отмена</button>
-                      <button className="premium-btn-gradient" onClick={addFromSchedule}>✓ Добавить все</button>
+                      <button className="premium-btn-secondary" onClick={() => setShowSchedulePanel(false)}>{t('dailyModal.schedulePanelCancel')}</button>
+                      <button className="premium-btn-gradient" onClick={addFromSchedule}>{t('dailyModal.schedulePanelAdd')}</button>
                     </div>
                   </div>
                 )}
@@ -865,12 +865,12 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                 {showQuickAdd && (
                   <div className="quick-add-panel">
                     <div className="quick-add-header">
-                      <div className="quick-add-title">+ Добавить предмет</div>
+                      <div className="quick-add-title">{t('dailyModal.quickAddTitle')}</div>
                       <button className="quick-add-close" onClick={() => setShowQuickAdd(false)}>✕</button>
                     </div>
                     <div className="quick-add-content">
                       <select className="premium-select" value={quickAddSubject} onChange={(e) => setQuickAddSubject(e.target.value)}>
-                        <option value="">Выберите предмет</option>
+                        <option value="">{t('dailyModal.subjectPlaceholder')}</option>
                         {subjects.filter(s => !grades.find(g => g.subject_id === s.id)).map(subject => (
                           <option key={subject.id} value={subject.id}>{subject.name}</option>
                         ))}
@@ -885,7 +885,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                         ))}
                       </div>
                       <button className="premium-btn-gradient" onClick={handleQuickAddGrade} disabled={!quickAddSubject} style={{ width: '100%' }}>
-                        ✓ Добавить
+                        {t('dailyModal.addSubjectConfirm')}
                       </button>
                     </div>
                   </div>
@@ -910,7 +910,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                             <button className="grade-card-delete" onClick={() => removeGrade(idx)}>🗑️</button>
                           </div>
                         </div>
-                        <input type="text" className="grade-card-note" placeholder="Комментарий..." value={g.note} onChange={(e) => updateNoteInline(idx, e.target.value)} />
+                        <input type="text" className="grade-card-note" placeholder={t('dailyModal.gradeCommentPlaceholder')} value={g.note} onChange={(e) => updateNoteInline(idx, e.target.value)} />
                       </div>
                     ))}
                   </div>
@@ -918,7 +918,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
                 {grades.length === 0 && !showQuickAdd && !showSchedulePanel && (
                   <div className="premium-empty" style={{ padding: '16px' }}>
-                    <div className="premium-empty-text" style={{ fontSize: '14px' }}>Нет оценок</div>
+                    <div className="premium-empty-text" style={{ fontSize: '14px' }}>{t('dailyModal.noGrades')}</div>
                   </div>
                 )}
               </div>
@@ -935,16 +935,16 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
               </div>
               {dayType === 'sick' ? (
                 <div style={{ padding: '8px 0', fontSize: '12px', color: 'rgba(238,238,255,0.45)' }}>
-                  Грейс-период — комната не учитывается в болезнь
+                  {t('dailyModal.sickGraceNote')}
                 </div>
               ) : (
                 <div className="premium-checklist">
                   {[
-                    { key: 'bed', label: 'Застелил кровать', icon: '🛏️', value: roomBed, setter: setRoomBed },
-                    { key: 'floor', label: 'Подмёл пол', icon: '🧹', value: roomFloor, setter: setRoomFloor },
-                    { key: 'desk', label: 'Убрал стол', icon: '🪑', value: roomDesk, setter: setRoomDesk },
-                    { key: 'closet', label: 'Разложил одежду', icon: '👕', value: roomCloset, setter: setRoomCloset },
-                    { key: 'trash', label: 'Вынес мусор', icon: '🗑️', value: roomTrash, setter: setRoomTrash }
+                    { key: 'bed', label: t('dailyModal.roomBed'), icon: '🛏️', value: roomBed, setter: setRoomBed },
+                    { key: 'floor', label: t('dailyModal.roomFloor'), icon: '🧹', value: roomFloor, setter: setRoomFloor },
+                    { key: 'desk', label: t('dailyModal.roomDesk'), icon: '🪑', value: roomDesk, setter: setRoomDesk },
+                    { key: 'closet', label: t('dailyModal.roomCloset'), icon: '👕', value: roomCloset, setter: setRoomCloset },
+                    { key: 'trash', label: t('dailyModal.roomTrash'), icon: '🗑️', value: roomTrash, setter: setRoomTrash }
                   ].map(item => (
                     <label key={item.key} className="premium-checkbox">
                       <input type="checkbox" checked={item.value} onChange={(e) => item.setter(e.target.checked)} />
@@ -961,7 +961,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={roomProofUrl}
-                    alt="Фото комнаты"
+                    alt="Room photo"
                     className="w-20 h-20 rounded-xl object-cover cursor-pointer"
                     style={{ border: '2px solid rgba(238,238,255,0.15)' }}
                     onClick={() => setLightboxProofUrl(roomProofUrl)}
@@ -986,8 +986,8 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                   />
                   <span className="premium-checkbox-icon">✅</span>
                   <span className="premium-checkbox-label">
-                    Хорошо вёл себя
-                    {dayType === 'sick' && <span style={{ color: 'rgba(238,238,255,0.4)', fontSize: '12px', marginLeft: '6px' }}>авто ✓</span>}
+                    {t('dailyModal.goodBehaviorLabel')}
+                    {dayType === 'sick' && <span style={{ color: 'rgba(238,238,255,0.4)', fontSize: '12px', marginLeft: '6px' }}>{t('dailyModal.goodBehaviorAuto')}</span>}
                   </span>
                   <span className="premium-checkbox-check">✓</span>
                 </label>
@@ -995,12 +995,12 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                   <label className="premium-checkbox">
                     <input type="checkbox" checked={diaryNotDone} onChange={(e) => setDiaryNotDone(e.target.checked)} />
                     <span className="premium-checkbox-icon">⚠️</span>
-                    <span className="premium-checkbox-label">Не заполнил дневник</span>
+                    <span className="premium-checkbox-label">{t('dailyModal.diaryNotDone')}</span>
                     <span className="premium-checkbox-check">✓</span>
                   </label>
                 )}
               </div>
-              <textarea className="premium-textarea" style={{ marginTop: '12px' }} placeholder="Заметка о дне..." value={dayNote} onChange={(e) => setDayNote(e.target.value)} rows={3} />
+              <textarea className="premium-textarea" style={{ marginTop: '12px' }} placeholder={t('dailyModal.dayNotePlaceholder')} value={dayNote} onChange={(e) => setDayNote(e.target.value)} rows={3} />
             </div>
 
             {/* ── СПОРТ ────────────────────────────────────────── */}
@@ -1011,7 +1011,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
               </div>
               {exerciseTypes.length === 0 ? (
                 <div className="premium-empty" style={{ padding: '16px' }}>
-                  <div className="premium-empty-text" style={{ fontSize: '14px' }}>Нет упражнений — добавьте в Settings</div>
+                  <div className="premium-empty-text" style={{ fontSize: '14px' }}>{t('dailyModal.noExercises')}</div>
                 </div>
               ) : (
                 <>
@@ -1036,7 +1036,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                       )
                     })}
                   </div>
-                  <textarea className="premium-textarea" style={{ marginTop: '12px' }} placeholder="Заметка о спорте..." value={sportNote} onChange={(e) => setSportNote(e.target.value)} rows={2} />
+                  <textarea className="premium-textarea" style={{ marginTop: '12px' }} placeholder={t('dailyModal.sportNotePlaceholder')} value={sportNote} onChange={(e) => setSportNote(e.target.value)} rows={2} />
                 </>
               )}
             </div>
@@ -1059,16 +1059,16 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                           <span className="premium-exercise-icon">🏊</span>
                           <div className="premium-exercise-name">
                             <div>{section.name}</div>
-                            {section.trainer && <div style={{ fontSize: '13px', color: 'var(--gray-600)', fontWeight: 400 }}>Тренер: {section.trainer}</div>}
+                            {section.trainer && <div style={{ fontSize: '13px', color: 'var(--gray-600)', fontWeight: 400 }}>{t('dailyModal.trainerLabel', { name: section.trainer })}</div>}
                           </div>
                         </label>
                         {isAttended && (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-                            <input type="text" className="premium-input" placeholder="Прогресс" value={notes.progress} onChange={(e) => updateSectionNote(section.id, 'progress', e.target.value)} onClick={(e) => e.stopPropagation()} style={{ fontSize: '14px', padding: '10px 12px' }} />
-                            <input type="text" className="premium-input" placeholder="Отзыв тренера" value={notes.feedback} onChange={(e) => updateSectionNote(section.id, 'feedback', e.target.value)} onClick={(e) => e.stopPropagation()} style={{ fontSize: '14px', padding: '10px 12px' }} />
+                            <input type="text" className="premium-input" placeholder={t('dailyModal.progressPlaceholder')} value={notes.progress} onChange={(e) => updateSectionNote(section.id, 'progress', e.target.value)} onClick={(e) => e.stopPropagation()} style={{ fontSize: '14px', padding: '10px 12px' }} />
+                            <input type="text" className="premium-input" placeholder={t('dailyModal.feedbackPlaceholder')} value={notes.feedback} onChange={(e) => updateSectionNote(section.id, 'feedback', e.target.value)} onClick={(e) => e.stopPropagation()} style={{ fontSize: '14px', padding: '10px 12px' }} />
                             {/* Coach rating (numeric 1-5) */}
                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
-                              <span style={{ fontSize: '13px', color: 'var(--gray-600)' }}>Оценка тренера:</span>
+                              <span style={{ fontSize: '13px', color: 'var(--gray-600)' }}>{t('dailyModal.coachRatingLabel')}</span>
                               {[1, 2, 3, 4, 5].map(r => (
                                 <button
                                   key={r}

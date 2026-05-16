@@ -35,6 +35,7 @@
  */
 
 import { useState } from 'react'
+import { useT } from '@/lib/i18n'
 import { supabase } from '@/lib/supabase'
 import { awardCoinsForSport } from '@/lib/wallet-api'
 
@@ -45,12 +46,13 @@ interface CoachRatingModalProps {
   onSuccess: () => void
 }
 
-export default function CoachRatingModal({ 
-  childId, 
-  sections, 
-  onClose, 
-  onSuccess 
+export default function CoachRatingModal({
+  childId,
+  sections,
+  onClose,
+  onSuccess
 }: CoachRatingModalProps) {
+  const t = useT()
   const [sectionId, setSectionId] = useState('')
   const [coachRating, setCoachRating] = useState<number | null>(null)
   const [coachComment, setCoachComment] = useState('')
@@ -59,46 +61,46 @@ export default function CoachRatingModal({
 
   // Таблица наград/штрафов
   const RATINGS = [
-    { 
-      value: 5, 
-      label: '5️⃣ Отлично! Пахал!', 
+    {
+      value: 5,
+      label: t('coachRatingModal.rating5Label'),
       coins: '+10 💰',
       color: 'excellent',
-      description: 'Выкладывался на 100%'
+      description: t('coachRatingModal.rating5Desc')
     },
-    { 
-      value: 4, 
-      label: '4️⃣ Хорошо, старался', 
+    {
+      value: 4,
+      label: t('coachRatingModal.rating4Label'),
       coins: '+5 💰',
       color: 'good',
-      description: 'Работал нормально, старался'
+      description: t('coachRatingModal.rating4Desc')
     },
-    { 
-      value: 3, 
-      label: '3️⃣ Средне', 
+    {
+      value: 3,
+      label: t('coachRatingModal.rating3Label'),
       coins: '0 💰',
       color: 'medium',
-      description: 'Был, но без огня'
+      description: t('coachRatingModal.rating3Desc')
     },
-    { 
-      value: 2, 
-      label: '2️⃣ Ленился', 
+    {
+      value: 2,
+      label: t('coachRatingModal.rating2Label'),
       coins: '-3 💰',
       color: 'bad',
-      description: 'Откровенно ленился'
+      description: t('coachRatingModal.rating2Desc')
     },
-    { 
-      value: 1, 
-      label: '1️⃣ Хулиганил', 
+    {
+      value: 1,
+      label: t('coachRatingModal.rating1Label'),
       coins: '-10 💰',
       color: 'terrible',
-      description: 'Мешал другим / хулиганил'
+      description: t('coachRatingModal.rating1Desc')
     }
   ]
 
   const handleSave = async () => {
     if (!sectionId || coachRating === null) {
-      alert('Выберите секцию и оценку!')
+      alert(t('coachRatingModal.selectSectionAlert'))
       return
     }
 
@@ -136,7 +138,7 @@ export default function CoachRatingModal({
       onClose()
     } catch (error) {
       console.error('Error saving coach rating:', error)
-      alert('Ошибка сохранения! ' + (error as Error).message)
+      alert(t('coachRatingModal.saveError') + (error as Error).message)
     } finally {
       setSaving(false)
     }
@@ -149,23 +151,23 @@ export default function CoachRatingModal({
       <div className="modal-content coach-rating-modal" onClick={(e) => e.stopPropagation()}>
         {/* Заголовок */}
         <div className="modal-header">
-          <h2>💪 ОЦЕНКА ТРЕНЕРА</h2>
+          <h2>{t('coachRatingModal.heading')}</h2>
           <button className="close-button" onClick={onClose}>×</button>
         </div>
 
         {/* Философия */}
         <div className="philosophy-section">
           <p className="philosophy-text">
-            <strong>Важно:</strong> Награда НЕ за посещение, а за ТРУД!
+            <strong>{t('coachRatingModal.philosophyImportant')}</strong> {t('coachRatingModal.philosophyText1')}
           </p>
           <p className="philosophy-text">
-            Тренер оценивает старание → система начисляет монеты.
+            {t('coachRatingModal.philosophyText2')}
           </p>
         </div>
 
         {/* Дата */}
         <div className="form-group">
-          <label>📅 Дата тренировки:</label>
+          <label>{t('coachRatingModal.dateLabel')}</label>
           <input
             type="date"
             value={date}
@@ -176,13 +178,13 @@ export default function CoachRatingModal({
 
         {/* Секция */}
         <div className="form-group">
-          <label>⚽ Секция:</label>
+          <label>{t('coachRatingModal.sectionLabel')}</label>
           <select
             value={sectionId}
             onChange={(e) => setSectionId(e.target.value)}
             className="form-select"
           >
-            <option value="">Выберите секцию...</option>
+            <option value="">{t('coachRatingModal.sectionPlaceholder')}</option>
             {sections.map(section => (
               <option key={section.id} value={section.id}>
                 {section.name}
@@ -193,9 +195,9 @@ export default function CoachRatingModal({
 
         {/* Оценка тренера */}
         <div className="form-group">
-          <label>🏅 Как тренер оценил работу ребёнка?</label>
+          <label>{t('coachRatingModal.ratingQuestion')}</label>
           <p className="label-hint">
-            Спросите у тренера после занятия
+            {t('coachRatingModal.ratingHint')}
           </p>
           
           <div className="ratings-grid">
@@ -222,18 +224,18 @@ export default function CoachRatingModal({
             <div className="preview-text">
               <strong>{selectedRating.label}</strong>
               <p>{selectedRating.description}</p>
-              <p className="preview-coins">Начислено: {selectedRating.coins}</p>
+              <p className="preview-coins">{t('coachRatingModal.awarded')}{selectedRating.coins}</p>
             </div>
           </div>
         )}
 
         {/* Комментарий тренера */}
         <div className="form-group">
-          <label>💬 Комментарий тренера (опционально):</label>
+          <label>{t('coachRating.comment')} (optional):</label>
           <textarea
             value={coachComment}
             onChange={(e) => setCoachComment(e.target.value)}
-            placeholder='Например: "Отлично работал, выложился на все 100%!"'
+            placeholder={t('coachRating.commentPlaceholder')}
             className="form-textarea"
             rows={3}
           />
@@ -242,51 +244,51 @@ export default function CoachRatingModal({
         {/* Сообщение для ребёнка */}
         {coachRating && (
           <div className="child-message">
-            <h4>📱 Ребёнок увидит:</h4>
+            <h4>{t('coachRatingModal.childWillSee')}</h4>
             <div className={`message-preview ${selectedRating?.color}`}>
               {coachRating >= 4 ? (
                 <p>
-                  {selectedRating?.value === 5 ? '🔥 ОТЛИЧНО!' : '👍 ХОРОШО!'}
+                  {selectedRating?.value === 5 ? t('coachRatingModal.previewExcellent') : t('coachRatingModal.previewGood')}
                   <br />
-                  {sections.find(s => s.id === sectionId)?.name || 'Тренировка'}
+                  {sections.find(s => s.id === sectionId)?.name || 'Training'}
                   <br />
-                  Тренер: "{selectedRating?.description}"
+                  {t('coachRatingModal.previewTrainerSays')}"{selectedRating?.description}"
                   <br />
                   <strong>{selectedRating?.coins}</strong>
                   <br />
-                  💪 Ты тренировался для СЕБЯ! Твоё здоровье улучшается!
+                  {t('coachRatingModal.previewHealthNote')}
                   <br />
-                  🏆 Тренер гордится тобой!
+                  {t('coachRatingModal.previewPrideNote')}
                 </p>
               ) : coachRating === 3 ? (
                 <p>
-                  😐 СРЕДНЕ
+                  {t('coachRatingModal.previewAverage')}
                   <br />
-                  {sections.find(s => s.id === sectionId)?.name || 'Тренировка'}
+                  {sections.find(s => s.id === sectionId)?.name || 'Training'}
                   <br />
-                  Тренер: "Так себе, мог лучше"
+                  {t('coachRatingModal.previewTrainerSays')}"{selectedRating?.description}"
                   <br />
-                  <strong>0 💰 (нет награды)</strong>
+                  <strong>0 💰</strong>
                   <br />
-                  💡 Ты пришёл, но не выложился.
+                  {t('coachRatingModal.previewAverageNote')}
                   <br />
-                  В следующий раз пахай → получишь +5-10 💰!
+                  {t('coachRatingModal.previewAverageHint')}
                 </p>
               ) : (
                 <p>
-                  ⚠️ {coachRating === 2 ? 'ПЛОХО!' : 'ОЧЕНЬ ПЛОХО!'}
+                  {coachRating === 2 ? t('coachRatingModal.previewBad') : t('coachRatingModal.previewVeryBad')}
                   <br />
-                  {sections.find(s => s.id === sectionId)?.name || 'Тренировка'}
+                  {sections.find(s => s.id === sectionId)?.name || 'Training'}
                   <br />
-                  Тренер: "{selectedRating?.description}"
+                  {t('coachRatingModal.previewTrainerSays')}"{selectedRating?.description}"
                   <br />
-                  <strong>{selectedRating?.coins} (ШТРАФ!)</strong>
+                  <strong>{selectedRating?.coins}</strong>
                   <br />
-                  ❌ ЗАЧЕМ ПРИШЁЛ, ЕСЛИ ЛЕНИЛСЯ?
+                  {t('coachRatingModal.previewBadNote')}
                   <br />
-                  Спорт = не галочка для монет!
+                  {t('coachRatingModal.previewBadHint')}
                   <br />
-                  Два пути: ходи и ПАХАЙ, или не ходи вообще.
+                  {t('coachRatingModal.previewBadChoice')}
                 </p>
               )}
             </div>
@@ -296,14 +298,14 @@ export default function CoachRatingModal({
         {/* Кнопки */}
         <div className="modal-footer">
           <button className="button secondary" onClick={onClose}>
-            Отмена
+            {t('coachRating.cancel')}
           </button>
-          <button 
-            className="button primary" 
+          <button
+            className="button primary"
             onClick={handleSave}
             disabled={saving || !sectionId || coachRating === null}
           >
-            {saving ? 'Сохранение...' : 'Сохранить'}
+            {saving ? t('coachRatingModal.saving') : t('coachRatingModal.saveBtn')}
           </button>
         </div>
       </div>
