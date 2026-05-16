@@ -7,6 +7,9 @@ interface AppStore {
   setFamilyId: (id: string | null) => void
   activeMemberId: string | null     // family_members.id of the selected child
   setActiveMemberId: (id: string | null) => void
+  // Localization (Phase 4.3)
+  language: 'ru' | 'en'
+  setLanguage: (lang: 'ru' | 'en') => void
 }
 
 export const useAppStore = create<AppStore>()(persist(
@@ -15,6 +18,10 @@ export const useAppStore = create<AppStore>()(persist(
     setFamilyId: (id) => set({ familyId: id }),
     activeMemberId: null,
     setActiveMemberId: (id) => set({ activeMemberId: id }),
+    language: typeof window !== 'undefined'
+      ? (navigator.language.startsWith('ru') ? 'ru' : 'en')
+      : 'ru',
+    setLanguage: (lang) => set({ language: lang }),
   }),
   { name: 'v5_child' }
 ))

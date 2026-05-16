@@ -4,6 +4,7 @@ import { PushInit } from '@/components/PushInit'
 import { InstallPrompt } from '@/components/InstallPrompt'
 import { OfflineBanner } from '@/components/OfflineBanner'
 import { PageTransition } from '@/components/PageTransition'
+import { LanguageProvider } from '@/lib/i18n'
 
 export const metadata: Metadata = {
   title: 'FamilyCoins — Мотивация для детей',
@@ -29,14 +30,16 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="ru">
+    <html lang="en">
       <body>
-        <OfflineBanner />
-        <PushInit />
-        <InstallPrompt />
-        <PageTransition>
-          {children}
-        </PageTransition>
+        <LanguageProvider>
+          <OfflineBanner />
+          <PushInit />
+          <InstallPrompt />
+          <PageTransition>
+            {children}
+          </PageTransition>
+        </LanguageProvider>
       </body>
     </html>
   )
