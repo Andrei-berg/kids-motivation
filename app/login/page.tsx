@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { useT } from '@/lib/i18n'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -13,6 +14,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [forgotSent, setForgotSent] = useState(false)
   const [forgotLoading, setForgotLoading] = useState(false)
+  const t = useT()
 
   async function handleGoogleOAuth() {
     const supabase = createClient()
@@ -344,7 +346,7 @@ export default function LoginPage() {
         {/* Kid PIN login link */}
         <div style={{ textAlign: 'center', marginTop: '16px' }}>
           <a href="/kid/login" style={{ color: '#f59e0b', fontSize: '14px', textDecoration: 'none' }}>
-            Войти как ребёнок (по PIN-коду)
+            {t('login.kidLoginLabel')}
           </a>
         </div>
 

@@ -10,22 +10,11 @@ import {
   deleteScheduleItem,
 } from '@/lib/schedule-api'
 import type { ScheduleItem } from '@/lib/schedule-api'
+import { useT } from '@/lib/i18n'
 
-const DAY_NAMES = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] // index 1-7
-
-const TYPE_OPTIONS = [
-  { value: 'lesson', label: 'Урок' },
-  { value: 'section', label: 'Секция' },
-  { value: 'routine', label: 'Распорядок' },
-] as const
+const DAY_NAMES = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] // index 1-7
 
 type ItemType = 'lesson' | 'section' | 'routine'
-
-const TYPE_LABELS: Record<ItemType, string> = {
-  lesson: 'Уроки',
-  section: 'Секции',
-  routine: 'Распорядок',
-}
 
 const TYPE_COLORS: Record<ItemType, string> = {
   lesson: 'bg-blue-500/20 text-blue-400',
@@ -60,6 +49,7 @@ interface Props {
 }
 
 export default function ScheduleEditor({ familyId }: Props) {
+  const t = useT()
   const [children, setChildren] = useState<ChildProfile[]>([])
   const [loadingChildren, setLoadingChildren] = useState(true)
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null)
@@ -75,6 +65,18 @@ export default function ScheduleEditor({ familyId }: Props) {
   const [formError, setFormError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
+  const TYPE_OPTIONS = [
+    { value: 'lesson' as ItemType, label: t('settings.scheduleEditor.lesson') },
+    { value: 'section' as ItemType, label: t('settings.scheduleEditor.section') },
+    { value: 'routine' as ItemType, label: t('settings.scheduleEditor.routine') },
+  ]
+
+  const TYPE_LABELS: Record<ItemType, string> = {
+    lesson: t('settings.scheduleEditor.lesson'),
+    section: t('settings.scheduleEditor.section'),
+    routine: t('settings.scheduleEditor.routine'),
+  }
+
   // Load all children (including linked)
   useEffect(() => {
     const load = async () => {
@@ -84,7 +86,7 @@ export default function ScheduleEditor({ familyId }: Props) {
         setChildren(data)
         if (data.length > 0) setSelectedChildId(data[0].memberId)
       } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : 'Ошибка загрузки детей'
+        const msg = err instanceof Error ? err.message : t('common.error')
         setError(msg)
       } finally {
         setLoadingChildren(false)
@@ -101,7 +103,7 @@ export default function ScheduleEditor({ familyId }: Props) {
       const data = await getScheduleItems(familyId, selectedChildId)
       setItems(data)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Ошибка загрузки расписания'
+      const msg = err instanceof Error ? err.message : t('common.error')
       setError(msg)
     } finally {
       setLoadingItems(false)
@@ -153,11 +155,11 @@ export default function ScheduleEditor({ familyId }: Props) {
 
   const handleSave = async () => {
     if (!form.title.trim()) {
-      setFormError('Введите название')
+      setFormError(t('settings.scheduleEditor.name'))
       return
     }
     if (form.day_of_week.length === 0) {
-      setFormError('Выберите хотя бы один день недели')
+      setFormError(t('settings.scheduleEditor.days'))
       return
     }
     if (!selectedChildId) return
@@ -190,7 +192,7 @@ export default function ScheduleEditor({ familyId }: Props) {
       }
       closeForm()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Ошибка сохранения'
+      const msg = err instanceof Error ? err.message : t('common.error')
       setFormError(msg)
     } finally {
       setSaving(false)
@@ -203,7 +205,7 @@ export default function ScheduleEditor({ familyId }: Props) {
       setItems(prev => prev.filter(i => i.id !== itemId))
       if (editingItemId === itemId) closeForm()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Ошибка удаления'
+      const msg = err instanceof Error ? err.message : t('common.error')
       setError(msg)
     }
   }
@@ -215,12 +217,12 @@ export default function ScheduleEditor({ familyId }: Props) {
   const renderForm = () => (
     <div className="bg-gray-700/50 rounded-xl p-4 space-y-3 mt-3">
       <h3 className="text-sm font-medium text-white">
-        {editingItemId ? 'Редактировать' : 'Новый элемент'}
+        {editingItemId ? t('common.edit') : t('settings.scheduleEditor.addLesson')}
       </h3>
 
       {/* Type selector */}
       <div>
-        <label className="text-xs text-gray-400 mb-2 block">Тип</label>
+        <label className="text-xs text-gray-400 mb-2 block">{t('settings.scheduleEditor.title')}</label>
         <div className="flex gap-2">
           {TYPE_OPTIONS.map(opt => (
             <button
@@ -241,7 +243,7 @@ export default function ScheduleEditor({ familyId }: Props) {
       {/* Title */}
       <input
         type="text"
-        placeholder="Название"
+        placeholder={t('settings.scheduleEditor.name')}
         value={form.title}
         onChange={e => updateForm({ title: e.target.value })}
         className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-indigo-500"
@@ -250,7 +252,7 @@ export default function ScheduleEditor({ familyId }: Props) {
 
       {/* Days of week */}
       <div>
-        <label className="text-xs text-gray-400 mb-2 block">Дни недели</label>
+        <label className="text-xs text-gray-400 mb-2 block">{t('settings.scheduleEditor.days')}</label>
         <div className="flex gap-1 flex-wrap">
           {[1, 2, 3, 4, 5, 6, 7].map(day => (
             <button
@@ -271,7 +273,7 @@ export default function ScheduleEditor({ familyId }: Props) {
       {/* Times */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-gray-400 mb-1 block">Начало</label>
+          <label className="text-xs text-gray-400 mb-1 block">{t('settings.periodsManager.start')}</label>
           <input
             type="time"
             value={form.start_time}
@@ -281,7 +283,7 @@ export default function ScheduleEditor({ familyId }: Props) {
         </div>
         {form.type === 'section' && (
           <div>
-            <label className="text-xs text-gray-400 mb-1 block">Конец</label>
+            <label className="text-xs text-gray-400 mb-1 block">{t('settings.periodsManager.end')}</label>
             <input
               type="time"
               value={form.end_time}
@@ -296,7 +298,7 @@ export default function ScheduleEditor({ familyId }: Props) {
       {form.type === 'section' && (
         <input
           type="text"
-          placeholder="Место / адрес"
+          placeholder={t('settings.scheduleEditor.name')}
           value={form.location}
           onChange={e => updateForm({ location: e.target.value })}
           className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-indigo-500"
@@ -315,7 +317,7 @@ export default function ScheduleEditor({ familyId }: Props) {
             form.has_reminder ? 'left-5' : 'left-1'
           }`} />
         </button>
-        <span className="text-sm text-gray-300">Напоминание</span>
+        <span className="text-sm text-gray-300">{t('settings.notificationSettings.title')}</span>
         {form.has_reminder && (
           <div className="flex items-center gap-2 ml-auto">
             <input
@@ -325,7 +327,7 @@ export default function ScheduleEditor({ familyId }: Props) {
               onChange={e => updateForm({ reminder_offset: Number(e.target.value) })}
               className="w-20 bg-gray-800 border border-gray-600 rounded-xl px-3 py-1.5 text-white text-sm text-center focus:outline-none focus:border-indigo-500"
             />
-            <span className="text-xs text-gray-400">мин раньше</span>
+            <span className="text-xs text-gray-400">min</span>
           </div>
         )}
       </div>
@@ -340,13 +342,13 @@ export default function ScheduleEditor({ familyId }: Props) {
           disabled={saving}
           className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
         >
-          {saving ? 'Сохранение...' : 'Сохранить'}
+          {saving ? '...' : t('settings.scheduleEditor.save')}
         </button>
         <button
           onClick={closeForm}
           className="px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded-xl transition-colors"
         >
-          Отмена
+          {t('settings.scheduleEditor.cancel')}
         </button>
       </div>
     </div>
@@ -361,7 +363,7 @@ export default function ScheduleEditor({ familyId }: Props) {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-white mb-4">Расписание</h2>
+      <h2 className="text-lg font-semibold text-white mb-4">{t('settings.scheduleEditor.title')}</h2>
 
       {/* Child tabs */}
       {loadingChildren ? (
@@ -372,7 +374,7 @@ export default function ScheduleEditor({ familyId }: Props) {
         </div>
       ) : children.length === 0 ? (
         <p className="text-gray-500 text-sm mb-4">
-          Нет детей в семье. Добавьте ребёнка в онбординге.
+          {t('settings.familyManager.members')}
         </p>
       ) : (
         <div className="flex gap-2 mb-4">
@@ -396,7 +398,7 @@ export default function ScheduleEditor({ familyId }: Props) {
       {error && (
         <div className="mb-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
           {error}
-          <button onClick={() => setError(null)} className="ml-2 underline">Скрыть</button>
+          <button onClick={() => setError(null)} className="ml-2 underline">{t('common.close')}</button>
         </div>
       )}
 
@@ -429,7 +431,7 @@ export default function ScheduleEditor({ familyId }: Props) {
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-sm font-medium text-white">{item.title}</span>
                             <span className={`text-xs px-1.5 py-0.5 rounded-full ${TYPE_COLORS[item.type]}`}>
-                              {TYPE_LABELS[item.type].slice(0, -1)}
+                              {TYPE_LABELS[item.type]}
                             </span>
                           </div>
                           {/* Days chips */}
@@ -481,7 +483,7 @@ export default function ScheduleEditor({ familyId }: Props) {
 
           {items.length === 0 && (
             <p className="text-gray-500 text-sm text-center py-4">
-              Нет элементов расписания. Добавьте первый!
+              {t('settings.scheduleEditor.addLesson')}
             </p>
           )}
 
@@ -496,7 +498,7 @@ export default function ScheduleEditor({ familyId }: Props) {
           onClick={openAddForm}
           className="w-full py-3 mt-3 border-2 border-dashed border-gray-600 hover:border-indigo-500 rounded-xl text-gray-400 hover:text-indigo-400 text-sm font-medium transition-all"
         >
-          + Добавить элемент
+          + {t('settings.scheduleEditor.addLesson')}
         </button>
       )}
     </div>

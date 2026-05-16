@@ -1,8 +1,10 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useT } from '@/lib/i18n'
 
 export function OfflineBanner() {
   const [isOffline, setIsOffline] = useState(false)
+  const t = useT()
 
   useEffect(() => {
     // Initialize from current state
@@ -40,7 +42,7 @@ export function OfflineBanner() {
       gap: 8,
     }}>
       <span>📡</span>
-      <span>Нет соединения — данные могут быть устаревшими</span>
+      <span>{t('offline.banner')}</span>
     </div>
   )
 }

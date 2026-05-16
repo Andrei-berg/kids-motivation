@@ -10,15 +10,16 @@ import {
   Section,
 } from '@/lib/expenses-api'
 import { useFamilyMembers } from '@/lib/hooks/useFamilyMembers'
+import { useT } from '@/lib/i18n'
 
 const DAYS = [
-  { key: 'mon', label: 'Пн' },
-  { key: 'tue', label: 'Вт' },
-  { key: 'wed', label: 'Ср' },
-  { key: 'thu', label: 'Чт' },
-  { key: 'fri', label: 'Пт' },
-  { key: 'sat', label: 'Сб' },
-  { key: 'sun', label: 'Вс' },
+  { key: 'mon', label: 'Mon' },
+  { key: 'tue', label: 'Tue' },
+  { key: 'wed', label: 'Wed' },
+  { key: 'thu', label: 'Thu' },
+  { key: 'fri', label: 'Fri' },
+  { key: 'sat', label: 'Sat' },
+  { key: 'sun', label: 'Sun' },
 ]
 
 interface SectionForm {
@@ -42,6 +43,7 @@ const EMPTY_FORM: SectionForm = {
 }
 
 export default function SectionsManager() {
+  const t = useT()
   const { members } = useFamilyMembers()
   const { familyId } = useAppStore()
   const children = members.filter(m => m.role === 'child')
@@ -114,7 +116,7 @@ export default function SectionsManager() {
   }
 
   async function handleSave() {
-    if (!form.name.trim()) { setError('Введите название секции'); return }
+    if (!form.name.trim()) { setError(t('settings.sectionsManager.name')); return }
     setSaving(true); setError('')
     try {
       if (editingId) {
@@ -151,7 +153,7 @@ export default function SectionsManager() {
   }
 
   async function handleArchive(s: Section) {
-    if (!confirm(`Завершить секцию "${s.name}"? Она попадёт в архив, история останется.`)) return
+    if (!confirm(`${t('settings.sectionsManager.name')}: "${s.name}"?`)) return
     try {
       await updateSection(s.id, { endDate: today, isActive: true })
       await loadSections()
@@ -161,7 +163,7 @@ export default function SectionsManager() {
   }
 
   async function handleDelete(s: Section) {
-    if (!confirm(`Удалить "${s.name}" полностью? Это нельзя отменить.`)) return
+    if (!confirm(t('settings.sectionsManager.deleteConfirm'))) return
     try {
       await deleteSection(s.id)
       await loadSections()
@@ -171,10 +173,10 @@ export default function SectionsManager() {
   }
 
   function formatDateRange(s: Section): string {
-    const from = s.start_date ? new Date(s.start_date + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) : null
-    const to = s.end_date ? new Date(s.end_date + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' }) : '...'
+    const from = s.start_date ? new Date(s.start_date + 'T12:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'short' }) : null
+    const to = s.end_date ? new Date(s.end_date + 'T12:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '...'
     if (!from && !s.end_date) return ''
-    if (!from) return `до ${to}`
+    if (!from) return `to ${to}`
     return `${from} — ${to}`
   }
 
@@ -183,9 +185,9 @@ export default function SectionsManager() {
   return (
     <div>
       <div style={{ marginBottom: '16px' }}>
-        <div style={{ fontSize: '16px', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>⚽ Секции и тренировки</div>
+        <div style={{ fontSize: '16px', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>⚽ {t('settings.sectionsManager.title')}</div>
         <div style={{ fontSize: '13px', color: 'rgba(238,238,255,0.5)' }}>
-          Управляйте спортивными секциями. Укажите даты — и старые секции уйдут в архив автоматически.
+          {t('settings.sectionsManager.addSection')}
         </div>
       </div>
 
@@ -210,19 +212,19 @@ export default function SectionsManager() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
-        {(['active', 'archive'] as const).map(t => (
+        {(['active', 'archive'] as const).map(tabKey => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabKey}
+            onClick={() => setTab(tabKey)}
             style={{
               padding: '6px 14px', fontSize: '12px', fontWeight: 800,
               borderRadius: '8px', border: '1px solid', cursor: 'pointer',
-              borderColor: tab === t ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.1)',
-              background: tab === t ? 'rgba(99,102,241,0.1)' : 'rgba(255,255,255,0.03)',
-              color: tab === t ? '#818CF8' : 'rgba(238,238,255,0.4)',
+              borderColor: tab === tabKey ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.1)',
+              background: tab === tabKey ? 'rgba(99,102,241,0.1)' : 'rgba(255,255,255,0.03)',
+              color: tab === tabKey ? '#818CF8' : 'rgba(238,238,255,0.4)',
             }}
           >
-            {t === 'active' ? `Текущие (${activeSections.length})` : `Архив (${archivedSections.length})`}
+            {tabKey === 'active' ? `Active (${activeSections.length})` : `Archive (${archivedSections.length})`}
           </button>
         ))}
         <button
@@ -233,7 +235,7 @@ export default function SectionsManager() {
             background: 'rgba(99,102,241,0.8)', color: '#fff',
           }}
         >
-          + Добавить
+          + {t('settings.sectionsManager.addSection')}
         </button>
       </div>
 
@@ -247,43 +249,43 @@ export default function SectionsManager() {
       {showForm && (
         <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
           <div style={{ fontSize: '14px', fontWeight: 800, color: '#818CF8', marginBottom: '12px' }}>
-            {editingId ? '✏️ Редактировать секцию' : '➕ Новая секция'}
+            {editingId ? `✏️ ${t('common.edit')}` : `➕ ${t('settings.sectionsManager.addSection')}`}
           </div>
 
           <div style={{ marginBottom: '10px' }}>
-            <div className="premium-label">Название *</div>
-            <input className="premium-input" placeholder="Плавание, Карате, Футбол..." value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
+            <div className="premium-label">{t('settings.sectionsManager.name')} *</div>
+            <input className="premium-input" placeholder={t('settings.sectionsManager.name')} value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
             <div>
-              <div className="premium-label">Тренер</div>
-              <input className="premium-input" placeholder="Имя тренера" value={form.trainer} onChange={e => setForm(p => ({ ...p, trainer: e.target.value }))} />
+              <div className="premium-label">Trainer</div>
+              <input className="premium-input" placeholder="Trainer name" value={form.trainer} onChange={e => setForm(p => ({ ...p, trainer: e.target.value }))} />
             </div>
             <div>
-              <div className="premium-label">Стоимость / мес.</div>
+              <div className="premium-label">Cost / mo.</div>
               <input className="premium-input" type="number" placeholder="0" value={form.cost} onChange={e => setForm(p => ({ ...p, cost: e.target.value }))} />
             </div>
           </div>
 
           <div style={{ marginBottom: '10px' }}>
-            <div className="premium-label">Адрес / место</div>
-            <input className="premium-input" placeholder="Ул. Примерная 1" value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} />
+            <div className="premium-label">Address / location</div>
+            <input className="premium-input" placeholder="Location" value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
             <div>
-              <div className="premium-label">Дата начала</div>
+              <div className="premium-label">{t('settings.periodsManager.start')}</div>
               <input className="premium-input" type="date" value={form.startDate} onChange={e => setForm(p => ({ ...p, startDate: e.target.value }))} />
             </div>
             <div>
-              <div className="premium-label">Дата окончания</div>
+              <div className="premium-label">{t('settings.periodsManager.end')}</div>
               <input className="premium-input" type="date" value={form.endDate} onChange={e => setForm(p => ({ ...p, endDate: e.target.value }))} />
             </div>
           </div>
 
           <div style={{ marginBottom: '14px' }}>
-            <div className="premium-label">Дни занятий (необязательно — если не выбрано, секция показывается каждый день)</div>
+            <div className="premium-label">Schedule days (optional)</div>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
               {DAYS.map(d => (
                 <button
@@ -309,13 +311,13 @@ export default function SectionsManager() {
               disabled={saving}
               style={{ flex: 1, padding: '10px', fontSize: '13px', fontWeight: 800, borderRadius: '10px', border: 'none', cursor: 'pointer', background: 'rgba(99,102,241,0.8)', color: '#fff' }}
             >
-              {saving ? 'Сохранение...' : '💾 Сохранить'}
+              {saving ? '...' : `💾 ${t('settings.sectionsManager.save')}`}
             </button>
             <button
               onClick={() => { setShowForm(false); setEditingId(null); setError('') }}
               style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 800, borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', color: 'rgba(238,238,255,0.5)' }}
             >
-              Отмена
+              {t('settings.sectionsManager.cancel')}
             </button>
           </div>
         </div>
@@ -323,10 +325,10 @@ export default function SectionsManager() {
 
       {/* Section list */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '20px', color: 'rgba(238,238,255,0.4)', fontSize: '13px' }}>Загрузка...</div>
+        <div style={{ textAlign: 'center', padding: '20px', color: 'rgba(238,238,255,0.4)', fontSize: '13px' }}>{t('common.loading')}</div>
       ) : displayed.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '24px', color: 'rgba(238,238,255,0.3)', fontSize: '13px' }}>
-          {tab === 'active' ? 'Нет активных секций. Нажмите «+ Добавить».' : 'Архив пуст.'}
+          {tab === 'active' ? t('settings.sectionsManager.addSection') : 'Archive is empty.'}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -362,7 +364,7 @@ export default function SectionsManager() {
                     )}
                     {s.cost && (
                       <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(238,238,255,0.45)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', padding: '2px 7px', borderRadius: '6px' }}>
-                        💳 {s.cost} ₽/мес
+                        💳 {s.cost}/mo
                       </span>
                     )}
                   </div>
@@ -378,7 +380,7 @@ export default function SectionsManager() {
                       </button>
                       <button
                         onClick={() => handleArchive(s)}
-                        title="Завершить (в архив)"
+                        title="Archive"
                         style={{ padding: '6px 10px', fontSize: '12px', fontWeight: 700, borderRadius: '8px', border: '1px solid rgba(245,158,11,0.2)', cursor: 'pointer', background: 'rgba(245,158,11,0.06)', color: '#F59E0B' }}
                       >
                         📦

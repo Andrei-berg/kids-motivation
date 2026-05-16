@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import { useT } from '@/lib/i18n'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>
@@ -11,6 +12,7 @@ export function InstallPrompt() {
   const [showAndroid, setShowAndroid] = useState(false)
   const [showIOS, setShowIOS] = useState(false)
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null)
+  const t = useT()
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -86,10 +88,10 @@ export function InstallPrompt() {
       <div style={bannerStyle} role="banner">
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 600, fontSize: '14px', marginBottom: '2px' }}>
-            Установить приложение
+            {t('install.title')}
           </div>
           <div style={{ fontSize: '12px', color: '#c7d2fe' }}>
-            Добавьте FamilyCoins на главный экран
+            {t('install.subtitle')}
           </div>
         </div>
         <button
@@ -106,11 +108,11 @@ export function InstallPrompt() {
             whiteSpace: 'nowrap',
           }}
         >
-          Добавить
+          {t('install.addButton')}
         </button>
         <button
           onClick={handleAndroidDismiss}
-          aria-label="Закрыть"
+          aria-label={t('install.closeLabel')}
           style={{
             background: 'none',
             border: 'none',
@@ -132,10 +134,10 @@ export function InstallPrompt() {
       <div style={bannerStyle} role="banner">
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>
-            Установить на iPhone
+            {t('install.iosTitle')}
           </div>
           <div style={{ fontSize: '12px', color: '#c7d2fe', lineHeight: 1.5 }}>
-            Нажмите{' '}
+            {t('install.iosTap')}{' '}
             <span
               style={{
                 display: 'inline-block',
@@ -147,12 +149,12 @@ export function InstallPrompt() {
             >
               ⎙
             </span>{' '}
-            → «На экран "Домой"» для установки и получения уведомлений
+            {t('install.iosInstruct')}
           </div>
         </div>
         <button
           onClick={handleIOSDismiss}
-          aria-label="Закрыть"
+          aria-label={t('install.closeLabel')}
           style={{
             background: 'none',
             border: 'none',

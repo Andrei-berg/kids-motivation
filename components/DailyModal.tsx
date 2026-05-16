@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useT } from '@/lib/i18n'
 import { api } from '@/lib/api'
 import { flexibleApi, Subject, ExerciseType } from '@/lib/flexible-api'
 import { getSectionsForDate, markSectionVisit, Section, SectionVisit, ExtraActivity, getExtraActivities, getActivityLogs, saveActivityLogs } from '@/lib/expenses-api'
@@ -83,6 +84,7 @@ const DAY_TYPE_STYLES: Record<string, { bg: string; border: string; text: string
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function DailyModal({ isOpen, onClose, childId, date, onSave }: DailyModalProps) {
+  const t = useT()
   const { familyId } = useAppStore()
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -91,7 +93,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
   // Day type
   const [vacationPeriods, setVacationPeriods] = useState<VacationPeriod[]>([])
-  const [dayTypeInfo, setDayTypeInfo] = useState<DayTypeInfo>({ type: 'school', label: 'Учебный', emoji: '📚' })
+  const [dayTypeInfo, setDayTypeInfo] = useState<DayTypeInfo>({ type: 'school', label: 'School', emoji: '📚' })
   const [isSick, setIsSick] = useState(false)
 
   // Справочники
@@ -224,7 +226,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
           exercise_type_id: ex.exercise_type_id,
           exercise_name: ex.exercise_type?.name || '',
           quantity: ex.quantity,
-          unit: ex.exercise_type?.unit || 'раз'
+          unit: ex.exercise_type?.unit || t('dailyModal.unit')
         })))
       } catch { setExercises([]) }
 
@@ -318,7 +320,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   }
 
   function openSchedulePanel() {
-    if (scheduleForToday.length === 0) { alert('На этот день нет расписания'); return }
+    if (scheduleForToday.length === 0) { alert(t('dailyModal.noSchedule')); return }
     const initialGrades: { [key: string]: number } = {}
     scheduleForToday.forEach(lesson => { initialGrades[lesson.subject.id] = 5 })
     setScheduleGrades(initialGrades); setShowSchedulePanel(true)
@@ -374,7 +376,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
   async function handleSave() {
     try {
-      setSaving(true); setStatus('Сохранение...'); setError(false)
+      setSaving(true); setStatus(t('dailyModal.saving')); setError(false)
 
       const dayType = dayTypeInfo.type
       const isSickDay = dayType === 'sick'
@@ -474,8 +476,8 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
       }
 
       const badges = await checkAndAwardBadges(childId, date)
-      if (badges.length > 0) { triggerConfetti(); setStatus('🎉 Готово! Получен бейдж!') }
-      else { setStatus('✅ Сохранено!') }
+      if (badges.length > 0) { triggerConfetti(); setStatus(t('dailyModal.savedBadge')) }
+      else { setStatus(t('dailyModal.saved')) }
 
       if (onSave) onSave()
       setTimeout(() => { onClose() }, 1500)
@@ -526,7 +528,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
         <div className="premium-modal-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <div className="premium-modal-title">Заполнить день</div>
+              <div className="premium-modal-title">{t('dailyModal.title')}</div>
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: '4px',
                 padding: '3px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 800,
@@ -547,7 +549,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
         {loading ? (
           <div className="premium-loading">
             <div className="premium-spinner"></div>
-            <div className="premium-loading-text">Загрузка...</div>
+            <div className="premium-loading-text">{t('dailyModal.loading')}</div>
           </div>
         ) : (
           <div className="scroll-modal-body">
@@ -558,9 +560,9 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span style={{ fontSize: '24px' }}>🤒</span>
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: '14px', color: '#F43F5E' }}>День болезни</div>
+                    <div style={{ fontWeight: 800, fontSize: '14px', color: '#F43F5E' }}>{t('dailyModal.sickDay')}</div>
                     <div style={{ fontSize: '12px', color: 'rgba(238,238,255,0.55)', marginTop: '2px' }}>
-                      Комната и поведение — грейс-период, штрафов нет. Лёгкое чтение — засчитывается.
+                      {t('dailyModal.sickDayNote')}
                     </div>
                   </div>
                 </div>
@@ -572,7 +574,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
               <div className="scroll-section">
                 <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
                   <span className="scroll-section-icon">📚</span>
-                  <span className="scroll-section-title">Чтение</span>
+                  <span className="scroll-section-title">{t('dailyModal.reading')}</span>
                   {readingCoins > 0 && (
                     <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.22)', padding: '2px 8px', borderRadius: '20px' }}>
                       +{readingCoins}💰
@@ -582,11 +584,11 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
                 <div style={{ padding: '12px 0 0' }}>
                   <div style={{ marginBottom: '10px' }}>
-                    <div className="premium-label">Книга</div>
+                    <div className="premium-label">{t('dailyModal.book')}</div>
                     <input
                       className="premium-input"
                       type="text"
-                      placeholder="Название книги..."
+                      placeholder={t('dailyModal.bookPlaceholder')}
                       value={bookTitle}
                       onChange={e => setBookTitle(e.target.value)}
                       style={{ fontSize: '14px', padding: '10px 12px' }}
@@ -595,7 +597,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
                     <div>
-                      <div className="premium-label">Страниц</div>
+                      <div className="premium-label">{t('dailyModal.pages')}</div>
                       <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface,#0D0D1E)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden' }}>
                         <button
                           onClick={() => setPagesRead(Math.max(0, pagesRead - 5))}
@@ -603,7 +605,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                         >−</button>
                         <div style={{ flex: 1, textAlign: 'center' }}>
                           <div style={{ fontSize: '18px', fontWeight: 900 }}>{pagesRead}</div>
-                          <div style={{ fontSize: '9px', color: 'rgba(238,238,255,0.4)', fontWeight: 700 }}>СТРАНИЦ</div>
+                          <div style={{ fontSize: '9px', color: 'rgba(238,238,255,0.4)', fontWeight: 700 }}>{t('dailyModal.pagesUnit')}</div>
                         </div>
                         <button
                           onClick={() => setPagesRead(pagesRead + 5)}
@@ -612,7 +614,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                       </div>
                     </div>
                     <div>
-                      <div className="premium-label">Минут</div>
+                      <div className="premium-label">{t('dailyModal.minutes')}</div>
                       <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface,#0D0D1E)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden' }}>
                         <button
                           onClick={() => setMinutesRead(Math.max(0, minutesRead - 5))}
@@ -620,7 +622,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                         >−</button>
                         <div style={{ flex: 1, textAlign: 'center' }}>
                           <div style={{ fontSize: '18px', fontWeight: 900 }}>{minutesRead}</div>
-                          <div style={{ fontSize: '9px', color: 'rgba(238,238,255,0.4)', fontWeight: 700 }}>МИНУТ</div>
+                          <div style={{ fontSize: '9px', color: 'rgba(238,238,255,0.4)', fontWeight: 700 }}>{t('dailyModal.minutesUnit')}</div>
                         </div>
                         <button
                           onClick={() => setMinutesRead(Math.min(120, minutesRead + 5))}
@@ -639,11 +641,11 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
                   {/* Book finished */}
                   <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.18)', borderRadius: '10px', cursor: 'pointer', marginBottom: '10px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700 }}>🎉 Книга дочитана! <span style={{ color: '#10B981' }}>+10💰</span></span>
+                    <span style={{ fontSize: '13px', fontWeight: 700 }}>{t('dailyModal.bookFinished')}</span>
                     <input type="checkbox" checked={bookFinished} onChange={e => setBookFinished(e.target.checked)} style={{ width: '18px', height: '18px', accentColor: '#10B981' }} />
                   </label>
 
-                  <textarea className="premium-textarea" placeholder="Что запомнилось?" value={readingNote} onChange={e => setReadingNote(e.target.value)} rows={2} />
+                  <textarea className="premium-textarea" placeholder={t('dailyModal.readingNote')} value={readingNote} onChange={e => setReadingNote(e.target.value)} rows={2} />
                 </div>
               </div>
             )}
@@ -656,7 +658,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                 <div className="scroll-section">
                   <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
                     <span className="scroll-section-icon">📋</span>
-                    <span className="scroll-section-title">Доп. занятия</span>
+                    <span className="scroll-section-title">{t('dailyModal.extraActivities')}</span>
                     {activityCoins > 0 && (
                       <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.22)', padding: '2px 8px', borderRadius: '20px' }}>
                         +{activityCoins}💰
@@ -714,7 +716,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
               <div className="scroll-section">
                 <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
                   <span className="scroll-section-icon">🏠</span>
-                  <span className="scroll-section-title">Помощь по дому</span>
+                  <span className="scroll-section-title">{t('dailyModal.homeHelp')}</span>
                   {homeHelp && (
                     <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.22)', padding: '2px 8px', borderRadius: '20px' }}>
                       +3💰
@@ -767,7 +769,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
               <div className="scroll-section">
                 <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
                   <span className="scroll-section-icon">📝</span>
-                  <span className="scroll-section-title">Домашнее задание</span>
+                  <span className="scroll-section-title">{t('dailyModal.homework')}</span>
                   {homeworkDone && (
                     <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.22)', padding: '2px 8px', borderRadius: '20px' }}>
                       +5💰
@@ -810,7 +812,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
               <div className="scroll-section">
                 <div className="scroll-section-header">
                   <span className="scroll-section-icon">📚</span>
-                  <span className="scroll-section-title">Учёба</span>
+                  <span className="scroll-section-title">{t('dailyModal.study')}</span>
                   {gradeCoins !== 0 && (
                     <span style={{ fontSize: '12px', fontWeight: 800, color: gradeCoins >= 0 ? '#10B981' : '#F43F5E', background: gradeCoins >= 0 ? 'rgba(16,185,129,0.12)' : 'rgba(244,63,94,0.1)', border: `1px solid ${gradeCoins >= 0 ? 'rgba(16,185,129,0.22)' : 'rgba(244,63,94,0.25)'}`, padding: '2px 8px', borderRadius: '20px' }}>
                       {gradeCoins >= 0 ? '+' : ''}{gradeCoins}💰
@@ -926,7 +928,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
             <div className="scroll-section">
               <div className="scroll-section-header">
                 <span className="scroll-section-icon">🏠</span>
-                <span className="scroll-section-title">Комната</span>
+                <span className="scroll-section-title">{t('dailyModal.room')}</span>
                 <span className={`scroll-section-badge ${dayType === 'sick' ? 'ok' : roomOk ? 'ok' : 'warn'}`}>
                   {dayType === 'sick' ? '🤒' : `${roomScore}/5`}
                 </span>
@@ -972,7 +974,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
             <div className="scroll-section">
               <div className="scroll-section-header">
                 <span className="scroll-section-icon">📝</span>
-                <span className="scroll-section-title">День</span>
+                <span className="scroll-section-title">{t('dailyModal.day')}</span>
               </div>
               <div className="premium-checklist">
                 <label className="premium-checkbox">
@@ -1005,7 +1007,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
             <div className="scroll-section">
               <div className="scroll-section-header">
                 <span className="scroll-section-icon">💪</span>
-                <span className="scroll-section-title">Спорт</span>
+                <span className="scroll-section-title">{t('dailyModal.sport')}</span>
               </div>
               {exerciseTypes.length === 0 ? (
                 <div className="premium-empty" style={{ padding: '16px' }}>
@@ -1044,7 +1046,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
               <div className="scroll-section">
                 <div className="scroll-section-header">
                   <span className="scroll-section-icon">🏊</span>
-                  <span className="scroll-section-title">Секции</span>
+                  <span className="scroll-section-title">{t('dailyModal.sections')}</span>
                 </div>
                 <div className="premium-exercises-grid">
                   {sections.map(section => {
@@ -1114,9 +1116,9 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
               </div>
               {status && <div className={`premium-status ${error ? 'error' : 'success'}`}>{status}</div>}
               <div className="premium-footer-actions">
-                <button className="premium-btn-secondary" onClick={onClose} disabled={saving}>Отмена</button>
+                <button className="premium-btn-secondary" onClick={onClose} disabled={saving}>{t('common.cancel')}</button>
                 <button className="premium-btn-save" onClick={handleSave} disabled={saving}>
-                  {saving ? '⏳ Сохранение...' : `💾 Сохранить · ${totalCoins >= 0 ? '+' : ''}${totalCoins}💰`}
+                  {saving ? `⏳ ${t('dailyModal.saving')}` : `💾 ${t('dailyModal.save')} · ${totalCoins >= 0 ? '+' : ''}${totalCoins}💰`}
                 </button>
               </div>
             </div>

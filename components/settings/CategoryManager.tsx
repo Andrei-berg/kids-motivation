@@ -8,26 +8,19 @@ import {
   deleteCategory,
 } from '@/lib/categories-api'
 import type { Category } from '@/lib/categories-api'
+import { useT } from '@/lib/i18n'
 
 const EMOJI_PICKER = ['📚','🏠','⚽','⏰','🎨','🎵','🍳','💪','🧘','🎯','📖','🌟','🎮','🚴','🏊','✈️','🎭','🔬','💻','🎁']
 
 const TYPE_OPTIONS = [
-  { value: 'study', label: 'Учёба' },
-  { value: 'home', label: 'Дом' },
-  { value: 'sport', label: 'Спорт' },
-  { value: 'routine', label: 'Распорядок' },
-  { value: 'custom', label: 'Другое' },
+  { value: 'study', label: 'study' },
+  { value: 'home', label: 'home' },
+  { value: 'sport', label: 'sport' },
+  { value: 'routine', label: 'routine' },
+  { value: 'custom', label: 'custom' },
 ] as const
 
 type CategoryType = 'study' | 'home' | 'sport' | 'routine' | 'custom'
-
-const TYPE_LABELS: Record<CategoryType, string> = {
-  study: 'Учёба',
-  home: 'Дом',
-  sport: 'Спорт',
-  routine: 'Распорядок',
-  custom: 'Другое',
-}
 
 const TYPE_COLORS: Record<CategoryType, string> = {
   study: 'bg-blue-500/20 text-blue-400',
@@ -42,6 +35,7 @@ interface Props {
 }
 
 export default function CategoryManager({ familyId }: Props) {
+  const t = useT()
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -58,6 +52,14 @@ export default function CategoryManager({ familyId }: Props) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
 
+  const TYPE_LABELS: Record<CategoryType, string> = {
+    study: t('kidDayFill.study'),
+    home: t('kidDayFill.room'),
+    sport: t('kidDayFill.sport'),
+    routine: t('settings.scheduleEditor.routine'),
+    custom: 'Other',
+  }
+
   const loadCategories = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -65,7 +67,7 @@ export default function CategoryManager({ familyId }: Props) {
       const data = await getCategories(familyId)
       setCategories(data)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Ошибка загрузки категорий'
+      const msg = err instanceof Error ? err.message : t('common.error')
       setError(msg)
     } finally {
       setLoading(false)
@@ -88,7 +90,7 @@ export default function CategoryManager({ familyId }: Props) {
       setCategories(prev =>
         prev.map(c => c.id === cat.id ? { ...c, is_active: cat.is_active } : c)
       )
-      setError('Не удалось изменить статус категории')
+      setError(t('common.error'))
     }
   }
 
@@ -99,7 +101,7 @@ export default function CategoryManager({ familyId }: Props) {
       setCategories(prev => prev.filter(c => c.id !== categoryId))
       setConfirmDeleteId(null)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Ошибка удаления'
+      const msg = err instanceof Error ? err.message : t('common.error')
       setError(msg)
     } finally {
       setDeleting(false)
@@ -108,7 +110,7 @@ export default function CategoryManager({ familyId }: Props) {
 
   const handleAdd = async () => {
     if (!newName.trim()) {
-      setAddError('Введите название категории')
+      setAddError(t('settings.categoryManager.name'))
       return
     }
     setAdding(true)
@@ -125,7 +127,7 @@ export default function CategoryManager({ familyId }: Props) {
       setNewType('study')
       setShowAddForm(false)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Ошибка создания категории'
+      const msg = err instanceof Error ? err.message : t('common.error')
       setAddError(msg)
     } finally {
       setAdding(false)
@@ -136,7 +138,7 @@ export default function CategoryManager({ familyId }: Props) {
   if (loading) {
     return (
       <div>
-        <h2 className="text-lg font-semibold text-white mb-4">Категории</h2>
+        <h2 className="text-lg font-semibold text-white mb-4">{t('settings.categoryManager.title')}</h2>
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
             <div key={i} className="h-14 bg-gray-700/50 rounded-xl animate-pulse" />
@@ -149,15 +151,15 @@ export default function CategoryManager({ familyId }: Props) {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-white">Категории</h2>
-        <span className="text-gray-400 text-sm">{categories.length} категорий</span>
+        <h2 className="text-lg font-semibold text-white">{t('settings.categoryManager.title')}</h2>
+        <span className="text-gray-400 text-sm">{categories.length}</span>
       </div>
 
       {/* Error */}
       {error && (
         <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
           {error}
-          <button onClick={() => setError(null)} className="ml-2 underline">Скрыть</button>
+          <button onClick={() => setError(null)} className="ml-2 underline">{t('common.close')}</button>
         </div>
       )}
 
@@ -165,7 +167,7 @@ export default function CategoryManager({ familyId }: Props) {
       <div className="space-y-2 mb-4">
         {categories.length === 0 && (
           <p className="text-gray-500 text-sm text-center py-6">
-            Нет категорий. Создайте первую!
+            {t('settings.categoryManager.addCategory')}
           </p>
         )}
         {categories.map(cat => (
@@ -185,7 +187,7 @@ export default function CategoryManager({ familyId }: Props) {
                 {TYPE_LABELS[cat.type]}
               </span>
               {cat.is_default && (
-                <span className="ml-2 text-xs text-gray-500">Стандартная</span>
+                <span className="ml-2 text-xs text-gray-500">Default</span>
               )}
             </div>
 
@@ -197,7 +199,7 @@ export default function CategoryManager({ familyId }: Props) {
                 className={`relative w-10 h-6 rounded-full transition-colors ${
                   cat.is_active ? 'bg-indigo-600' : 'bg-gray-600'
                 }`}
-                title={cat.is_active ? 'Отключить' : 'Включить'}
+                title={cat.is_active ? t('settings.categoryManager.inactive') : t('settings.categoryManager.active')}
               >
                 <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
                   cat.is_active ? 'left-5' : 'left-1'
@@ -213,20 +215,20 @@ export default function CategoryManager({ familyId }: Props) {
                       disabled={deleting}
                       className="text-xs px-2 py-1 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors disabled:opacity-50"
                     >
-                      {deleting ? '...' : 'Да'}
+                      {deleting ? '...' : t('settings.categoryManager.save')}
                     </button>
                     <button
                       onClick={() => setConfirmDeleteId(null)}
                       className="text-xs px-2 py-1 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors"
                     >
-                      Нет
+                      {t('settings.categoryManager.cancel')}
                     </button>
                   </div>
                 ) : (
                   <button
                     onClick={() => setConfirmDeleteId(cat.id)}
                     className="text-gray-500 hover:text-red-400 transition-colors p-1 rounded-lg hover:bg-red-400/10"
-                    title="Удалить категорию"
+                    title={t('settings.categoryManager.deleteConfirm')}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -241,7 +243,7 @@ export default function CategoryManager({ familyId }: Props) {
         {/* Confirm delete text */}
         {confirmDeleteId && (
           <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-300">
-            Удалить категорию и все её задачи? Это действие нельзя отменить.
+            {t('settings.categoryManager.deleteConfirm')}
           </div>
         )}
       </div>
@@ -249,12 +251,12 @@ export default function CategoryManager({ familyId }: Props) {
       {/* Add form */}
       {showAddForm ? (
         <div className="bg-gray-700/50 rounded-xl p-4 space-y-3">
-          <h3 className="text-sm font-medium text-white">Новая категория</h3>
+          <h3 className="text-sm font-medium text-white">{t('settings.categoryManager.addCategory')}</h3>
 
           {/* Name input */}
           <input
             type="text"
-            placeholder="Название категории"
+            placeholder={t('settings.categoryManager.name')}
             value={newName}
             onChange={e => setNewName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleAdd()}
@@ -264,7 +266,7 @@ export default function CategoryManager({ familyId }: Props) {
 
           {/* Emoji picker */}
           <div>
-            <label className="text-xs text-gray-400 mb-2 block">Иконка</label>
+            <label className="text-xs text-gray-400 mb-2 block">{t('settings.categoryManager.emoji')}</label>
             <div className="flex flex-wrap gap-2">
               {EMOJI_PICKER.map(emoji => (
                 <button
@@ -284,14 +286,14 @@ export default function CategoryManager({ familyId }: Props) {
 
           {/* Type selector */}
           <div>
-            <label className="text-xs text-gray-400 mb-2 block">Тип</label>
+            <label className="text-xs text-gray-400 mb-2 block">{t('settings.categoryManager.name')}</label>
             <select
               value={newType}
               onChange={e => setNewType(e.target.value as CategoryType)}
               className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
             >
               {TYPE_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                <option key={opt.value} value={opt.value}>{TYPE_LABELS[opt.value]}</option>
               ))}
             </select>
           </div>
@@ -308,13 +310,13 @@ export default function CategoryManager({ familyId }: Props) {
               disabled={adding}
               className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
             >
-              {adding ? 'Создание...' : 'Создать'}
+              {adding ? '...' : t('settings.categoryManager.save')}
             </button>
             <button
               onClick={() => { setShowAddForm(false); setAddError(null) }}
               className="px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded-xl transition-colors"
             >
-              Отмена
+              {t('settings.categoryManager.cancel')}
             </button>
           </div>
         </div>
@@ -323,7 +325,7 @@ export default function CategoryManager({ familyId }: Props) {
           onClick={() => setShowAddForm(true)}
           className="w-full py-3 border-2 border-dashed border-gray-600 hover:border-indigo-500 rounded-xl text-gray-400 hover:text-indigo-400 text-sm font-medium transition-all"
         >
-          + Добавить категорию
+          + {t('settings.categoryManager.addCategory')}
         </button>
       )}
     </div>

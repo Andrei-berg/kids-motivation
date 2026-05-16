@@ -7,6 +7,7 @@ import { requestPurchase } from '@/app/kid/shop/actions'
 import type { Wallet, Reward, RewardPurchase } from '@/lib/models/wallet.types'
 import { T } from '@/components/kid/design/tokens'
 import { AnimatedNum, CoinPill, KMButton } from '@/components/kid/design/atoms'
+import { useT } from '@/lib/i18n'
 
 function LoadingSkeleton() {
   return (
@@ -18,16 +19,8 @@ function LoadingSkeleton() {
   )
 }
 
-const VIRTUAL_ITEMS = [
-  { id: 'v1', icon: '🚀', title: 'Костюм космонавта', price_coins: 400, tag: 'Аватар' },
-  { id: 'v2', icon: '🌈', title: 'Неон тема', price_coins: 250, tag: 'Тема' },
-  { id: 'v3', icon: '🐉', title: 'Дракон питомец', price_coins: 600, tag: 'Питомец' },
-  { id: 'v4', icon: '🤖', title: 'Робот-аватар', price_coins: 350, tag: 'Аватар' },
-  { id: 'v5', icon: '🌙', title: 'Тёмная тема', price_coins: 200, tag: 'Тема' },
-  { id: 'v6', icon: '🦄', title: 'Единорог питомец', price_coins: 500, tag: 'Питомец' },
-]
-
 export default function KidShopPage() {
+  const t = useT()
   const { activeMemberId } = useAppStore()
   const [tab, setTab] = useState<'real' | 'virtual'>('real')
   const [loading, setLoading] = useState(true)
@@ -62,6 +55,15 @@ export default function KidShopPage() {
   if (loading) return <LoadingSkeleton/>
 
   const coins = wallet?.coins ?? 0
+
+  const VIRTUAL_ITEMS = [
+    { id: 'v1', icon: '🚀', title: 'Astronaut Suit',  price_coins: 400, tag: 'Avatar' },
+    { id: 'v2', icon: '🌈', title: 'Neon Theme',      price_coins: 250, tag: 'Theme'  },
+    { id: 'v3', icon: '🐉', title: 'Dragon Pet',      price_coins: 600, tag: 'Pet'    },
+    { id: 'v4', icon: '🤖', title: 'Robot Avatar',    price_coins: 350, tag: 'Avatar' },
+    { id: 'v5', icon: '🌙', title: 'Dark Theme',      price_coins: 200, tag: 'Theme'  },
+    { id: 'v6', icon: '🦄', title: 'Unicorn Pet',     price_coins: 500, tag: 'Pet'    },
+  ]
 
   async function handleConfirm() {
     if (!activeMemberId || !pending) return
@@ -98,7 +100,7 @@ export default function KidShopPage() {
             <text x="11" y="14.5" textAnchor="middle" fontSize="9" fontWeight="900" fontFamily={T.fDisp} fill={T.ink}>K</text>
           </svg>
           <div style={{ flex: 1, position: 'relative' }}>
-            <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink2, fontWeight: 700, letterSpacing: 1 }}>ТВОИ МОНЕТЫ</div>
+            <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink2, fontWeight: 700, letterSpacing: 1 }}>{t('kidShop.myCoins')}</div>
             <div style={{ fontFamily: T.fNum, fontSize: 26, fontWeight: 800, color: T.ink, letterSpacing: -1, lineHeight: 1 }}>
               <AnimatedNum value={coins}/>
             </div>
@@ -109,16 +111,16 @@ export default function KidShopPage() {
       {/* ═══ Tabs ═════════════════════════════════════════════════════════════ */}
       <div style={{ padding: '14px 16px 0' }}>
         <div style={{ display: 'flex', background: T.lineSoft, borderRadius: 18, padding: 3, gap: 3 }}>
-          {(['real', 'virtual'] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{
+          {(['real', 'virtual'] as const).map(tabKey => (
+            <button key={tabKey} onClick={() => setTab(tabKey)} style={{
               flex: 1, height: 40, borderRadius: 15, border: 'none', cursor: 'pointer',
-              background: tab === t ? '#fff' : 'transparent',
+              background: tab === tabKey ? '#fff' : 'transparent',
               fontFamily: T.fDisp, fontSize: 13, fontWeight: 800,
-              color: tab === t ? T.ink : T.ink3,
-              boxShadow: tab === t ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
+              color: tab === tabKey ? T.ink : T.ink3,
+              boxShadow: tab === tabKey ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
               transition: 'all 0.2s',
             }}>
-              {t === 'real' ? '🎁 Реальные' : '✨ Виртуальные'}
+              {tabKey === 'real' ? `🎁 ${t('kidShop.rewardsTab')}` : `✨ ${t('kidShop.virtualTab')}`}
             </button>
           ))}
         </div>
@@ -126,11 +128,11 @@ export default function KidShopPage() {
 
       {/* ═══ Rewards grid ═════════════════════════════════════════════════════ */}
       <div style={{ padding: '16px 16px 0' }}>
-        <h3 style={{ margin: '0 0 12px', fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>{tab === 'real' ? 'Награды' : 'Виртуальный магазин'}</h3>
+        <h3 style={{ margin: '0 0 12px', fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>{tab === 'real' ? t('kidShop.realRewards') : t('kidShop.virtualItems')}</h3>
         {tab === 'virtual' ? (
           <>
             <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, marginBottom: 12, lineHeight: 1.4 }}>
-              Скоро! Виртуальные предметы пока в разработке. Копи монеты! 🚀
+              {t('kidShop.virtualComingSoon')}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               {VIRTUAL_ITEMS.map(item => {
@@ -148,7 +150,7 @@ export default function KidShopPage() {
                     <div style={{ fontFamily: T.fDisp, fontSize: 13, fontWeight: 800, color: T.ink, marginTop: 10, lineHeight: 1.2, minHeight: 30 }}>{item.title}</div>
                     <div style={{ marginTop: 8 }}><CoinPill value={item.price_coins} size="sm"/></div>
                     <button disabled style={{ marginTop: 8, height: 34, borderRadius: 12, border: 'none', background: T.lineSoft, color: T.ink3, fontFamily: T.fDisp, fontSize: 12, fontWeight: 800, cursor: 'not-allowed' }}>
-                      Скоро
+                      {t('kidShop.comingSoon')}
                     </button>
                   </div>
                 )
@@ -159,10 +161,10 @@ export default function KidShopPage() {
           <div style={{ background: '#fff', borderRadius: 22, padding: 40, textAlign: 'center', border: `1.5px solid ${T.line}` }}>
             <div style={{ fontSize: 40 }}>🛍️</div>
             <div style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 800, color: T.ink3, marginTop: 12 }}>
-              Магазин пока пуст
+              {t('kidShop.shopEmpty')}
             </div>
             <div style={{ fontFamily: T.fBody, fontSize: 13, color: T.ink3, marginTop: 4 }}>
-              Попроси родителей добавить награды!
+              {t('kidShop.askParents')}
             </div>
           </div>
         ) : (
@@ -196,7 +198,7 @@ export default function KidShopPage() {
                     fontFamily: T.fDisp, fontSize: 12, fontWeight: 800,
                     cursor: canAfford ? 'pointer' : 'not-allowed',
                   }}>
-                    {canAfford ? 'Получить →' : `ещё ${price - coins}`}
+                    {canAfford ? t('kidShop.getButton') : t('kidShop.moreNeeded', { amount: price - coins })}
                   </button>
                 </div>
               )
@@ -217,9 +219,9 @@ export default function KidShopPage() {
             <div style={{ position: 'absolute', top: -30, right: -10, width: 130, height: 130, borderRadius: '50%', background: 'rgba(255,255,255,0.12)' }}/>
             <div style={{ fontSize: 44, position: 'relative' }}>🌟</div>
             <div style={{ position: 'relative' }}>
-              <div style={{ fontFamily: T.fBody, fontSize: 10, color: 'rgba(255,255,255,0.8)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>Заработай больше</div>
-              <div style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 900, color: '#fff', lineHeight: 1.2, marginTop: 2 }}>Заполняй каждый день</div>
-              <div style={{ fontFamily: T.fBody, fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 4 }}>Получай монеты и трать на награды!</div>
+              <div style={{ fontFamily: T.fBody, fontSize: 10, color: 'rgba(255,255,255,0.8)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>{t('kidShop.earnMore')}</div>
+              <div style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 900, color: '#fff', lineHeight: 1.2, marginTop: 2 }}>{t('kidShop.fillEachDay')}</div>
+              <div style={{ fontFamily: T.fBody, fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 4 }}>{t('kidShop.earnAndSpend')}</div>
             </div>
           </div>
         </div>
@@ -228,7 +230,7 @@ export default function KidShopPage() {
       {/* ═══ Recent purchases ═════════════════════════════════════════════════ */}
       {purchases.length > 0 && (
         <div style={{ padding: '20px 16px 0' }}>
-          <h3 style={{ margin: '0 0 12px', fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>Мои запросы</h3>
+          <h3 style={{ margin: '0 0 12px', fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>{t('kidShop.myRequests')}</h3>
           <div style={{ background: '#fff', borderRadius: 22, border: `1.5px solid ${T.line}`, overflow: 'hidden' }}>
             {purchases.slice(0, 5).map((p, i) => {
               const s = p.status ?? (p.fulfilled ? 'delivered' : 'pending')

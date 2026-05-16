@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { lookupFamilyByCode, getFamilyChildren } from '@/lib/onboarding-api'
 import { useAppStore } from '@/lib/store'
 import type { ChildProfile } from '@/lib/onboarding-api'
+import { useT } from '@/lib/i18n'
 
 const AMBER = '#f59e0b'
 const AMBER_DARK = '#d97706'

@@ -4,17 +4,18 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAppStore } from '@/lib/store'
 import { getVacationPeriods, createVacationPeriod, updateVacationPeriod, deleteVacationPeriod, VacationPeriod } from '@/lib/vacation-api'
+import { useT } from '@/lib/i18n'
 
 
 
 const EMOJIS = ['🌸', '🌴', '❄️', '🍂', '🎄', '☀️', '🌊', '⛷️']
 
-// Стандартные каникулы 2025–2026 учебного года (РФ, типовые даты)
+// Default school year periods (RU academic calendar 2025–2026)
 const PRESETS = [
-  { name: 'Осенние каникулы',  emoji: '🍂', start: '2025-10-27', end: '2025-11-02' },
-  { name: 'Зимние каникулы',   emoji: '❄️', start: '2025-12-29', end: '2026-01-09' },
-  { name: 'Весенние каникулы', emoji: '🌸', start: '2026-03-23', end: '2026-03-29' },
-  { name: 'Летние каникулы',   emoji: '☀️', start: '2026-06-01', end: '2026-08-31' },
+  { name: 'Autumn break',  emoji: '🍂', start: '2025-10-27', end: '2025-11-02' },
+  { name: 'Winter break',  emoji: '❄️', start: '2025-12-29', end: '2026-01-09' },
+  { name: 'Spring break',  emoji: '🌸', start: '2026-03-23', end: '2026-03-29' },
+  { name: 'Summer break',  emoji: '☀️', start: '2026-06-01', end: '2026-08-31' },
 ]
 
 interface ChildOption {
@@ -23,6 +24,7 @@ interface ChildOption {
 }
 
 export default function PeriodsManager() {
+  const t = useT()
   const { familyId, setFamilyId, activeMemberId } = useAppStore()
   const [children, setChildren] = useState<ChildOption[]>([])
   const [periods, setPeriods] = useState<VacationPeriod[]>([])
@@ -72,7 +74,7 @@ export default function PeriodsManager() {
 
       setChildren((childRows || []).map(c => ({
         id: c.id,
-        name: c.display_name || 'Ребёнок',
+        name: c.display_name || 'Child',
       })))
 
       const data = await getVacationPeriods(fid)
@@ -103,10 +105,10 @@ export default function PeriodsManager() {
 
   async function handleSave() {
     setSaveError('')
-    if (!familyId) { setSaveError('Семья не найдена — перезагрузите страницу'); return }
-    if (!name.trim()) { setSaveError('Введите название'); return }
-    if (!startDate || !endDate) { setSaveError('Укажите даты начала и окончания'); return }
-    if (startDate > endDate) { setSaveError('Дата начала не может быть позже даты окончания'); return }
+    if (!familyId) { setSaveError(t('common.error')); return }
+    if (!name.trim()) { setSaveError(t('settings.periodsManager.name')); return }
+    if (!startDate || !endDate) { setSaveError(t('settings.periodsManager.start')); return }
+    if (startDate > endDate) { setSaveError(t('settings.periodsManager.start')); return }
     try {
       setSaving(true)
       if (editingId) {
@@ -123,47 +125,47 @@ export default function PeriodsManager() {
       setPeriods(data)
     } catch (e) {
       console.error(e)
-      setSaveError(e instanceof Error ? e.message : 'Ошибка при сохранении')
+      setSaveError(e instanceof Error ? e.message : t('common.error'))
     } finally {
       setSaving(false)
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Удалить период?')) return
+    if (!confirm(t('settings.periodsManager.deleteConfirm'))) return
     await deleteVacationPeriod(id)
     setPeriods(periods.filter(p => p.id !== id))
   }
 
   function formatDateRange(start: string, end: string) {
-    const fmt = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+    const fmt = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
     const days = Math.floor((new Date(end + 'T12:00:00').getTime() - new Date(start + 'T12:00:00').getTime()) / 86400000) + 1
-    return `${fmt(start)} – ${fmt(end)} · ${days} ${days === 1 ? 'день' : days < 5 ? 'дня' : 'дней'}`
+    return `${fmt(start)} – ${fmt(end)} · ${days} ${days === 1 ? 'day' : 'days'}`
   }
 
   function childFilterLabel(filter: string) {
-    if (filter === 'all') return 'Все дети'
+    if (filter === 'all') return 'All children'
     const child = children.find(c => c.id === filter)
     return child ? child.name : filter
   }
 
-  if (loading) return <div className="text-gray-400 text-sm">Загрузка...</div>
+  if (loading) return <div className="text-gray-400 text-sm">{t('common.loading')}</div>
 
   return (
     <div>
       <p className="text-gray-400 text-sm mb-4">
-        В эти периоды система автоматически переключится на режим каникул: чтение, доп. уроки, помощь по дому вместо оценок.
+        {t('settings.periodsManager.title')}
       </p>
 
       {/* Rules reminder */}
       <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-4 mb-5 text-sm">
-        <div className="font-bold text-amber-400 mb-2">📋 Правила каникул</div>
+        <div className="font-bold text-amber-400 mb-2">📋 {t('settings.periodsManager.type')}</div>
         <div className="text-gray-400 space-y-1">
-          <div>📚 Чтение ≥15 мин или ≥10 стр → <span className="text-amber-400 font-bold">+3💰</span></div>
-          <div>📚 Чтение ≥30 мин или ≥20 стр → <span className="text-amber-400 font-bold">+5💰</span></div>
-          <div>📚 Книга дочитана → <span className="text-amber-400 font-bold">+10💰</span></div>
-          <div>📖 Каждый доп. урок → <span className="text-amber-400 font-bold">+3💰</span></div>
-          <div>🏠 Помощь по дому → <span className="text-amber-400 font-bold">+3💰</span></div>
+          <div>📚 {t('settings.periodsManager.vacation')}: ≥15 min or ≥10 p → <span className="text-amber-400 font-bold">+3💰</span></div>
+          <div>📚 {t('settings.periodsManager.vacation')}: ≥30 min or ≥20 p → <span className="text-amber-400 font-bold">+5💰</span></div>
+          <div>📚 Book finished → <span className="text-amber-400 font-bold">+10💰</span></div>
+          <div>📖 Each extra lesson → <span className="text-amber-400 font-bold">+3💰</span></div>
+          <div>🏠 Home help → <span className="text-amber-400 font-bold">+3💰</span></div>
         </div>
       </div>
 
@@ -171,7 +173,7 @@ export default function PeriodsManager() {
       <div className="space-y-3 mb-4">
         {periods.length === 0 && !showForm && (
           <div className="text-gray-500 text-sm text-center py-6 border border-gray-700 rounded-xl border-dashed">
-            Нет периодов — добавьте первый
+            {t('settings.periodsManager.addPeriod')}
           </div>
         )}
         {periods.map(p => (
@@ -185,12 +187,12 @@ export default function PeriodsManager() {
             <button
               onClick={() => openEdit(p)}
               className="text-gray-500 hover:text-amber-400 transition-colors p-1 text-sm"
-              title="Редактировать"
+              title={t('common.edit')}
             >✏️</button>
             <button
               onClick={() => handleDelete(p.id)}
               className="text-gray-500 hover:text-red-400 transition-colors p-1 text-sm"
-              title="Удалить"
+              title={t('settings.periodsManager.deleteConfirm')}
             >🗑</button>
           </div>
         ))}
@@ -199,13 +201,13 @@ export default function PeriodsManager() {
       {/* Add form */}
       {showForm && (
         <div className="bg-gray-700/40 border border-gray-600 rounded-xl p-4 mb-4">
-          <div className="font-bold text-white mb-4">{editingId ? 'Редактировать период' : 'Новый период'}</div>
+          <div className="font-bold text-white mb-4">{editingId ? t('common.edit') : t('settings.periodsManager.addPeriod')}</div>
 
           <div className="mb-3">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">Название</label>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">{t('settings.periodsManager.name')}</label>
             <input
               className="w-full bg-gray-800 border border-gray-600 rounded-lg text-white text-sm px-3 py-2.5 outline-none focus:border-amber-500"
-              placeholder="Весенние каникулы"
+              placeholder={t('settings.periodsManager.name')}
               value={name}
               onChange={e => setName(e.target.value)}
             />
@@ -213,17 +215,17 @@ export default function PeriodsManager() {
 
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">Начало</label>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">{t('settings.periodsManager.start')}</label>
               <input type="date" className="w-full bg-gray-800 border border-gray-600 rounded-lg text-white text-sm px-3 py-2.5 outline-none focus:border-amber-500" value={startDate} onChange={e => setStartDate(e.target.value)} />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">Конец</label>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">{t('settings.periodsManager.end')}</label>
               <input type="date" className="w-full bg-gray-800 border border-gray-600 rounded-lg text-white text-sm px-3 py-2.5 outline-none focus:border-amber-500" value={endDate} onChange={e => setEndDate(e.target.value)} />
             </div>
           </div>
 
           <div className="mb-3">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">Иконка</label>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">{t('settings.categoryManager.emoji')}</label>
             <div className="flex gap-2 flex-wrap">
               {EMOJIS.map(e => (
                 <button key={e} onClick={() => setEmoji(e)}
@@ -234,9 +236,9 @@ export default function PeriodsManager() {
           </div>
 
           <div className="mb-4">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">Применить к</label>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">{t('settings.periodsManager.type')}</label>
             <div className="flex bg-gray-800 rounded-lg p-1 gap-1 border border-gray-600 flex-wrap">
-              {[{ val: 'all', label: 'Все дети' }, ...children.map(c => ({ val: c.id, label: c.name }))].map(opt => (
+              {[{ val: 'all', label: 'All children' }, ...children.map(c => ({ val: c.id, label: c.name }))].map(opt => (
                 <button key={opt.val} onClick={() => setChildFilter(opt.val)}
                   className={`flex-1 py-2 text-xs font-bold rounded-md transition-all min-w-[60px] ${childFilter === opt.val ? 'bg-amber-500 text-black' : 'text-gray-400'}`}
                 >{opt.label}</button>
@@ -246,18 +248,18 @@ export default function PeriodsManager() {
 
           {saveError && (
             <div className="bg-red-500/15 border border-red-500/30 rounded-lg px-3 py-2 text-red-400 text-sm mb-3">
-              ⚠️ {saveError}
+              {saveError}
             </div>
           )}
 
           <div className="flex gap-2">
             <button onClick={handleSave} disabled={saving}
               className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold text-sm rounded-lg transition-colors">
-              {saving ? 'Сохранение...' : 'Сохранить'}
+              {saving ? '...' : t('settings.periodsManager.save')}
             </button>
             <button onClick={resetForm}
               className="px-4 py-2.5 bg-gray-700 text-gray-400 text-sm font-medium rounded-lg">
-              Отмена
+              {t('settings.periodsManager.cancel')}
             </button>
           </div>
         </div>
@@ -265,17 +267,17 @@ export default function PeriodsManager() {
 
       {!showForm && (
         <>
-          {/* Быстрые шаблоны */}
+          {/* Quick templates */}
           <div className="mb-4">
             <div className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
-              Шаблоны 2025–2026
+              Templates 2025–2026
             </div>
             <div className="grid grid-cols-2 gap-2">
               {PRESETS.map(p => {
                 const alreadyAdded = periods.some(
                   existing => existing.name === p.name && existing.start_date === p.start
                 )
-                const fmt = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+                const fmt = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
                 return (
                   <button
                     key={p.name}
@@ -308,7 +310,7 @@ export default function PeriodsManager() {
 
           <button onClick={() => setShowForm(true)}
             className="w-full py-3 border-2 border-dashed border-gray-600 hover:border-amber-500 hover:text-amber-500 text-gray-500 font-bold text-sm rounded-xl transition-all">
-            + Добавить свой период
+            + {t('settings.periodsManager.addPeriod')}
           </button>
         </>
       )}

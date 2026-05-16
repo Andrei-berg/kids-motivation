@@ -5,6 +5,7 @@ import { getTasks, createTask, updateTask, deleteTask } from '@/lib/categories-a
 import { getFamilyChildren } from '@/lib/onboarding-api'
 import type { Category, Task } from '@/lib/categories-api'
 import type { ChildProfile } from '@/lib/onboarding-api'
+import { useT } from '@/lib/i18n'
 
 interface Props {
   familyId: string
@@ -32,6 +33,7 @@ const DEFAULT_FORM: TaskFormData = {
 }
 
 export default function TaskManager({ familyId, categories }: Props) {
+  const t = useT()
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     categories[0]?.id ?? null
   )
@@ -66,7 +68,7 @@ export default function TaskManager({ familyId, categories }: Props) {
       const data = await getTasks(familyId, selectedCategoryId)
       setTasks(data)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Ошибка загрузки задач'
+      const msg = err instanceof Error ? err.message : t('common.error')
       setError(msg)
     } finally {
       setLoading(false)
@@ -86,7 +88,7 @@ export default function TaskManager({ familyId, categories }: Props) {
         const data = await getFamilyChildren(familyId)
         setChildren(data)
       } catch {
-        // Non-fatal — "Все дети" is the default
+        // Non-fatal
       } finally {
         setChildrenLoaded(true)
       }
@@ -125,7 +127,7 @@ export default function TaskManager({ familyId, categories }: Props) {
 
   const handleSave = async () => {
     if (!form.title.trim()) {
-      setFormError('Введите название задачи')
+      setFormError(t('settings.taskManager.name'))
       return
     }
     if (!selectedCategoryId) return
@@ -155,7 +157,7 @@ export default function TaskManager({ familyId, categories }: Props) {
       }
       closeForm()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Ошибка сохранения задачи'
+      const msg = err instanceof Error ? err.message : t('common.error')
       setFormError(msg)
     } finally {
       setSaving(false)
@@ -168,7 +170,7 @@ export default function TaskManager({ familyId, categories }: Props) {
       setTasks(prev => prev.filter(t => t.id !== taskId))
       if (editingTaskId === taskId) closeForm()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Ошибка удаления задачи'
+      const msg = err instanceof Error ? err.message : t('common.error')
       setError(msg)
     }
   }
@@ -181,13 +183,13 @@ export default function TaskManager({ familyId, categories }: Props) {
   const renderForm = () => (
     <div className="bg-gray-700/50 rounded-xl p-4 space-y-3 mt-3">
       <h3 className="text-sm font-medium text-white">
-        {editingTaskId ? 'Редактировать задачу' : 'Новая задача'}
+        {editingTaskId ? t('common.edit') : t('settings.taskManager.addTask')}
       </h3>
 
       {/* Title */}
       <input
         type="text"
-        placeholder="Название задачи"
+        placeholder={t('settings.taskManager.name')}
         value={form.title}
         onChange={e => updateForm({ title: e.target.value })}
         onKeyDown={e => e.key === 'Enter' && handleSave()}
@@ -198,7 +200,7 @@ export default function TaskManager({ familyId, categories }: Props) {
       {/* Coins */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-gray-400 mb-1 block">Монеты за выполнение</label>
+          <label className="text-xs text-gray-400 mb-1 block">{t('settings.taskManager.coins')} (+)</label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-green-400 text-sm font-medium">+</span>
             <input
@@ -211,7 +213,7 @@ export default function TaskManager({ familyId, categories }: Props) {
           </div>
         </div>
         <div>
-          <label className="text-xs text-gray-400 mb-1 block">Штраф за пропуск</label>
+          <label className="text-xs text-gray-400 mb-1 block">{t('settings.taskManager.coins')} (-)</label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-red-400 text-sm font-medium">-</span>
             <input
@@ -228,7 +230,7 @@ export default function TaskManager({ familyId, categories }: Props) {
       {/* Required + Child assignment */}
       <div className="grid grid-cols-2 gap-3">
         <div className="flex items-center gap-3 bg-gray-800 rounded-xl px-4 py-2.5">
-          <span className="text-sm text-gray-300 flex-1">Обязательная</span>
+          <span className="text-sm text-gray-300 flex-1">{t('settings.taskManager.daily')}</span>
           <button
             onClick={() => updateForm({ is_required: !form.is_required })}
             className={`relative w-10 h-6 rounded-full transition-colors ${
@@ -241,13 +243,13 @@ export default function TaskManager({ familyId, categories }: Props) {
           </button>
         </div>
         <div>
-          <label className="text-xs text-gray-400 mb-1 block">Для кого</label>
+          <label className="text-xs text-gray-400 mb-1 block">{t('settings.taskManager.category')}</label>
           <select
             value={form.child_member_id ?? ''}
             onChange={e => updateForm({ child_member_id: e.target.value || null })}
             className="w-full bg-gray-800 border border-gray-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
           >
-            <option value="">Все дети</option>
+            <option value="">All children</option>
             {children.map(child => (
               <option key={child.memberId} value={child.memberId}>
                 {child.displayName}
@@ -259,7 +261,7 @@ export default function TaskManager({ familyId, categories }: Props) {
 
       {/* Reminder time */}
       <div>
-        <label className="text-xs text-gray-400 mb-1 block">Время напоминания (необязательно)</label>
+        <label className="text-xs text-gray-400 mb-1 block">{t('settings.scheduleEditor.time')}</label>
         <input
           type="time"
           value={form.reminder_time}
@@ -270,10 +272,10 @@ export default function TaskManager({ familyId, categories }: Props) {
 
       {/* Notification text */}
       <div>
-        <label className="text-xs text-gray-400 mb-1 block">Текст уведомления (необязательно)</label>
+        <label className="text-xs text-gray-400 mb-1 block">{t('settings.notificationSettings.title')}</label>
         <textarea
           rows={2}
-          placeholder="Например: Эй, загляни в комнату — порядок или бардак? 🏠"
+          placeholder={t('settings.taskManager.name')}
           value={form.notification_text}
           onChange={e => updateForm({ notification_text: e.target.value })}
           className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-indigo-500 resize-none"
@@ -292,13 +294,13 @@ export default function TaskManager({ familyId, categories }: Props) {
           disabled={saving}
           className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
         >
-          {saving ? 'Сохранение...' : 'Сохранить'}
+          {saving ? '...' : t('settings.taskManager.save')}
         </button>
         <button
           onClick={closeForm}
           className="px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded-xl transition-colors"
         >
-          Отмена
+          {t('settings.taskManager.cancel')}
         </button>
       </div>
     </div>
@@ -307,13 +309,13 @@ export default function TaskManager({ familyId, categories }: Props) {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-white">Задачи</h2>
+        <h2 className="text-lg font-semibold text-white">{t('settings.taskManager.title')}</h2>
       </div>
 
       {/* Category selector */}
       {categories.length === 0 ? (
         <p className="text-gray-500 text-sm mb-4">
-          Сначала создайте категории в разделе «Категории».
+          {t('settings.categoryManager.addCategory')}
         </p>
       ) : (
         <div className="flex flex-wrap gap-2 mb-4">
@@ -337,7 +339,7 @@ export default function TaskManager({ familyId, categories }: Props) {
       {error && (
         <div className="mb-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
           {error}
-          <button onClick={() => setError(null)} className="ml-2 underline">Скрыть</button>
+          <button onClick={() => setError(null)} className="ml-2 underline">{t('common.close')}</button>
         </div>
       )}
 
@@ -352,7 +354,7 @@ export default function TaskManager({ familyId, categories }: Props) {
         <div className="space-y-2">
           {tasks.length === 0 && selectedCategoryId && (
             <p className="text-gray-500 text-sm text-center py-4">
-              В этой категории нет задач. Добавьте первую!
+              {t('settings.taskManager.addTask')}
             </p>
           )}
 
@@ -369,21 +371,21 @@ export default function TaskManager({ familyId, categories }: Props) {
                     <span className="text-sm font-medium text-white truncate">{task.title}</span>
                     {task.is_required && (
                       <span className="text-xs px-1.5 py-0.5 bg-orange-500/20 text-orange-400 rounded-full">
-                        Обязательная
+                        {t('settings.taskManager.daily')}
                       </span>
                     )}
                     {task.child_member_id && (
                       <span className="text-xs px-1.5 py-0.5 bg-blue-500/20 text-blue-400 rounded-full">
-                        {children.find(c => c.memberId === task.child_member_id)?.displayName ?? 'Только один'}
+                        {children.find(c => c.memberId === task.child_member_id)?.displayName ?? '—'}
                       </span>
                     )}
                   </div>
                   <div className="flex gap-2 mt-0.5">
                     {task.coins_reward > 0 && (
-                      <span className="text-xs text-green-400">+{task.coins_reward} монет</span>
+                      <span className="text-xs text-green-400">+{task.coins_reward} {t('settings.taskManager.coins')}</span>
                     )}
                     {task.coins_penalty > 0 && (
-                      <span className="text-xs text-red-400">-{task.coins_penalty} штраф</span>
+                      <span className="text-xs text-red-400">-{task.coins_penalty}</span>
                     )}
                   </div>
                 </div>
@@ -393,7 +395,7 @@ export default function TaskManager({ familyId, categories }: Props) {
                   <button
                     onClick={() => editingTaskId === task.id ? closeForm() : openEditForm(task)}
                     className="p-1.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-400/10 rounded-lg transition-colors"
-                    title="Редактировать"
+                    title={t('common.edit')}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -402,7 +404,7 @@ export default function TaskManager({ familyId, categories }: Props) {
                   <button
                     onClick={() => handleDelete(task.id)}
                     className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
-                    title="Удалить"
+                    title={t('settings.taskManager.deleteConfirm')}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -427,7 +429,7 @@ export default function TaskManager({ familyId, categories }: Props) {
           onClick={openAddForm}
           className="w-full py-3 mt-3 border-2 border-dashed border-gray-600 hover:border-indigo-500 rounded-xl text-gray-400 hover:text-indigo-400 text-sm font-medium transition-all"
         >
-          + Добавить задачу
+          + {t('settings.taskManager.addTask')}
         </button>
       )}
     </div>
