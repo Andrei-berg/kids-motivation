@@ -34,8 +34,8 @@ export async function requestPurchase(
       if (member?.family_id) {
         await notifyParent(
           member.family_id,
-          `Новый запрос ${purchase.reward_icon ?? '🎁'}`,
-          `${purchase.reward_title} — ждёт одобрения`,
+          `New request ${purchase.reward_icon ?? '🎁'}`,
+          `${purchase.reward_title} — awaiting approval`,
           '/parent-center'
         )
       }

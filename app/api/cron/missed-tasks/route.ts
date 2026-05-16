@@ -2,6 +2,7 @@
 // Vercel Cron: runs daily at 20:00 UTC (declared in vercel.json)
 // Checks if children have unfilled required tasks today; notifies parent(s)
 // Auth: CRON_SECRET header
+// TODO: Phase 4.3+ — localize push notification strings based on family language preference stored in DB
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'

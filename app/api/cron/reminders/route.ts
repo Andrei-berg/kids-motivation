@@ -2,6 +2,7 @@
 // Vercel Cron: runs every 5 minutes via vercel.json
 // Sends push notifications for schedule items whose reminder time is now (±5 min window)
 // Auth: Vercel Cron sends Authorization: Bearer CRON_SECRET automatically
+// TODO: Phase 4.3+ — localize push notification strings based on family language preference stored in DB
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'

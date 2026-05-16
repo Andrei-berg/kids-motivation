@@ -7,6 +7,7 @@
 //   NEXT_PUBLIC_VAPID_PUBLIC_KEY — generated via: npx web-push generate-vapid-keys
 //   VAPID_PRIVATE_KEY            — generated via: npx web-push generate-vapid-keys
 //   VAPID_MAILTO                 — contact email (e.g. mailto:admin@kidscoins.app)
+// TODO: Phase 4.3+ — localize push notification strings based on family language preference stored in DB
 'use server'
 
 import webpush from 'web-push'
