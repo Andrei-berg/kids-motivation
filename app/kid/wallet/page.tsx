@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 import { useAppStore } from '@/lib/store'
 import { getWallet, getTransactions } from '@/lib/repositories/wallet.repo'
 import { api } from '@/lib/api'
@@ -33,6 +34,12 @@ const QUICK_ACTIONS = [
   { icon: '📤', label: 'Подарить', href: '/kid/wallet#gift' },
   { icon: '📊', label: 'Статистика', href: '/kid/analytics' },
 ]
+
+const listV = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } }
+const itemV = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: 'easeOut' as const } },
+}
 
 export default function KidWalletPage() {
   const router = useRouter()
@@ -178,9 +185,13 @@ export default function KidWalletPage() {
           </div>
         ) : (
           <div style={{ background: '#fff', borderRadius: 22, padding: 4, border: `1.5px solid ${T.line}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
-            {transactions.slice(0, 15).map((x, i) => (
-              <TxnRow key={x.id} x={x} isLast={i === Math.min(transactions.length, 15) - 1}/>
-            ))}
+            <motion.div variants={listV} initial="hidden" animate="show">
+              {transactions.slice(0, 10).map((x, i) => (
+                <motion.div key={x.id} variants={itemV}>
+                  <TxnRow x={x} isLast={i === Math.min(transactions.length, 10) - 1}/>
+                </motion.div>
+              ))}
+            </motion.div>
           </div>
         )}
       </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import { useAppStore } from '@/lib/store'
 import { getChildBadges, getAvailableBadges } from '@/lib/services/badges.service'
 import { api } from '@/lib/api'
@@ -37,6 +38,13 @@ function getRarity(xp: number) {
   if (xp >= 600) return RARITY[2]
   if (xp >= 400) return RARITY[1]
   return RARITY[0]
+}
+
+// ─── Stagger variants ─────────────────────────────────────────────────────────
+const listV = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } }
+const itemV = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: 'easeOut' as const } },
 }
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -174,15 +182,16 @@ export default function AchievementsPage() {
       {/* ═══ Badges grid ══════════════════════════════════════════════════════ */}
       <div style={{ padding: '22px 16px 0' }}>
         <SectionHeader title="Все значки"/>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 12 }}>
-          {allBadges.map(badge => {
+        <motion.div variants={listV} initial="hidden" animate="show"
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 12 }}>
+          {allBadges.slice(0, 12).map(badge => {
             const earned = earnedBadges.find(e => e.badge_key === badge.key)
             const isEarned = !!earned
             const prog = badgeProgress[badge.key]
             const r = getRarity(badge.xp ?? 0)
             const progress01 = prog ? Math.min(1, prog.current / prog.target) : 0
             return (
-              <div key={badge.key} onClick={() => setFocused({ ...badge, earned, isEarned, progress01, r })}
+              <motion.div key={badge.key} variants={itemV} onClick={() => setFocused({ ...badge, earned, isEarned, progress01, r })}
                 style={{
                   background: isEarned ? r.bg : '#F5F0E4',
                   borderRadius: 18, padding: '12px 8px 10px',
@@ -214,10 +223,10 @@ export default function AchievementsPage() {
                     <div style={{ width: `${progress01 * 100}%`, height: '100%', background: T.ink3, borderRadius: 999 }}/>
                   </div>
                 )}
-              </div>
+              </motion.div>
             )
           })}
-        </div>
+        </motion.div>
       </div>
 
       {/* ═══ Badge bottom sheet ═══════════════════════════════════════════════ */}
