@@ -10,6 +10,7 @@ import { normalizeDate, getWeekRange } from '@/utils/helpers'
 import type { Wallet, WalletTransaction } from '@/lib/models/wallet.types'
 import { T } from '@/components/kid/design/tokens'
 import { Coin, CoinPill, AnimatedNum, SectionHeader, KMButton } from '@/components/kid/design/atoms'
+import { useT } from '@/lib/i18n'
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 function LoadingSkeleton() {
@@ -28,13 +29,6 @@ function LoadingSkeleton() {
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
-const QUICK_ACTIONS = [
-  { icon: '💸', label: 'Сохранить', href: '/kid/wallet#goals' },
-  { icon: '🎁', label: 'Потратить', href: '/kid/shop' },
-  { icon: '📤', label: 'Подарить', href: '/kid/wallet#gift' },
-  { icon: '📊', label: 'Статистика', href: '/kid/analytics' },
-]
-
 const listV = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } }
 const itemV = {
   hidden: { opacity: 0, y: 10 },
@@ -42,6 +36,7 @@ const itemV = {
 }
 
 export default function KidWalletPage() {
+  const t = useT()
   const router = useRouter()
   const { activeMemberId } = useAppStore()
   const [loading, setLoading] = useState(true)
@@ -80,6 +75,13 @@ export default function KidWalletPage() {
   const coins = wallet?.coins ?? 0
   const saved = wallet?.total_earned_coins ?? 0
 
+  const QUICK_ACTIONS = [
+    { icon: '💸', label: t('kidWallet.quickActions.save'),  href: '/kid/wallet#goals' },
+    { icon: '🎁', label: t('kidWallet.quickActions.spend'), href: '/kid/shop' },
+    { icon: '📤', label: t('kidWallet.quickActions.gift'),  href: '/kid/wallet#gift' },
+    { icon: '📊', label: t('kidWallet.quickActions.stats'), href: '/kid/analytics' },
+  ]
+
   return (
     <div style={{ paddingBottom: 110, maxWidth: 500, margin: '0 auto' }}>
       {/* ═══ Balance hero ═════════════════════════════════════════════════════ */}
@@ -97,14 +99,14 @@ export default function KidWalletPage() {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
             <div style={{ fontFamily: T.fBody, fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.7)', letterSpacing: 1, textTransform: 'uppercase' }}>
-              Твой баланс
+              {t('kidWallet.balance')}
             </div>
             {weekScore > 0 && (
               <div style={{
                 padding: '4px 10px', borderRadius: 999, whiteSpace: 'nowrap',
                 background: `${T.sun}22`, border: `1px solid ${T.sun}55`,
                 fontFamily: T.fBody, fontSize: 11, fontWeight: 700, color: T.sun,
-              }}>+{weekScore} на этой неделе</div>
+              }}>{t('kidWallet.earnedThisWeek', { amount: weekScore })}</div>
             )}
           </div>
 
@@ -119,7 +121,7 @@ export default function KidWalletPage() {
             </div>
           </div>
           <div style={{ fontFamily: T.fBody, fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 6, fontWeight: 500, position: 'relative' }}>
-            ≈ {(coins * 1.5).toLocaleString('ru-RU')} ₸ эквивалент
+            {t('kidWallet.equivalent', { amount: (coins * 1.5).toLocaleString('ru-RU') })}
           </div>
 
           <div style={{
@@ -127,11 +129,11 @@ export default function KidWalletPage() {
             background: 'rgba(255,255,255,0.08)', borderRadius: 16, padding: 3,
           }}>
             <div style={{ flex: 1, padding: '10px 12px', borderRadius: 13, background: 'rgba(255,255,255,0.12)' }}>
-              <div style={{ fontFamily: T.fBody, fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.6)', letterSpacing: 1 }}>БАЛАНС</div>
+              <div style={{ fontFamily: T.fBody, fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.6)', letterSpacing: 1 }}>{t('kidWallet.balanceLabel')}</div>
               <div style={{ fontFamily: T.fNum, fontSize: 18, fontWeight: 800, color: '#fff', marginTop: 2 }}>{coins.toLocaleString('ru-RU')}</div>
             </div>
             <div style={{ flex: 1, padding: '10px 12px' }}>
-              <div style={{ fontFamily: T.fBody, fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.6)', letterSpacing: 1 }}>НАКОПЛЕНО</div>
+              <div style={{ fontFamily: T.fBody, fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.6)', letterSpacing: 1 }}>{t('kidWallet.savedLabel')}</div>
               <div style={{ fontFamily: T.fNum, fontSize: 18, fontWeight: 800, color: T.sun, marginTop: 2 }}>{saved.toLocaleString('ru-RU')}</div>
             </div>
           </div>
@@ -159,7 +161,7 @@ export default function KidWalletPage() {
       {goals.length > 0 && (
         <div style={{ padding: '22px 16px 0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>Цели сбережений</h3>
+            <h3 style={{ margin: 0, fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>{t('kidWallet.savingsGoals')}</h3>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {goals.map((g: any) => <GoalCard key={g.id} g={g} coins={coins}/>)}
@@ -170,8 +172,8 @@ export default function KidWalletPage() {
       {/* ═══ Transactions ═════════════════════════════════════════════════════ */}
       <div style={{ padding: '24px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-          <h3 style={{ margin: 0, fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>История</h3>
-          <span style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, fontWeight: 600 }}>Последние</span>
+          <h3 style={{ margin: 0, fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>{t('kidWallet.history')}</h3>
+          <span style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, fontWeight: 600 }}>{t('kidWallet.lastTransactions')}</span>
         </div>
         {transactions.length === 0 ? (
           <div style={{
@@ -180,7 +182,7 @@ export default function KidWalletPage() {
           }}>
             <div style={{ fontSize: 32 }}>💸</div>
             <div style={{ fontFamily: T.fDisp, fontSize: 15, fontWeight: 800, color: T.ink3, marginTop: 8 }}>
-              Транзакций пока нет
+              {t('kidWallet.noTransactions')}
             </div>
           </div>
         ) : (
@@ -201,6 +203,7 @@ export default function KidWalletPage() {
 
 // ─── Goal card ────────────────────────────────────────────────────────────────
 function GoalCard({ g, coins }: { g: any; coins: number }) {
+  const t = useT()
   const target = g.target_coins ?? g.target ?? 0
   const current = g.saved_coins ?? g.current ?? 0
   const pct = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0
@@ -220,9 +223,9 @@ function GoalCard({ g, coins }: { g: any; coins: number }) {
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, flexShrink: 0,
         }}>🎯</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 900, color: T.ink, lineHeight: 1.2 }}>{g.name ?? g.title ?? 'Цель'}</div>
+          <div style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 900, color: T.ink, lineHeight: 1.2 }}>{g.name ?? g.title ?? t('goals.title')}</div>
           {g.deadline && (
-            <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 600, marginTop: 2 }}>До: {g.deadline}</div>
+            <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 600, marginTop: 2 }}>{t('kidWallet.goalDeadline', { date: g.deadline })}</div>
           )}
         </div>
         <div style={{
@@ -247,7 +250,7 @@ function GoalCard({ g, coins }: { g: any; coins: number }) {
           </span>
           {target > current && (
             <span style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 700 }}>
-              ещё {(target - current).toLocaleString('ru-RU')}
+              {t('kidWallet.remaining', { amount: (target - current).toLocaleString('ru-RU') })}
             </span>
           )}
         </div>
@@ -258,9 +261,10 @@ function GoalCard({ g, coins }: { g: any; coins: number }) {
 
 // ─── Transaction row ─────────────────────────────────────────────────────────
 function TxnRow({ x, isLast }: { x: WalletTransaction; isLast: boolean }) {
+  const t = useT()
   const isIn = x.coins_change > 0
   const col = isIn ? T.teal : T.coral
-  const label = x.description ?? (isIn ? 'Начислено' : 'Списано')
+  const label = x.description ?? (isIn ? t('kidWallet.credited') : t('kidWallet.debited'))
   const time = x.created_at ? new Date(x.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''
   return (
     <div style={{

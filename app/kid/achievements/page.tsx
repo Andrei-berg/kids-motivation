@@ -9,6 +9,7 @@ import type { Child } from '@/lib/api'
 import { supabase } from '@/lib/supabase'
 import { T } from '@/components/kid/design/tokens'
 import { XPBar, SectionHeader } from '@/components/kid/design/atoms'
+import { useT } from '@/lib/i18n'
 
 // ─── Badge progress computation ───────────────────────────────────────────────
 async function computeBadgeProgress(childId: string, streaks: any[]) {
@@ -26,19 +27,13 @@ async function computeBadgeProgress(childId: string, streaks: any[]) {
   return progress
 }
 
-// ─── Rarity config ────────────────────────────────────────────────────────────
-const RARITY = [
-  { bg: '#F5F0E4', ring: '#D9CFB8', label: 'Обычный', labelBg: '#B8AE92' },
-  { bg: '#D6F5F2', ring: T.teal,    label: 'Редкий',  labelBg: T.teal    },
-  { bg: '#E9E5FB', ring: T.plum,    label: 'Эпик',    labelBg: T.plum    },
-  { bg: '#FFE4D6', ring: T.coral,   label: 'Легенда', labelBg: T.coral   },
+// ─── Rarity config (labels are computed inside component via useT) ────────────
+const RARITY_STATIC = [
+  { bg: '#F5F0E4', ring: '#D9CFB8', labelBg: '#B8AE92', key: 'rarityCommon'  },
+  { bg: '#D6F5F2', ring: T.teal,    labelBg: T.teal,    key: 'rarityRare'    },
+  { bg: '#E9E5FB', ring: T.plum,    labelBg: T.plum,    key: 'rarityEpic'    },
+  { bg: '#FFE4D6', ring: T.coral,   labelBg: T.coral,   key: 'rarityLegend'  },
 ]
-function getRarity(xp: number) {
-  if (xp >= 1000) return RARITY[3]
-  if (xp >= 600) return RARITY[2]
-  if (xp >= 400) return RARITY[1]
-  return RARITY[0]
-}
 
 // ─── Stagger variants ─────────────────────────────────────────────────────────
 const listV = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } }
@@ -65,6 +60,7 @@ function LoadingSkeleton() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function AchievementsPage() {
+  const t = useT()
   const { activeMemberId } = useAppStore()
   const [loading, setLoading] = useState(true)
   const [child, setChild] = useState<Child | null>(null)
@@ -99,16 +95,25 @@ export default function AchievementsPage() {
 
   if (loading) return <LoadingSkeleton/>
 
+  // Rarity labels computed from t() inside component
+  const RARITY = RARITY_STATIC.map(r => ({ ...r, label: t(`achievements.${r.key}`) }))
+  function getRarity(xp: number) {
+    if (xp >= 1000) return RARITY[3]
+    if (xp >= 600) return RARITY[2]
+    if (xp >= 400) return RARITY[1]
+    return RARITY[0]
+  }
+
   const allBadges = getAvailableBadges()
   const earnedKeys = new Set(earnedBadges.map(b => b.badge_key))
   const level = child?.level ?? 1
   const xpInLevel = (child?.xp ?? 0) % 1000
 
   const cats = [
-    { n: 'Учёба',    icon: '📚', type: 'study',  col: T.plum  },
-    { n: 'Дом',      icon: '🏠', type: 'room',   col: T.teal  },
-    { n: 'Спорт',    icon: '💪', type: 'sport',  col: T.coral },
-    { n: 'Поведение',icon: '⭐', type: 'strong_week', col: T.pink },
+    { n: t('achievements.categoryStudy'),    icon: '📚', type: 'study',       col: T.plum  },
+    { n: t('achievements.categoryRoom'),     icon: '🏠', type: 'room',        col: T.teal  },
+    { n: t('achievements.categorySport'),    icon: '💪', type: 'sport',       col: T.coral },
+    { n: t('achievements.categoryBehavior'), icon: '⭐', type: 'strong_week', col: T.pink  },
   ]
 
   return (
@@ -122,15 +127,15 @@ export default function AchievementsPage() {
         }}>
           <div style={{ position: 'absolute', top: -30, right: -30, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.12)' }}/>
           <div style={{ position: 'relative' }}>
-            <div style={{ fontFamily: T.fBody, fontSize: 11, color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: 1.5 }}>ТРОФЕЙНАЯ КОМНАТА</div>
+            <div style={{ fontFamily: T.fBody, fontSize: 11, color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: 1.5 }}>{t('achievements.title')}</div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4, whiteSpace: 'nowrap' }}>
               <span style={{ fontFamily: T.fNum, fontSize: 40, fontWeight: 800, color: '#fff', letterSpacing: -2, lineHeight: 1 }}>{earnedBadges.length}</span>
-              <span style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 800, color: 'rgba(255,255,255,0.7)' }}>/ {allBadges.length} значков</span>
+              <span style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 800, color: 'rgba(255,255,255,0.7)' }}>{t('achievements.badgesCount', { count: allBadges.length })}</span>
             </div>
             <div style={{ marginTop: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6, gap: 8 }}>
                 <span style={{ fontFamily: T.fDisp, fontSize: 12, color: '#fff', fontWeight: 800, letterSpacing: 0.5, whiteSpace: 'nowrap' }}>
-                  УР. {level} · {child?.name ?? ''}
+                  {t('achievements.level', { level })} · {child?.name ?? ''}
                 </span>
                 <span style={{ fontFamily: T.fNum, fontSize: 11, color: 'rgba(255,255,255,0.8)', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
                   {xpInLevel}/1000 XP
@@ -140,8 +145,8 @@ export default function AchievementsPage() {
                 <div style={{ width: `${(xpInLevel / 1000) * 100}%`, height: '100%', background: `linear-gradient(90deg, ${T.sun}, #fff)`, borderRadius: 999, boxShadow: `0 0 10px ${T.sun}` }}/>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-                <span style={{ fontFamily: T.fBody, fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>Уровень {level}</span>
-                <span style={{ fontFamily: T.fBody, fontSize: 11, color: T.sun, fontWeight: 800 }}>Следующий: {level + 1}</span>
+                <span style={{ fontFamily: T.fBody, fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>{t('achievements.level', { level })}</span>
+                <span style={{ fontFamily: T.fBody, fontSize: 11, color: T.sun, fontWeight: 800 }}>{t('achievements.nextLevel', { level: level + 1 })}</span>
               </div>
             </div>
           </div>
@@ -150,7 +155,7 @@ export default function AchievementsPage() {
 
       {/* ═══ Category streaks ═════════════════════════════════════════════════ */}
       <div style={{ padding: '20px 16px 0' }}>
-        <h3 style={{ margin: '0 0 12px', fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>Серии по категориям</h3>
+        <h3 style={{ margin: '0 0 12px', fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>{t('achievements.categoryStreaks')}</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {cats.map(c => {
             const streak = streaks.find(s => s.streak_type === c.type)
@@ -170,7 +175,7 @@ export default function AchievementsPage() {
                     <span style={{ fontFamily: T.fNum, fontSize: 18, fontWeight: 800, color: c.col, lineHeight: 1 }}>
                       {streak?.current_count ?? 0}
                     </span>
-                    <span style={{ fontFamily: T.fBody, fontSize: 10, color: T.ink3, fontWeight: 700 }}>дн. 🔥</span>
+                    <span style={{ fontFamily: T.fBody, fontSize: 10, color: T.ink3, fontWeight: 700 }}>{t('achievements.streakDays')}</span>
                   </div>
                 </div>
               </div>
@@ -181,7 +186,7 @@ export default function AchievementsPage() {
 
       {/* ═══ Badges grid ══════════════════════════════════════════════════════ */}
       <div style={{ padding: '22px 16px 0' }}>
-        <SectionHeader title="Все значки"/>
+        <SectionHeader title={t('achievements.allBadges')}/>
         <motion.div variants={listV} initial="hidden" animate="show"
           style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 12 }}>
           {allBadges.slice(0, 12).map(badge => {
@@ -259,7 +264,7 @@ export default function AchievementsPage() {
               <div style={{ fontFamily: T.fBody, fontSize: 14, color: T.ink3, marginTop: 4 }}>{focused.description}</div>
               {focused.isEarned ? (
                 <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.teal, fontWeight: 700, marginTop: 12 }}>
-                  ✓ Получен {focused.earned?.earned_at ? new Date(focused.earned.earned_at).toLocaleDateString('ru-RU') : ''}
+                  {t('achievements.earnedAt', { date: focused.earned?.earned_at ? new Date(focused.earned.earned_at).toLocaleDateString() : '' })}
                 </div>
               ) : (
                 <div style={{ marginTop: 14, padding: '0 20px' }}>
@@ -267,7 +272,7 @@ export default function AchievementsPage() {
                     <div style={{ width: `${focused.progress01 * 100}%`, height: '100%', background: focused.r.ring, borderRadius: 999 }}/>
                   </div>
                   <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, marginTop: 6, fontWeight: 600 }}>
-                    {Math.round(focused.progress01 * 100)}% — продолжай!
+                    {t('achievements.progress', { pct: Math.round(focused.progress01 * 100) })}
                   </div>
                 </div>
               )}
@@ -276,7 +281,7 @@ export default function AchievementsPage() {
               marginTop: 20, width: '100%', height: 48, borderRadius: 24,
               background: T.ink, color: '#fff', border: 'none',
               fontFamily: T.fDisp, fontSize: 16, fontWeight: 800, cursor: 'pointer',
-            }}>Закрыть</button>
+            }}>{t('achievements.closeButton')}</button>
           </div>
         </div>
       )}
