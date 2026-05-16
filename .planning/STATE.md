@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-last_updated: "2026-04-26T18:13:43.785Z"
+last_updated: "2026-05-15T21:15:43.832Z"
 progress:
-  total_phases: 17
+  total_phases: 34
   completed_phases: 15
-  total_plans: 60
-  completed_plans: 60
+  total_plans: 64
+  completed_plans: 61
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-04-26 — executed 04.1-03 (notifyParent + shop push notification flow).
+> Обновляется после каждой фазы. Последнее обновление: 2026-05-16 — executed 04.2-04 (count-up balance + stagger animations for Dashboard, achievements, wallet).
 
 ---
 
@@ -21,8 +21,8 @@ progress:
 
 ```
 Milestone v4.0 PWA Polish — In Progress
-Phase 4.1 (pwa): Plan 3/3 complete (phase done)
-Last activity: 2026-04-26 — executed 04.1-03 (notifyParent + shop push notification flow)
+Phase 4.2 (ux-animations): Plan 4/4 COMPLETE
+Last activity: 2026-05-16 — executed 04.2-04 (rAF count-up in parent Dashboard ChildCard, Framer Motion stagger for activity feed, kid achievements badges, kid wallet transactions)
 ```
 
 Progress: [████░░░░░░] 20% (1/5 phases complete)
@@ -79,8 +79,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-26T18:09:33Z
-Stopped at: Completed 04.1-03-PLAN.md — phase 4.1 complete, ready for phase 4.2
+Last session: 2026-05-16T00:00:00Z
+Stopped at: Completed 04.2-04-PLAN.md — phase 4.2 complete, all 4 animation plans done
 Resume file: None
 
 ---
@@ -91,6 +91,8 @@ Resume file: None
 - Used Next.js Metadata API `appleWebApp` field for Apple meta tags (not manual `<head>` tags) — idiomatic with App Router
 - InstallPrompt uses inline styles for reliability — renders before Tailwind CSS hydration
 - iOS install detection: `/iPad|iPhone|iPod/.test(navigator.userAgent)` + non-standalone check — covers all iOS Safari variants
+- [Phase 04.2-03]: Parent skeleton uses T.card (#1A1A28) and T.cardHi (#20202E) tokens for dark-theme shimmer — matches existing dark palette without introducing new colors
+- [Phase 04.2-03]: ParentCenterSkeleton renders semantic sections (header tabs + 2 child cards + activity rows) mirroring Dashboard layout structure
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 - Three-strategy fetch handler: passthrough for /api/ and supabase.co, cache-first for /_next/static/, network-first for pages
@@ -103,3 +105,8 @@ Resume file: None
 - Push failure in requestPurchase is non-blocking — caught in try/catch, purchase flow always succeeds
 - pushsubscriptionchange logs warning only — full auto-resubscription requires VAPID key unavailable in SW context
 - requestPurchase must be a 'use server' file so notifyParent runs server-side (not in browser context)
+
+### Phase 04.2 — Plan 04 (2026-05-16)
+- useCountUp hook uses rAF with cubic ease-out (same pattern as AnimatedNum in kid/design/atoms.tsx) — no framer-motion for count-up, simpler and no extra dependency
+- ease: 'easeOut' as const required to satisfy Framer Motion's Easing type in strict TypeScript — plain string literal rejected
+- Activity feed capped at 8 items, badge grid at 12, wallet transactions at 10 — all animations complete under 500ms total

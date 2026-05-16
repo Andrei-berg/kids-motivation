@@ -66,7 +66,7 @@ See: `.planning/milestones/v3.0-ROADMAP.md`
 ## Phases
 
 - [x] **Phase 4.1: pwa** — Install prompt on iOS/Android, background Web Push via service worker, basic offline shell (completed 2026-04-26)
-- [ ] **Phase 4.2: ux-polish** — Skeleton loaders, Framer Motion page transitions, 44px touch targets throughout
+- [x] **Phase 4.2: ux-polish** — Skeleton loaders, Framer Motion page transitions, 44px touch targets throughout (completed 2026-05-16)
 - [ ] **Phase 4.3: localization** — Russian + English, browser auto-detect, manual language switcher
 - [ ] **Phase 4.4: security-compliance** — Account deletion with data cascade, data export, COPPA/GDPR consent gate, parent audit log
 - [ ] **Phase 4.5: desktop** — Dedicated wide-screen layout (≥1024px): sidebar nav, multi-column Parent Center, wide-screen Kid Screen
@@ -181,7 +181,7 @@ Plans:
 | 3.2 family-chat | v3.0 | 4/4 | Complete | 2026-04-14 |
 | 3.3 photos | v3.0 | 3/3 | Complete | 2026-04-14 |
 | 4.1 pwa | v4.0 | 3/3 | Complete | 2026-04-26 |
-| 4.2 ux-polish | v4.0 | 0/4 | Not started | - |
+| 4.2 ux-polish | 4/4 | Complete   | 2026-05-16 | - |
 | 4.3 localization | v4.0 | 0/? | Not started | - |
 | 4.4 security-compliance | v4.0 | 0/? | Not started | - |
 | 4.5 desktop | v4.0 | 0/? | Not started | - |
