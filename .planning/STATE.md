@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-last_updated: "2026-05-16T17:11:10.468Z"
+last_updated: "2026-05-16T17:15:19.003Z"
 progress:
   total_phases: 34
   completed_phases: 16
   total_plans: 70
-  completed_plans: 67
+  completed_plans: 68
 ---
 
 # STATE.md — Текущее состояние проекта
@@ -79,8 +79,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-16T17:10:20Z
-Stopped at: Completed 04.3-05b-PLAN.md — all 10 settings components localized, push server files marked TODO
+Last session: 2026-05-16T17:12:44Z
+Stopped at: Completed 04.3-03-PLAN.md — all 6 kid pages localized (achievements, wallet, shop, day, leaderboard, KidDayFillForm)
 Resume file: None
 
 ---
@@ -96,6 +96,8 @@ Resume file: None
 - [Phase 04.3-01]: Custom React context + Zustand for i18n — no next-intl or external packages; dotted-key lookup with {{var}} interpolation; browser language auto-detect with SSR guard; html lang is static, runtime language via LanguageProvider
 - [Phase 04.3]: CelebrationOverlay uses t('celebration.badgeEarned') for both aria-label and heading; manifest.ts uses English canonical strings (server-side, no hooks)
 - [Phase 04.3]: Push notification server files cannot use React hooks — kept Russian strings unchanged, marked TODO for future localization
+- [Phase 04.3]: ROOM_ITEM_LABELS uses labelKey pattern — labels resolved via t(labelKey) inside component to avoid hook calls at module level
+- [Phase 04.3]: todayLabel() uses toLocaleDateString with locale from useLanguage() — no hardcoded Russian day/month arrays
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 - Three-strategy fetch handler: passthrough for /api/ and supabase.co, cache-first for /_next/static/, network-first for pages
