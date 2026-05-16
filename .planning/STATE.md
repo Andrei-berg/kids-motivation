@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-last_updated: "2026-05-16T06:38:38.652Z"
+last_updated: "2026-05-16T17:09:26.039Z"
 progress:
   total_phases: 34
   completed_phases: 16
   total_plans: 70
-  completed_plans: 65
+  completed_plans: 66
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-05-16 — executed 04.3-01 (i18n foundation: LanguageProvider, useT hook, en/ru translation files, LanguageToggle, store language slice).
+> Обновляется после каждой фазы. Последнее обновление: 2026-05-16 — executed 04.3-02 (i18n applied to nav/auth pages, chat, kid components, manifest).
 
 ---
 
@@ -21,8 +21,8 @@ progress:
 
 ```
 Milestone v4.0 PWA Polish — In Progress
-Phase 4.3 (localization): Plan 1/6 COMPLETE
-Last activity: 2026-05-16 — executed 04.3-01 (custom i18n context + Zustand language slice, 37-namespace translation files for en/ru, LanguageToggle, wired LanguageProvider in app/layout.tsx)
+Phase 4.3 (localization): Plan 2/6 COMPLETE
+Last activity: 2026-05-16 — executed 04.3-02 (localized nav, auth pages, chat components, CelebrationOverlay, ParentPreviewBanner, KidChatFAB, manifest)
 ```
 
 Progress: [████░░░░░░] 20% (1/5 phases complete)
@@ -79,8 +79,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-16T06:37:33Z
-Stopped at: Completed 04.3-01-PLAN.md — i18n foundation done, Wave 2 plans (04.3-02 through 04.3-05b) can now use useT()
+Last session: 2026-05-16T17:08:40Z
+Stopped at: Completed 04.3-02-PLAN.md — nav/auth/chat/kid components + manifest fully localized
 Resume file: None
 
 ---
@@ -94,6 +94,7 @@ Resume file: None
 - [Phase 04.2-03]: Parent skeleton uses T.card (#1A1A28) and T.cardHi (#20202E) tokens for dark-theme shimmer — matches existing dark palette without introducing new colors
 - [Phase 04.2-03]: ParentCenterSkeleton renders semantic sections (header tabs + 2 child cards + activity rows) mirroring Dashboard layout structure
 - [Phase 04.3-01]: Custom React context + Zustand for i18n — no next-intl or external packages; dotted-key lookup with {{var}} interpolation; browser language auto-detect with SSR guard; html lang is static, runtime language via LanguageProvider
+- [Phase 04.3]: CelebrationOverlay uses t('celebration.badgeEarned') for both aria-label and heading; manifest.ts uses English canonical strings (server-side, no hooks)
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 - Three-strategy fetch handler: passthrough for /api/ and supabase.co, cache-first for /_next/static/, network-first for pages
