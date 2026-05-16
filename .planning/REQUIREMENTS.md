@@ -20,7 +20,7 @@ Requirements for v4.0 PWA Polish milestone. Each maps to roadmap phases.
 
 ### Localization
 
-- [ ] **LOC-01**: App is available in Russian and English; language auto-detected from browser with manual switcher
+- [x] **LOC-01**: App is available in Russian and English; language auto-detected from browser with manual switcher
 
 ### Security / Compliance
 
@@ -69,7 +69,7 @@ Updated during roadmap creation.
 | PWA-03 | Phase 4.1 (pwa) | Complete |
 | UX-01 | Phase 4.2 (ux-polish) | Complete |
 | UX-02 | Phase 4.2 (ux-polish) | Pending |
-| LOC-01 | Phase 4.3 (localization) | Pending |
+| LOC-01 | Phase 4.3 (localization) | Complete |
 | SEC-01 | Phase 4.4 (security-compliance) | Pending |
 | SEC-02 | Phase 4.4 (security-compliance) | Pending |
 | DSK-01 | Phase 4.5 (desktop) | Pending |

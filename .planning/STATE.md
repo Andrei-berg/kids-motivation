@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-last_updated: "2026-05-16T05:52:07.064Z"
+last_updated: "2026-05-16T06:38:38.652Z"
 progress:
   total_phases: 34
   completed_phases: 16
-  total_plans: 64
-  completed_plans: 64
+  total_plans: 70
+  completed_plans: 65
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-05-16 — executed 04.2-04 (count-up balance + stagger animations for Dashboard, achievements, wallet).
+> Обновляется после каждой фазы. Последнее обновление: 2026-05-16 — executed 04.3-01 (i18n foundation: LanguageProvider, useT hook, en/ru translation files, LanguageToggle, store language slice).
 
 ---
 
@@ -21,8 +21,8 @@ progress:
 
 ```
 Milestone v4.0 PWA Polish — In Progress
-Phase 4.2 (ux-animations): Plan 4/4 COMPLETE
-Last activity: 2026-05-16 — executed 04.2-04 (rAF count-up in parent Dashboard ChildCard, Framer Motion stagger for activity feed, kid achievements badges, kid wallet transactions)
+Phase 4.3 (localization): Plan 1/6 COMPLETE
+Last activity: 2026-05-16 — executed 04.3-01 (custom i18n context + Zustand language slice, 37-namespace translation files for en/ru, LanguageToggle, wired LanguageProvider in app/layout.tsx)
 ```
 
 Progress: [████░░░░░░] 20% (1/5 phases complete)
@@ -64,7 +64,7 @@ See: .planning/PROJECT.md (updated 2026-04-26)
 - Service worker already exists (for Web Push in v2.5) — extend it for offline caching and background push
 - PWA manifest needs `display: standalone`, proper icons (192px, 512px), theme_color
 - Next.js 14 App Router: static shell caching requires careful `cache: 'force-cache'` + ISR strategy
-- i18n: Next.js has built-in i18n routing; evaluate `next-intl` vs. simple JSON translation files
+- i18n: Chose custom React context + Zustand over next-intl — zero deps, dotted-key lookup, {{var}} interpolation, browser-detect default. See 04.3-01-SUMMARY.md.
 - COPPA requires parental consent gate for children under 13; data deletion must cascade across all tables
 
 ### Pending Todos
@@ -79,8 +79,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-16T00:00:00Z
-Stopped at: Completed 04.2-04-PLAN.md — phase 4.2 complete, all 4 animation plans done
+Last session: 2026-05-16T06:37:33Z
+Stopped at: Completed 04.3-01-PLAN.md — i18n foundation done, Wave 2 plans (04.3-02 through 04.3-05b) can now use useT()
 Resume file: None
 
 ---
@@ -93,6 +93,7 @@ Resume file: None
 - iOS install detection: `/iPad|iPhone|iPod/.test(navigator.userAgent)` + non-standalone check — covers all iOS Safari variants
 - [Phase 04.2-03]: Parent skeleton uses T.card (#1A1A28) and T.cardHi (#20202E) tokens for dark-theme shimmer — matches existing dark palette without introducing new colors
 - [Phase 04.2-03]: ParentCenterSkeleton renders semantic sections (header tabs + 2 child cards + activity rows) mirroring Dashboard layout structure
+- [Phase 04.3-01]: Custom React context + Zustand for i18n — no next-intl or external packages; dotted-key lookup with {{var}} interpolation; browser language auto-detect with SSR guard; html lang is static, runtime language via LanguageProvider
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 - Three-strategy fetch handler: passthrough for /api/ and supabase.co, cache-first for /_next/static/, network-first for pages
