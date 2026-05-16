@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-last_updated: "2026-05-16T17:15:19.003Z"
+last_updated: "2026-05-16T17:18:52.140Z"
 progress:
   total_phases: 34
   completed_phases: 16
   total_plans: 70
-  completed_plans: 68
+  completed_plans: 69
 ---
 
 # STATE.md — Текущее состояние проекта
@@ -98,6 +98,8 @@ Resume file: None
 - [Phase 04.3]: Push notification server files cannot use React hooks — kept Russian strings unchanged, marked TODO for future localization
 - [Phase 04.3]: ROOM_ITEM_LABELS uses labelKey pattern — labels resolved via t(labelKey) inside component to avoid hook calls at module level
 - [Phase 04.3]: todayLabel() uses toLocaleDateString with locale from useLanguage() — no hardcoded Russian day/month arrays
+- [Phase 04.3-05a]: CATEGORY_LABELS, ROLES, and DAYS arrays moved inside components to allow useT() hook access
+- [Phase 04.3-05a]: ru.json onboarding section extended with 60+ missing keys to match en.json
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 - Three-strategy fetch handler: passthrough for /api/ and supabase.co, cache-first for /_next/static/, network-first for pages
