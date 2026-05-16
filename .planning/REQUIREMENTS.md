@@ -15,7 +15,7 @@ Requirements for v4.0 PWA Polish milestone. Each maps to roadmap phases.
 
 ### UX Polish
 
-- [ ] **UX-01**: Pages transition with Framer Motion animations; skeleton loaders shown during data fetch (no layout shifts)
+- [x] **UX-01**: Pages transition with Framer Motion animations; skeleton loaders shown during data fetch (no layout shifts)
 - [ ] **UX-02**: All interactive elements are ≥44px touch targets throughout the app
 
 ### Localization
@@ -67,7 +67,7 @@ Updated during roadmap creation.
 | PWA-01 | Phase 4.1 (pwa) | Complete |
 | PWA-02 | Phase 4.1 (pwa) | Complete |
 | PWA-03 | Phase 4.1 (pwa) | Complete |
-| UX-01 | Phase 4.2 (ux-polish) | Pending |
+| UX-01 | Phase 4.2 (ux-polish) | Complete |
 | UX-02 | Phase 4.2 (ux-polish) | Pending |
 | LOC-01 | Phase 4.3 (localization) | Pending |
 | SEC-01 | Phase 4.4 (security-compliance) | Pending |

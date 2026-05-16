@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-last_updated: "2026-05-15T21:15:43.832Z"
+last_updated: "2026-05-16T05:52:07.064Z"
 progress:
   total_phases: 34
-  completed_phases: 15
+  completed_phases: 16
   total_plans: 64
-  completed_plans: 61
+  completed_plans: 64
 ---
 
 # STATE.md — Текущее состояние проекта
