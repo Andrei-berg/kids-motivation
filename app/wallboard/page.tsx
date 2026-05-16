@@ -5,8 +5,10 @@ import NavBar from '@/components/NavBar'
 import { api, Child, Goal } from '@/lib/api'
 import { getChildBadges } from '@/lib/badges'
 import { formatMoney, calculatePercentage, getWeekRange, normalizeDate, getGradeColor } from '@/utils/helpers'
+import { useT } from '@/lib/i18n'
 
 export default function Wallboard() {
+  const t = useT()
   const [children, setChildren] = useState<Child[]>([])
   const [goals, setGoals] = useState<{ [childId: string]: Goal | null }>({})
   const [badges, setBadges] = useState<{ [childId: string]: any[] }>({})
@@ -125,7 +127,7 @@ export default function Wallboard() {
       }}>
         <div style={{ textAlign: 'center' }}>
           <div className="spinner" style={{ margin: '0 auto', width: '80px', height: '80px' }} />
-          <div style={{ color: '#fff', fontSize: '24px', marginTop: '20px' }}>Загрузка...</div>
+          <div style={{ color: '#fff', fontSize: '24px', marginTop: '20px' }}>{t('wallboard.loading')}</div>
         </div>
       </div>
     )
@@ -176,7 +178,7 @@ export default function Wallboard() {
             {currentTime.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}
           </div>
           <div style={{ fontSize: '18px', opacity: 0.7, marginTop: '8px' }}>
-            ⏱️ До воскресенья: {daysToSunday} {daysToSunday === 1 ? 'день' : 'дня'}
+            {t('wallboard.untilSunday', { days: daysToSunday, dayWord: daysToSunday === 1 ? t('wallboard.day') : t('wallboard.days') })}
           </div>
         </div>
       </div>
@@ -192,7 +194,7 @@ export default function Wallboard() {
           boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
         }}>
           <div style={{ fontSize: '32px', fontWeight: 700, marginBottom: '20px' }}>
-            👑 Лидерборд
+            {t('wallboard.leaderboard')}
           </div>
           <div style={{ display: 'flex', gap: '20px' }}>
             {sorted.map((kid, idx) => (
@@ -282,7 +284,7 @@ export default function Wallboard() {
                   opacity: 0.9,
                   fontWeight: 600
                 }}>
-                  ⭐ До {child.level + 1} уровня
+                  {t('wallboard.toLevel', { level: child.level + 1 })}
                 </div>
                 <div style={{
                   height: '32px',
@@ -345,7 +347,7 @@ export default function Wallboard() {
                     }} />
                   </div>
                   <div style={{ fontSize: '20px', fontWeight: 600 }}>
-                    {goalProgress}% • Осталось {formatMoney(goal.target - goal.current)}
+                    {t('wallboard.goalProgress', { pct: goalProgress, remaining: formatMoney(goal.target - goal.current) })}
                   </div>
                 </div>
               )}
@@ -360,21 +362,21 @@ export default function Wallboard() {
                   border: '2px solid rgba(59, 130, 246, 0.4)'
                 }}>
                   <div style={{ fontSize: '24px', fontWeight: 700, marginBottom: '16px' }}>
-                    📊 Неделя • Прогноз: ~{formatMoney(child.base_weekly)}
+                    {t('wallboard.weekForecast', { amount: formatMoney(child.base_weekly) })}
                   </div>
                   
                   {/* Основные метрики */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '20px' }}>
                     <div>
-                      <div style={{ fontSize: '16px', opacity: 0.8 }}>Дней</div>
+                      <div style={{ fontSize: '16px', opacity: 0.8 }}>{t('wallboard.daysLabel')}</div>
                       <div style={{ fontSize: '32px', fontWeight: 800 }}>{week.filledDays}/7</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '16px', opacity: 0.8 }}>Комната</div>
+                      <div style={{ fontSize: '16px', opacity: 0.8 }}>{t('wallboard.roomLabel')}</div>
                       <div style={{ fontSize: '32px', fontWeight: 800 }}>{week.roomDays}/7</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '16px', opacity: 0.8 }}>Оценки</div>
+                      <div style={{ fontSize: '16px', opacity: 0.8 }}>{t('wallboard.gradesLabel')}</div>
                       <div style={{ fontSize: '32px', fontWeight: 800 }}>{week.gradesCount}</div>
                     </div>
                   </div>
@@ -388,28 +390,28 @@ export default function Wallboard() {
                       marginBottom: '16px'
                     }}>
                       <div style={{ fontSize: '18px', fontWeight: 600, marginBottom: '12px' }}>
-                        📚 Оценки этой недели
+                        {t('wallboard.gradesThisWeek')}
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '8px', marginBottom: '12px' }}>
                         <div style={{ textAlign: 'center' }}>
                           <div style={{ fontSize: '28px', fontWeight: 800, color: '#10b981' }}>{week.grades5}</div>
-                          <div style={{ fontSize: '14px', opacity: 0.8 }}>пятёрок</div>
+                          <div style={{ fontSize: '14px', opacity: 0.8 }}>{t('wallboard.fives')}</div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
                           <div style={{ fontSize: '28px', fontWeight: 800, color: '#3b82f6' }}>{week.grades4}</div>
-                          <div style={{ fontSize: '14px', opacity: 0.8 }}>четвёрок</div>
+                          <div style={{ fontSize: '14px', opacity: 0.8 }}>{t('wallboard.fours')}</div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
                           <div style={{ fontSize: '28px', fontWeight: 800, color: '#f59e0b' }}>{week.grades3}</div>
-                          <div style={{ fontSize: '14px', opacity: 0.8 }}>троек</div>
+                          <div style={{ fontSize: '14px', opacity: 0.8 }}>{t('wallboard.threes')}</div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
                           <div style={{ fontSize: '28px', fontWeight: 800, color: '#ef4444' }}>{week.grades2}</div>
-                          <div style={{ fontSize: '14px', opacity: 0.8 }}>двоек</div>
+                          <div style={{ fontSize: '14px', opacity: 0.8 }}>{t('wallboard.twos')}</div>
                         </div>
                       </div>
                       <div style={{ fontSize: '16px', textAlign: 'center', opacity: 0.9 }}>
-                        Средний балл: <strong style={{ fontSize: '20px' }}>{week.avgGrade.toFixed(1)}</strong>
+                        {t('wallboard.avgGrade')} <strong style={{ fontSize: '20px' }}>{week.avgGrade.toFixed(1)}</strong>
                       </div>
                     </div>
                   )}
@@ -422,30 +424,30 @@ export default function Wallboard() {
                       padding: '16px'
                     }}>
                       <div style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>
-                        💰 Breakdown прогноза:
+                        {t('wallboard.breakdown')}
                       </div>
                       <div style={{ fontSize: '14px', display: 'grid', gap: '6px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span>Базовая сумма</span>
+                          <span>{t('wallboard.baseAmount')}</span>
                           <strong>{formatMoney(settings.baseWeekly || 500)}</strong>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span>За 5-ки ({week.grades5} × {settings.per5 || 50}₽)</span>
+                          <span>{t('wallboard.fivesFor', { count: week.grades5, per: settings.per5 || 50 })}</span>
                           <strong style={{ color: '#10b981' }}>+{formatMoney(week.grades5 * (settings.per5 || 50))}</strong>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span>За 4-ки ({week.grades4} × {settings.per4 || 10}₽)</span>
+                          <span>{t('wallboard.foursFor', { count: week.grades4, per: settings.per4 || 10 })}</span>
                           <strong style={{ color: '#3b82f6' }}>+{formatMoney(week.grades4 * (settings.per4 || 10))}</strong>
                         </div>
                         {week.grades3 > 0 && (
                           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span>За 3-ки ({week.grades3} × {settings.pen3 || -50}₽)</span>
+                            <span>{t('wallboard.threesFor', { count: week.grades3, per: settings.pen3 || -50 })}</span>
                             <strong style={{ color: '#f59e0b' }}>{formatMoney(week.grades3 * (settings.pen3 || -50))}</strong>
                           </div>
                         )}
                         {week.roomDays >= 5 && (
                           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span>Бонус за комнату</span>
+                            <span>{t('wallboard.roomBonus')}</span>
                             <strong style={{ color: '#10b981' }}>
                               +{formatMoney(week.roomDays === 7 ? (settings.room7of7 || 100) : (settings.room5of7 || 50))}
                             </strong>
@@ -467,7 +469,7 @@ export default function Wallboard() {
                   border: '2px solid rgba(16, 185, 129, 0.3)'
                 }}>
                   <div style={{ fontSize: '24px', fontWeight: 700, marginBottom: '16px' }}>
-                    📝 Последние оценки
+                    {t('wallboard.lastGrades')}
                   </div>
                   <div style={{ display: 'grid', gap: '10px' }}>
                     {childGrades.map((grade: any, idx: number) => (
@@ -506,7 +508,7 @@ export default function Wallboard() {
                   border: '2px solid rgba(239, 68, 68, 0.4)'
                 }}>
                   <div style={{ fontSize: '24px', fontWeight: 700, marginBottom: '16px' }}>
-                    🔥 Активные стрики
+                    {t('wallboard.activeStreaks')}
                   </div>
                   <div style={{ display: 'grid', gap: '12px' }}>
                     {childStreaks.map((streak: any) => {
@@ -515,15 +517,15 @@ export default function Wallboard() {
                       let bonusText = ''
                       if (streak.streak_type === 'room' && streak.current_count >= 7) {
                         bonus = settings?.roomStreak7 || 100
-                        bonusText = '7 дней → +100₽'
+                        bonusText = t('wallboard.streakBonusText', { days: 7, amount: settings?.roomStreak7 || 100 })
                       }
                       if (streak.streak_type === 'study' && streak.current_count >= 14) {
                         bonus = settings?.studyStreak14 || 100
-                        bonusText = '14 дней → +100₽'
+                        bonusText = t('wallboard.streakBonusText', { days: 14, amount: settings?.studyStreak14 || 100 })
                       }
                       if (streak.streak_type === 'sport' && streak.current_count >= 7) {
                         bonus = settings?.sportStreak7 || 100
-                        bonusText = '7 дней → +100₽'
+                        bonusText = t('wallboard.streakBonusText', { days: 7, amount: settings?.sportStreak7 || 100 })
                       }
                       
                       return (
@@ -534,16 +536,16 @@ export default function Wallboard() {
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                             <div style={{ fontSize: '18px', fontWeight: 600 }}>
-                              {streak.streak_type === 'room' && '🧹 Комната убрана'}
-                              {streak.streak_type === 'study' && '📚 Учёба каждый день'}
-                              {streak.streak_type === 'sport' && '💪 Спорт каждый день'}
+                              {streak.streak_type === 'room' && t('wallboard.streakRoom')}
+                              {streak.streak_type === 'study' && t('wallboard.streakStudy')}
+                              {streak.streak_type === 'sport' && t('wallboard.streakSport')}
                             </div>
                             <div style={{ fontSize: '28px', fontWeight: 800 }}>
                               {streak.current_count} 🔥
                             </div>
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', opacity: 0.9 }}>
-                            <span>Рекорд: {streak.best_count} дней</span>
+                            <span>{t('wallboard.streakRecordDays', { count: streak.best_count })}</span>
                             {bonusText && <span style={{ color: '#10b981', fontWeight: 600 }}>{bonusText}</span>}
                           </div>
                         </div>
@@ -562,7 +564,7 @@ export default function Wallboard() {
                   border: '2px solid rgba(251, 191, 36, 0.4)'
                 }}>
                   <div style={{ fontSize: '24px', fontWeight: 700, marginBottom: '16px' }}>
-                    🏆 Последние достижения
+                    {t('wallboard.lastAchievements')}
                   </div>
                   <div style={{ display: 'grid', gap: '12px' }}>
                     {childBadges.map((badge: any) => (

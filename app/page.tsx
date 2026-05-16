@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useT } from '@/lib/i18n'
 
 export default function AuthPage() {
+  const t = useT()
   const router = useRouter()
   const [tab, setTab] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
@@ -74,7 +76,7 @@ export default function AuthPage() {
   if (checking) {
     return (
       <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: '#64748b' }}>Загрузка...</div>
+        <div style={{ color: '#64748b' }}>{t('auth.loading')}</div>
       </div>
     )
   }
@@ -84,10 +86,10 @@ export default function AuthPage() {
       <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
         <div style={{ background: '#1e293b', borderRadius: '1.5rem', padding: '2.5rem', width: '100%', maxWidth: '400px', textAlign: 'center' }}>
           <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📧</div>
-          <h2 style={{ color: '#fff', fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Проверьте почту</h2>
+          <h2 style={{ color: '#fff', fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>{t('auth.checkEmail')}</h2>
           <p style={{ color: '#94a3b8', fontSize: '0.875rem', lineHeight: 1.6 }}>
-            Письмо отправлено на <strong style={{ color: '#e2e8f0' }}>{email}</strong>.<br />
-            Перейдите по ссылке для подтверждения аккаунта.
+            {t('auth.emailSent', { email })}<br />
+            {t('auth.confirmLink')}
           </p>
         </div>
       </div>
@@ -102,23 +104,23 @@ export default function AuthPage() {
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>⭐</div>
           <h1 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Kids Motivation</h1>
-          <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>Семейная система мотивации</p>
+          <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>{t('auth.subtitle')}</p>
         </div>
 
         {/* Tabs */}
         <div style={{ display: 'flex', background: '#0f172a', borderRadius: '0.75rem', padding: '0.25rem', marginBottom: '1.5rem' }}>
-          {(['login', 'register'] as const).map(t => (
+          {(['login', 'register'] as const).map(tabKey => (
             <button
-              key={t}
-              onClick={() => { setTab(t); setError(null) }}
+              key={tabKey}
+              onClick={() => { setTab(tabKey); setError(null) }}
               style={{
                 flex: 1, padding: '0.625rem', borderRadius: '0.5rem', border: 'none', cursor: 'pointer',
                 fontWeight: 600, fontSize: '0.875rem', transition: 'all 0.15s',
-                background: tab === t ? '#4f46e5' : 'transparent',
-                color: tab === t ? '#fff' : '#64748b',
+                background: tab === tabKey ? '#4f46e5' : 'transparent',
+                color: tab === tabKey ? '#fff' : '#64748b',
               }}
             >
-              {t === 'login' ? 'Войти' : 'Регистрация'}
+              {tabKey === 'login' ? t('auth.loginTab') : t('auth.registerTab')}
             </button>
           ))}
         </div>
@@ -135,7 +137,7 @@ export default function AuthPage() {
           />
           <input
             type="password"
-            placeholder="Пароль"
+            placeholder={t('auth.password')}
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
@@ -153,14 +155,14 @@ export default function AuthPage() {
             disabled={loading}
             style={{ padding: '0.75rem', borderRadius: '0.75rem', border: 'none', background: '#4f46e5', color: '#fff', fontWeight: 600, fontSize: '0.9375rem', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, marginTop: '0.25rem' }}
           >
-            {loading ? '...' : tab === 'login' ? 'Войти' : 'Создать аккаунт'}
+            {loading ? '...' : tab === 'login' ? t('auth.loginBtn') : t('auth.registerBtn')}
           </button>
         </form>
 
         {/* Divider */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1.25rem 0' }}>
           <div style={{ flex: 1, height: '1px', background: '#334155' }} />
-          <span style={{ color: '#475569', fontSize: '0.8125rem' }}>или</span>
+          <span style={{ color: '#475569', fontSize: '0.8125rem' }}>{t('common.or')}</span>
           <div style={{ flex: 1, height: '1px', background: '#334155' }} />
         </div>
 
@@ -174,13 +176,13 @@ export default function AuthPage() {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          Войти через Google
+          {t('auth.googleBtn')}
         </button>
 
         {/* Join family */}
         <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
           <a href="/onboarding/join" style={{ color: '#6366f1', fontSize: '0.8125rem', textDecoration: 'none' }}>
-            Есть код приглашения? Присоединиться к семье →
+            {t('auth.joinFamily')}
           </a>
         </div>
       </div>

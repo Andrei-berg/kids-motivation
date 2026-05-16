@@ -18,6 +18,7 @@ import {
   ChildProfile,
 } from '@/lib/onboarding-api'
 import { useAppStore } from '@/lib/store'
+import { useT } from '@/lib/i18n'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -289,6 +290,7 @@ function ScreenCode({
   loading: boolean
   error: string | null
 }) {
+  const t = useT()
   const canSubmit = code.length === 6 && !loading
 
   return (
@@ -312,8 +314,8 @@ function ScreenCode({
       </div>
 
       <div style={{ textAlign: 'center' }}>
-        <h1 style={headingStyle}>Войти в семью</h1>
-        <p style={subStyle}>Введите 6-значный код,<br />который дал вам родитель</p>
+        <h1 style={headingStyle}>{t('onboarding.joinTitle')}</h1>
+        <p style={subStyle}>{t('onboarding.joinSubtitle')}</p>
       </div>
 
       <CodeInput value={code} onChange={onChange} onComplete={canSubmit ? onSubmit : undefined} disabled={loading} />
@@ -331,15 +333,15 @@ function ScreenCode({
       >
         {loading ? (
           <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-            <Spinner /> Ищем семью...
+            <Spinner /> {t('onboarding.searching')}
           </span>
-        ) : 'Найти семью →'}
+        ) : t('onboarding.findFamily')}
       </button>
 
       <p style={{ fontSize: '0.8125rem', color: '#9ca3af', textAlign: 'center', margin: 0 }}>
-        Нет аккаунта?{' '}
+        {t('onboarding.noAccount')}{' '}
         <a href="/register" style={{ color: '#10b981', textDecoration: 'none', fontWeight: 700 }}>
-          Зарегистрироваться
+          {t('onboarding.register')}
         </a>
       </p>
     </div>
@@ -371,12 +373,13 @@ function ScreenSelect({
   loading: boolean
   error: string | null
 }) {
+  const t = useT()
   const canJoin = !!selectedChildId && !loading
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       <button onClick={onBack} style={ghostBtnStyle}>
-        ← Назад
+        ← {t('onboarding.back')}
       </button>
 
       {/* Family header */}
@@ -390,21 +393,21 @@ function ScreenSelect({
       }}>
         <span style={{ fontSize: '2rem' }}>🏠</span>
         <div>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Семья найдена</div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{t('onboarding.familyFound')}</div>
           <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#064e3b', fontFamily: "'Nunito', sans-serif" }}>{familyName}</div>
         </div>
         <span style={{ marginLeft: 'auto', fontSize: '1.25rem', color: '#10b981' }}>✓</span>
       </div>
 
       <div>
-        <h1 style={{ ...headingStyle, fontSize: '1.25rem' }}>Кто вы в этой семье?</h1>
+        <h1 style={{ ...headingStyle, fontSize: '1.25rem' }}>{t('onboarding.whoAreYou')}</h1>
       </div>
 
       {/* Child profiles */}
       {unlinkedChildren.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
           <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-            Я ребёнок
+            {t('onboarding.iAmChild')}
           </div>
           {unlinkedChildren.map((child) => {
             const isSelected = selectedChildId === child.memberId
@@ -453,9 +456,9 @@ function ScreenSelect({
             <button onClick={onJoinAsChild} disabled={loading} style={primaryBtnStyle(canJoin)}>
               {loading ? (
                 <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                  <Spinner /> Присоединяюсь...
+                  <Spinner /> {t('onboarding.joining')}
                 </span>
-              ) : '🎉 Это я!'}
+              ) : t('onboarding.thatsMe')}
             </button>
           )}
         </div>
@@ -465,7 +468,7 @@ function ScreenSelect({
       {unlinkedChildren.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{ flex: 1, height: '1px', background: '#e5e7eb' }} />
-          <span style={{ fontSize: '0.8125rem', color: '#9ca3af', fontWeight: 600 }}>или</span>
+          <span style={{ fontSize: '0.8125rem', color: '#9ca3af', fontWeight: 600 }}>{t('onboarding.or')}</span>
           <div style={{ flex: 1, height: '1px', background: '#e5e7eb' }} />
         </div>
       )}
@@ -494,7 +497,7 @@ function ScreenSelect({
         onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#e5e7eb')}
       >
         <span>👨‍👩‍👧</span>
-        Я родитель / взрослый
+        {t('onboarding.iAmParent')}
       </button>
 
       {error && <div style={errorBoxStyle}><span>⚠️</span> {error}</div>}
@@ -505,23 +508,6 @@ function ScreenSelect({
 // ---------------------------------------------------------------------------
 // Screen 3 — Adult role selection
 // ---------------------------------------------------------------------------
-
-const ROLES: { value: 'parent' | 'extended'; emoji: string; label: string; desc: string; color: string }[] = [
-  {
-    value: 'parent',
-    emoji: '👨‍👩‍👧',
-    label: 'Родитель',
-    desc: 'Полный доступ: управление детьми, монетами и настройками',
-    color: '#10b981',
-  },
-  {
-    value: 'extended',
-    emoji: '👴',
-    label: 'Член семьи',
-    desc: 'Просмотр прогресса: бабушка, дедушка или другой близкий',
-    color: '#f59e0b',
-  },
-]
 
 function ScreenAdultRole({
   familyName,
@@ -540,15 +526,32 @@ function ScreenAdultRole({
   loading: boolean
   error: string | null
 }) {
+  const t = useT()
+  const ROLES: { value: 'parent' | 'extended'; emoji: string; label: string; desc: string; color: string }[] = [
+    {
+      value: 'parent',
+      emoji: '👨‍👩‍👧',
+      label: t('onboarding.roleParent'),
+      desc: t('onboarding.roleParentDesc'),
+      color: '#10b981',
+    },
+    {
+      value: 'extended',
+      emoji: '👴',
+      label: t('onboarding.roleExtended'),
+      desc: t('onboarding.roleExtendedDesc'),
+      color: '#f59e0b',
+    },
+  ]
   const canConfirm = !!selectedRole && !loading
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-      <button onClick={onBack} style={ghostBtnStyle}>← Назад</button>
+      <button onClick={onBack} style={ghostBtnStyle}>← {t('onboarding.back')}</button>
 
       <div>
-        <h1 style={headingStyle}>Ваша роль</h1>
-        <p style={subStyle}>Семья <strong style={{ color: '#065f46' }}>{familyName}</strong></p>
+        <h1 style={headingStyle}>{t('onboarding.yourRole')}</h1>
+        <p style={subStyle}>{t('onboarding.familyName')} <strong style={{ color: '#065f46' }}>{familyName}</strong></p>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -618,9 +621,9 @@ function ScreenAdultRole({
       <button onClick={onConfirm} disabled={!canConfirm} style={primaryBtnStyle(canConfirm)}>
         {loading ? (
           <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-            <Spinner /> Присоединяюсь...
+            <Spinner /> {t('onboarding.joining')}
           </span>
-        ) : 'Войти в семью →'}
+        ) : t('onboarding.enterFamily')}
       </button>
     </div>
   )
@@ -633,6 +636,7 @@ function ScreenAdultRole({
 const SCREEN_ORDER: Screen[] = ['code', 'select', 'adult-role']
 
 export default function JoinFamilyPage() {
+  const t = useT()
   const router = useRouter()
   const { setFamilyId: setStoreFamilyId, setActiveMemberId } = useAppStore()
 
@@ -723,7 +727,7 @@ export default function JoinFamilyPage() {
     setError(null)
     try {
       const result = await lookupFamilyByCode(code)
-      if (!result) { setError('Код не найден. Проверьте и попробуйте ещё раз.'); return }
+      if (!result) { setError(t('onboarding.codeNotFound')); return }
       const children = await getFamilyChildren(result.familyId)
       setFamilyId(result.familyId)
       setFamilyName(result.name)
@@ -732,7 +736,7 @@ export default function JoinFamilyPage() {
       setSelectedRole(null)
       goTo('select', 'forward')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Произошла ошибка. Попробуйте снова.')
+      setError(err instanceof Error ? err.message : t('onboarding.tryAgain'))
     } finally {
       setLookingUp(false)
     }
@@ -763,7 +767,7 @@ export default function JoinFamilyPage() {
       }
       router.push('/kid/day')  // child lands on kid screen
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Не удалось присоединиться. Попробуйте снова.')
+      setError(err instanceof Error ? err.message : t('onboarding.joinFailed'))
     } finally {
       setLoading(false)
     }
@@ -779,7 +783,7 @@ export default function JoinFamilyPage() {
       setStoreFamilyId(familyId)
       router.push('/parent/dashboard')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Не удалось присоединиться. Попробуйте снова.')
+      setError(err instanceof Error ? err.message : t('onboarding.joinFailed'))
     } finally {
       setLoading(false)
     }

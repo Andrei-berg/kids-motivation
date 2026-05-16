@@ -33,6 +33,7 @@
 import { useEffect, useState } from 'react'
 import { getMonthlyPotential, getWallet } from '@/lib/wallet-api'
 import type { MonthlyPotential, Wallet } from '@/lib/wallet-api'
+import { useT } from '@/lib/i18n'
 
 interface PotentialWidgetProps {
   childId: string
@@ -41,6 +42,7 @@ interface PotentialWidgetProps {
 }
 
 export default function PotentialWidget({ childId, displayName, onDetailsClick }: PotentialWidgetProps) {
+  const t = useT()
   const [potential, setPotential] = useState<MonthlyPotential | null>(null)
   const [wallet, setWallet] = useState<Wallet | null>(null)
   const [loading, setLoading] = useState(true)
@@ -69,7 +71,7 @@ export default function PotentialWidget({ childId, displayName, onDetailsClick }
     return (
       <div className="potential-widget loading">
         <div className="spinner">⏳</div>
-        <p>Загрузка...</p>
+        <p>{t('potentialWidget.loading')}</p>
       </div>
     )
   }
@@ -77,7 +79,7 @@ export default function PotentialWidget({ childId, displayName, onDetailsClick }
   if (!potential || !wallet) {
     return (
       <div className="potential-widget error">
-        <p>❌ Ошибка загрузки данных</p>
+        <p>{t('potentialWidget.error')}</p>
       </div>
     )
   }
@@ -103,29 +105,29 @@ export default function PotentialWidget({ childId, displayName, onDetailsClick }
   
   // Сообщение мотивации
   const getMessage = (pct: number) => {
-    if (pct >= 100) return "🔥 ТЫ ПРЕВЫСИЛ ПОТЕНЦИАЛ! НЕВЕРОЯТНО!"
-    if (pct >= 90) return "🎉 Почти максимум! Отличная работа!"
-    if (pct >= 70) return "👍 Хороший прогресс! Можешь ещё лучше!"
-    if (pct >= 50) return "💪 Неплохо! Подтянись до 90%+"
-    return "⚠️ Используешь только " + pct + "%! Давай активнее!"
+    if (pct >= 100) return t('potentialWidget.msgExceeded')
+    if (pct >= 90) return t('potentialWidget.msgAlmost')
+    if (pct >= 70) return t('potentialWidget.msgGood')
+    if (pct >= 50) return t('potentialWidget.msgMedium')
+    return t('potentialWidget.msgLow', { pct })
   }
 
   return (
     <div className="potential-widget">
       {/* Заголовок */}
       <div className="potential-header">
-        <h3>💰 ПОТЕНЦИАЛ МЕСЯЦА</h3>
+        <h3>{t('potentialWidget.monthlyTitle')}</h3>
         <div className="child-name">{(displayName ?? childId).toUpperCase()}</div>
       </div>
 
       {/* Баланс */}
       <div className="balance-section">
         <div className="balance-row">
-          <span className="label">Баланс:</span>
+          <span className="label">{t('potentialWidget.balance')}</span>
           <span className="value">{wallet.coins} 💰</span>
         </div>
         <div className="balance-row">
-          <span className="label">Деньги:</span>
+          <span className="label">{t('potentialWidget.money')}</span>
           <span className="value">{wallet.money}₽</span>
         </div>
       </div>
@@ -133,7 +135,7 @@ export default function PotentialWidget({ childId, displayName, onDetailsClick }
       {/* Прогресс к потенциалу */}
       <div className="potential-progress">
         <div className="progress-label">
-          <span>Прогресс к потенциалу</span>
+          <span>{t('potentialWidget.progressLabel')}</span>
           <span className="percentage">{percentage}%</span>
         </div>
         
@@ -162,14 +164,14 @@ export default function PotentialWidget({ childId, displayName, onDetailsClick }
       {missing > 0 && (
         <div className="missing-section">
           <div className="missing-header">
-            <span>📉 Упускаешь:</span>
+            <span>{t('potentialWidget.missing')}</span>
             <span className="missing-amount">{missing} 💰</span>
           </div>
-          <button 
+          <button
             className="details-button"
             onClick={onDetailsClick}
           >
-            Что можно улучшить? →
+            {t('potentialWidget.improve')}
           </button>
         </div>
       )}
@@ -177,7 +179,7 @@ export default function PotentialWidget({ childId, displayName, onDetailsClick }
       {/* Доступные бонусы */}
       {potential.available_bonuses && (
         <div className="bonuses-section">
-          <h4>🎁 ДОСТУПНЫЕ БОНУСЫ</h4>
+          <h4>{t('potentialWidget.availableBonuses')}</h4>
           <div className="bonuses-list">
             {Object.entries(potential.available_bonuses).map(([key, bonus]: any) => (
               <div key={key} className="bonus-item">
@@ -197,31 +199,31 @@ export default function PotentialWidget({ childId, displayName, onDetailsClick }
 
       {/* Прогноз */}
       <div className="forecast-section">
-        <h4>📊 ПРОГНОЗ</h4>
+        <h4>{t('potentialWidget.forecast')}</h4>
         <div className="forecast-scenarios">
           <div className="scenario">
-            <span className="scenario-label">Если достигнешь потенциала:</span>
+            <span className="scenario-label">{t('potentialWidget.ifPotential')}</span>
             <span className="scenario-value">{basePotential} 💰</span>
           </div>
           {missing > 0 && (
             <div className="scenario">
-              <span className="scenario-label">С учётом упущенного:</span>
+              <span className="scenario-label">{t('potentialWidget.withMissed')}</span>
               <span className="scenario-value">{currentCoins + missing} 💰</span>
             </div>
           )}
           <div className="scenario highlight">
-            <span className="scenario-label">Максимум с бонусами:</span>
+            <span className="scenario-label">{t('potentialWidget.maxWithBonuses')}</span>
             <span className="scenario-value">{maxWithBonuses} 💰 🚀</span>
           </div>
         </div>
       </div>
 
       {/* Кнопка детали */}
-      <button 
+      <button
         className="view-details-button"
         onClick={onDetailsClick}
       >
-        📊 Подробная статистика
+        {t('potentialWidget.detailedStats')}
       </button>
     </div>
   )

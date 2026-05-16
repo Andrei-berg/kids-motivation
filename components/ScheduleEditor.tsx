@@ -2,22 +2,25 @@
 
 import { useState, useEffect } from 'react'
 import { flexibleApi, Subject, ScheduleLesson } from '@/lib/flexible-api'
+import { useT } from '@/lib/i18n'
 
 interface ScheduleEditorProps {
   childId: string
 }
 
-const DAYS = [
-  { num: 1, name: 'Понедельник' },
-  { num: 2, name: 'Вторник' },
-  { num: 3, name: 'Среда' },
-  { num: 4, name: 'Четверг' },
-  { num: 5, name: 'Пятница' }
-]
+// Day names are computed inside the component using t() — see useDays() below
 
 const MAX_LESSONS = 8
 
 export default function ScheduleEditor({ childId }: ScheduleEditorProps) {
+  const t = useT()
+  const DAYS = [
+    { num: 1, name: t('settings.scheduleEditor.monday') },
+    { num: 2, name: t('settings.scheduleEditor.tuesday') },
+    { num: 3, name: t('settings.scheduleEditor.wednesday') },
+    { num: 4, name: t('settings.scheduleEditor.thursday') },
+    { num: 5, name: t('settings.scheduleEditor.friday') },
+  ]
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [schedule, setSchedule] = useState<ScheduleLesson[]>([])
   const [loading, setLoading] = useState(true)
@@ -55,9 +58,9 @@ export default function ScheduleEditor({ childId }: ScheduleEditorProps) {
       await loadData()
     } catch (err: any) {
       if (err.message?.includes('duplicate')) {
-        alert('Урок на этой позиции уже существует!')
+        alert(t('settings.scheduleEditor.duplicateLesson'))
       } else {
-        alert('Ошибка добавления урока')
+        alert(t('settings.scheduleEditor.addError'))
       }
     }
   }
@@ -67,7 +70,7 @@ export default function ScheduleEditor({ childId }: ScheduleEditorProps) {
       await flexibleApi.updateScheduleLesson(id, subjectId)
       await loadData()
     } catch (err) {
-      alert('Ошибка обновления урока')
+      alert(t('settings.scheduleEditor.updateError'))
     }
   }
 
@@ -76,29 +79,29 @@ export default function ScheduleEditor({ childId }: ScheduleEditorProps) {
       await flexibleApi.deleteScheduleLesson(id)
       await loadData()
     } catch (err) {
-      alert('Ошибка удаления урока')
+      alert(t('settings.scheduleEditor.deleteError'))
     }
   }
 
   async function clearAllSchedule() {
-    if (!confirm('Удалить всё расписание? Это действие нельзя отменить!')) return
-    
+    if (!confirm(t('settings.scheduleEditor.clearConfirm'))) return
+
     try {
       await flexibleApi.clearSchedule(childId)
       await loadData()
     } catch (err) {
-      alert('Ошибка очистки расписания')
+      alert(t('settings.scheduleEditor.clearError'))
     }
   }
 
   if (loading) {
-    return <div>Загрузка...</div>
+    return <div>{t('common.loading')}</div>
   }
 
   if (subjects.length === 0) {
     return (
       <div className="tip">
-        Сначала добавьте предметы во вкладке "Предметы"
+        {t('settings.scheduleEditor.noSubjects')}
       </div>
     )
   }
@@ -107,7 +110,7 @@ export default function ScheduleEditor({ childId }: ScheduleEditorProps) {
 
   return (
     <div>
-      <div className="h2">Расписание уроков</div>
+      <div className="h2">{t('settings.scheduleEditor.scheduleTitle')}</div>
       
       {/* День недели */}
       <div style={{ marginTop: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -126,11 +129,11 @@ export default function ScheduleEditor({ childId }: ScheduleEditorProps) {
       <div style={{ marginTop: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <div className="h3">
-            {DAYS.find(d => d.num === selectedDay)?.name} ({dayLessons.length} {dayLessons.length === 1 ? 'урок' : 'уроков'})
+            {DAYS.find(d => d.num === selectedDay)?.name} ({dayLessons.length === 1 ? t('settings.scheduleEditor.lessonCount', { count: dayLessons.length }) : t('settings.scheduleEditor.lessonsCount', { count: dayLessons.length })})
           </div>
           {schedule.length > 0 && (
             <button className="btn" onClick={clearAllSchedule}>
-              🗑️ Очистить всё
+              {t('settings.scheduleEditor.clearAll')}
             </button>
           )}
         </div>
@@ -191,7 +194,7 @@ export default function ScheduleEditor({ childId }: ScheduleEditorProps) {
             <button
               className="btn primary"
               onClick={() => {
-                const nextLessonNumber = dayLessons.length > 0 
+                const nextLessonNumber = dayLessons.length > 0
                   ? Math.max(...dayLessons.map(l => l.lesson_number)) + 1
                   : 1
                 if (subjects.length > 0) {
@@ -199,21 +202,21 @@ export default function ScheduleEditor({ childId }: ScheduleEditorProps) {
                 }
               }}
             >
-              + Добавить урок
+              + {t('settings.scheduleEditor.addLesson')}
             </button>
           </div>
         )}
 
         {dayLessons.length === 0 && (
           <div className="tip" style={{ marginTop: '16px' }}>
-            Нет уроков на этот день. Нажмите "Добавить урок" чтобы создать расписание.
+            {t('settings.scheduleEditor.noLessons')}
           </div>
         )}
       </div>
 
       {/* Сводка по неделе */}
       <div style={{ marginTop: '32px' }}>
-        <div className="h3" style={{ marginBottom: '12px' }}>Сводка по неделе</div>
+        <div className="h3" style={{ marginBottom: '12px' }}>{t('settings.scheduleEditor.weeklySummary')}</div>
         <div style={{ display: 'grid', gap: '8px' }}>
           {DAYS.map(day => {
             const lessons = getLessonsForDay(day.num)
@@ -230,7 +233,7 @@ export default function ScheduleEditor({ childId }: ScheduleEditorProps) {
               >
                 <div style={{ fontWeight: 600 }}>{day.name}</div>
                 <div className="tip">
-                  {lessons.length === 0 ? 'Нет уроков' : `${lessons.length} ${lessons.length === 1 ? 'урок' : 'уроков'}`}
+                  {lessons.length === 0 ? t('settings.scheduleEditor.noLessonsShort') : lessons.length === 1 ? t('settings.scheduleEditor.lessonCount', { count: lessons.length }) : t('settings.scheduleEditor.lessonsCount', { count: lessons.length })}
                 </div>
               </div>
             )

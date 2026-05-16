@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { addExpense, ExpenseCategory } from '@/lib/expenses-api'
 import type { FamilyMember } from '@/lib/hooks/useFamilyMembers'
+import { useT } from '@/lib/i18n'
 
 interface ExpenseModalProps {
   isOpen: boolean
@@ -13,6 +14,7 @@ interface ExpenseModalProps {
 }
 
 export default function ExpenseModal({ isOpen, onClose, categories, onSuccess, members }: ExpenseModalProps) {
+  const t = useT()
   const [title, setTitle] = useState('')
   const [amount, setAmount] = useState('')
   const [categoryId, setCategoryId] = useState('')
@@ -53,22 +55,22 @@ export default function ExpenseModal({ isOpen, onClose, categories, onSuccess, m
 
     // Валидация
     if (!title.trim()) {
-      setError('Введите название')
+      setError(t('expenseModal.nameRequired'))
       return
     }
 
     if (!amount || Number(amount) <= 0) {
-      setError('Введите корректную сумму')
+      setError(t('expenseModal.amountRequired'))
       return
     }
 
     if (!categoryId) {
-      setError('Выберите категорию')
+      setError(t('expenseModal.categoryRequired'))
       return
     }
 
     if (!date) {
-      setError('Выберите дату')
+      setError(t('expenseModal.dateRequired'))
       return
     }
 
@@ -92,7 +94,7 @@ export default function ExpenseModal({ isOpen, onClose, categories, onSuccess, m
       onClose()
     } catch (err) {
       console.error('Error adding expense:', err)
-      setError('Ошибка сохранения. Попробуйте ещё раз.')
+      setError(t('expenseModal.saveError'))
     } finally {
       setSaving(false)
     }
@@ -111,7 +113,7 @@ export default function ExpenseModal({ isOpen, onClose, categories, onSuccess, m
       <div className="expense-modal" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="expense-modal-header">
-          <h2 className="expense-modal-title">+ Добавить расход</h2>
+          <h2 className="expense-modal-title">+ {t('expenseModal.title')}</h2>
           <button
             className="expense-modal-close"
             onClick={handleClose}
@@ -126,12 +128,12 @@ export default function ExpenseModal({ isOpen, onClose, categories, onSuccess, m
           {/* Название */}
           <div className="form-group">
             <label className="form-label">
-              Название <span className="required">*</span>
+              {t('expenseModal.titleLabel')} <span className="required">*</span>
             </label>
             <input
               type="text"
               className="form-input"
-              placeholder="Например: Репетитор по математике"
+              placeholder={t('expenseModal.titlePlaceholder')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
@@ -141,7 +143,7 @@ export default function ExpenseModal({ isOpen, onClose, categories, onSuccess, m
           {/* Сумма */}
           <div className="form-group">
             <label className="form-label">
-              Сумма <span className="required">*</span>
+              {t('expenseModal.amountLabel')} <span className="required">*</span>
             </label>
             <div className="form-input-with-suffix">
               <input
@@ -161,7 +163,7 @@ export default function ExpenseModal({ isOpen, onClose, categories, onSuccess, m
           {/* Категория */}
           <div className="form-group">
             <label className="form-label">
-              Категория <span className="required">*</span>
+              {t('expenseModal.categoryLabel')} <span className="required">*</span>
             </label>
             <select
               className="form-select"
@@ -169,7 +171,7 @@ export default function ExpenseModal({ isOpen, onClose, categories, onSuccess, m
               onChange={(e) => setCategoryId(e.target.value)}
               required
             >
-              <option value="">Выберите категорию</option>
+              <option value="">{t('expenseModal.categoryPlaceholder')}</option>
               {categories.map(cat => (
                 <option key={cat.id} value={cat.id}>
                   {cat.icon} {cat.name}
@@ -181,7 +183,7 @@ export default function ExpenseModal({ isOpen, onClose, categories, onSuccess, m
           {/* Для кого */}
           <div className="form-group">
             <label className="form-label">
-              Для кого <span className="required">*</span>
+              {t('expenseModal.forWhom')} <span className="required">*</span>
             </label>
             <div className="form-radio-group">
               {members.map(member => (
@@ -202,7 +204,7 @@ export default function ExpenseModal({ isOpen, onClose, categories, onSuccess, m
           {/* Дата */}
           <div className="form-group">
             <label className="form-label">
-              Дата <span className="required">*</span>
+              {t('expenseModal.dateLabel')} <span className="required">*</span>
             </label>
             <input
               type="date"
@@ -221,31 +223,31 @@ export default function ExpenseModal({ isOpen, onClose, categories, onSuccess, m
                 checked={isRecurring}
                 onChange={(e) => setIsRecurring(e.target.checked)}
               />
-              <span>Повторяется</span>
+              <span>{t('expenseModal.recurring')}</span>
             </label>
           </div>
 
           {/* Период (если повторяется) */}
           {isRecurring && (
             <div className="form-group">
-              <label className="form-label">Период</label>
+              <label className="form-label">{t('expenseModal.period')}</label>
               <select
                 className="form-select"
                 value={recurringPeriod}
                 onChange={(e) => setRecurringPeriod(e.target.value)}
               >
-                <option value="weekly">Еженедельно</option>
-                <option value="monthly">Ежемесячно</option>
+                <option value="weekly">{t('expenseModal.weekly')}</option>
+                <option value="monthly">{t('expenseModal.monthly')}</option>
               </select>
             </div>
           )}
 
           {/* Заметки */}
           <div className="form-group">
-            <label className="form-label">Заметки</label>
+            <label className="form-label">{t('expenseModal.notes')}</label>
             <textarea
               className="form-textarea"
-              placeholder="Дополнительная информация..."
+              placeholder={t('expenseModal.notesPlaceholder')}
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={3}
@@ -267,14 +269,14 @@ export default function ExpenseModal({ isOpen, onClose, categories, onSuccess, m
               onClick={handleClose}
               disabled={saving}
             >
-              Отмена
+              {t('expenseModal.cancel')}
             </button>
             <button
               type="submit"
               className="btn-save"
               disabled={saving}
             >
-              {saving ? '💾 Сохранение...' : '💾 Сохранить'}
+              {saving ? t('expenseModal.savingBtn') : t('expenseModal.saveBtn')}
             </button>
           </div>
         </form>

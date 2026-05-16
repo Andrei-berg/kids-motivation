@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { createFamily, createChildWithWallet, completeOnboarding } from '@/lib/onboarding-api'
+import { useT } from '@/lib/i18n'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -26,25 +27,24 @@ interface CoinRulesState {
 // ---------------------------------------------------------------------------
 
 function StepWelcome({ onNext }: { onNext: () => void }) {
+  const t = useT()
   return (
     <div>
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <div style={{ fontSize: '56px', marginBottom: '16px' }}>🏆</div>
         <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#1f2937', margin: '0 0 12px', lineHeight: 1.2 }}>
-          Добро пожаловать в FamilyCoins
+          {t('onboarding.title')}
         </h1>
         <p style={{ fontSize: '15px', color: '#6b7280', lineHeight: 1.6, margin: 0 }}>
-          FamilyCoins помогает детям учиться ответственности и достигать целей через
-          систему монет и наград. Родители задают правила — дети зарабатывают монеты за
-          учёбу, спорт и домашние дела. Обменивайте монеты на реальные награды!
+          {t('onboarding.welcomeDesc')}
         </p>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
         {[
-          { icon: '🎓', text: 'Учёба, спорт и домашние дела — всё в одном месте' },
-          { icon: '🪙', text: 'Прозрачная система монет и наград' },
-          { icon: '👨‍👩‍👧', text: 'Приглашайте всю семью — каждый ребёнок видит только своё' },
+          { icon: '🎓', text: t('onboarding.feature1') },
+          { icon: '🪙', text: t('onboarding.feature2') },
+          { icon: '👨‍👩‍👧', text: t('onboarding.feature3') },
         ].map(({ icon, text }) => (
           <div
             key={text}
@@ -79,7 +79,7 @@ function StepWelcome({ onNext }: { onNext: () => void }) {
           boxShadow: '0 4px 16px rgba(245,158,11,.35)',
         }}
       >
-        Создать семью →
+        {t('onboarding.createFamily')}
       </button>
     </div>
   )
@@ -100,15 +100,16 @@ function StepFamily({
   onNext: () => void
   onBack: () => void
 }) {
+  const t = useT()
   const [localError, setLocalError] = useState<string | null>(null)
 
   function handleNext() {
     if (parentName.trim().length < 1 || parentName.trim().length > 40) {
-      setLocalError('Введите ваше имя (до 40 символов)')
+      setLocalError(t('onboarding.yourNameError'))
       return
     }
     if (familyName.trim().length < 2 || familyName.trim().length > 40) {
-      setLocalError('Название семьи: от 2 до 40 символов')
+      setLocalError(t('onboarding.familyNameError'))
       return
     }
     setLocalError(null)
@@ -118,29 +119,29 @@ function StepFamily({
   return (
     <div>
       <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#1f2937', margin: '0 0 6px' }}>
-        Расскажите о вашей семье
+        {t('onboarding.familyStep')}
       </h2>
       <p style={{ fontSize: '14px', color: '#9ca3af', margin: '0 0 28px' }}>
-        Шаг 1 из 4
+        {t('onboarding.step1of4')}
       </p>
 
       <label style={labelStyle}>
-        Ваше имя
+        {t('onboarding.yourName')}
         <input
           value={parentName}
           onChange={e => setParentName(e.target.value)}
-          placeholder="Иван"
+          placeholder={t('onboarding.namePlaceholder')}
           maxLength={40}
           style={inputStyle}
         />
       </label>
 
       <label style={{ ...labelStyle, marginTop: '16px' }}>
-        Название семьи
+        {t('onboarding.familyName')}
         <input
           value={familyName}
           onChange={e => setFamilyName(e.target.value)}
-          placeholder="Семья Ивановых"
+          placeholder={t('onboarding.familyNamePlaceholder')}
           maxLength={40}
           style={inputStyle}
         />
@@ -149,8 +150,8 @@ function StepFamily({
       {localError && <p style={errorTextStyle}>{localError}</p>}
 
       <div style={{ display: 'flex', gap: '10px', marginTop: '28px' }}>
-        <button onClick={onBack} style={backBtnStyle}>← Назад</button>
-        <button onClick={handleNext} style={{ ...primaryBtnStyle, flex: 1 }}>Далее →</button>
+        <button onClick={onBack} style={backBtnStyle}>← {t('onboarding.back')}</button>
+        <button onClick={handleNext} style={{ ...primaryBtnStyle, flex: 1 }}>{t('onboarding.next')} →</button>
       </div>
     </div>
   )
@@ -167,6 +168,7 @@ function StepChildren({
   onNext: () => void
   onBack: () => void
 }) {
+  const t = useT()
   const [localError, setLocalError] = useState<string | null>(null)
 
   function addChild() {
@@ -186,7 +188,7 @@ function StepChildren({
   function handleNext() {
     for (const c of children) {
       if (!c.name.trim() || c.name.trim().length > 30) {
-        setLocalError('Введите имя для каждого ребёнка (до 30 символов)')
+        setLocalError(t('onboarding.childNameError'))
         return
       }
     }
@@ -197,10 +199,10 @@ function StepChildren({
   return (
     <div>
       <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#1f2937', margin: '0 0 6px' }}>
-        Добавьте детей
+        {t('onboarding.addChildren')}
       </h2>
       <p style={{ fontSize: '14px', color: '#9ca3af', margin: '0 0 28px' }}>
-        Шаг 2 из 4
+        {t('onboarding.step2of4')}
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -209,7 +211,7 @@ function StepChildren({
             <input
               value={child.name}
               onChange={e => updateName(idx, e.target.value)}
-              placeholder={`Ребёнок ${idx + 1}`}
+              placeholder={t('onboarding.childPlaceholder', { n: idx + 1 })}
               maxLength={30}
               style={{ ...inputStyle, flex: 1, marginTop: 0 }}
             />
@@ -228,7 +230,7 @@ function StepChildren({
                   whiteSpace: 'nowrap',
                 }}
               >
-                Удалить
+                {t('onboarding.remove')}
               </button>
             )}
           </div>
@@ -251,15 +253,15 @@ function StepChildren({
             width: '100%',
           }}
         >
-          + Добавить ребёнка
+          {t('onboarding.addChild')}
         </button>
       )}
 
       {localError && <p style={errorTextStyle}>{localError}</p>}
 
       <div style={{ display: 'flex', gap: '10px', marginTop: '28px' }}>
-        <button onClick={onBack} style={backBtnStyle}>← Назад</button>
-        <button onClick={handleNext} style={{ ...primaryBtnStyle, flex: 1 }}>Далее →</button>
+        <button onClick={onBack} style={backBtnStyle}>← {t('onboarding.back')}</button>
+        <button onClick={handleNext} style={{ ...primaryBtnStyle, flex: 1 }}>{t('onboarding.next')} →</button>
       </div>
     </div>
   )
@@ -280,26 +282,27 @@ function StepCoinRules({
   onBack: () => void
   saving: boolean
 }) {
+  const t = useT()
   function setField(key: keyof CoinRulesState, value: string) {
     const num = parseInt(value, 10)
     if (!isNaN(num)) setCoinRules({ ...coinRules, [key]: num })
   }
 
   const fields: { key: keyof CoinRulesState; label: string; hint?: string }[] = [
-    { key: 'g5', label: 'Оценка 5 → монеты' },
-    { key: 'g4', label: 'Оценка 4 → монеты' },
-    { key: 'g3', label: 'Оценка 3 → монеты', hint: 'Отрицательное значение — штраф (по умолчанию -3)' },
-    { key: 'room', label: 'Уборка комнаты → монеты' },
-    { key: 'sport', label: 'Рейтинг тренера 5 → монеты' },
+    { key: 'g5', label: t('onboarding.grade5label') },
+    { key: 'g4', label: t('onboarding.grade4label') },
+    { key: 'g3', label: t('onboarding.grade3label'), hint: t('onboarding.grade3hint') },
+    { key: 'room', label: t('onboarding.roomLabel') },
+    { key: 'sport', label: t('onboarding.sportLabel') },
   ]
 
   return (
     <div>
       <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#1f2937', margin: '0 0 6px' }}>
-        Правила монет
+        {t('onboarding.coinRulesTitle')}
       </h2>
       <p style={{ fontSize: '14px', color: '#9ca3af', margin: '0 0 20px' }}>
-        Шаг 3 из 4 — можно настроить позже в Настройках
+        {t('onboarding.step3of4')}
       </p>
 
       <button
@@ -319,7 +322,7 @@ function StepCoinRules({
           boxShadow: saving ? 'none' : '0 4px 12px rgba(245,158,11,.3)',
         }}
       >
-        {saving ? 'Создаём семью...' : 'Использовать стандартные настройки →'}
+        {saving ? t('onboarding.creating') : t('onboarding.useDefaults')}
       </button>
 
       <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -338,7 +341,7 @@ function StepCoinRules({
       </div>
 
       <div style={{ display: 'flex', gap: '10px', marginTop: '24px' }}>
-        <button onClick={onBack} disabled={saving} style={{ ...backBtnStyle, opacity: saving ? 0.5 : 1, cursor: saving ? 'not-allowed' : 'pointer' }}>← Назад</button>
+        <button onClick={onBack} disabled={saving} style={{ ...backBtnStyle, opacity: saving ? 0.5 : 1, cursor: saving ? 'not-allowed' : 'pointer' }}>← {t('onboarding.back')}</button>
         <button
           onClick={onNext}
           disabled={saving}
@@ -350,7 +353,7 @@ function StepCoinRules({
             cursor: saving ? 'not-allowed' : 'pointer',
           }}
         >
-          {saving ? 'Создаём семью...' : 'Далее →'}
+          {saving ? t('onboarding.creating') : `${t('onboarding.next')} →`}
         </button>
       </div>
     </div>
@@ -366,6 +369,7 @@ function StepDone({
   children: ChildRow[]
   onFinish: () => void
 }) {
+  const t = useT()
   const [copied, setCopied] = useState(false)
 
   async function handleCopy() {
@@ -382,10 +386,10 @@ function StepDone({
     <div style={{ textAlign: 'center' }}>
       <div style={{ fontSize: '56px', marginBottom: '12px' }}>🎉</div>
       <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#1f2937', margin: '0 0 8px' }}>
-        Ваша семья готова!
+        {t('onboarding.familyReady')}
       </h2>
       <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 28px' }}>
-        Добавляйте достижения и зарабатывайте монеты вместе
+        {t('onboarding.earnTogether')}
       </p>
 
       {/* Invite code card */}
@@ -399,7 +403,7 @@ function StepDone({
         }}
       >
         <p style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          Код приглашения
+          {t('onboarding.inviteCodeLabel')}
         </p>
         <p
           style={{
@@ -427,7 +431,7 @@ function StepDone({
             transition: 'background 0.2s',
           }}
         >
-          {copied ? '✓ Скопировано!' : 'Скопировать код'}
+          {copied ? t('onboarding.copied') : t('onboarding.copyCode')}
         </button>
       </div>
 
@@ -444,13 +448,13 @@ function StepDone({
         }}
       >
         <p style={{ fontWeight: 600, marginBottom: '8px', margin: '0 0 8px', fontSize: '15px', color: '#1f2937' }}>
-          👫 Второй родитель
+          {t('onboarding.secondParent')}
         </p>
         <p style={{ fontSize: '14px', color: '#374151', marginBottom: '4px', margin: '0 0 4px' }}>
-          Поделитесь кодом <strong>{inviteCode}</strong> с партнёром — они смогут войти через /onboarding/join
+          {t('onboarding.shareCode', { code: inviteCode })}
         </p>
         <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>
-          Можно настроить позже в <em>Настройках</em>
+          {t('onboarding.settingsLater')}
         </p>
       </div>
 
@@ -467,11 +471,11 @@ function StepDone({
           }}
         >
           <p style={{ fontSize: '13px', fontWeight: 600, color: '#6b7280', margin: '0 0 8px' }}>
-            PIN для детей
+            {t('onboarding.pinForKids')}
           </p>
           {children.map((child, idx) => (
             <p key={idx} style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 4px' }}>
-              {child.name.trim() || `Ребёнок ${idx + 1}`}: нет email? → задай PIN в настройках (/parent/settings)
+              {t('onboarding.childPin', { name: child.name.trim() || t('onboarding.childPlaceholder', { n: idx + 1 }) })}
             </p>
           ))}
         </div>
@@ -492,7 +496,7 @@ function StepDone({
           boxShadow: '0 4px 16px rgba(245,158,11,.35)',
         }}
       >
-        Открыть приложение →
+        {t('onboarding.openApp')}
       </button>
     </div>
   )
@@ -561,6 +565,7 @@ const errorTextStyle: React.CSSProperties = {
 // ---------------------------------------------------------------------------
 
 export default function OnboardingWizard() {
+  const t = useT()
   const router = useRouter()
   const [step, setStep] = useState(0)
   const [parentName, setParentName] = useState('')
@@ -587,7 +592,7 @@ export default function OnboardingWizard() {
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Не авторизован')
+      if (!user) throw new Error(t('onboarding.notAuthorized'))
 
       // 1. Create family + parent member.
       //    createFamily() upserts parent family_members row — safe even if auth
@@ -611,7 +616,7 @@ export default function OnboardingWizard() {
       setInviteCode(code)
       setStep(4) // advance to Done screen
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Произошла ошибка. Попробуйте снова.')
+      setError(err instanceof Error ? err.message : t('onboarding.generalError'))
     } finally {
       setSaving(false)
     }

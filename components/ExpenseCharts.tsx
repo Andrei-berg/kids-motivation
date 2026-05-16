@@ -1,6 +1,7 @@
 'use client'
 
 import { ExpenseStats } from '@/lib/expenses-api'
+import { useT } from '@/lib/i18n'
 
 interface ExpenseChartsProps {
   stats: ExpenseStats
@@ -8,6 +9,7 @@ interface ExpenseChartsProps {
 }
 
 export default function ExpenseCharts({ stats, getChildName }: ExpenseChartsProps) {
+  const t = useT()
   if (!stats || stats.total === 0) {
     return null
   }
@@ -33,7 +35,7 @@ export default function ExpenseCharts({ stats, getChildName }: ExpenseChartsProp
   if (othersAmount > 0) {
     pieData.push({
       categoryId: 'others',
-      categoryName: 'Прочее',
+      categoryName: t('expenseCharts.other'),
       icon: '📦',
       amount: othersAmount,
       percentage: (othersAmount / stats.total) * 100
@@ -78,12 +80,12 @@ export default function ExpenseCharts({ stats, getChildName }: ExpenseChartsProp
 
   return (
     <div className="expense-charts">
-      <h2 className="expense-charts-title">📊 Визуализация расходов</h2>
+      <h2 className="expense-charts-title">{t('expenseCharts.visualization')}</h2>
       
       <div className="charts-grid">
         {/* Круговая диаграмма */}
         <div className="chart-card">
-          <h3 className="chart-card-title">По категориям</h3>
+          <h3 className="chart-card-title">{t('expenseCharts.byCategory')}</h3>
           <div className="pie-chart-container">
             <svg className="pie-chart" viewBox="0 0 200 200">
               {pieSegments.map((segment, index) => (
@@ -97,7 +99,7 @@ export default function ExpenseCharts({ stats, getChildName }: ExpenseChartsProp
               ))}
               {/* Центральный круг для donut эффекта */}
               <circle cx="100" cy="100" r="50" fill="white" />
-              <text x="100" y="95" textAnchor="middle" className="pie-total-label">Всего</text>
+              <text x="100" y="95" textAnchor="middle" className="pie-total-label">{t('expenseCharts.total')}</text>
               <text x="100" y="115" textAnchor="middle" className="pie-total-amount">
                 {(stats.total / 1000).toFixed(0)}K
               </text>
@@ -123,7 +125,7 @@ export default function ExpenseCharts({ stats, getChildName }: ExpenseChartsProp
         {/* Столбчатая диаграмма по детям */}
         {stats.byChild.length > 0 && (
           <div className="chart-card">
-            <h3 className="chart-card-title">По детям</h3>
+            <h3 className="chart-card-title">{t('expenseCharts.byChild')}</h3>
             <div className="bar-chart">
               {stats.byChild.map((child, index) => {
                 const height = (child.amount / stats.total) * 100
@@ -153,7 +155,7 @@ export default function ExpenseCharts({ stats, getChildName }: ExpenseChartsProp
 
         {/* Топ категории */}
         <div className="chart-card chart-card-wide">
-          <h3 className="chart-card-title">Топ категорий</h3>
+          <h3 className="chart-card-title">{t('expenseCharts.topCategories')}</h3>
           <div className="horizontal-bars">
             {stats.byCategory.slice(0, 6).map((category, index) => {
               const width = category.percentage
