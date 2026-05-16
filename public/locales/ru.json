@@ -858,6 +858,29 @@
     "moodTired": "Устал",
     "gradePill": "{{count}} оценок"
   },
+  "withdrawModalExtra": {
+    "allBtn": "Всё",
+    "remainingAfter": "После вывода:",
+    "remainingValue": "Останется: {{amount}}₽",
+    "hint": "💡 Родитель одобрит заявку и даст деньги наличными",
+    "pendingTitle": "⏳ Ожидают одобрения:",
+    "historyTitle": "📜 История выводов:",
+    "statusApproved": "✅ Выдано",
+    "statusRejected": "❌ Отклонено",
+    "sendingBtn": "💵 Отправляю...",
+    "withdrawBtn": "💵 Вывести"
+  },
+  "exchangeModalExtra": {
+    "howManyCoins": "Сколько монет обменять?",
+    "coinsSuffix": "монет",
+    "allBtn": "Всё",
+    "youGet": "↓ Получишь: ",
+    "afterExchange": "После обмена:",
+    "coinsAfter": "💰 Монеты:",
+    "moneyAfter": "💵 Деньги:",
+    "exchangingBtn": "💱 Обмениваю...",
+    "exchangeBtn": "💱 Обменять"
+  },
   "goalsModal": {
     "pinTitle": "🔐 Родительский PIN",
     "pinPlaceholder": "Введи PIN",

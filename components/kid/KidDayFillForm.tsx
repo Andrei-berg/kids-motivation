@@ -23,6 +23,7 @@ import { supabase } from '@/lib/supabase'
 import { getReadingLog, saveReadingLog } from '@/lib/vacation-api'
 import { T } from '@/components/kid/design/tokens'
 import { Confetti, AnimatedNum } from '@/components/kid/design/atoms'
+import { useT, useLanguage } from '@/lib/i18n'
 
 const GRADE_COINS: Record<number, number> = { 5: 5, 4: 3, 3: -3, 2: -5, 1: -10 }
 
@@ -51,24 +52,24 @@ interface RoomItems {
 // ROOM ITEM LABELS
 // ============================================================================
 
-const ROOM_ITEM_LABELS: { key: keyof RoomItems; emoji: string; label: string }[] = [
-  { key: 'bed',    emoji: '🛏️', label: 'Кровать' },
-  { key: 'floor',  emoji: '🧹', label: 'Пол' },
-  { key: 'desk',   emoji: '🪑', label: 'Стол' },
-  { key: 'closet', emoji: '🚪', label: 'Шкаф' },
-  { key: 'trash',  emoji: '🗑️', label: 'Мусор' },
+const ROOM_ITEM_LABELS: { key: keyof RoomItems; emoji: string; labelKey: string }[] = [
+  { key: 'bed',    emoji: '🛏️', labelKey: 'kidFillForm.roomBed' },
+  { key: 'floor',  emoji: '🧹', labelKey: 'kidFillForm.roomFloor' },
+  { key: 'desk',   emoji: '🪑', labelKey: 'kidFillForm.roomDesk' },
+  { key: 'closet', emoji: '🚪', labelKey: 'kidFillForm.roomCloset' },
+  { key: 'trash',  emoji: '🗑️', labelKey: 'kidFillForm.roomTrash' },
 ]
 
 // ============================================================================
 // MOOD OPTIONS
 // ============================================================================
 
-const MOOD_OPTIONS = [
-  { key: 'happy',   emoji: '😄', label: 'Огонь!',  color: '#FF6B35' },
-  { key: 'neutral', emoji: '🙂', label: 'Хорошо',  color: '#4ECDC4' },
-  { key: 'meh',     emoji: '😐', label: 'Норм',    color: '#F5A623' },
-  { key: 'sad',     emoji: '😔', label: 'Грустно', color: '#6C5CE7' },
-  { key: 'tired',   emoji: '😴', label: 'Устал',   color: '#FF8FB1' },
+const MOOD_OPTIONS_STATIC = [
+  { key: 'happy',   emoji: '😄', labelKey: 'kidFillForm.moodFire',  color: '#FF6B35' },
+  { key: 'neutral', emoji: '🙂', labelKey: 'kidFillForm.moodGood',  color: '#4ECDC4' },
+  { key: 'meh',     emoji: '😐', labelKey: 'kidFillForm.moodOk',    color: '#F5A623' },
+  { key: 'sad',     emoji: '😔', labelKey: 'kidFillForm.moodSad',   color: '#6C5CE7' },
+  { key: 'tired',   emoji: '😴', labelKey: 'kidFillForm.moodTired', color: '#FF8FB1' },
 ]
 
 // ============================================================================
@@ -100,6 +101,10 @@ export function KidDayFillForm({
   existingDay,
   onSaved,
 }: KidDayFillFormProps) {
+  const t = useT()
+  const { language } = useLanguage()
+  const MOOD_OPTIONS = MOOD_OPTIONS_STATIC.map(m => ({ ...m, label: t(m.labelKey) }))
+
   // ── Coin animation ───────────────────────────────────────────────────────
   const { flyups, trigger: triggerCoinFlyup } = useCoinAnimation()
 
@@ -178,7 +183,7 @@ export function KidDayFillForm({
       setExercises((existingExercises ?? []).map((ex: any) => ({
         exercise_type_id: ex.exercise_type_id,
         quantity: ex.quantity,
-        unit: ex.exercise_type?.unit ?? 'раз',
+        unit: ex.exercise_type?.unit ?? t('kidDayFill.unit'),
       })))
 
       // Pre-fill sections
@@ -316,7 +321,7 @@ export function KidDayFillForm({
       const exists = prev.find(e => e.exercise_type_id === exerciseTypeId)
       if (exists) return prev.filter(e => e.exercise_type_id !== exerciseTypeId)
       const et = exerciseTypes.find(t => t.id === exerciseTypeId)
-      return [...prev, { exercise_type_id: exerciseTypeId, quantity: null, unit: et?.unit ?? 'раз' }]
+      return [...prev, { exercise_type_id: exerciseTypeId, quantity: null, unit: et?.unit ?? t('kidDayFill.unit') }]
     })
   }
 
@@ -515,22 +520,22 @@ export function KidDayFillForm({
               <text x="11" y="14.5" textAnchor="middle" fontSize="9" fontWeight="900" fontFamily={T.fDisp} fill="#1A1423">K</text>
             </svg>
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: T.fBody, fontSize: 10, color: 'rgba(255,255,255,0.7)', fontWeight: 700, letterSpacing: 1 }}>МОНЕТ ЗА СЕГОДНЯ</div>
+              <div style={{ fontFamily: T.fBody, fontSize: 10, color: 'rgba(255,255,255,0.7)', fontWeight: 700, letterSpacing: 1 }}>{t('kidFillForm.coinsToday')}</div>
               <div style={{ fontFamily: T.fNum, fontSize: 28, fontWeight: 900, color: '#fff', lineHeight: 1, marginTop: 2 }}>
                 +<AnimatedNum value={coinsPreview} duration={500}/>
               </div>
             </div>
             {isLocked && (
-              <div style={{ padding: '6px 12px', borderRadius: 999, background: 'rgba(255,255,255,0.2)', color: '#fff', fontFamily: T.fDisp, fontSize: 11, fontWeight: 900 }}>🔒 Закрыт</div>
+              <div style={{ padding: '6px 12px', borderRadius: 999, background: 'rgba(255,255,255,0.2)', color: '#fff', fontFamily: T.fDisp, fontSize: 11, fontWeight: 900 }}>{t('kidFillForm.locked')}</div>
             )}
           </div>
         </div>
       </div>
 
       {/* ─── Room ─── */}
-      <FillSection title="Комната" icon="🏠" sub={`${Object.values(roomItems).filter(Boolean).length}/${ROOM_ITEM_LABELS.length}`}>
+      <FillSection title={t('kidFillForm.roomSection')} icon="🏠" sub={`${Object.values(roomItems).filter(Boolean).length}/${ROOM_ITEM_LABELS.length}`}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            {ROOM_ITEM_LABELS.map(({ key, emoji, label }) => {
+            {ROOM_ITEM_LABELS.map(({ key, emoji, labelKey }) => {
               const on = roomItems[key]
               return (
                 <button key={key} onClick={() => { toggleRoomItem(key); if (!on) triggerConfetti() }} disabled={isLocked} style={{
@@ -543,7 +548,7 @@ export function KidDayFillForm({
                   transition: 'all 0.2s',
                 }}>
                   <span style={{ fontSize: 18 }}>{emoji}</span>
-                  <span style={{ flex: 1, textAlign: 'left' }}>{label}</span>
+                  <span style={{ flex: 1, textAlign: 'left' }}>{t(labelKey)}</span>
                   {on && <span style={{ width: 22, height: 22, borderRadius: 11, background: T.teal, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6l3 3 5-6" stroke="#fff" strokeWidth="2.4" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </span>}
@@ -555,10 +560,10 @@ export function KidDayFillForm({
           {proofLocalUrl ? (
             <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={proofLocalUrl} alt="Фото" style={{ width: 60, height: 60, borderRadius: 14, objectFit: 'cover', border: `2px solid ${T.teal}` }}/>
+              <img src={proofLocalUrl} alt={t('kidFillForm.photoAttached')} style={{ width: 60, height: 60, borderRadius: 14, objectFit: 'cover', border: `2px solid ${T.teal}` }}/>
               <div>
-                <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.teal, fontWeight: 700 }}>Фото приложено ✓</div>
-                <button onClick={handleProofRetake} style={{ fontFamily: T.fBody, fontSize: 11, color: T.coral, background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 4 }}>Переснять</button>
+                <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.teal, fontWeight: 700 }}>{t('kidFillForm.photoAttached')}</div>
+                <button onClick={handleProofRetake} style={{ fontFamily: T.fBody, fontSize: 11, color: T.coral, background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 4 }}>{t('kidFillForm.retakePhoto')}</button>
               </div>
             </div>
           ) : (
@@ -568,13 +573,13 @@ export function KidDayFillForm({
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               fontFamily: T.fDisp, fontSize: 13, fontWeight: 800,
               color: T.ink3, cursor: isLocked ? 'not-allowed' : 'pointer',
-            }}>📸 Сфотографировать комнату</button>
+            }}>{t('kidFillForm.takePhoto')}</button>
           )}
           <input ref={proofInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleProofCapture}/>
         </FillSection>
 
       {/* ─── Mood ─── */}
-      <FillSection title="Настроение" icon="✨">
+      <FillSection title={t('kidFillForm.moodSection')} icon="✨">
         <div style={{ display: 'flex', gap: 6, justifyContent: 'space-between' }}>
           {MOOD_OPTIONS.map(m => {
             const on = mood === m.key
@@ -597,7 +602,7 @@ export function KidDayFillForm({
 
       {/* ─── Extra activities ─── */}
       {activities.length > 0 && (
-        <FillSection title="Доп. занятия" icon="⭐">
+        <FillSection title={t('kidFillForm.extraSection')} icon="⭐">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {activities.map(act => {
               const checked = checkedActivities.has(act.id)
@@ -625,9 +630,9 @@ export function KidDayFillForm({
 
       {/* ─── Grades ─── */}
       {dayType === 'school' && subjects.length > 0 && (
-        <FillSection title="Оценки за сегодня" icon="📚" sub="Школа">
+        <FillSection title={t('kidFillForm.gradesSection')} icon="📚" sub={t('kidFillForm.schoolSub')}>
           <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, marginBottom: 10, lineHeight: 1.4 }}>
-            Можно ставить несколько оценок по одному предмету. <b style={{ color: T.coral }}>📱 Цифр</b> — задание с приставкой.
+            <b style={{ color: T.coral }}>📱 Digital</b>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {subjects.map(sub => {
@@ -643,7 +648,7 @@ export function KidDayFillForm({
                     <span style={{ flex: 1, fontFamily: T.fDisp, fontSize: 14, fontWeight: 800, color: T.ink }}>{sub.name}</span>
                     {gradeEntries.length > 0 && (
                       <span style={{ padding: '2px 8px', borderRadius: 999, background: T.coralSoft, fontFamily: T.fNum, fontSize: 11, fontWeight: 800, color: T.coralDeep }}>
-                        {gradeEntries.length} {gradeEntries.length === 1 ? 'оценка' : 'оценок'}
+                        {t('kidFillForm.gradePill', { count: gradeEntries.length })}
                       </span>
                     )}
                   </div>
@@ -670,7 +675,7 @@ export function KidDayFillForm({
                             background: entry.isDigital ? T.coral : T.lineSoft,
                             color: entry.isDigital ? '#fff' : T.ink3,
                             fontFamily: T.fDisp, fontSize: 11, fontWeight: 800,
-                          }}>📱 Цифр</button>
+                          }}>📱 {language === 'en' ? 'Dig.' : 'Цифр'}</button>
                           {entries.filter(e => !e.saved).length > 1 && (
                             <button onClick={() => setKidGrades(prev => ({ ...prev, [sub.name]: prev[sub.name].filter((_, i) => i !== idx) }))} style={{
                               width: 26, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
@@ -693,7 +698,7 @@ export function KidDayFillForm({
                       height: 30, padding: '0 14px', borderRadius: 15, border: `1.5px dashed ${T.line}`,
                       background: 'transparent', cursor: 'pointer',
                       fontFamily: T.fBody, fontSize: 12, color: T.coral, fontWeight: 700,
-                    }}>+ ещё оценка</button>
+                    }}>{t('kidFillForm.moreGrade')}</button>
                   )}
                 </div>
               )
@@ -704,7 +709,7 @@ export function KidDayFillForm({
 
       {/* ─── Exercises ─── */}
       {exerciseTypes.length > 0 && (
-        <FillSection title="Упражнения" icon="💪" sub="Дома">
+        <FillSection title={t('kidFillForm.exercisesSection')} icon="💪" sub={t('kidFillForm.homeSub')}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {exerciseTypes.map(et => {
               const active = exercises.find(e => e.exercise_type_id === et.id)
@@ -751,10 +756,10 @@ export function KidDayFillForm({
       )}
 
       {/* ─── Clubs / Sections ─── */}
-      <FillSection title="Секции" icon="🏆" sub="Тренер">
+      <FillSection title={t('kidFillForm.sectionsSection')} icon="🏆" sub={t('kidFillForm.trainerSub')}>
         {sections.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '12px 0', fontFamily: T.fBody, fontSize: 13, color: T.ink3 }}>
-            Секций пока нет. Попроси родителей добавить!
+            {t('kidFillForm.noSections')}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -776,11 +781,11 @@ export function KidDayFillForm({
                       height: 36, padding: '0 14px', borderRadius: 18, border: 'none', cursor: isLocked ? 'not-allowed' : 'pointer',
                       background: attended ? T.coral : T.lineSoft, color: attended ? '#fff' : T.ink,
                       fontFamily: T.fDisp, fontSize: 12, fontWeight: 800,
-                    }}>{attended ? '✓ Был' : 'Был?'}</button>
+                    }}>{attended ? t('kidFillForm.attended') : t('kidFillForm.notAttended')}</button>
                   </div>
                   {attended && (
                     <div style={{ marginTop: 12, padding: 12, borderRadius: 16, background: T.lineSoft, border: `1px solid ${T.line}` }}>
-                      <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 700, letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' }}>Оценка тренера</div>
+                      <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 700, letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' }}>{t('kidFillForm.coachRatingLabel')}</div>
                       <div style={{ display: 'flex', gap: 6 }}>
                         {[1, 2, 3, 4, 5].map(s => {
                           const on = s <= (note.coachRating ?? 0)
@@ -808,7 +813,7 @@ export function KidDayFillForm({
       </FillSection>
 
       {/* ─── Reading ─── */}
-      <FillSection title="Чтение" icon="📖" sub="Каждый день">
+      <FillSection title={t('kidFillForm.readingSection')} icon="📖" sub={t('kidFillForm.everyDay')}>
         <div style={{
           background: '#fff', borderRadius: 22, padding: 14,
           border: readingActive ? `2px solid ${T.plum}` : `1.5px solid ${T.line}`,
@@ -816,23 +821,23 @@ export function KidDayFillForm({
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: readingActive ? 14 : 0 }}>
             <div style={{ width: 40, height: 40, borderRadius: 14, background: T.plumSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>📖</div>
-            <span style={{ flex: 1, fontFamily: T.fDisp, fontSize: 14, fontWeight: 800, color: T.ink }}>Читал сегодня?</span>
+            <span style={{ flex: 1, fontFamily: T.fDisp, fontSize: 14, fontWeight: 800, color: T.ink }}>{t('kidFillForm.readingSection')}?</span>
             <button onClick={() => !isLocked && setReadingActive(v => !v)} style={{
               height: 34, padding: '0 14px', borderRadius: 17, border: 'none', cursor: isLocked ? 'not-allowed' : 'pointer',
               background: readingActive ? T.teal : T.lineSoft, color: readingActive ? '#fff' : T.ink,
               fontFamily: T.fDisp, fontSize: 12, fontWeight: 800,
-            }}>{readingActive ? '✓ Читал' : 'Читал'}</button>
+            }}>{readingActive ? t('kidFillForm.didRead') : t('kidFillForm.readToggle')}</button>
           </div>
           {readingActive && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <input value={reading.bookTitle} onChange={e => setReading(r => ({ ...r, bookTitle: e.target.value }))} disabled={isLocked} placeholder="Название книги" style={{
+              <input value={reading.bookTitle} onChange={e => setReading(r => ({ ...r, bookTitle: e.target.value }))} disabled={isLocked} placeholder={t('kidFillForm.bookField')} style={{
                 height: 44, padding: '0 16px', borderRadius: 22,
                 border: `1.5px solid ${T.line}`, background: T.lineSoft,
                 fontFamily: T.fBody, fontSize: 14, color: T.ink, outline: 'none', width: '100%', boxSizing: 'border-box',
               }}/>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
                 {(['pagesRead', 'minutesRead', 'currentPage'] as const).map((field, fi) => {
-                  const labels = ['Страниц', 'Минут', 'Закладка']
+                  const labels = [t('kidFillForm.pagesLabel'), t('kidFillForm.minutesLabel'), t('kidFillForm.bookmarkLabel')]
                   return (
                     <div key={field} style={{ borderRadius: 16, background: T.lineSoft, border: `1.5px solid ${T.line}`, padding: '6px 10px' }}>
                       <div style={{ fontFamily: T.fBody, fontSize: 9, color: T.ink3, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase' }}>{labels[fi]}</div>
@@ -850,7 +855,7 @@ export function KidDayFillForm({
                 fontFamily: T.fDisp, fontSize: 13, fontWeight: 800,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}>
-                🏆 {reading.bookFinished ? 'Дочитал книгу до конца! +50🪙' : 'Дочитал книгу до конца?'}
+                🏆 {reading.bookFinished ? t('kidFillForm.finishedBtnDone') : t('kidFillForm.finishedBtn')}
               </button>
             </div>
           )}
@@ -860,10 +865,10 @@ export function KidDayFillForm({
       {/* ─── Save button ─── */}
       <div style={{ padding: '20px 16px 0' }}>
         <div style={{ textAlign: 'center', fontFamily: T.fBody, fontSize: 12, color: T.ink3, marginBottom: 10 }}>
-          Мы доверяем тебе ✨ Родители проверят запись.
+          {t('kidFillForm.trustNote')}
         </div>
         {isLocked ? (
-          <div style={{ textAlign: 'center', fontFamily: T.fBody, fontSize: 14, color: T.ink3, padding: '16px 0' }}>🔒 День закрыт для редактирования</div>
+          <div style={{ textAlign: 'center', fontFamily: T.fBody, fontSize: 14, color: T.ink3, padding: '16px 0' }}>{t('kidFillForm.dayLocked')}</div>
         ) : (
           <button onClick={handleSubmit} disabled={saving} style={{
             width: '100%', height: 58, borderRadius: 29, border: 'none', cursor: saving ? 'not-allowed' : 'pointer',
@@ -876,10 +881,10 @@ export function KidDayFillForm({
             {saving ? (
               <>
                 <span style={{ display: 'inline-block', width: 20, height: 20, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}/>
-                Сохраняем…
+                {t('kidFillForm.saving')}
               </>
             ) : (
-              `✨ Сохранить день · +${coinsPreview} монет`
+              t('kidFillForm.saveBtn', { coins: coinsPreview })
             )}
           </button>
         )}

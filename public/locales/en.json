@@ -953,6 +953,29 @@
     "moodTired": "Tired",
     "gradePill": "{{count}} grade"
   },
+  "withdrawModalExtra": {
+    "allBtn": "All",
+    "remainingAfter": "After withdrawal:",
+    "remainingValue": "Remaining: {{amount}}₽",
+    "hint": "💡 Parent will approve and give cash",
+    "pendingTitle": "⏳ Pending approval:",
+    "historyTitle": "📜 Withdrawal history:",
+    "statusApproved": "✅ Paid",
+    "statusRejected": "❌ Rejected",
+    "sendingBtn": "💵 Sending...",
+    "withdrawBtn": "💵 Withdraw"
+  },
+  "exchangeModalExtra": {
+    "howManyCoins": "How many coins to exchange?",
+    "coinsSuffix": "coins",
+    "allBtn": "All",
+    "youGet": "↓ You'll get: ",
+    "afterExchange": "After exchange:",
+    "coinsAfter": "💰 Coins:",
+    "moneyAfter": "💵 Money:",
+    "exchangingBtn": "💱 Exchanging...",
+    "exchangeBtn": "💱 Exchange"
+  },
   "goalsModal": {
     "pinTitle": "🔐 Parent PIN",
     "pinPlaceholder": "Enter PIN",

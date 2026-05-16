@@ -74,7 +74,7 @@ export default function KidShopPage() {
       setWallet(w); setPurchases(p)
       setApproving(pending)
       setPending(null)
-    } catch (err: any) { showToast(err?.message ?? 'Ошибка') }
+    } catch (err: any) { showToast(err?.message ?? t('common.error')) }
     finally { setPurchasing(false) }
   }
 
@@ -235,7 +235,7 @@ export default function KidShopPage() {
             {purchases.slice(0, 5).map((p, i) => {
               const s = p.status ?? (p.fulfilled ? 'delivered' : 'pending')
               const statusColor = s === 'approved' || s === 'delivered' ? T.teal : s === 'rejected' ? T.coral : T.sunDeep
-              const statusLabel = s === 'pending' ? '⏳ Ожидает' : s === 'approved' ? '✅ Одобрено' : s === 'rejected' ? '❌ Отклонено' : '🎉 Выдано'
+              const statusLabel = s === 'pending' ? t('kidShop.statusPending') : s === 'approved' ? t('kidShop.statusApproved') : s === 'rejected' ? t('kidShop.statusRejected') : t('kidShop.statusDelivered')
               return (
                 <div key={p.id} style={{
                   padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12,
@@ -243,7 +243,7 @@ export default function KidShopPage() {
                 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontFamily: T.fDisp, fontSize: 14, fontWeight: 700, color: T.ink }}>
-                      {(p as any).reward_title ?? 'Награда'}
+                      {(p as any).reward_title ?? t('kidShop.realRewards')}
                     </div>
                     <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, marginTop: 1 }}>
                       {new Date(p.purchased_at).toLocaleDateString('ru-RU')}
@@ -270,7 +270,7 @@ export default function KidShopPage() {
                 {pending.icon || '🎁'}
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 700, letterSpacing: 1 }}>ПОДТВЕРДИ ПОКУПКУ</div>
+                <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 700, letterSpacing: 1 }}>{t('kidShopConfirm.title')}</div>
                 <div style={{ fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, lineHeight: 1.15, marginTop: 2 }}>{pending.title}</div>
                 <div style={{ marginTop: 6 }}><CoinPill value={pending.price_coins ?? 0} size="md"/></div>
               </div>
@@ -278,13 +278,13 @@ export default function KidShopPage() {
             <div style={{ marginTop: 14, padding: 12, borderRadius: 16, background: T.pinkSoft, display: 'flex', gap: 10, alignItems: 'center' }}>
               <div style={{ fontSize: 22 }}>🛡️</div>
               <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink, fontWeight: 600, lineHeight: 1.35 }}>
-                Родитель получит запрос на одобрение. Это займёт ~15 минут.
+                {t('kidShopConfirm.parentNote')}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-              <KMButton tone="ghost" full onClick={() => setPending(null)}>Отмена</KMButton>
+              <KMButton tone="ghost" full onClick={() => setPending(null)}>{t('kidShopConfirm.cancel')}</KMButton>
               <KMButton tone="coral" full onClick={handleConfirm} disabled={purchasing}>
-                {purchasing ? 'Отправка…' : 'Отправить запрос'}
+                {purchasing ? t('kidShopConfirm.sending') : t('kidShopConfirm.sendRequest')}
               </KMButton>
             </div>
           </div>
@@ -298,6 +298,7 @@ export default function KidShopPage() {
 }
 
 function ApprovalSheet({ item, onClose }: { item: Reward; onClose: () => void }) {
+  const t = useT()
   const [stage, setStage] = useState<'sent' | 'seen' | 'approved'>('sent')
   useEffect(() => {
     const t1 = setTimeout(() => setStage('seen'), 1600)
@@ -305,9 +306,9 @@ function ApprovalSheet({ item, onClose }: { item: Reward; onClose: () => void })
     return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [])
   const steps = [
-    { k: 'sent', l: 'Запрос отправлен', ic: '📤' },
-    { k: 'seen', l: 'Родитель уведомлён', ic: '📱' },
-    { k: 'approved', l: 'Одобрено!', ic: '🎉' },
+    { k: 'sent', l: t('kidShopApproval.stepSent'), ic: '📤' },
+    { k: 'seen', l: t('kidShopApproval.stepSeen'), ic: '📱' },
+    { k: 'approved', l: t('kidShopApproval.stepApproved'), ic: '🎉' },
   ]
   const curIdx = steps.findIndex(s => s.k === stage)
   return (
@@ -317,7 +318,7 @@ function ApprovalSheet({ item, onClose }: { item: Reward; onClose: () => void })
           {stage === 'approved' ? '✓' : '⏳'}
         </div>
         <div style={{ fontFamily: T.fDisp, fontSize: 22, fontWeight: 900, color: T.ink, textAlign: 'center', marginTop: 14 }}>
-          {stage === 'approved' ? 'Готово! 🎉' : 'Ждём родителя'}
+          {stage === 'approved' ? t('kidShopApproval.done') : t('kidShopApproval.waiting')}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 18 }}>
           {steps.map((s, i) => {
@@ -334,7 +335,7 @@ function ApprovalSheet({ item, onClose }: { item: Reward; onClose: () => void })
         </div>
         {stage === 'approved' && (
           <div style={{ marginTop: 18 }}>
-            <KMButton tone="teal" full onClick={onClose}>Отлично!</KMButton>
+            <KMButton tone="teal" full onClick={onClose}>{t('kidShopApproval.greatBtn')}</KMButton>
           </div>
         )}
       </div>

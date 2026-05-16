@@ -11,13 +11,11 @@ import { getVacationPeriods } from '@/lib/vacation-api'
 import type { Wallet } from '@/lib/models/wallet.types'
 import { T } from '@/components/kid/design/tokens'
 import { Avatar, Coin, AnimatedNum, StreakFlame, Confetti } from '@/components/kid/design/atoms'
+import { useT, useLanguage } from '@/lib/i18n'
 
-const RU_DAY = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']
-const RU_MONTH_SHORT = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
-
-function todayLabel(): string {
-  const d = new Date()
-  return `${RU_DAY[d.getDay()]}, ${d.getDate()} ${RU_MONTH_SHORT[d.getMonth()]}`
+function todayLabel(language: string): string {
+  const locale = language === 'ru' ? 'ru-RU' : 'en-US'
+  return new Date().toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
 function LoadingSkeleton() {
@@ -37,6 +35,8 @@ function LoadingSkeleton() {
 }
 
 export default function KidDayPage() {
+  const t = useT()
+  const { language } = useLanguage()
   const { activeMemberId, setActiveMemberId } = useAppStore()
   const [loading, setLoading] = useState(true)
   const [child, setChild] = useState<Child | null>(null)
@@ -98,7 +98,7 @@ export default function KidDayPage() {
   if (loading) return <LoadingSkeleton/>
   if (!activeMemberId) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '50vh', color: T.ink3, fontFamily: T.fBody }}>
-      Ребёнок не определён
+      {t('kidDayPage.noChild')}
     </div>
   )
 
@@ -124,8 +124,8 @@ export default function KidDayPage() {
       <div style={{ padding: '12px 16px 0', display: 'flex', alignItems: 'center', gap: 10 }}>
         <Avatar size={38} skin="#F5C9A1" hair="#2B1810" shirt={T.coral}/>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: T.fDisp, fontSize: 15, fontWeight: 900, color: T.ink }}>Привет, {child?.name ?? '...'} 👋</div>
-          <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 600 }}>Ур. {level} · {todayLabel()}</div>
+          <div style={{ fontFamily: T.fDisp, fontSize: 15, fontWeight: 900, color: T.ink }}>{t('kidDayPage.greeting', { name: child?.name ?? '...' })}</div>
+          <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 600 }}>{t('kidDayPage.levelDay', { level, date: todayLabel(language) })}</div>
         </div>
         <StreakFlame days={streakDays}/>
       </div>
@@ -138,7 +138,7 @@ export default function KidDayPage() {
               <button onClick={() => setEditMode(false)} style={{
                 height: 30, padding: '0 12px', borderRadius: 15, border: `1.5px solid ${T.line}`,
                 background: '#fff', cursor: 'pointer', fontFamily: T.fBody, fontSize: 12, color: T.ink3, fontWeight: 700,
-              }}>← Назад</button>
+              }}>{t('kidDayPage.backBtn')}</button>
             </div>
           )}
           {activeMemberId && (
@@ -162,14 +162,14 @@ export default function KidDayPage() {
               boxShadow: `0 10px 30px ${T.teal}40`,
             }}>
               <div style={{ position: 'absolute', top: -30, right: -30, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.15)' }}/>
-              <div style={{ fontFamily: T.fBody, fontSize: 11, color: 'rgba(255,255,255,0.8)', fontWeight: 700, letterSpacing: 1.5, position: 'relative' }}>СЕГОДНЯ ЗАПОЛНЕНО ✓</div>
-              <div style={{ fontFamily: T.fDisp, fontSize: 26, fontWeight: 900, color: '#fff', marginTop: 4, position: 'relative' }}>Отличная работа! 🎉</div>
-              <div style={{ fontFamily: T.fBody, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4, position: 'relative' }}>{todayLabel()}</div>
+              <div style={{ fontFamily: T.fBody, fontSize: 11, color: 'rgba(255,255,255,0.8)', fontWeight: 700, letterSpacing: 1.5, position: 'relative' }}>{t('kidDayPage.filledToday')}</div>
+              <div style={{ fontFamily: T.fDisp, fontSize: 26, fontWeight: 900, color: '#fff', marginTop: 4, position: 'relative' }}>{t('kidDayPage.greatJob')}</div>
+              <div style={{ fontFamily: T.fBody, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4, position: 'relative' }}>{todayLabel(language)}</div>
               <button onClick={() => setEditMode(true)} style={{
                 marginTop: 14, height: 40, padding: '0 18px', borderRadius: 20, border: 'none', cursor: 'pointer',
                 background: 'rgba(255,255,255,0.2)', color: '#fff',
                 fontFamily: T.fDisp, fontSize: 13, fontWeight: 800, position: 'relative',
-              }}>✏️ Редактировать</button>
+              }}>{t('kidDayPage.editBtn')}</button>
             </div>
           </div>
 
@@ -182,7 +182,7 @@ export default function KidDayPage() {
             }}>
               <Coin size={26}/>
               <div>
-                <div style={{ fontFamily: T.fBody, fontSize: 10, color: T.ink3, fontWeight: 700 }}>БАЛАНС</div>
+                <div style={{ fontFamily: T.fBody, fontSize: 10, color: T.ink3, fontWeight: 700 }}>{t('kidDayPage.balanceLabel')}</div>
                 <div style={{ fontFamily: T.fNum, fontSize: 20, fontWeight: 800, color: T.ink }}>
                   <AnimatedNum value={coins}/>
                 </div>
@@ -195,8 +195,8 @@ export default function KidDayPage() {
             }}>
               <div style={{ fontSize: 22 }}>🔥</div>
               <div>
-                <div style={{ fontFamily: T.fBody, fontSize: 10, color: T.ink3, fontWeight: 700 }}>СЕРИЯ</div>
-                <div style={{ fontFamily: T.fNum, fontSize: 20, fontWeight: 800, color: T.coral }}>{streakDays} дн.</div>
+                <div style={{ fontFamily: T.fBody, fontSize: 10, color: T.ink3, fontWeight: 700 }}>{t('kidDayPage.streakLabel')}</div>
+                <div style={{ fontFamily: T.fNum, fontSize: 20, fontWeight: 800, color: T.coral }}>{t('kidDayPage.streakDays', { count: streakDays })}</div>
               </div>
             </div>
           </div>
@@ -209,8 +209,8 @@ export default function KidDayPage() {
                   {todayDay.mood === 'happy' ? '😄' : todayDay.mood === 'neutral' || todayDay.mood === 'meh' ? '🙂' : todayDay.mood === 'sad' ? '😔' : todayDay.mood === 'tired' ? '😴' : '😐'}
                 </div>
                 <div>
-                  <div style={{ fontFamily: T.fDisp, fontSize: 14, fontWeight: 800, color: T.ink }}>Настроение отмечено</div>
-                  <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, marginTop: 2 }}>Молодец что заполнил день!</div>
+                  <div style={{ fontFamily: T.fDisp, fontSize: 14, fontWeight: 800, color: T.ink }}>{t('kidDayPage.moodLabel')}</div>
+                  <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, marginTop: 2 }}>{t('kidDayPage.moodNote')}</div>
                 </div>
               </div>
             </div>
