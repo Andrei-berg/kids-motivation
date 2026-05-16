@@ -1,9 +1,43 @@
 'use client'
 
+import { useState, useEffect, useRef } from 'react'
+import { motion } from 'framer-motion'
 import { T } from '../tokens'
 import { Card, Btn, Pill, Avatar, Sparkline, Ring, Coin, SectionH, Icon } from '../ui'
 import type { ParentChild, ActivityEntry, ActionType } from '../types'
 import type { RewardPurchase } from '@/lib/models/wallet.types'
+
+function useCountUp(target: number, duration = 800) {
+  const [n, setN] = useState(0)
+  const prev = useRef(0)
+  useEffect(() => {
+    const from = 0  // always count from 0 on first mount
+    const to = target
+    if (from === to) { setN(to); return }
+    const t0 = performance.now()
+    let raf: number
+    const tick = () => {
+      const t = Math.min(1, (performance.now() - t0) / duration)
+      const e = 1 - Math.pow(1 - t, 3)  // cubic ease-out
+      setN(Math.round(from + (to - from) * e))
+      if (t < 1) raf = requestAnimationFrame(tick)
+      else prev.current = to
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [target, duration])
+  return n
+}
+
+const listVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.05 } },
+} as const
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 8 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: 'easeOut' as const } },
+}
 
 type Props = {
   children: ParentChild[]
@@ -16,6 +50,7 @@ type Props = {
 }
 
 function ChildCard({ child, onAction }: { child: ParentChild; onAction: Props['onAction'] }) {
+  const animatedBalance = useCountUp(child.balance)
   return (
     <Card pad={0} style={{ overflow: 'hidden' }}>
       <div style={{ padding: 16, display: 'flex', gap: 14, alignItems: 'center' }}>
@@ -27,7 +62,7 @@ function ChildCard({ child, onAction }: { child: ParentChild; onAction: Props['o
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
             <span style={{ fontFamily: T.fMono, fontSize: 13, color: T.text, fontWeight: 600 }}>
-              {child.balance.toLocaleString()}<span style={{ marginLeft: 3, opacity: 0.8 }}>🪙</span>
+              {animatedBalance.toLocaleString()}<span style={{ marginLeft: 3, opacity: 0.8 }}>🪙</span>
             </span>
             <span style={{ width: 3, height: 3, borderRadius: '50%', background: T.faint, display: 'block' }}/>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: T.warning, fontWeight: 600 }}>
@@ -188,7 +223,13 @@ export default function Dashboard({ children, activity, pending, onAction, onApp
         <SectionH title="Activity" sub="Recent actions across all children"
           action={<Btn variant="outline" size="sm" icon="filter">All</Btn>}/>
         <Card pad={0} style={{ overflow: 'hidden' }}>
-          {activity.slice(0, 8).map((a, i) => <ActivityRow key={i} a={a} allChildren={children}/>)}
+          <motion.div variants={listVariants} initial="hidden" animate="show">
+            {activity.slice(0, 8).map((a, i) => (
+              <motion.div key={i} variants={itemVariants}>
+                <ActivityRow a={a} allChildren={children}/>
+              </motion.div>
+            ))}
+          </motion.div>
           {activity.length === 0 && (
             <div style={{ padding: '20px', textAlign: 'center', color: T.muted, fontSize: 13 }}>No recent activity</div>
           )}
