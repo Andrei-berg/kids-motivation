@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useT } from '@/lib/i18n'
 
 interface Member {
   id: string
@@ -14,6 +15,7 @@ interface Member {
 const EMOJI_OPTIONS = ['👦', '👧', '🧒', '👶', '🦸', '🧠', '⭐', '🏆']
 
 export default function FamilyManager() {
+  const t = useT()
   const [inviteCode, setInviteCode] = useState<string | null>(null)
   const [familyId, setFamilyId] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
@@ -96,8 +98,8 @@ export default function FamilyManager() {
   }
 
   async function handleAddChild() {
-    if (!childName.trim()) { setAddChildError('Введите имя ребёнка'); return }
-    if (!familyId || !userId) { setAddChildError('Семья не найдена — перезагрузите страницу'); return }
+    if (!childName.trim()) { setAddChildError(t('settings.familyManager.childNameRequired')); return }
+    if (!familyId || !userId) { setAddChildError(t('settings.familyManager.familyNotFound')); return }
 
     setAddingChild(true)
     setAddChildError('')
@@ -137,29 +139,30 @@ export default function FamilyManager() {
       setMembers(prev => [...prev, newMember])
       resetAddChildForm()
     } catch (err) {
-      setAddChildError(err instanceof Error ? err.message : 'Ошибка при добавлении ребёнка')
+      setAddChildError(err instanceof Error ? err.message : t('common.error'))
     } finally {
       setAddingChild(false)
     }
   }
 
   const roleLabel = (role: string) =>
-    role === 'parent' ? 'Родитель' : role === 'child' ? 'Ребёнок' : 'Член семьи'
+    role === 'parent' ? t('settings.familyManager.roleParent') : role === 'child' ? t('settings.familyManager.roleChild') : t('settings.familyManager.roleExtended')
   const roleColor = (role: string) =>
     role === 'parent' ? '#6366F1' : role === 'child' ? '#10B981' : '#F59E0B'
 
-  if (loading) return <div className="text-gray-400 text-sm">Загрузка...</div>
+  if (loading) return <div className="text-gray-400 text-sm">{t('common.loading')}</div>
 
   return (
     <div>
       {/* Invite code block */}
       <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-2xl p-5 mb-6">
         <div className="text-sm font-bold text-indigo-400 uppercase tracking-wide mb-1">
-          Код приглашения
+          {t('settings.familyManager.inviteCode')}
         </div>
         <div className="text-gray-300 text-sm mb-4">
-          Ребёнок регистрируется на сайте, затем идёт на страницу{' '}
-          <span className="font-mono text-indigo-300">/onboarding/join</span> и вводит этот код
+          {t('settings.familyManager.inviteInstructions')}{' '}
+          <span className="font-mono text-indigo-300">/onboarding/join</span>{' '}
+          {t('settings.familyManager.inviteEnterCode')}
         </div>
 
         <div className="flex items-center gap-3">
@@ -174,29 +177,29 @@ export default function FamilyManager() {
               copied ? 'bg-emerald-500 text-white' : 'bg-indigo-600 hover:bg-indigo-500 text-white'
             }`}
           >
-            {copied ? '✓ Скопировано' : 'Копировать'}
+            {copied ? t('onboarding.copied') : t('settings.familyManager.copyCode')}
           </button>
         </div>
 
         <div className="mt-3 text-xs text-gray-500">
-          Инструкция для ребёнка: открыть{' '}
+          {t('settings.familyManager.childInstructions')}{' '}
           <span className="text-gray-400">
             {typeof window !== 'undefined' ? window.location.origin : ''}/onboarding/join
           </span>
-          , ввести код выше
+          {', '}{t('settings.familyManager.enterCodeAbove')}
         </div>
       </div>
 
       {/* Members list */}
       <div className="flex items-center justify-between mb-3">
         <div className="text-sm font-bold text-gray-400 uppercase tracking-wide">
-          Участники ({members.length})
+          {t('settings.familyManager.members')} ({members.length})
         </div>
         <button
           onClick={() => setShowAddChild(true)}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors"
         >
-          <span>+</span> Добавить ребёнка
+          <span>+</span> {t('settings.familyManager.addChild')}
         </button>
       </div>
 
@@ -215,12 +218,12 @@ export default function FamilyManager() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-white font-semibold text-sm truncate">
-                  {m.display_name || 'Без имени'}
+                  {m.display_name || t('settings.familyManager.noName')}
                 </div>
                 <div className="text-xs mt-0.5" style={{ color: roleColor(m.role) }}>
                   {roleLabel(m.role)}
                   {m.role === 'child' && !m.user_id && (
-                    <span className="text-gray-500 ml-2">· ожидает присоединения</span>
+                    <span className="text-gray-500 ml-2">· {t('settings.familyManager.pendingJoin')}</span>
                   )}
                 </div>
               </div>
@@ -232,13 +235,13 @@ export default function FamilyManager() {
       {/* Add child form */}
       {showAddChild && (
         <div className="bg-gray-700/40 border border-emerald-500/30 rounded-2xl p-5">
-          <div className="font-bold text-white mb-4">Новый ребёнок</div>
+          <div className="font-bold text-white mb-4">{t('settings.familyManager.addChild')}</div>
 
           <div className="mb-3">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">Имя</label>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">{t('settings.familyManager.childName')}</label>
             <input
               className="w-full bg-gray-800 border border-gray-600 rounded-lg text-white text-sm px-3 py-2.5 outline-none focus:border-emerald-500"
-              placeholder="Имя ребёнка"
+              placeholder={t('settings.familyManager.childName')}
               value={childName}
               onChange={e => setChildName(e.target.value)}
               autoFocus
@@ -246,7 +249,7 @@ export default function FamilyManager() {
           </div>
 
           <div className="mb-3">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">Год рождения</label>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">{t('settings.familyManager.birthYear')}</label>
             <select
               value={birthYear}
               onChange={e => setBirthYear(Number(e.target.value))}
@@ -257,16 +260,16 @@ export default function FamilyManager() {
           </div>
 
           <div className="mb-4">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-2">Аватар</label>
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-2">{t('settings.familyManager.avatar')}</label>
             {photoPreviewUrl ? (
               <div className="flex items-center gap-3 mb-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={photoPreviewUrl} alt="Превью" className="w-10 h-10 rounded-full object-cover border-2 border-emerald-500" />
+                <img src={photoPreviewUrl} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-emerald-500" />
                 <button
                   onClick={() => { setPhotoFile(null); setPhotoPreviewUrl(null); if (fileInputRef.current) fileInputRef.current.value = '' }}
                   className="text-xs text-gray-400 hover:text-gray-200"
                 >
-                  Удалить фото
+                  {t('settings.familyManager.removePhoto')}
                 </button>
               </div>
             ) : (
@@ -290,14 +293,14 @@ export default function FamilyManager() {
               onClick={() => fileInputRef.current?.click()}
               className="w-full text-xs text-gray-400 border border-gray-600 rounded-lg py-2 hover:border-gray-400 transition-colors"
             >
-              Загрузить фото
+              {t('settings.familyManager.uploadPhoto')}
             </button>
             <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
           </div>
 
           {addChildError && (
             <div className="bg-red-500/15 border border-red-500/30 rounded-lg px-3 py-2 text-red-400 text-sm mb-3">
-              ⚠️ {addChildError}
+              {addChildError}
             </div>
           )}
 
@@ -307,13 +310,13 @@ export default function FamilyManager() {
               disabled={addingChild}
               className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-sm rounded-lg transition-colors"
             >
-              {addingChild ? 'Добавление...' : 'Добавить'}
+              {addingChild ? '...' : t('settings.familyManager.addChild')}
             </button>
             <button
               onClick={resetAddChildForm}
               className="px-4 py-2.5 bg-gray-700 text-gray-400 text-sm font-medium rounded-lg hover:bg-gray-600 transition-colors"
             >
-              Отмена
+              {t('settings.familyManager.cancel')}
             </button>
           </div>
         </div>

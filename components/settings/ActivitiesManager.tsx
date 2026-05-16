@@ -9,6 +9,7 @@ import {
   ExtraActivity,
 } from '@/lib/expenses-api'
 import { useFamilyMembers } from '@/lib/hooks/useFamilyMembers'
+import { useT } from '@/lib/i18n'
 
 const EMOJIS = ['📖', '✏️', '🧮', '🔬', '🌍', '🎨', '🎵', '💻', '♟️', '🏃', '🤸', '🧩', '📝', '🌱', '🍳', '🔧']
 
@@ -31,6 +32,7 @@ const EMPTY_FORM: ActivityForm = {
 }
 
 export default function ActivitiesManager() {
+  const t = useT()
   const { members } = useFamilyMembers()
   const children = members.filter(m => m.role === 'child')
   const [childId, setChildId] = useState('')
@@ -87,8 +89,8 @@ export default function ActivitiesManager() {
   }
 
   async function handleSave() {
-    if (!form.name.trim()) { setError('Введите название занятия'); return }
-    if (form.dayTypes.length === 0) { setError('Выберите хотя бы один тип дня'); return }
+    if (!form.name.trim()) { setError(t('settings.activitiesManager.name')); return }
+    if (form.dayTypes.length === 0) { setError(t('settings.activitiesManager.addActivity')); return }
     setSaving(true); setError('')
     try {
       if (editingId) {
@@ -118,7 +120,7 @@ export default function ActivitiesManager() {
   }
 
   async function handleDelete(a: ExtraActivity) {
-    if (!confirm(`Удалить "${a.name}"?`)) return
+    if (!confirm(t('settings.activitiesManager.deleteConfirm'))) return
     try {
       await deleteExtraActivity(a.id)
       await loadActivities()
@@ -151,14 +153,14 @@ export default function ActivitiesManager() {
     await loadActivities()
   }
 
-  const dayTypeLabel = (dt: string) => dt === 'vacation' ? '🌴 Каникулы' : '📅 Выходные'
+  const dayTypeLabel = (dt: string) => dt === 'vacation' ? `🌴 ${t('kidDay.vacationDay')}` : `📅 ${t('kidDay.weekendDay')}`
 
   return (
     <div>
       <div style={{ marginBottom: '16px' }}>
-        <div style={{ fontSize: '16px', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>📋 Доп. занятия</div>
+        <div style={{ fontSize: '16px', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>📋 {t('settings.activitiesManager.title')}</div>
         <div style={{ fontSize: '13px', color: 'rgba(238,238,255,0.5)' }}>
-          Настройте список занятий для каждого ребёнка. В модалке дня будет готовый чеклист.
+          {t('settings.activitiesManager.addActivity')}
         </div>
       </div>
 
@@ -206,7 +208,7 @@ export default function ActivitiesManager() {
             background: 'rgba(245,158,11,0.7)', color: '#000',
           }}
         >
-          + Добавить
+          + {t('settings.activitiesManager.addActivity')}
         </button>
       </div>
 
@@ -220,12 +222,12 @@ export default function ActivitiesManager() {
       {showForm && (
         <div style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
           <div style={{ fontSize: '14px', fontWeight: 800, color: '#F59E0B', marginBottom: '12px' }}>
-            {editingId ? '✏️ Редактировать занятие' : '➕ Новое занятие'}
+            {editingId ? `✏️ ${t('common.edit')}` : `➕ ${t('settings.activitiesManager.addActivity')}`}
           </div>
 
           {/* Emoji picker */}
           <div style={{ marginBottom: '12px' }}>
-            <div className="premium-label">Иконка</div>
+            <div className="premium-label">{t('settings.categoryManager.emoji')}</div>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
               {EMOJIS.map(e => (
                 <button
@@ -245,13 +247,13 @@ export default function ActivitiesManager() {
           </div>
 
           <div style={{ marginBottom: '10px' }}>
-            <div className="premium-label">Название занятия *</div>
-            <input className="premium-input" placeholder="Математика, Английский, Шахматы..." value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
+            <div className="premium-label">{t('settings.activitiesManager.name')} *</div>
+            <input className="premium-input" placeholder={t('settings.activitiesManager.name')} value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
           </div>
 
           {/* Day types */}
           <div style={{ marginBottom: '12px' }}>
-            <div className="premium-label">Показывать в дни</div>
+            <div className="premium-label">{t('settings.activitiesManager.addActivity')}</div>
             <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
               {(['vacation', 'weekend'] as const).map(dt => (
                 <button
@@ -273,7 +275,7 @@ export default function ActivitiesManager() {
 
           {/* Coins */}
           <div style={{ marginBottom: '14px' }}>
-            <div className="premium-label">Монеты за выполнение</div>
+            <div className="premium-label">{t('settings.taskManager.coins')}</div>
             <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
               {COINS_OPTIONS.map(c => (
                 <button
@@ -299,13 +301,13 @@ export default function ActivitiesManager() {
               disabled={saving}
               style={{ flex: 1, padding: '10px', fontSize: '13px', fontWeight: 800, borderRadius: '10px', border: 'none', cursor: 'pointer', background: 'rgba(245,158,11,0.8)', color: '#000' }}
             >
-              {saving ? 'Сохранение...' : '💾 Сохранить'}
+              {saving ? '...' : `💾 ${t('settings.activitiesManager.save')}`}
             </button>
             <button
               onClick={() => { setShowForm(false); setEditingId(null); setError('') }}
               style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 800, borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', color: 'rgba(238,238,255,0.5)' }}
             >
-              Отмена
+              {t('settings.activitiesManager.cancel')}
             </button>
           </div>
         </div>
@@ -313,10 +315,10 @@ export default function ActivitiesManager() {
 
       {/* Activity list */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '20px', color: 'rgba(238,238,255,0.4)', fontSize: '13px' }}>Загрузка...</div>
+        <div style={{ textAlign: 'center', padding: '20px', color: 'rgba(238,238,255,0.4)', fontSize: '13px' }}>{t('common.loading')}</div>
       ) : filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '24px', color: 'rgba(238,238,255,0.3)', fontSize: '13px' }}>
-          Нет занятий для этого типа дня. Нажмите «+ Добавить».
+          {t('settings.activitiesManager.addActivity')}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>

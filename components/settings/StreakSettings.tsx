@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useT } from '@/lib/i18n'
 
 interface Milestone {
   days: number
@@ -17,9 +18,9 @@ interface StreakRules {
 
 const DEFAULT_RULES: StreakRules = {
   milestones: [
-    { days: 7, label: '7 дней', bonus: 100 },
-    { days: 14, label: '14 дней', bonus: 200 },
-    { days: 30, label: '30 дней', bonus: 500 },
+    { days: 7, label: '7', bonus: 100 },
+    { days: 14, label: '14', bonus: 200 },
+    { days: 30, label: '30', bonus: 500 },
   ],
   weeklyComboEnabled: true,
   weeklyComboBonus: 50,
@@ -31,6 +32,7 @@ interface Props {
 }
 
 export default function StreakSettings({ familyId }: Props) {
+  const t = useT()
   const [rules, setRules] = useState<StreakRules>(DEFAULT_RULES)
   const [saved, setSaved] = useState(false)
 
@@ -73,21 +75,21 @@ export default function StreakSettings({ familyId }: Props) {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-white mb-1">Стрики и бонусы</h2>
+      <h2 className="text-lg font-semibold text-white mb-1">{t('settings.streakSettings.title')}</h2>
       <p className="text-gray-400 text-sm mb-6">
-        Настройки сохраняются локально. В Phase 2.1 будут мигрированы в БД.
+        {t('settings.streakSettings.shieldDays')}
       </p>
 
       {/* Milestone bonuses */}
       <div className="bg-gray-700/50 rounded-xl overflow-hidden mb-4">
         <div className="px-4 py-3 border-b border-gray-600/50">
-          <h3 className="text-sm font-medium text-white">Бонусы за стрики</h3>
+          <h3 className="text-sm font-medium text-white">{t('settings.streakSettings.milestones')}</h3>
         </div>
         <div className="divide-y divide-gray-600/30">
           {rules.milestones.map(m => (
             <div key={m.days} className="flex items-center px-4 py-3 gap-4">
               <div className="flex-1">
-                <span className="text-sm font-medium text-white">{m.label}</span>
+                <span className="text-sm font-medium text-white">{m.label} {t('common.days')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <input
@@ -97,7 +99,7 @@ export default function StreakSettings({ familyId }: Props) {
                   onChange={e => updateMilestoneBonus(m.days, Number(e.target.value))}
                   className="w-24 bg-gray-800 border border-gray-600 rounded-xl px-3 py-2 text-sm text-right font-medium text-yellow-400 focus:outline-none focus:border-indigo-500"
                 />
-                <span className="text-gray-400 text-sm w-14">монет</span>
+                <span className="text-gray-400 text-sm w-14">{t('common.coins')}</span>
               </div>
             </div>
           ))}
@@ -107,7 +109,7 @@ export default function StreakSettings({ familyId }: Props) {
       {/* Weekly academic combo */}
       <div className="bg-gray-700/50 rounded-xl overflow-hidden mb-4">
         <div className="px-4 py-3 border-b border-gray-600/50 flex items-center justify-between">
-          <h3 className="text-sm font-medium text-white">Еженедельный академический комбо</h3>
+          <h3 className="text-sm font-medium text-white">{t('settings.streakSettings.weeklyCombo')}</h3>
           <button
             onClick={() => setRules(prev => ({ ...prev, weeklyComboEnabled: !prev.weeklyComboEnabled }))}
             className={`relative w-10 h-6 rounded-full transition-colors ${
@@ -121,11 +123,11 @@ export default function StreakSettings({ familyId }: Props) {
         </div>
         <div className="p-4">
           <p className="text-xs text-gray-400 mb-3">
-            Если все оценки за неделю — 5 или 4 (без 3, 2, 1)
+            {t('settings.streakSettings.weeklyComboDesc')}
           </p>
           {rules.weeklyComboEnabled && (
             <div>
-              <label className="text-xs text-gray-400 mb-1 block">Бонус монет</label>
+              <label className="text-xs text-gray-400 mb-1 block">{t('settings.streakSettings.bonusCoins')}</label>
               <input
                 type="number"
                 min={0}
@@ -142,9 +144,9 @@ export default function StreakSettings({ familyId }: Props) {
       <div className="bg-gray-700/50 rounded-xl overflow-hidden mb-6">
         <div className="p-4 flex items-start gap-4">
           <div className="flex-1">
-            <h3 className="text-sm font-medium text-white mb-1">Щит стрика</h3>
+            <h3 className="text-sm font-medium text-white mb-1">{t('settings.streakSettings.shield')}</h3>
             <p className="text-xs text-gray-400">
-              Один пропущенный день в месяц не сбрасывает стрик
+              {t('settings.streakSettings.shieldDesc')}
             </p>
           </div>
           <button
@@ -163,7 +165,7 @@ export default function StreakSettings({ familyId }: Props) {
       {/* Success toast */}
       {saved && (
         <div className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-sm text-center">
-          Настройки сохранены
+          {t('common.success')}
         </div>
       )}
 
@@ -173,13 +175,13 @@ export default function StreakSettings({ familyId }: Props) {
           onClick={handleSave}
           className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-xl transition-colors"
         >
-          Сохранить
+          {t('settings.streakSettings.save')}
         </button>
         <button
           onClick={handleReset}
           className="px-4 py-3 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded-xl transition-colors"
         >
-          Сбросить
+          {t('settings.streakSettings.reset')}
         </button>
       </div>
     </div>

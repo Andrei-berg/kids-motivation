@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { savePushSubscription, deletePushSubscription } from '@/lib/push-api'
 import { sendTestNotification } from '@/app/actions/push'
+import { useT } from '@/lib/i18n'
 
 interface Props {
   familyId: string
@@ -29,6 +30,7 @@ function isStandalone(): boolean {
 }
 
 export default function NotificationSettings({ familyId, memberId }: Props) {
+  const t = useT()
   const [subscribed, setSubscribed] = useState(false)
   const [currentSubscription, setCurrentSubscription] = useState<PushSubscription | null>(null)
   const [loading, setLoading] = useState(false)
@@ -63,12 +65,12 @@ export default function NotificationSettings({ familyId, memberId }: Props) {
     setError(null)
 
     if (!vapidKey) {
-      setError('Для включения уведомлений настройте NEXT_PUBLIC_VAPID_PUBLIC_KEY в .env.local')
+      setError(t('settings.notificationSettings.vapidMissing'))
       return
     }
 
     if (!memberId) {
-      setError('Не удалось определить пользователя. Обновите страницу и попробуйте снова.')
+      setError(t('settings.notificationSettings.memberError'))
       return
     }
 
@@ -79,7 +81,7 @@ export default function NotificationSettings({ familyId, memberId }: Props) {
     }
 
     if (!('serviceWorker' in navigator)) {
-      setError('Ваш браузер не поддерживает push-уведомления')
+      setError(t('settings.notificationSettings.noSupport'))
       return
     }
 
@@ -106,11 +108,11 @@ export default function NotificationSettings({ familyId, memberId }: Props) {
       setSubscribed(true)
       setCurrentSubscription(subscription)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Ошибка подписки'
+      const msg = err instanceof Error ? err.message : t('settings.notificationSettings.subscribeError')
       if (msg.includes('permission') || msg.includes('denied')) {
-        setError('Разрешение на уведомления отклонено. Включите их в настройках браузера.')
+        setError(t('settings.notificationSettings.permissionDenied'))
       } else {
-        setError(`Не удалось подключить уведомления: ${msg}`)
+        setError(`${t('settings.notificationSettings.subscribeError')}: ${msg}`)
       }
     } finally {
       setLoading(false)
@@ -128,7 +130,7 @@ export default function NotificationSettings({ familyId, memberId }: Props) {
       setSubscribed(false)
       setCurrentSubscription(null)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Ошибка отписки'
+      const msg = err instanceof Error ? err.message : t('settings.notificationSettings.unsubscribeError')
       setError(msg)
     } finally {
       setLoading(false)
@@ -143,14 +145,14 @@ export default function NotificationSettings({ familyId, memberId }: Props) {
       const reg = await navigator.serviceWorker.ready
       const sub = await reg.pushManager.getSubscription()
       if (!sub) {
-        setError('Сначала включите уведомления')
+        setError(t('settings.notificationSettings.enableFirst'))
         return
       }
       await sendTestNotification(JSON.stringify(sub))
-      setTestSuccess('Уведомление отправлено!')
+      setTestSuccess(t('settings.notificationSettings.testSent'))
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Ошибка отправки'
-      setError(`Ошибка: проверьте VAPID ключи в .env.local (${msg})`)
+      const msg = err instanceof Error ? err.message : t('settings.notificationSettings.testError')
+      setError(`${t('common.error')}: ${t('settings.notificationSettings.vapidCheck')} (${msg})`)
     } finally {
       setTestLoading(false)
     }
@@ -158,7 +160,7 @@ export default function NotificationSettings({ familyId, memberId }: Props) {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-white mb-4">Уведомления</h2>
+      <h2 className="text-lg font-semibold text-white mb-4">{t('settings.notificationSettings.title')}</h2>
 
       {/* iOS banner */}
       {showIOSBanner && (
@@ -166,16 +168,15 @@ export default function NotificationSettings({ familyId, memberId }: Props) {
           <div className="flex items-start gap-3">
             <span className="text-2xl flex-shrink-0">📱</span>
             <div>
-              <p className="text-sm font-medium text-amber-400 mb-1">Добавьте приложение на главный экран</p>
+              <p className="text-sm font-medium text-amber-400 mb-1">{t('settings.notificationSettings.iosTitle')}</p>
               <p className="text-xs text-gray-300">
-                На iPhone сначала добавьте приложение на главный экран (Поделиться → На экран «Домой»),
-                затем откройте его и вернитесь сюда.
+                {t('settings.notificationSettings.iosInstructions')}
               </p>
               <button
                 onClick={() => setShowIOSBanner(false)}
                 className="mt-2 text-xs text-amber-400 underline"
               >
-                Закрыть
+                {t('common.close')}
               </button>
             </div>
           </div>
@@ -184,20 +185,20 @@ export default function NotificationSettings({ familyId, memberId }: Props) {
 
       {/* Section 1: Push status */}
       <div className="bg-gray-700/50 rounded-xl p-4 mb-4">
-        <h3 className="text-sm font-medium text-white mb-3">Push-уведомления</h3>
+        <h3 className="text-sm font-medium text-white mb-3">{t('settings.notificationSettings.pushTitle')}</h3>
 
         {/* Status indicator */}
         <div className="flex items-center gap-2 mb-4">
           <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${subscribed ? 'bg-green-400' : 'bg-gray-500'}`} />
           <span className={`text-sm ${subscribed ? 'text-green-400' : 'text-gray-400'}`}>
-            {subscribed ? 'Подключено' : 'Отключено'}
+            {subscribed ? t('settings.notificationSettings.connected') : t('settings.notificationSettings.disconnected')}
           </span>
         </div>
 
         {/* No VAPID key warning */}
         {!vapidKey && (
           <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-400 text-xs">
-            Для включения уведомлений настройте VAPID ключи в .env.local:
+            {t('settings.notificationSettings.vapidMissing')}
             <br />
             <code className="font-mono">NEXT_PUBLIC_VAPID_PUBLIC_KEY=...</code>
           </div>
@@ -207,7 +208,7 @@ export default function NotificationSettings({ familyId, memberId }: Props) {
         {error && (
           <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
             {error}
-            <button onClick={() => setError(null)} className="ml-2 underline text-xs">Закрыть</button>
+            <button onClick={() => setError(null)} className="ml-2 underline text-xs">{t('common.close')}</button>
           </div>
         )}
 
@@ -218,7 +219,7 @@ export default function NotificationSettings({ familyId, memberId }: Props) {
             disabled={loading}
             className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
           >
-            {loading ? 'Подключение...' : 'Включить уведомления'}
+            {loading ? '...' : t('settings.notificationSettings.enable')}
           </button>
         ) : (
           <button
@@ -226,14 +227,14 @@ export default function NotificationSettings({ familyId, memberId }: Props) {
             disabled={loading}
             className="w-full py-3 bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-gray-300 text-sm font-medium rounded-xl transition-colors"
           >
-            {loading ? 'Отключение...' : 'Отключить уведомления'}
+            {loading ? '...' : t('settings.notificationSettings.disable')}
           </button>
         )}
       </div>
 
       {/* Section 2: Test notification */}
       <div className="bg-gray-700/50 rounded-xl p-4 mb-4">
-        <h3 className="text-sm font-medium text-white mb-3">Тест уведомления</h3>
+        <h3 className="text-sm font-medium text-white mb-3">{t('settings.notificationSettings.testTitle')}</h3>
         {testSuccess && (
           <div className="mb-3 p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-sm">
             {testSuccess}
@@ -244,15 +245,15 @@ export default function NotificationSettings({ familyId, memberId }: Props) {
           disabled={testLoading}
           className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-medium rounded-xl transition-colors"
         >
-          {testLoading ? 'Отправка...' : 'Отправить тестовое уведомление'}
+          {testLoading ? '...' : t('settings.notificationSettings.testButton')}
         </button>
       </div>
 
       {/* Section 3: Task reminders info */}
       <div className="bg-gray-700/50 rounded-xl p-4">
-        <h3 className="text-sm font-medium text-white mb-2">Напоминания по задачам</h3>
+        <h3 className="text-sm font-medium text-white mb-2">{t('settings.notificationSettings.remindersTitle')}</h3>
         <p className="text-sm text-gray-400">
-          Настройте время напоминания для каждой задачи в разделе «Задачи».
+          {t('settings.notificationSettings.remindersDesc')}
         </p>
       </div>
     </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useT } from '@/lib/i18n'
 
 interface GradeRule {
   grade: number
@@ -31,6 +32,7 @@ interface Props {
 }
 
 export default function CoinRulesEditor({ familyId }: Props) {
+  const t = useT()
   const [rules, setRules] = useState<CoinRules>(DEFAULT_RULES)
   const [saved, setSaved] = useState(false)
 
@@ -74,15 +76,15 @@ export default function CoinRulesEditor({ familyId }: Props) {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-white mb-1">Правила монет</h2>
+      <h2 className="text-lg font-semibold text-white mb-1">{t('settings.coinRules.title')}</h2>
       <p className="text-gray-400 text-sm mb-6">
-        Настройки сохраняются локально. В Phase 2.1 будут мигрированы в БД.
+        {t('settings.coinRules.localNote')}
       </p>
 
       {/* Grade rules table */}
       <div className="bg-gray-700/50 rounded-xl overflow-hidden mb-6">
         <div className="px-4 py-3 border-b border-gray-600/50">
-          <h3 className="text-sm font-medium text-white">Правила монет за оценки</h3>
+          <h3 className="text-sm font-medium text-white">{t('settings.coinRules.title')}</h3>
         </div>
         <div className="divide-y divide-gray-600/30">
           {rules.grades.map(rule => (
@@ -102,7 +104,7 @@ export default function CoinRulesEditor({ familyId }: Props) {
                     }`}
                   />
                 </div>
-                <span className="text-gray-400 text-sm w-14">монет</span>
+                <span className="text-gray-400 text-sm w-14">{t('common.coins')}</span>
               </div>
             </div>
           ))}
@@ -112,11 +114,11 @@ export default function CoinRulesEditor({ familyId }: Props) {
       {/* Monthly limit */}
       <div className="bg-gray-700/50 rounded-xl overflow-hidden mb-6">
         <div className="px-4 py-3 border-b border-gray-600/50">
-          <h3 className="text-sm font-medium text-white">Ежемесячный лимит монет</h3>
+          <h3 className="text-sm font-medium text-white">{t('settings.coinRules.monthlyLimit')}</h3>
         </div>
         <div className="p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-300">Включить лимит</span>
+            <span className="text-sm text-gray-300">{t('settings.coinRules.enableLimit')}</span>
             <button
               onClick={() => setRules(prev => ({ ...prev, monthlyLimitEnabled: !prev.monthlyLimitEnabled }))}
               className={`relative w-10 h-6 rounded-full transition-colors ${
@@ -132,7 +134,7 @@ export default function CoinRulesEditor({ familyId }: Props) {
           {rules.monthlyLimitEnabled && (
             <div>
               <label className="text-xs text-gray-400 mb-1 block">
-                Максимум монет за задачу в месяц
+                {t('settings.coinRules.maxCoinsPerTask')}
               </label>
               <input
                 type="number"
@@ -142,7 +144,7 @@ export default function CoinRulesEditor({ familyId }: Props) {
                 className="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
               />
               <p className="text-xs text-gray-500 mt-2">
-                Оценки не подпадают под лимит — только задачи.
+                {t('settings.coinRules.gradesExcluded')}
               </p>
             </div>
           )}
@@ -152,7 +154,7 @@ export default function CoinRulesEditor({ familyId }: Props) {
       {/* Success toast */}
       {saved && (
         <div className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 text-sm text-center">
-          Настройки сохранены
+          {t('common.success')}
         </div>
       )}
 
@@ -162,13 +164,13 @@ export default function CoinRulesEditor({ familyId }: Props) {
           onClick={handleSave}
           className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-xl transition-colors"
         >
-          Сохранить
+          {t('settings.coinRules.save')}
         </button>
         <button
           onClick={handleReset}
           className="px-4 py-3 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded-xl transition-colors"
         >
-          Сбросить к умолчаниям
+          {t('settings.coinRules.reset')}
         </button>
       </div>
     </div>
