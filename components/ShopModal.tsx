@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
-  getRewards, 
-  getWallet, 
+import { useT } from '@/lib/i18n'
+import {
+  getRewards,
+  getWallet,
   purchaseReward,
   Reward,
-  Wallet 
+  Wallet
 } from '@/lib/wallet-api'
 import { triggerConfetti } from '@/utils/confetti'
 
@@ -20,6 +21,7 @@ interface ShopModalProps {
 type Tab = 'coins' | 'money'
 
 export default function ShopModal({ isOpen, onClose, childId, onSuccess }: ShopModalProps) {
+  const t = useT()
   const [tab, setTab] = useState<Tab>('coins')
   const [rewards, setRewards] = useState<Reward[]>([])
   const [wallet, setWallet] = useState<Wallet | null>(null)
@@ -54,34 +56,34 @@ export default function ShopModal({ isOpen, onClose, childId, onSuccess }: ShopM
     // Проверить баланс
     if (reward.reward_type === 'coins') {
       if ((wallet?.coins || 0) < (reward.price_coins || 0)) {
-        alert('Недостаточно монет!')
+        alert(t('shopModal.insufficientCoins'))
         return
       }
     } else {
       if (Number(wallet?.money || 0) < Number(reward.price_money || 0)) {
-        alert('Недостаточно денег!')
+        alert(t('shopModal.insufficientMoney'))
         return
       }
     }
 
     const confirmText = reward.reward_type === 'coins'
-      ? `Купить "${reward.title}" за ${reward.price_coins} монет?`
-      : `Купить "${reward.title}" за ${Number(reward.price_money).toLocaleString('ru-RU')}₽?`
+      ? t('shopModal.buyCoinsConfirm', { title: reward.title, price: reward.price_coins ?? 0 })
+      : t('shopModal.buyMoneyConfirm', { title: reward.title, price: Number(reward.price_money).toLocaleString('ru-RU') })
 
     if (!confirm(confirmText)) return
 
     try {
       setPurchasing(reward.id)
       await purchaseReward(childId, reward.id)
-      
+
       triggerConfetti()
-      alert(`🎉 Поздравляем! Ты купил: ${reward.title}!\n\nРодитель скоро исполнит обещание! 😊`)
-      
+      alert(t('shopModal.bought', { title: reward.title }))
+
       onSuccess()
       await loadData()
     } catch (err: any) {
       console.error('Error purchasing reward:', err)
-      alert(err.message || 'Ошибка покупки')
+      alert(err.message || t('shopModal.buyError'))
     } finally {
       setPurchasing(null)
     }
@@ -98,8 +100,8 @@ export default function ShopModal({ isOpen, onClose, childId, onSuccess }: ShopM
       <div className="shop-modal" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="shop-modal-header">
-          <h2 className="shop-modal-title">🏪 Магазин наград</h2>
-          <button 
+          <h2 className="shop-modal-title">{t('shopModal.title')}</h2>
+          <button
             className="shop-modal-close"
             onClick={onClose}
           >
@@ -108,14 +110,14 @@ export default function ShopModal({ isOpen, onClose, childId, onSuccess }: ShopM
         </div>
 
         <div className="shop-modal-body">
-          {/* Баланс */}
+          {/* Balance */}
           <div className="shop-balance">
             <div className="shop-balance-item">
-              <span className="shop-balance-label">💰 Монеты:</span>
+              <span className="shop-balance-label">{t('shopModal.coinsLabel')}</span>
               <span className="shop-balance-value">{wallet?.coins || 0}</span>
             </div>
             <div className="shop-balance-item">
-              <span className="shop-balance-label">💵 Деньги:</span>
+              <span className="shop-balance-label">{t('shopModal.moneyLabel')}</span>
               <span className="shop-balance-value">
                 {Number(wallet?.money || 0).toLocaleString('ru-RU')}₽
               </span>
@@ -129,7 +131,7 @@ export default function ShopModal({ isOpen, onClose, childId, onSuccess }: ShopM
               onClick={() => setTab('coins')}
             >
               <span className="shop-tab-icon">💰</span>
-              <span>За монеты</span>
+              <span>{t('shopModal.forCoins')}</span>
               <span className="shop-tab-badge">{coinsRewards.length}</span>
             </button>
             <button
@@ -137,7 +139,7 @@ export default function ShopModal({ isOpen, onClose, childId, onSuccess }: ShopM
               onClick={() => setTab('money')}
             >
               <span className="shop-tab-icon">💵</span>
-              <span>За деньги</span>
+              <span>{t('shopModal.forMoney')}</span>
               <span className="shop-tab-badge">{moneyRewards.length}</span>
             </button>
           </div>
@@ -145,14 +147,14 @@ export default function ShopModal({ isOpen, onClose, childId, onSuccess }: ShopM
           {/* Rewards Grid */}
           <div className="shop-rewards-grid">
             {loading ? (
-              <div className="shop-loading">Загрузка...</div>
+              <div className="shop-loading">{t('shopModal.loading')}</div>
             ) : currentRewards.length === 0 ? (
               <div className="shop-empty">
                 <div className="shop-empty-icon">📦</div>
                 <div className="shop-empty-text">
-                  {tab === 'coins' 
-                    ? 'Нет наград за монеты' 
-                    : 'Нет наград за деньги'}
+                  {tab === 'coins'
+                    ? t('shopModal.noCoinsRewards')
+                    : t('shopModal.noMoneyRewards')}
                 </div>
               </div>
             ) : (
@@ -173,10 +175,10 @@ export default function ShopModal({ isOpen, onClose, childId, onSuccess }: ShopM
                       {reward.description && (
                         <p className="shop-reward-description">{reward.description}</p>
                       )}
-                      
+
                       <div className="shop-reward-price">
                         {reward.reward_type === 'coins' ? (
-                          <>💰 {reward.price_coins} монет</>
+                          <>💰 {reward.price_coins}</>
                         ) : (
                           <>💵 {Number(reward.price_money).toLocaleString('ru-RU')}₽</>
                         )}
@@ -185,13 +187,13 @@ export default function ShopModal({ isOpen, onClose, childId, onSuccess }: ShopM
                       {!canAfford && (
                         <div className="shop-reward-progress">
                           <div className="shop-reward-progress-bar">
-                            <div 
+                            <div
                               className="shop-reward-progress-fill"
                               style={{ width: `${progress}%` }}
                             />
                           </div>
                           <div className="shop-reward-progress-text">
-                            {progress.toFixed(0)}% накоплено
+                            {progress.toFixed(0)}%
                           </div>
                         </div>
                       )}
@@ -202,13 +204,13 @@ export default function ShopModal({ isOpen, onClose, childId, onSuccess }: ShopM
                         disabled={!canAfford || purchasing === reward.id}
                       >
                         {purchasing === reward.id ? (
-                          '⏳ Покупаем...'
+                          '⏳'
                         ) : canAfford ? (
-                          '🛒 Купить'
+                          '🛒'
                         ) : reward.reward_type === 'coins' ? (
-                          `Ещё ${(reward.price_coins || 0) - (wallet?.coins || 0)} монет`
+                          `${(reward.price_coins || 0) - (wallet?.coins || 0)}`
                         ) : (
-                          `Ещё ${(Number(reward.price_money || 0) - Number(wallet?.money || 0)).toLocaleString('ru-RU')}₽`
+                          `${(Number(reward.price_money || 0) - Number(wallet?.money || 0)).toLocaleString('ru-RU')}₽`
                         )}
                       </button>
                     </div>

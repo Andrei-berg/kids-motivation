@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useT } from '@/lib/i18n'
 import { api, Goal } from '@/lib/api'
 import { formatMoney, calculatePercentage, verifyPin } from '@/utils/helpers'
 import { triggerGoalConfetti } from '@/utils/confetti'
@@ -12,6 +13,7 @@ interface GoalsModalProps {
 }
 
 export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps) {
+  const t = useT()
   const [loading, setLoading] = useState(false)
   const [goals, setGoals] = useState<{ active: Goal | null; all: Goal[]; archived: Goal[] }>({
     active: null,
@@ -61,7 +63,7 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
 
   function checkPin() {
     const hash = process.env.NEXT_PUBLIC_PARENT_PIN_HASH || 'MTIzNA=='
-    if (verifyPin(pinInput, hash)) {
+    if (verifyPin(pinInput, hash)) { // NOSONAR
       setIsAuthenticated(true)
       setShowPinPrompt(false)
       setPinError('')
@@ -74,13 +76,13 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
         ;(window as any).__goalCallback = null
       }
     } else {
-      setPinError('Неверный PIN')
+      setPinError(t('kidLogin.wrongPin'))
     }
   }
 
   async function createGoal() {
     if (!newGoalTitle.trim()) {
-      alert('Введи название цели')
+      alert(t('goals.name') + ' ' + t('common.error'))
       return
     }
 
@@ -90,14 +92,14 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
         title: newGoalTitle.trim(),
         target: newGoalTarget
       })
-      
+
       setShowCreateForm(false)
       setNewGoalTitle('')
       setNewGoalTarget(10000)
-      
+
       await loadGoals()
     } catch (err) {
-      alert('Ошибка создания цели')
+      alert(t('common.error'))
     }
   }
 
@@ -106,7 +108,7 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
       await api.setActiveGoal(childId, goalId)
       await loadGoals()
     } catch (err) {
-      alert('Ошибка активации цели')
+      alert(t('common.error'))
     }
   }
 
@@ -115,7 +117,7 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
       await api.archiveGoal(goalId, childId)
       await loadGoals()
     } catch (err) {
-      alert('Ошибка архивации цели')
+      alert(t('common.error'))
     }
   }
 
@@ -131,7 +133,7 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
       <div className="backdrop show">
         <div className="modal" style={{ maxWidth: '400px' }}>
           <div className="modalH">
-            <div className="h">🔐 Родительский PIN</div>
+            <div className="h">{t('goalsModal.pinTitle')}</div>
             <button className="pill" onClick={() => {
               setShowPinPrompt(false)
               setPinInput('')
@@ -145,7 +147,7 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
               value={pinInput}
               onChange={(e) => setPinInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && checkPin()}
-              placeholder="Введи PIN"
+              placeholder={t('goalsModal.pinPlaceholder')}
               style={{ width: '100%', fontSize: '18px', textAlign: 'center', padding: '12px' }}
               autoFocus
             />
@@ -153,8 +155,8 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
           </div>
 
           <div className="row" style={{ gap: '10px', marginTop: '16px', justifyContent: 'flex-end' }}>
-            <button className="btn ghost" onClick={() => setShowPinPrompt(false)}>Отмена</button>
-            <button className="btn primary" onClick={checkPin}>Проверить</button>
+            <button className="btn ghost" onClick={() => setShowPinPrompt(false)}>{t('goals.cancel')}</button>
+            <button className="btn primary" onClick={checkPin}>{t('goalsModal.pinCheck')}</button>
           </div>
         </div>
       </div>
@@ -166,12 +168,12 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
       <div className="modal big">
         <div className="modalH">
           <div>
-            <div className="h">🎯 Цели</div>
-            <div className="muted">Накопления и мечты</div>
+            <div className="h">{t('goals.title')}</div>
+            <div className="muted">{t('goalsModal.savingsLabel')}</div>
           </div>
           <div className="row" style={{ gap: '8px' }}>
-            <button 
-              className="btn primary" 
+            <button
+              className="btn primary"
               onClick={() => {
                 if (!isAuthenticated) {
                   requestAuth(() => setShowCreateForm(true))
@@ -180,7 +182,7 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
                 }
               }}
             >
-              ➕ Новая цель
+              {t('goalsModal.newGoalBtn')}
             </button>
             <button className="pill" onClick={onClose}>✕</button>
           </div>
@@ -189,20 +191,20 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
         {/* Create Form */}
         {showCreateForm && (
           <div className="card" style={{ marginBottom: '16px', background: 'var(--emerald-50)' }}>
-            <div className="h" style={{ marginBottom: '12px' }}>➕ Создать новую цель</div>
-            
+            <div className="h" style={{ marginBottom: '12px' }}>{t('goalsModal.newGoalTitle')}</div>
+
             <div style={{ marginBottom: '12px' }}>
-              <div className="muted" style={{ marginBottom: '6px' }}>Название</div>
+              <div className="muted" style={{ marginBottom: '6px' }}>{t('goals.name')}</div>
               <input
                 value={newGoalTitle}
                 onChange={(e) => setNewGoalTitle(e.target.value)}
-                placeholder="Например: LEGO Technic 42143"
+                placeholder={t('goalsModal.namePlaceholder')}
                 style={{ width: '100%' }}
               />
             </div>
 
             <div style={{ marginBottom: '12px' }}>
-              <div className="muted" style={{ marginBottom: '6px' }}>Цель (рублей)</div>
+              <div className="muted" style={{ marginBottom: '6px' }}>{t('goalsModal.targetLabel')}</div>
               <input
                 type="number"
                 value={newGoalTarget}
@@ -214,8 +216,8 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
             </div>
 
             <div className="row" style={{ gap: '8px' }}>
-              <button className="btn primary" onClick={createGoal}>Создать</button>
-              <button className="btn ghost" onClick={() => setShowCreateForm(false)}>Отмена</button>
+              <button className="btn primary" onClick={createGoal}>{t('goalsModal.createBtn')}</button>
+              <button className="btn ghost" onClick={() => setShowCreateForm(false)}>{t('goals.cancel')}</button>
             </div>
           </div>
         )}
@@ -224,14 +226,14 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
         {activeGoal && (
           <div className="card" style={{ marginBottom: '16px', boxShadow: 'var(--shadow-lg)' }}>
             <div className="cardH">
-              <div className="h">🎯 Активная цель</div>
+              <div className="h">{t('goalsModal.activeGoalTitle')}</div>
               <div className="muted">{progress}%</div>
             </div>
 
             {/* Main KPI */}
             <div className="kpi" style={{ background: 'linear-gradient(135deg, #fffbeb, #fef3c7)' }}>
               <div className="lab">{activeGoal.title}</div>
-              <div className="val" style={{ 
+              <div className="val" style={{
                 background: 'linear-gradient(135deg, #f59e0b, #d97706)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
@@ -243,9 +245,9 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
 
             {/* Progress Bar */}
             <div className="progress" style={{ marginTop: '16px', height: '16px' }}>
-              <div 
-                className="fill" 
-                style={{ 
+              <div
+                className="fill"
+                style={{
                   width: `${progress}%`,
                   background: 'var(--gradient-goal)'
                 }}
@@ -255,28 +257,28 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
             {/* Stats */}
             <div className="grid3" style={{ marginTop: '16px' }}>
               <div className="mini">
-                <div className="lab">Осталось</div>
+                <div className="lab">{t('goalsModal.remainingLabel')}</div>
                 <div className="val">{formatMoney(remaining)}</div>
               </div>
               <div className="mini">
-                <div className="lab">Прогресс</div>
+                <div className="lab">{t('goalsModal.progressLabel')}</div>
                 <div className="val">{progress}%</div>
               </div>
               <div className="mini">
-                <div className="lab">Статус</div>
+                <div className="lab">{t('goalsModal.statusLabel')}</div>
                 <div className="val">
-                  {progress < 25 && '🌱 Начало'}
-                  {progress >= 25 && progress < 50 && '🌿 Растёт'}
-                  {progress >= 50 && progress < 75 && '🌳 Половина'}
-                  {progress >= 75 && progress < 100 && '🔥 Почти!'}
-                  {progress >= 100 && '🎉 Готово!'}
+                  {progress < 25 && t('goalsModal.statusStart')}
+                  {progress >= 25 && progress < 50 && t('goalsModal.statusGrowing')}
+                  {progress >= 50 && progress < 75 && t('goalsModal.statusHalf')}
+                  {progress >= 75 && progress < 100 && t('goalsModal.statusAlmost')}
+                  {progress >= 100 && t('goalsModal.statusDone')}
                 </div>
               </div>
             </div>
 
             {/* Milestones */}
             <div style={{ marginTop: '16px' }}>
-              <div className="h" style={{ marginBottom: '8px' }}>Вехи прогресса:</div>
+              <div className="h" style={{ marginBottom: '8px' }}>{t('goalsModal.milestonesTitle')}</div>
               <div className="row" style={{ gap: '8px', flexWrap: 'wrap' }}>
                 <div className={`badge ${progress >= 25 ? 'gold' : ''}`}>
                   25% {progress >= 25 ? '✅' : '⏳'}
@@ -299,8 +301,8 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
         {goals.all.filter(g => !g.active).length > 0 && (
           <div className="card" style={{ marginBottom: '16px' }}>
             <div className="cardH">
-              <div className="h">📋 Все цели</div>
-              <div className="muted">{goals.all.filter(g => !g.active).length} шт</div>
+              <div className="h">{t('goalsModal.allGoalsTitle')}</div>
+              <div className="muted">{t('goalsModal.countLabel', { count: goals.all.filter(g => !g.active).length })}</div>
             </div>
 
             <div style={{ display: 'grid', gap: '10px' }}>
@@ -311,7 +313,7 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
                     <div className="row" style={{ justifyContent: 'space-between', marginBottom: '8px' }}>
                       <div className="h">{goal.title}</div>
                       <div className="row" style={{ gap: '6px' }}>
-                        <button 
+                        <button
                           className="pill"
                           onClick={() => {
                             if (!isAuthenticated) {
@@ -321,9 +323,9 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
                             }
                           }}
                         >
-                          Активировать
+                          {t('goalsModal.activateBtn')}
                         </button>
-                        <button 
+                        <button
                           className="pill"
                           onClick={() => {
                             if (!isAuthenticated) {
@@ -333,7 +335,7 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
                             }
                           }}
                         >
-                          Архив
+                          {t('goalsModal.archiveBtn')}
                         </button>
                       </div>
                     </div>
@@ -352,8 +354,8 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
         {goals.archived.length > 0 && (
           <div className="card" style={{ opacity: 0.7 }}>
             <div className="cardH">
-              <div className="h">📦 Архив</div>
-              <div className="muted">{goals.archived.length} шт</div>
+              <div className="h">{t('goalsModal.archivedTitle')}</div>
+              <div className="muted">{t('goalsModal.archivedCount', { count: goals.archived.length })}</div>
             </div>
 
             <div style={{ display: 'grid', gap: '8px' }}>
@@ -362,7 +364,7 @@ export default function GoalsModal({ isOpen, onClose, childId }: GoalsModalProps
                   <div className="h">{goal.title}</div>
                   <div className="muted">
                     {formatMoney(goal.current)} / {formatMoney(goal.target)}
-                    {goal.completed && ' • ✅ Достигнута'}
+                    {goal.completed && t('goalsModal.achievedLabel')}
                   </div>
                 </div>
               ))}

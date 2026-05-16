@@ -34,6 +34,7 @@
  */
 
 import { useEffect, useState } from 'react'
+import { useT } from '@/lib/i18n'
 import { getAuditLog } from '@/lib/wallet-api'
 import type { AuditLog } from '@/lib/wallet-api'
 
@@ -50,6 +51,7 @@ export default function AuditLogViewer({
   limit = 50,
   showFilters = true
 }: AuditLogViewerProps) {
+  const t = useT()
   const [logs, setLogs] = useState<AuditLog[]>([])
   const [filteredLogs, setFilteredLogs] = useState<AuditLog[]>([])
   const [loading, setLoading] = useState(true)
@@ -108,36 +110,36 @@ export default function AuditLogViewer({
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
 
-    if (diffMins < 1) return 'Только что'
-    if (diffMins < 60) return `${diffMins} мин назад`
-    if (diffHours < 24) return `${diffHours} ч назад`
+    if (diffMins < 1) return t('auditLogExtra.justNow')
+    if (diffMins < 60) return t('auditLogExtra.minsAgo', { mins: diffMins })
+    if (diffHours < 24) return t('auditLogExtra.hoursAgo', { hours: diffHours })
     if (diffDays === 0) return 'Сегодня ' + date.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })
     if (diffDays === 1) return 'Вчера ' + date.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })
-    return date.toLocaleString('ru', { 
-      day: 'numeric', 
-      month: 'short', 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return date.toLocaleString('ru', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
     })
   }
 
   const getActionLabel = (actionBy: string) => {
     switch (actionBy) {
-      case 'system': return '🤖 Система'
-      case 'parent': return '👨‍👩‍👦 Родитель'
-      case 'child': return '👦 ' + (displayName ?? childId)
+      case 'system': return t('auditLogExtra.actorSystem')
+      case 'parent': return t('auditLogExtra.actorParent')
+      case 'child': return t('auditLogExtra.actorChild', { name: displayName ?? childId })
       default: return actionBy
     }
   }
 
   const getActionTypeLabel = (actionType: string) => {
     switch (actionType) {
-      case 'earn_coins': return 'Заработал'
-      case 'spend_coins': return 'Потратил'
-      case 'exchange': return 'Обменял'
-      case 'p2p_transfer': return 'Перевод'
-      case 'admin_edit': return 'Изменение'
-      case 'attempt_cheat': return '⚠️ ПОПЫТКА ОБМАНА'
+      case 'earn_coins': return t('auditLogExtra.actionEarnCoins')
+      case 'spend_coins': return t('auditLogExtra.actionSpendCoins')
+      case 'exchange': return t('auditLogExtra.actionExchange')
+      case 'p2p_transfer': return t('auditLogExtra.actionP2P')
+      case 'admin_edit': return t('auditLogExtra.actionAdminEdit')
+      case 'attempt_cheat': return t('auditLogExtra.actionCheat')
       default: return actionType
     }
   }
@@ -146,7 +148,7 @@ export default function AuditLogViewer({
     return (
       <div className="audit-log-viewer loading">
         <div className="spinner">⏳</div>
-        <p>Загрузка истории...</p>
+        <p>{t('auditLog.loading')}</p>
       </div>
     )
   }
@@ -155,9 +157,9 @@ export default function AuditLogViewer({
     <div className="audit-log-viewer">
       {/* Заголовок */}
       <div className="log-header">
-        <h3>📜 История операций</h3>
+        <h3>{t('auditLog.title')}</h3>
         <p className="log-subtitle">
-          Полная прозрачность! Все операции логируются.
+          {t('auditLogExtra.subtitle')}
         </p>
       </div>
 
@@ -165,32 +167,32 @@ export default function AuditLogViewer({
       {showFilters && (
         <div className="log-filters">
           <div className="filter-group">
-            <label>Тип:</label>
-            <select 
+            <label>{t('auditLogExtra.typeLabel')}</label>
+            <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
               className="filter-select"
             >
-              <option value="all">Все</option>
-              <option value="earn_coins">Заработал</option>
-              <option value="spend_coins">Потратил</option>
-              <option value="exchange">Обмен</option>
-              <option value="p2p_transfer">Переводы</option>
-              <option value="admin_edit">Изменения</option>
+              <option value="all">{t('auditLogExtra.filterAll')}</option>
+              <option value="earn_coins">{t('auditLogExtra.filterEarnCoins')}</option>
+              <option value="spend_coins">{t('auditLogExtra.filterSpendCoins')}</option>
+              <option value="exchange">{t('auditLogExtra.filterExchange')}</option>
+              <option value="p2p_transfer">{t('auditLogExtra.filterP2P')}</option>
+              <option value="admin_edit">{t('auditLogExtra.filterAdminEdit')}</option>
             </select>
           </div>
 
           <div className="filter-group">
-            <label>Кто:</label>
-            <select 
+            <label>{t('auditLogExtra.whoLabel')}</label>
+            <select
               value={filterActionBy}
               onChange={(e) => setFilterActionBy(e.target.value)}
               className="filter-select"
             >
-              <option value="all">Все</option>
-              <option value="system">Система</option>
-              <option value="parent">Родитель</option>
-              <option value="child">Ребёнок</option>
+              <option value="all">{t('auditLogExtra.filterAllWho')}</option>
+              <option value="system">{t('auditLogExtra.filterSystem')}</option>
+              <option value="parent">{t('auditLogExtra.filterParent')}</option>
+              <option value="child">{t('auditLogExtra.filterChild')}</option>
             </select>
           </div>
 
@@ -201,7 +203,7 @@ export default function AuditLogViewer({
                 checked={showSuspicious}
                 onChange={(e) => setShowSuspicious(e.target.checked)}
               />
-              Только подозрительные
+              {t('auditLogExtra.suspiciousLabel')}
             </label>
           </div>
         </div>
@@ -209,14 +211,14 @@ export default function AuditLogViewer({
 
       {/* Счётчик */}
       <div className="log-count">
-        Показано: {filteredLogs.length} из {logs.length} операций
+        {t('auditLogExtra.showingCount', { shown: filteredLogs.length, total: logs.length })}
       </div>
 
       {/* Список операций */}
       <div className="log-list">
         {filteredLogs.length === 0 ? (
           <div className="log-empty">
-            <p>📭 Нет операций по выбранным фильтрам</p>
+            <p>{t('auditLogExtra.emptyFiltered')}</p>
           </div>
         ) : (
           filteredLogs.map(log => (
@@ -256,11 +258,11 @@ export default function AuditLogViewer({
               {/* Баланс до/после */}
               <div className="log-balance">
                 <div className="balance-before">
-                  Было: {log.coins_before ?? '—'} 💰
+                  {t('auditLogExtra.balanceBefore', { coins: log.coins_before ?? '—' })}
                 </div>
                 <div className="balance-arrow">→</div>
                 <div className="balance-after">
-                  Стало: {log.coins_after ?? '—'} 💰
+                  {t('auditLogExtra.balanceAfter', { coins: log.coins_after ?? '—' })}
                 </div>
               </div>
 
@@ -269,17 +271,17 @@ export default function AuditLogViewer({
                 <div className="log-flags">
                   {log.is_suspicious && (
                     <div className="flag suspicious">
-                      ⚠️ Подозрительная активность
+                      {t('auditLogExtra.flagSuspicious')}
                     </div>
                   )}
                   {log.requires_review && (
                     <div className="flag requires-review">
-                      👀 Требует проверки родителем
+                      {t('auditLogExtra.flagNeedsReview')}
                     </div>
                   )}
                   {log.parent_reviewed && (
                     <div className="flag reviewed">
-                      ✅ Проверено родителем
+                      {t('auditLogExtra.flagReviewed')}
                     </div>
                   )}
                 </div>
@@ -288,7 +290,7 @@ export default function AuditLogViewer({
               {/* Метаданные (для отладки) */}
               {log.metadata && (
                 <details className="log-metadata">
-                  <summary>Подробности</summary>
+                  <summary>{t('auditLogExtra.detailsLabel')}</summary>
                   <pre>{JSON.stringify(log.metadata, null, 2)}</pre>
                 </details>
               )}
@@ -300,29 +302,29 @@ export default function AuditLogViewer({
       {/* Кнопка загрузить ещё */}
       {logs.length >= limit && (
         <div className="log-load-more">
-          <button 
+          <button
             className="button secondary"
             onClick={() => loadLogs()}
           >
-            Загрузить ещё
+            {t('auditLogExtra.loadMoreBtn')}
           </button>
         </div>
       )}
 
       {/* Напоминание о честности */}
       <div className="honesty-reminder">
-        <h4>💡 Помни о честности!</h4>
+        <h4>{t('auditLogExtra.honestyTitle')}</h4>
         <p>
-          Все операции логируются. Попытки обмана:
+          {t('auditLogExtra.honestyText')}
         </p>
         <ul>
-          <li>1-я попытка: Предупреждение + -100 💰</li>
-          <li>2-я попытка: -200 💰 + звонок родителям</li>
-          <li>3-я попытка: Аккаунт заморожен на 7 дней</li>
-          <li>Серьёзное мошенничество: Баланс сброшен в 0</li>
+          <li>{t('auditLogExtra.honesty1')}</li>
+          <li>{t('auditLogExtra.honesty2')}</li>
+          <li>{t('auditLogExtra.honesty3')}</li>
+          <li>{t('auditLogExtra.honestySerious')}</li>
         </ul>
         <p className="reminder-highlight">
-          <strong>Честность = лучшая политика! 🙌</strong>
+          <strong>{t('auditLogExtra.honestyHighlight')}</strong>
         </p>
       </div>
     </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useT } from '@/lib/i18n'
 import { api } from '@/lib/api'
 import { flexibleApi, Subject } from '@/lib/flexible-api'
 import { getWeekRange, getDatesInRange, formatDate, getDayName, normalizeDate, addDays } from '@/utils/helpers'
@@ -17,6 +18,7 @@ interface SubjectRow {
 }
 
 export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) {
+  const t = useT()
   const [weekStart, setWeekStart] = useState(normalizeDate(new Date()))
   const [subjects, setSubjects] = useState<SubjectRow[]>([])
   const [availableSubjects, setAvailableSubjects] = useState<Subject[]>([])
@@ -70,10 +72,10 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
 
   function addSubject() {
     if (!newSubject) return
-    
+
     // Проверить что предмет ещё не добавлен
     if (subjects.find(s => s.subject === newSubject)) {
-      alert('Этот предмет уже добавлен!')
+      alert(t('bulkModalExtra.duplicateAlert'))
       return
     }
     
@@ -101,8 +103,8 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
   async function save() {
     try {
       setLoading(true)
-      setStatus('Сохраняю...')
-      
+      setStatus(t('bulkModalExtra.savingStatus'))
+
       // Сохранить все оценки
       for (const subject of subjects) {
         for (const [date, grade] of Object.entries(subject.grades)) {
@@ -114,13 +116,13 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
           })
         }
       }
-      
-      setStatus('Готово! ✅')
+
+      setStatus(t('bulkModalExtra.doneStatus'))
       setTimeout(() => {
         onClose()
       }, 1000)
     } catch (err: any) {
-      setStatus('Ошибка: ' + err.message)
+      setStatus(t('bulkModalExtra.errorStatus', { msg: err.message }))
     } finally {
       setLoading(false)
     }
@@ -141,8 +143,8 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
       <div className="modal big">
         <div className="modalH">
           <div>
-            <div className="h">🧩 Массовый ввод</div>
-            <div className="muted">Быстрое заполнение оценок за неделю</div>
+            <div className="h">{t('bulkModalExtra.heading')}</div>
+            <div className="muted">{t('bulkModalExtra.subtitle')}</div>
           </div>
           <button className="pill" onClick={onClose}>✕</button>
         </div>
@@ -150,7 +152,7 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
         {/* Week Picker */}
         <div className="card" style={{ marginBottom: '16px' }}>
           <div className="row" style={{ gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <div className="h">Неделя:</div>
+            <div className="h">{t('bulkModalExtra.weekLabel')}</div>
             <input
               type="date"
               value={weekStart}
@@ -158,19 +160,19 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
               style={{ padding: '8px 12px' }}
             />
             <div className="muted">
-              {formatDate(weekStart)} - {formatDate(addDays(weekStart, 4))} (пн-пт)
+              {t('bulkModalExtra.weekRange', { from: formatDate(weekStart), to: formatDate(addDays(weekStart, 4)) })}
             </div>
-            <button 
+            <button
               className="btn ghost"
               onClick={() => setWeekStart(addDays(weekStart, -7))}
             >
-              ← Пред
+              {t('bulkModalExtra.prevBtn')}
             </button>
-            <button 
+            <button
               className="btn ghost"
               onClick={() => setWeekStart(addDays(weekStart, 7))}
             >
-              След →
+              {t('bulkModalExtra.nextBtn')}
             </button>
           </div>
         </div>
@@ -180,7 +182,7 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
           <table style={{ width: '100%', minWidth: '700px' }}>
             <thead>
               <tr>
-                <th style={{ width: '200px' }}>Предмет</th>
+                <th style={{ width: '200px' }}>{t('bulkModalExtra.subjectCol')}</th>
                 {weekDays.map(date => (
                   <th key={date} style={{ textAlign: 'center', minWidth: '80px' }}>
                     {getDayName(date, true)}
@@ -190,7 +192,7 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
                     </span>
                   </th>
                 ))}
-                <th style={{ width: '140px' }}>Действия</th>
+                <th style={{ width: '140px' }}>{t('bulkModalExtra.actionsCol')}</th>
               </tr>
             </thead>
             <tbody>
@@ -232,7 +234,6 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
                       <button
                         className="pill"
                         onClick={() => fillAll(subIndex, 5)}
-                        title="Заполнить все 5"
                         style={{ padding: '4px 8px', fontSize: '12px' }}
                       >
                         5️⃣
@@ -240,7 +241,6 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
                       <button
                         className="pill"
                         onClick={() => fillAll(subIndex, 4)}
-                        title="Заполнить все 4"
                         style={{ padding: '4px 8px', fontSize: '12px' }}
                       >
                         4️⃣
@@ -248,7 +248,6 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
                       <button
                         className="pill"
                         onClick={() => removeSubject(subIndex)}
-                        title="Удалить"
                         style={{ padding: '4px 8px', fontSize: '12px' }}
                       >
                         🗑️
@@ -267,7 +266,7 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
               onChange={(e) => setNewSubject(e.target.value)}
               style={{ flex: 1, maxWidth: '300px', padding: '8px 12px', borderRadius: '8px', border: '1.5px solid var(--line)' }}
             >
-              <option value="">Выберите предмет из настроек</option>
+              <option value="">{t('bulkModalExtra.addSubjectPlaceholder')}</option>
               {availableSubjects
                 .filter(subj => !subjects.find(s => s.subject === subj.name))
                 .map(subj => (
@@ -276,19 +275,19 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
               }
             </select>
             <button className="btn primary" onClick={addSubject} disabled={!newSubject}>
-              ➕ Добавить предмет
+              {t('bulkModalExtra.addSubjectBtn')}
             </button>
           </div>
         </div>
 
         {/* Tips */}
         <div className="card" style={{ marginTop: '16px', background: 'var(--blue-50)' }}>
-          <div className="h" style={{ marginBottom: '8px' }}>💡 Подсказки:</div>
+          <div className="h" style={{ marginBottom: '8px' }}>{t('bulkModalExtra.tipsTitle')}</div>
           <ul style={{ paddingLeft: '20px' }}>
-            <li>Используй <kbd>Tab</kbd> для перехода между ячейками</li>
-            <li>Кнопки 5️⃣ 4️⃣ заполняют всю неделю сразу</li>
-            <li>Пустые ячейки не сохраняются</li>
-            <li>Данные автоматически добавляются к существующим оценкам</li>
+            <li>{t('bulkModalExtra.tip1')}</li>
+            <li>{t('bulkModalExtra.tip2')}</li>
+            <li>{t('bulkModalExtra.tip3')}</li>
+            <li>{t('bulkModalExtra.tip4')}</li>
           </ul>
         </div>
 
@@ -302,10 +301,10 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
         {/* Footer */}
         <div className="row" style={{ gap: '10px', marginTop: '20px', justifyContent: 'flex-end' }}>
           <button className="btn ghost" onClick={onClose} disabled={loading}>
-            Отмена
+            {t('bulkModal.cancel')}
           </button>
           <button className="btn primary" onClick={save} disabled={loading}>
-            {loading ? 'Сохраняю...' : 'Сохранить всё'}
+            {loading ? t('bulkModalExtra.savingBtn') : t('bulkModalExtra.saveAllBtn')}
           </button>
         </div>
       </div>

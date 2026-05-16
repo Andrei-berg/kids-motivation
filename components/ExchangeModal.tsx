@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
-  getWallet, 
-  exchangeCoins, 
+import { useT } from '@/lib/i18n'
+import {
+  getWallet,
+  exchangeCoins,
   calculateExchangeRate,
-  Wallet 
+  Wallet
 } from '@/lib/wallet-api'
 import { triggerConfetti } from '@/utils/confetti'
 
@@ -17,6 +18,7 @@ interface ExchangeModalProps {
 }
 
 export default function ExchangeModal({ isOpen, onClose, childId, onSuccess }: ExchangeModalProps) {
+  const t = useT()
   const [wallet, setWallet] = useState<Wallet | null>(null)
   const [coinsAmount, setCoinsAmount] = useState('')
   const [exchangeRate, setExchangeRate] = useState(10)
@@ -44,7 +46,7 @@ export default function ExchangeModal({ isOpen, onClose, childId, onSuccess }: E
       setWallet(data)
     } catch (err) {
       console.error('Error loading wallet:', err)
-      setError('Ошибка загрузки кошелька')
+      setError(t('exchangeModal.loading'))
     }
   }
 
@@ -74,7 +76,7 @@ export default function ExchangeModal({ isOpen, onClose, childId, onSuccess }: E
 
   async function handleExchange() {
     if (!canExchange) {
-      setError('Недостаточно монет')
+      setError(t('exchangeModal.insufficientCoins'))
       return
     }
 
@@ -83,16 +85,16 @@ export default function ExchangeModal({ isOpen, onClose, childId, onSuccess }: E
       setError('')
 
       await exchangeCoins(childId, coins)
-      
+
       triggerConfetti()
       onSuccess()
-      
+
       setTimeout(() => {
         onClose()
       }, 1500)
     } catch (err: any) {
       console.error('Error exchanging:', err)
-      setError(err.message || 'Ошибка обмена')
+      setError(err.message || t('exchangeModal.error'))
     } finally {
       setLoading(false)
     }
@@ -105,8 +107,8 @@ export default function ExchangeModal({ isOpen, onClose, childId, onSuccess }: E
       <div className="exchange-modal" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="exchange-modal-header">
-          <h2 className="exchange-modal-title">💱 Обменник монет</h2>
-          <button 
+          <h2 className="exchange-modal-title">{t('exchangeModal.title')}</h2>
+          <button
             className="exchange-modal-close"
             onClick={onClose}
             disabled={loading}
@@ -116,46 +118,46 @@ export default function ExchangeModal({ isOpen, onClose, childId, onSuccess }: E
         </div>
 
         <div className="exchange-modal-body">
-          {/* Текущий баланс */}
+          {/* Balance */}
           <div className="exchange-balance">
             <div className="exchange-balance-item">
-              <div className="exchange-balance-label">💰 Монеты</div>
+              <div className="exchange-balance-label">{t('exchangeModal.coinsLabel')}</div>
               <div className="exchange-balance-value">
                 {wallet?.coins.toLocaleString('ru-RU') || 0}
               </div>
             </div>
             <div className="exchange-balance-item">
-              <div className="exchange-balance-label">💵 Деньги</div>
+              <div className="exchange-balance-label">{t('exchangeModal.moneyLabel')}</div>
               <div className="exchange-balance-value">
                 {Number(wallet?.money || 0).toLocaleString('ru-RU')} ₽
               </div>
             </div>
           </div>
 
-          {/* Курс обмена */}
+          {/* Exchange Rate */}
           <div className="exchange-rate-card">
-            <div className="exchange-rate-title">📈 Текущий курс</div>
+            <div className="exchange-rate-title">{t('exchangeModal.rateTitle')}</div>
             <div className="exchange-rate-value">
-              1 монета = {exchangeRate.toFixed(1)}₽
+              {t('exchangeModal.rate', { rate: exchangeRate.toFixed(1) })}
             </div>
             {bonus > 0 && (
               <div className="exchange-rate-bonus">
-                🎉 Бонус +{bonus}% за накопление!
+                {t('exchangeModal.bonus', { pct: bonus })}
               </div>
             )}
             <div className="exchange-rate-hint">
-              {wallet && wallet.coins < 100 && '💡 Копи монеты для лучшего курса!'}
-              {wallet && wallet.coins >= 100 && wallet.coins < 500 && '⭐ Ещё 400 монет до бонуса +20%!'}
-              {wallet && wallet.coins >= 500 && wallet.coins < 1000 && '⭐⭐ Ещё 500 монет до бонуса +50%!'}
-              {wallet && wallet.coins >= 1000 && '🔥 Максимальный бонус +50%!'}
+              {wallet && wallet.coins < 100 && t('exchangeModal.tip100')}
+              {wallet && wallet.coins >= 100 && wallet.coins < 500 && t('exchangeModal.tip500', { amount: 500 - wallet.coins })}
+              {wallet && wallet.coins >= 500 && wallet.coins < 1000 && t('exchangeModal.tip1000', { amount: 1000 - wallet.coins })}
+              {wallet && wallet.coins >= 1000 && t('exchangeModal.tipMax')}
             </div>
           </div>
 
-          {/* Форма обмена */}
+          {/* Exchange Form */}
           <div className="exchange-form">
             <div className="exchange-form-group">
               <label className="exchange-form-label">
-                Сколько монет обменять?
+                {t('exchangeModalExtra.howManyCoins')}
               </label>
               <div className="exchange-input-wrapper">
                 <input
@@ -168,10 +170,10 @@ export default function ExchangeModal({ isOpen, onClose, childId, onSuccess }: E
                   max={wallet?.coins || 0}
                   disabled={loading}
                 />
-                <span className="exchange-input-suffix">монет</span>
+                <span className="exchange-input-suffix">{t('exchangeModalExtra.coinsSuffix')}</span>
               </div>
 
-              {/* Быстрые кнопки */}
+              {/* Quick buttons */}
               <div className="exchange-quick-buttons">
                 <button
                   className="exchange-quick-btn"
@@ -199,34 +201,34 @@ export default function ExchangeModal({ isOpen, onClose, childId, onSuccess }: E
                   onClick={() => setCoinsAmount(String(wallet?.coins || 0))}
                   disabled={loading || !wallet || wallet.coins === 0}
                 >
-                  Всё
+                  {t('exchangeModalExtra.allBtn')}
                 </button>
               </div>
             </div>
 
-            {/* Результат обмена */}
+            {/* Exchange result */}
             {coins > 0 && (
               <div className="exchange-result">
                 <div className="exchange-result-arrow">↓</div>
                 <div className="exchange-result-amount">
-                  Получишь: <span className="exchange-result-money">{money.toFixed(0)}₽</span>
+                  {t('exchangeModalExtra.youGet')}<span className="exchange-result-money">{money.toFixed(0)}₽</span>
                 </div>
               </div>
             )}
 
-            {/* Баланс после обмена */}
+            {/* Balance after exchange */}
             {coins > 0 && canExchange && (
               <div className="exchange-preview">
-                <div className="exchange-preview-title">После обмена:</div>
+                <div className="exchange-preview-title">{t('exchangeModalExtra.afterExchange')}</div>
                 <div className="exchange-preview-items">
                   <div className="exchange-preview-item">
-                    <span>💰 Монеты:</span>
+                    <span>{t('exchangeModalExtra.coinsAfter')}</span>
                     <span className="exchange-preview-value">
                       {wallet?.coins} → {newCoins}
                     </span>
                   </div>
                   <div className="exchange-preview-item">
-                    <span>💵 Деньги:</span>
+                    <span>{t('exchangeModalExtra.moneyAfter')}</span>
                     <span className="exchange-preview-value exchange-preview-value-positive">
                       {Number(wallet?.money || 0).toFixed(0)}₽ → {newMoney.toFixed(0)}₽
                     </span>
@@ -250,14 +252,14 @@ export default function ExchangeModal({ isOpen, onClose, childId, onSuccess }: E
               onClick={onClose}
               disabled={loading}
             >
-              Отмена
+              {t('exchangeModal.cancel')}
             </button>
             <button
               className="btn-exchange"
               onClick={handleExchange}
               disabled={loading || !canExchange}
             >
-              {loading ? '💱 Обмениваю...' : '💱 Обменять'}
+              {loading ? t('exchangeModalExtra.exchangingBtn') : t('exchangeModalExtra.exchangeBtn')}
             </button>
           </div>
         </div>

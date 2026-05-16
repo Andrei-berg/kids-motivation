@@ -49,6 +49,7 @@
  */
 
 import { useState } from 'react'
+import { useT } from '@/lib/i18n'
 import { createP2PTransfer, getWalletSettings } from '@/lib/wallet-api'
 
 interface P2PTransferModalProps {
@@ -60,14 +61,15 @@ interface P2PTransferModalProps {
   onSuccess: () => void
 }
 
-export default function P2PTransferModal({ 
+export default function P2PTransferModal({
   fromChildId,
   toChildId,
   fromChildName,
   toChildName,
-  onClose, 
-  onSuccess 
+  onClose,
+  onSuccess
 }: P2PTransferModalProps) {
+  const t = useT()
   const [transferType, setTransferType] = useState<'gift' | 'payment' | 'loan' | 'deal'>('gift')
   const [amount, setAmount] = useState<number>(0)
   const [note, setNote] = useState('')
@@ -89,20 +91,20 @@ export default function P2PTransferModal({
 
       // Валидация
       if (amount <= 0) {
-        setError('Сумма должна быть больше 0!')
+        setError(t('p2pTransferModal.amountError'))
         return
       }
 
       // Проверить лимиты
       const settings = await getWalletSettings()
       if (amount > settings.p2p_max_per_transfer) {
-        setError(`Максимум за раз: ${settings.p2p_max_per_transfer} 💰`)
+        setError(t('p2pTransferModal.maxError', { max: settings.p2p_max_per_transfer }))
         return
       }
 
       // Для DEAL нужно описание
       if (transferType === 'deal' && !dealDescription) {
-        setError('Опиши что нужно сделать!')
+        setError(t('p2pTransferModal.dealDescError'))
         return
       }
 
@@ -140,7 +142,7 @@ export default function P2PTransferModal({
       <div className="modal-content p2p-transfer-modal" onClick={(e) => e.stopPropagation()}>
         {/* Заголовок */}
         <div className="modal-header">
-          <h2>💸 Перевод монет</h2>
+          <h2>{t('p2pTransferModal.title')}</h2>
           <button className="close-button" onClick={onClose}>×</button>
         </div>
 
@@ -149,92 +151,92 @@ export default function P2PTransferModal({
           <div className="from-child">
             <div className="child-avatar">👦</div>
             <div className="child-name">{fromChildName}</div>
-            <div className="child-label">Отправитель</div>
+            <div className="child-label">{t('p2pTransferModal.senderLabel')}</div>
           </div>
           <div className="transfer-arrow">→</div>
           <div className="to-child">
             <div className="child-avatar">👶</div>
             <div className="child-name">{toChildName}</div>
-            <div className="child-label">Получатель</div>
+            <div className="child-label">{t('p2pTransferModal.receiverLabel')}</div>
           </div>
         </div>
 
         {/* Тип перевода */}
         <div className="form-group">
-          <label>Тип перевода:</label>
+          <label>{t('p2pTransferModal.transferTypeLabel')}</label>
           <div className="transfer-types">
             <button
               className={`transfer-type-button ${transferType === 'gift' ? 'active' : ''}`}
               onClick={() => setTransferType('gift')}
             >
               <span className="type-icon">🎁</span>
-              <span className="type-label">Подарок</span>
-              <span className="type-description">Просто отдал</span>
+              <span className="type-label">{t('p2pTransferModal.typeGiftLabel')}</span>
+              <span className="type-description">{t('p2pTransferModal.typeGiftDesc')}</span>
             </button>
-            
+
             <button
               className={`transfer-type-button ${transferType === 'payment' ? 'active' : ''}`}
               onClick={() => setTransferType('payment')}
             >
               <span className="type-icon">💳</span>
-              <span className="type-label">Оплата</span>
-              <span className="type-description">За что-то купил</span>
+              <span className="type-label">{t('p2pTransferModal.typePaymentLabel')}</span>
+              <span className="type-description">{t('p2pTransferModal.typePaymentDesc')}</span>
             </button>
-            
+
             <button
               className={`transfer-type-button ${transferType === 'loan' ? 'active' : ''}`}
               onClick={() => setTransferType('loan')}
             >
               <span className="type-icon">🏦</span>
-              <span className="type-label">Займ</span>
-              <span className="type-description">Взял в долг</span>
+              <span className="type-label">{t('p2pTransferModal.typeLoanLabel')}</span>
+              <span className="type-description">{t('p2pTransferModal.typeLoanDesc')}</span>
             </button>
-            
+
             <button
               className={`transfer-type-button ${transferType === 'deal' ? 'active' : ''}`}
               onClick={() => setTransferType('deal')}
             >
               <span className="type-icon">🤝</span>
-              <span className="type-label">Сделка</span>
-              <span className="type-description">Сделай → получишь</span>
+              <span className="type-label">{t('p2pTransferModal.typeDealLabel')}</span>
+              <span className="type-description">{t('p2pTransferModal.typeDealDesc')}</span>
             </button>
           </div>
         </div>
 
         {/* Сумма */}
         <div className="form-group">
-          <label>💰 Сумма:</label>
+          <label>{t('p2pTransferModal.amountLabel')}</label>
           <input
             type="number"
             value={amount || ''}
             onChange={(e) => setAmount(Number(e.target.value))}
-            placeholder="Сколько монет?"
+            placeholder={t('p2pTransferModal.amountPlaceholder')}
             className="form-input"
             min="1"
             max="100"
           />
           <div className="form-hint">
-            Максимум за раз: 100 💰
+            {t('p2pTransferModal.maxNote')}
           </div>
         </div>
 
         {/* Для DEAL: описание */}
         {transferType === 'deal' && (
           <div className="form-group">
-            <label>📝 Что нужно сделать?</label>
+            <label>{t('p2pTransferModal.dealTaskLabel')}</label>
             <textarea
               value={dealDescription}
               onChange={(e) => setDealDescription(e.target.value)}
-              placeholder='Например: "Вынеси мусор" или "Помой посуду"'
+              placeholder={t('p2pTransferModal.dealTaskPlaceholder')}
               className="form-textarea"
               rows={3}
             />
             <div className="deal-preview">
-              <strong>Сделка:</strong>
+              <strong>{t('p2pTransferModal.dealSummaryTitle')}</strong>
               <p>
-                {toChildName} сделает: "{dealDescription || '...'}"
+                {toChildName}: &ldquo;{dealDescription || '...'}&rdquo;
                 <br />
-                {fromChildName} заплатит: {amount} 💰
+                {fromChildName}: {amount} 💰
               </p>
             </div>
           </div>
@@ -244,43 +246,43 @@ export default function P2PTransferModal({
         {transferType === 'loan' && (
           <>
             <div className="form-group">
-              <label>💹 Проценты (опционально):</label>
+              <label>{t('p2pTransferModal.loanInterestLabel')}</label>
               <input
                 type="number"
                 value={loanInterest || ''}
                 onChange={(e) => setLoanInterest(Number(e.target.value))}
-                placeholder="Например: 5"
+                placeholder={t('p2pTransferModal.loanInterestPlaceholder')}
                 className="form-input"
                 min="0"
                 max="50"
               />
               <div className="form-hint">
-                Сколько дополнительно вернуть? (0-50 💰)
+                {t('p2pTransferModal.loanInterestHint')}
               </div>
             </div>
 
             <div className="form-group">
-              <label>⏰ Срок возврата:</label>
+              <label>{t('p2pTransferModal.loanTermLabel')}</label>
               <select
                 value={loanDueDays}
                 onChange={(e) => setLoanDueDays(Number(e.target.value))}
                 className="form-select"
               >
-                <option value="1">1 день</option>
-                <option value="3">3 дня</option>
-                <option value="7">7 дней (неделя)</option>
+                <option value="1">{t('p2pTransferModal.loanTerm1')}</option>
+                <option value="3">{t('p2pTransferModal.loanTerm3')}</option>
+                <option value="7">{t('p2pTransferModal.loanTerm7')}</option>
               </select>
             </div>
 
             <div className="loan-preview">
-              <strong>Займ:</strong>
+              <strong>{t('p2pTransferModal.loanSummaryTitle')}</strong>
               <p>
-                {toChildName} получит: {amount} 💰
+                {toChildName}: {amount} 💰
                 <br />
-                Вернуть нужно: {totalLoanRepayment} 💰
-                {loanInterest > 0 && ` (из них ${loanInterest} 💰 проценты)`}
+                {totalLoanRepayment} 💰
+                {loanInterest > 0 && ` (${t('p2pTransferModal.loanInterestPart', { interest: loanInterest })})`}
                 <br />
-                Срок: {loanDueDays} {loanDueDays === 1 ? 'день' : loanDueDays < 5 ? 'дня' : 'дней'}
+                {loanDueDays} {t(loanDueDays === 1 ? 'p2pTransferModal.loanDay' : loanDueDays < 5 ? 'p2pTransferModal.loanFewDays' : 'p2pTransferModal.loanDays')}
               </p>
             </div>
           </>
@@ -288,16 +290,16 @@ export default function P2PTransferModal({
 
         {/* Примечание */}
         <div className="form-group">
-          <label>💬 Примечание (опционально):</label>
+          <label>{t('p2pTransferModal.noteLabel')}</label>
           <input
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder={
-              transferType === 'gift' ? 'Например: "С днём рождения!"' :
-              transferType === 'payment' ? 'Например: "За игрушку"' :
-              transferType === 'loan' ? 'Например: "На неделю"' :
-              'Например: "Важная сделка"'
+              transferType === 'gift' ? t('p2pTransferModal.notePlaceholderGift') :
+              transferType === 'payment' ? t('p2pTransferModal.notePlaceholderPayment') :
+              transferType === 'loan' ? t('p2pTransferModal.notePlaceholderLoan') :
+              t('p2pTransferModal.notePlaceholderDeal')
             }
             className="form-input"
           />
@@ -306,19 +308,19 @@ export default function P2PTransferModal({
         {/* Предупреждения */}
         {amount > 100 && (
           <div className="warning-message">
-            ⚠️ Суммы больше 100 💰 требуют одобрения родителя!
+            {t('p2pTransferModal.warningLargeAmount')}
           </div>
         )}
 
         {transferType === 'loan' && (
           <div className="info-message">
-            💡 Долг будет записан. Напоминание придёт за день до срока.
+            {t('p2pTransferModal.infoLoan')}
           </div>
         )}
 
         {transferType === 'deal' && (
           <div className="info-message">
-            💡 Деньги переведутся только после выполнения и подтверждения.
+            {t('p2pTransferModal.infoDeal')}
           </div>
         )}
 
@@ -332,50 +334,50 @@ export default function P2PTransferModal({
         {/* Кнопки */}
         <div className="modal-footer">
           <button className="button secondary" onClick={onClose}>
-            Отмена
+            {t('p2pTransfer.cancel')}
           </button>
-          <button 
-            className="button primary" 
+          <button
+            className="button primary"
             onClick={handleSubmit}
             disabled={saving || amount <= 0 || (transferType === 'deal' && !dealDescription)}
           >
-            {saving ? 'Отправка...' : 
-             transferType === 'deal' ? 'Создать сделку' :
-             transferType === 'loan' ? 'Одолжить' :
-             'Отправить'}
+            {saving ? t('p2pTransferModal.sendingBtn') :
+             transferType === 'deal' ? t('p2pTransferModal.createDealBtn') :
+             transferType === 'loan' ? t('p2pTransferModal.lendBtn') :
+             t('p2pTransferModal.sendBtn')}
           </button>
         </div>
 
         {/* Обучающая информация */}
         <div className="education-section">
-          <h4>💡 Что ты учишь:</h4>
+          <h4>{t('p2pTransferModal.educationTitle')}</h4>
           <ul>
             {transferType === 'gift' && (
               <>
-                <li>🎁 Щедрость и забота о других</li>
-                <li>❤️ Радость делать приятное</li>
+                <li>{t('p2pTransferModal.educationGiftGenerosity')}</li>
+                <li>{t('p2pTransferModal.educationGiftJoy')}</li>
               </>
             )}
             {transferType === 'payment' && (
               <>
-                <li>💳 Честная торговля</li>
-                <li>🤝 Договорённости и выполнение обязательств</li>
+                <li>{t('p2pTransferModal.educationPaymentFairTrade')}</li>
+                <li>{t('p2pTransferModal.educationPaymentAgreements')}</li>
               </>
             )}
             {transferType === 'loan' && (
               <>
-                <li>🏦 Как работают займы</li>
-                <li>📈 Что такое проценты</li>
-                <li>⏰ Важность вернуть вовремя</li>
-                <li>🤝 Доверие и ответственность</li>
+                <li>{t('p2pTransferModal.educationLoanHowLoans')}</li>
+                <li>{t('p2pTransferModal.educationLoanInterest')}</li>
+                <li>{t('p2pTransferModal.educationLoanOnTime')}</li>
+                <li>{t('p2pTransferModal.educationLoanTrust')}</li>
               </>
             )}
             {transferType === 'deal' && (
               <>
-                <li>🤝 Переговоры и договорённости</li>
-                <li>📝 Контракты (устные)</li>
-                <li>💪 Делегирование задач</li>
-                <li>👔 Предпринимательство</li>
+                <li>{t('p2pTransferModal.educationDealNegotiation')}</li>
+                <li>{t('p2pTransferModal.educationDealContracts')}</li>
+                <li>{t('p2pTransferModal.educationDealDelegation')}</li>
+                <li>{t('p2pTransferModal.educationDealEntrepreneurship')}</li>
               </>
             )}
           </ul>

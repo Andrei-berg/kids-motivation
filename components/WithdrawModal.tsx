@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
-  getWallet, 
+import { useT } from '@/lib/i18n'
+import {
+  getWallet,
   requestWithdrawal,
   getWithdrawals,
   Wallet,
@@ -17,6 +18,7 @@ interface WithdrawModalProps {
 }
 
 export default function WithdrawModal({ isOpen, onClose, childId, onSuccess }: WithdrawModalProps) {
+  const t = useT()
   const [wallet, setWallet] = useState<Wallet | null>(null)
   const [amount, setAmount] = useState('')
   const [withdrawals, setWithdrawals] = useState<CashWithdrawal[]>([])
@@ -55,11 +57,11 @@ export default function WithdrawModal({ isOpen, onClose, childId, onSuccess }: W
 
   async function handleWithdraw() {
     if (!canWithdraw) {
-      setError('Недостаточно денег')
+      setError(t('withdrawModal.insufficientFunds'))
       return
     }
 
-    if (!confirm(`Вывести ${withdrawAmount.toLocaleString('ru-RU')}₽ наличными?`)) {
+    if (!confirm(t('withdrawModal.confirmWithdraw', { amount: withdrawAmount.toLocaleString('ru-RU') }))) {
       return
     }
 
@@ -69,14 +71,14 @@ export default function WithdrawModal({ isOpen, onClose, childId, onSuccess }: W
 
       await requestWithdrawal(childId, withdrawAmount)
 
-      alert('✅ Заявка на вывод отправлена!\n\nРодитель скоро одобрит и даст деньги. 😊')
-      
+      alert(t('withdrawModal.success'))
+
       onSuccess()
       await loadData()
       resetForm()
     } catch (err: any) {
       console.error('Error requesting withdrawal:', err)
-      setError(err.message || 'Ошибка вывода')
+      setError(err.message || t('withdrawModal.error'))
     } finally {
       setLoading(false)
     }
@@ -92,8 +94,8 @@ export default function WithdrawModal({ isOpen, onClose, childId, onSuccess }: W
       <div className="withdraw-modal" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="withdraw-modal-header">
-          <h2 className="withdraw-modal-title">💵 Вывести деньги</h2>
-          <button 
+          <h2 className="withdraw-modal-title">{t('withdrawModal.title')}</h2>
+          <button
             className="withdraw-modal-close"
             onClick={onClose}
             disabled={loading}
@@ -103,19 +105,19 @@ export default function WithdrawModal({ isOpen, onClose, childId, onSuccess }: W
         </div>
 
         <div className="withdraw-modal-body">
-          {/* Баланс */}
+          {/* Balance */}
           <div className="withdraw-balance">
-            <div className="withdraw-balance-label">Доступно</div>
+            <div className="withdraw-balance-label">{t('withdrawModal.available')}</div>
             <div className="withdraw-balance-value">
               {Number(wallet?.money || 0).toLocaleString('ru-RU')} ₽
             </div>
           </div>
 
-          {/* Форма вывода */}
+          {/* Withdraw Form */}
           <div className="withdraw-form">
             <div className="withdraw-form-group">
               <label className="withdraw-form-label">
-                Сколько вывести?
+                {t('withdrawModal.howMuch')}
               </label>
               <div className="withdraw-input-wrapper">
                 <input
@@ -131,7 +133,7 @@ export default function WithdrawModal({ isOpen, onClose, childId, onSuccess }: W
                 <span className="withdraw-input-suffix">₽</span>
               </div>
 
-              {/* Быстрые кнопки */}
+              {/* Quick buttons */}
               <div className="withdraw-quick-buttons">
                 <button
                   className="withdraw-quick-btn"
@@ -159,24 +161,24 @@ export default function WithdrawModal({ isOpen, onClose, childId, onSuccess }: W
                   onClick={() => setAmount(String(wallet?.money || 0))}
                   disabled={loading || Number(wallet?.money || 0) === 0}
                 >
-                  Всё
+                  {t('withdrawModalExtra.allBtn')}
                 </button>
               </div>
             </div>
 
-            {/* Остаток */}
+            {/* Remaining */}
             {withdrawAmount > 0 && canWithdraw && (
               <div className="withdraw-preview">
-                <div className="withdraw-preview-title">После вывода:</div>
+                <div className="withdraw-preview-title">{t('withdrawModalExtra.remainingAfter')}</div>
                 <div className="withdraw-preview-value">
-                  Останется: {remainingMoney.toLocaleString('ru-RU')}₽
+                  {t('withdrawModalExtra.remainingValue', { amount: remainingMoney.toLocaleString('ru-RU') })}
                 </div>
               </div>
             )}
 
-            {/* Подсказка */}
+            {/* Hint */}
             <div className="withdraw-hint">
-              💡 Родитель одобрит заявку и даст деньги наличными
+              {t('withdrawModalExtra.hint')}
             </div>
           </div>
 
@@ -194,21 +196,21 @@ export default function WithdrawModal({ isOpen, onClose, childId, onSuccess }: W
               onClick={onClose}
               disabled={loading}
             >
-              Отмена
+              {t('withdrawModal.cancel')}
             </button>
             <button
               className="btn-withdraw"
               onClick={handleWithdraw}
               disabled={loading || !canWithdraw}
             >
-              {loading ? '💵 Отправляю...' : '💵 Вывести'}
+              {loading ? t('withdrawModalExtra.sendingBtn') : t('withdrawModalExtra.withdrawBtn')}
             </button>
           </div>
 
-          {/* Ожидающие заявки */}
+          {/* Pending requests */}
           {pendingWithdrawals.length > 0 && (
             <div className="withdraw-pending">
-              <div className="withdraw-pending-title">⏳ Ожидают одобрения:</div>
+              <div className="withdraw-pending-title">{t('withdrawModalExtra.pendingTitle')}</div>
               {pendingWithdrawals.map(w => (
                 <div key={w.id} className="withdraw-pending-item">
                   <span>{Number(w.amount).toLocaleString('ru-RU')}₽</span>
@@ -220,10 +222,10 @@ export default function WithdrawModal({ isOpen, onClose, childId, onSuccess }: W
             </div>
           )}
 
-          {/* История */}
+          {/* History */}
           {completedWithdrawals.length > 0 && (
             <div className="withdraw-history">
-              <div className="withdraw-history-title">📜 История выводов:</div>
+              <div className="withdraw-history-title">{t('withdrawModalExtra.historyTitle')}</div>
               {completedWithdrawals.map(w => (
                 <div key={w.id} className="withdraw-history-item">
                   <div className="withdraw-history-amount">
@@ -234,7 +236,7 @@ export default function WithdrawModal({ isOpen, onClose, childId, onSuccess }: W
                       {new Date(w.requested_at).toLocaleDateString('ru-RU')}
                     </span>
                     <span className={`withdraw-history-status withdraw-history-status-${w.status}`}>
-                      {w.status === 'approved' ? '✅ Выдано' : '❌ Отклонено'}
+                      {w.status === 'approved' ? t('withdrawModalExtra.statusApproved') : t('withdrawModalExtra.statusRejected')}
                     </span>
                   </div>
                 </div>
