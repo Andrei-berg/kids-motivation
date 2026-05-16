@@ -2,9 +2,9 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'KidsCoins',
-    short_name: 'KidsCoins',
-    description: 'Семейная система мотивации для детей',
+    name: 'FamilyCoins',
+    short_name: 'FamilyCoins',
+    description: 'Family motivation app for children',
     start_url: '/dashboard',
     display: 'standalone',
     orientation: 'portrait',

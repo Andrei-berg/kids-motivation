@@ -25,13 +25,15 @@ export default function KidLogin() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const t = useT()
+
   async function lookupFamily() {
     setLoading(true)
     setError(null)
     try {
       const result = await lookupFamilyByCode(code.toUpperCase())
       if (!result) {
-        setError('Код не найден. Проверь и попробуй снова.')
+        setError(t('kidLogin.codeNotFound'))
         return
       }
       const children = await getFamilyChildren(result.familyId)
@@ -39,7 +41,7 @@ export default function KidLogin() {
       setProfiles(children)
       setStep(1)
     } catch {
-      setError('Ошибка соединения. Попробуй снова.')
+      setError(t('kidLogin.connectionError'))
     } finally {
       setLoading(false)
     }
@@ -58,7 +60,7 @@ export default function KidLogin() {
         .maybeSingle()
 
       if (!memberRow?.child_id) {
-        setError('Профиль не найден. Обратись к родителю.')
+        setError(t('kidLogin.profileNotFound'))
         return
       }
 
@@ -69,7 +71,7 @@ export default function KidLogin() {
       })
 
       if (authError) {
-        setError('Неверный PIN. Попробуй ещё раз.')
+        setError(t('kidLogin.wrongPinRetry'))
         return
       }
 
@@ -77,7 +79,7 @@ export default function KidLogin() {
       setActiveMemberId(memberRow.child_id)
       router.push('/kid/day')
     } catch {
-      setError('Ошибка входа. Попробуй снова.')
+      setError(t('kidLogin.loginError'))
     } finally {
       setLoading(false)
     }
@@ -143,7 +145,7 @@ export default function KidLogin() {
                 marginTop: 0,
               }}
             >
-              Войти как ребёнок
+              {t('kidLogin.step0Title')}
             </h1>
             <p
               style={{
@@ -153,12 +155,12 @@ export default function KidLogin() {
                 marginBottom: '1.75rem',
               }}
             >
-              Попроси родителя показать код семьи
+              {t('kidLogin.step0Subtitle')}
             </p>
 
             <input
               type="text"
-              placeholder="Код семьи (6 букв)"
+              placeholder={t('kidLogin.familyCodePlaceholder')}
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
               maxLength={6}
@@ -213,7 +215,7 @@ export default function KidLogin() {
                 transition: 'opacity 0.2s',
               }}
             >
-              {loading ? 'Проверяю...' : 'Далее →'}
+              {loading ? t('kidLogin.checking') : t('kidLogin.next')}
             </button>
           </div>
         )}
@@ -235,7 +237,7 @@ export default function KidLogin() {
                 fontFamily: 'inherit',
               }}
             >
-              ← Назад
+              ← {t('kidLogin.back')}
             </button>
 
             <h1
@@ -248,7 +250,7 @@ export default function KidLogin() {
                 marginTop: 0,
               }}
             >
-              Кто ты?
+              {t('kidLogin.step1Title')}
             </h1>
             <p
               style={{
@@ -258,7 +260,7 @@ export default function KidLogin() {
                 marginBottom: '1.25rem',
               }}
             >
-              Выбери своё имя из списка
+              {t('kidLogin.step1Subtitle')}
             </p>
 
             {profiles.length === 0 ? (
@@ -270,7 +272,7 @@ export default function KidLogin() {
                   padding: '1rem',
                 }}
               >
-                Нет доступных профилей
+                {t('kidLogin.noProfiles')}
               </p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', marginBottom: '1rem' }}>
@@ -327,7 +329,7 @@ export default function KidLogin() {
                 marginBottom: '1rem',
               }}
             >
-              Если тебя нет в списке — спроси родителя
+              {t('kidLogin.notInList')}
             </p>
 
             {error && (
@@ -363,7 +365,7 @@ export default function KidLogin() {
                 fontFamily: 'inherit',
               }}
             >
-              Далее →
+              {t('kidLogin.next')}
             </button>
           </div>
         )}
@@ -385,7 +387,7 @@ export default function KidLogin() {
                 fontFamily: 'inherit',
               }}
             >
-              ← Назад
+              ← {t('kidLogin.back')}
             </button>
 
             <h1
@@ -398,7 +400,7 @@ export default function KidLogin() {
                 marginTop: 0,
               }}
             >
-              Введи PIN
+              {t('kidLogin.step2Title')}
             </h1>
             <p
               style={{
@@ -408,7 +410,7 @@ export default function KidLogin() {
                 marginBottom: '1.75rem',
               }}
             >
-              4 цифры, которые задал родитель
+              {t('kidLogin.step2Subtitle')}
             </p>
 
             <input
@@ -469,7 +471,7 @@ export default function KidLogin() {
                 fontFamily: 'inherit',
               }}
             >
-              {loading ? 'Входим...' : 'Войти →'}
+              {loading ? t('kidLogin.loggingIn') : t('kidLogin.loginBtn')}
             </button>
           </div>
         )}

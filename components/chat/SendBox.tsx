@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
+import { useT } from '@/lib/i18n'
 
 interface SendBoxProps {
   onSend: (text: string) => void
@@ -8,6 +9,7 @@ interface SendBoxProps {
 }
 
 export default function SendBox({ onSend, disabled = false }: SendBoxProps) {
+  const t = useT()
   const [text, setText] = useState('')
 
   function handleSubmit(e: FormEvent) {
@@ -27,7 +29,7 @@ export default function SendBox({ onSend, disabled = false }: SendBoxProps) {
         type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Написать сообщение…"
+        placeholder={t('chat.placeholder')}
         disabled={disabled}
         className="flex-1 rounded-full px-4 py-2 text-sm bg-gray-100 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50"
       />
@@ -36,7 +38,7 @@ export default function SendBox({ onSend, disabled = false }: SendBoxProps) {
         disabled={disabled || !text.trim()}
         className="rounded-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        Отправить
+        {t('chat.send')}
       </button>
     </form>
   )

@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
 import { getChildBadges } from '@/lib/services/badges.service'
 import { triggerGoalConfetti } from '@/utils/confetti'
+import { useT } from '@/lib/i18n'
 
 const STORAGE_KEY = 'kid_last_celebration_check'
 
 export default function CelebrationOverlay() {
+  const t = useT()
   const { activeMemberId } = useAppStore()
   const [newBadge, setNewBadge] = useState<{
     icon: string
@@ -55,7 +57,7 @@ export default function CelebrationOverlay() {
       className="kid-celebration-overlay"
       onClick={dismiss}
       role="dialog"
-      aria-label="Новый значок получен"
+      aria-label={t('celebration.badgeEarned')}
     >
       <div className="kid-celebration-badge" style={{
         animation: 'badge-pulse 0.6s ease-out',
@@ -64,12 +66,12 @@ export default function CelebrationOverlay() {
       }}>
         {newBadge.icon}
       </div>
-      <h2 className="text-white text-2xl font-extrabold text-center px-4">Новый значок!</h2>
+      <h2 className="text-white text-2xl font-extrabold text-center px-4">{t('celebration.badgeEarned')}</h2>
       <p className="text-white/90 text-lg font-bold text-center">{newBadge.title}</p>
       <div className="bg-white/20 text-white text-sm font-semibold px-4 py-2 rounded-full mt-2">
         +{newBadge.xp_reward} XP
       </div>
-      <p className="text-white/60 text-xs mt-4">Нажми, чтобы продолжить</p>
+      <p className="text-white/60 text-xs mt-4">{t('celebration.tapToContinue')}</p>
     </div>
   )
 }

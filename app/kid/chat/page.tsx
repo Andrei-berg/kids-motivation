@@ -5,12 +5,14 @@ import { useAppStore } from '@/lib/store'
 import { supabase } from '@/lib/supabase'
 import ChatThread from '@/components/chat/ChatThread'
 import { T } from '@/components/kid/design/tokens'
+import { useT } from '@/lib/i18n'
 
 export default function KidChatPage() {
+  const t = useT()
   const activeMemberId = useAppStore((s) => s.activeMemberId)
   const [familyId, setFamilyId] = useState<string | null>(null)
   const [memberId, setMemberId] = useState<string | null>(null)
-  const [senderName, setSenderName] = useState<string>('Ребёнок')
+  const [senderName, setSenderName] = useState<string>('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -24,7 +26,7 @@ export default function KidChatPage() {
       if (member) {
         setFamilyId(member.family_id)
         setMemberId(member.id)
-        setSenderName(member.display_name || 'Ребёнок')
+        setSenderName(member.display_name || '')
       }
       setLoading(false)
     }
@@ -47,10 +49,10 @@ export default function KidChatPage() {
             <div style={{ position: 'absolute', right: 0, top: 0, width: 28, height: 28, borderRadius: 14, background: '#6C5CE7', border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.fDisp, fontWeight: 800, color: '#fff', fontSize: 13 }}>П</div>
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: T.fDisp, fontSize: 18, fontWeight: 900, color: T.ink }}>Семейный чат</div>
+            <div style={{ fontFamily: T.fDisp, fontSize: 18, fontWeight: 900, color: T.ink }}>{t('kidChat.title')}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
               <div style={{ width: 7, height: 7, borderRadius: 999, background: T.teal }}/>
-              <span style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 600 }}>Онлайн</span>
+              <span style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 600 }}>{t('kidChat.online')}</span>
             </div>
           </div>
         </div>
@@ -75,8 +77,8 @@ export default function KidChatPage() {
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32, textAlign: 'center' }}>
             <div>
               <div style={{ fontSize: 40 }}>💬</div>
-              <div style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 800, color: T.ink3, marginTop: 12 }}>Профиль не найден</div>
-              <div style={{ fontFamily: T.fBody, fontSize: 13, color: T.ink3, marginTop: 4 }}>Попробуй войти заново</div>
+              <div style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 800, color: T.ink3, marginTop: 12 }}>{t('kidChat.profileNotFound')}</div>
+              <div style={{ fontFamily: T.fBody, fontSize: 13, color: T.ink3, marginTop: 4 }}>{t('kidChat.loginAgain')}</div>
             </div>
           </div>
         )}

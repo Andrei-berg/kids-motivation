@@ -15,6 +15,7 @@ import type { Sticker } from '@/lib/chat-stickers'
 import SendBox from './SendBox'
 import { ReactionPickerBar } from './MessageReactions'
 import StickerPicker from './StickerPicker'
+import { useT } from '@/lib/i18n'
 
 interface ChatThreadProps {
   familyId: string
@@ -34,6 +35,7 @@ export default function ChatThread({
   senderName,
   senderRole,
 }: ChatThreadProps) {
+  const t = useT()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [reactions, setReactions] = useState<Record<string, ChatReaction[]>>({})
   const [loading, setLoading] = useState(true)
@@ -258,7 +260,7 @@ export default function ChatThread({
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-            Пока нет сообщений. Напишите первым! 👋
+            {t('chat.noMessages')}
           </div>
         ) : (
           messages.map((msg) => {
@@ -336,7 +338,7 @@ export default function ChatThread({
                 type="text"
                 value={photoCaption}
                 onChange={(e) => setPhotoCaption(e.target.value)}
-                placeholder="Подпись (необязательно)…"
+                placeholder={t('chat.caption')}
                 className="text-sm px-3 py-1.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-400"
               />
               <div className="flex gap-2">
@@ -344,14 +346,14 @@ export default function ChatThread({
                   onClick={() => { setPhotoPreview(null); setPhotoCaption('') }}
                   className="text-xs text-gray-500 hover:text-gray-700"
                 >
-                  Отмена
+                  {t('chat.cancel')}
                 </button>
                 <button
                   onClick={handlePhotoSend}
                   disabled={photoUploading}
                   className="text-xs bg-blue-500 text-white px-3 py-1 rounded-full disabled:opacity-50"
                 >
-                  {photoUploading ? 'Отправка…' : 'Отправить'}
+                  {photoUploading ? t('chat.sending') : t('chat.send')}
                 </button>
               </div>
             </div>
@@ -374,21 +376,21 @@ export default function ChatThread({
           <button
             onClick={() => setShowStickerPicker((v) => !v)}
             className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-xl transition-colors"
-            title="Стикеры"
+            title={t('chat.stickers')}
           >
             🎭
           </button>
           <button
             onClick={() => cameraInputRef.current?.click()}
             className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-xl transition-colors"
-            title="Камера"
+            title={t('chat.camera')}
           >
             📷
           </button>
           <button
             onClick={() => galleryInputRef.current?.click()}
             className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-xl transition-colors"
-            title="Галерея"
+            title={t('chat.gallery')}
           >
             🖼️
           </button>
