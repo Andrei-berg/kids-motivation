@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-last_updated: "2026-05-17T13:11:30.769Z"
+last_updated: "2026-05-17T13:11:42.801Z"
 progress:
   total_phases: 34
   completed_phases: 17
@@ -21,8 +21,8 @@ progress:
 
 ```
 Milestone v4.0 PWA Polish — In Progress
-Phase 4.4 (security-compliance): IN PROGRESS — plans 01 and 05 complete
-Last activity: 2026-05-17 — executed 04.4-05 (COPPA consent gate in FamilyManager, consent_given in onboarding-api.ts)
+Phase 4.4 (security-compliance): IN PROGRESS — plans 01, 02, 03, 05 complete
+Last activity: 2026-05-17 — executed 04.4-03 (AuditScreen in ParentCenter + routing + i18n keys)
 ```
 
 Progress: [████░░░░░░] 20% (1/5 phases complete)
@@ -79,8 +79,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-17T13:10:00Z
-Stopped at: Completed 04.4-05-PLAN.md — COPPA consent gate in FamilyManager + consent_given in onboarding-api.ts
+Last session: 2026-05-17T13:10:58Z
+Stopped at: Completed 04.4-03-PLAN.md — AuditScreen component + ParentCenter routing + i18n keys for audit log
 Resume file: None
 
 ---
@@ -106,6 +106,8 @@ Resume file: None
 - [Phase 04.4]: COPPA consent denial = no child created = no pending state shown (correct COPPA behavior)
 - [Phase 04.4]: FamilyManager.tsx uses direct Supabase insert; consent_given added to both FamilyManager and addChildToFamily paths
 - [Phase 04.4]: AuditScreen uses 'tasks' icon as fallback for audit nav item (Icon component has no 'audit' SVG path)
+- [Phase 04.4-02]: coins_price in plan interface was wrong — actual RewardPurchase field is price_coins (auto-fixed Rule 1)
+- [Phase 04.4-02]: void insertAuditEvent fire-and-forget pattern established: audit failure never blocks parent workflows; repo-layer events minimal, component-layer events carry full context
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 - Three-strategy fetch handler: passthrough for /api/ and supabase.co, cache-first for /_next/static/, network-first for pages
