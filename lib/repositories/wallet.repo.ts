@@ -3,6 +3,7 @@
 // Sourced from lib/wallet-api.ts — this is the authoritative implementation.
 
 import { supabase } from '../supabase'
+import { insertAuditEvent } from '@/lib/repositories/audit.repo'
 import type {
   Wallet,
   Reward,
@@ -606,6 +607,17 @@ export async function approvePurchase(
     console.warn('[approvePurchase] push failed:', e)
   }
 
+  // Defense-in-depth: also record approval at the repo layer
+  void insertAuditEvent({
+    family_id: '',           // family_id not available in repo context — recorded at ParentCenter call site with real familyId
+    child_id: null,          // purchase child_id not passed to this function — ParentCenter call site has it
+    action_type: 'shop_approve',
+    description: `Shop purchase approved (id: ${purchaseId})`,
+    coins_delta: null,
+    actor_user_id: null,
+    metadata: { purchase_id: purchaseId, source: 'wallet.repo' },
+  })
+
   return data
 }
 
@@ -640,6 +652,18 @@ export async function rejectPurchase(
     .single()
 
   if (error) throw error
+
+  // Defense-in-depth: also record rejection at the repo layer
+  void insertAuditEvent({
+    family_id: '',
+    child_id: null,
+    action_type: 'shop_reject',
+    description: `Shop purchase rejected (id: ${purchaseId})`,
+    coins_delta: null,
+    actor_user_id: null,
+    metadata: { purchase_id: purchaseId, source: 'wallet.repo' },
+  })
+
   return data
 }
 
