@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Типы дней — Концепт</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #07070F;
+  --surface: #0D0D1E;
+  --card: #121224;
+  --card2: #181830;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.15);
+  --text: #EEEEFF;
+  --dim: rgba(238,238,255,0.55);
+  --muted: rgba(238,238,255,0.3);
+
+  --vac: #F59E0B;
+  --vac2: #FCD34D;
+  --vac-bg: rgba(245,158,11,0.09);
+  --vac-glow: rgba(245,158,11,0.2);
+
+  --wknd: #8B5CF6;
+  --wknd2: #C4B5FD;
+  --wknd-bg: rgba(139,92,246,0.09);
+
+  --sick: #F43F5E;
+  --sick2: #FDA4AF;
+  --sick-bg: rgba(244,63,94,0.09);
+
+  --school: #3B82F6;
+  --school2: #93C5FD;
+  --school-bg: rgba(59,130,246,0.09);
+
+  --green: #10B981;
+  --green-bg: rgba(16,185,129,0.09);
+
+  --r: 16px;
+  --r-sm: 10px;
+  --r-xs: 7px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 40px;
+}
+
+h1, h2, h3, h4 { font-family: 'DM Serif Display', serif; font-weight: 400; }
+
+/* ─── Screen Nav ─── */
+.screen-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 200;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(7,7,15,0.92);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-btn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--dim);
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.nav-btn.active { background: var(--vac); border-color: var(--vac); color: #000; }
+.nav-btn:hover:not(.active) { border-color: var(--border2); color: var(--text); }
+
+/* ─── Phone Frame ─── */
+.phone-frame {
+  width: 390px;
+  max-width: 100vw;
+  margin-top: 58px;
+}
+
+/* ─── Screens ─── */
+.screen { display: none; }
+.screen.active { display: block; animation: fadeIn 0.22s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+@keyframes fadeOut { to { opacity:0; transform:translateX(20px); } }
+@keyframes bump { 0%,100%{transform:scale(1)} 50%{transform:scale(1.18)} }
+@keyframes sparkleFloat { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-70px) scale(0.4)} }
+
+/* ═══════════════════════════════════
+   SCREEN 1 — SETTINGS
+═══════════════════════════════════ */
+
+.page-header { padding: 24px 20px 14px; }
+.page-header h2 { font-size: 26px; }
+.page-header p { font-size: 13px; color: var(--dim); margin-top: 5px; }
+
+.settings-section { padding: 0 20px 24px; }
+
+.section-label {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+/* Period Cards */
+.period-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 14px 14px 18px;
+  margin-bottom: 9px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.period-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+}
+.period-card.spring::before { background: #A78BFA; }
+.period-card.summer::before { background: var(--vac); }
+.period-card.autumn::before { background: #F97316; }
+.period-card.winter::before { background: #60A5FA; }
+.period-card:hover { border-color: var(--border2); }
+
+.period-icon {
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.period-icon.spring { background: rgba(167,139,250,0.15); }
+.period-icon.summer { background: var(--vac-bg); }
+.period-icon.autumn { background: rgba(249,115,22,0.12); }
+.period-icon.winter { background: rgba(96,165,250,0.12); }
+
+.period-info { flex: 1; min-width: 0; }
+.period-name { font-weight: 800; font-size: 14px; }
+.period-dates { font-size: 11px; color: var(--dim); margin-top: 2px; }
+.period-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: var(--card2);
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.period-actions { display: flex; gap: 6px; }
+.icon-btn {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+.icon-btn:hover { border-color: var(--border2); color: var(--text); }
+.icon-btn.delete:hover { border-color: var(--sick); color: var(--sick); }
+
+/* Add Button */
+.add-btn {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: 1.5px dashed var(--border2);
+  border-radius: var(--r);
+  color: var(--dim);
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+.add-btn:hover { border-color: var(--vac); color: var(--vac); background: var(--vac-bg); }
+
+/* Add Form */
+.add-form {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  padding: 16px;
+  margin-bottom: 10px;
+  display: none;
+}
+.add-form.visible { display: block; animation: fadeIn 0.2s ease; }
+.add-form h4 { font-size: 16px; margin-bottom: 14px; }
+
+.form-group { margin-bottom: 12px; }
+.form-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--dim);
+  margin-bottom: 6px;
+}
+.form-input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.form-input:focus { border-color: var(--vac); }
+
+.date-row { display: flex; gap: 8px; }
+.date-row .form-group { flex: 1; margin-bottom: 0; }
+
+.emoji-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.emoji-opt {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.emoji-opt:hover, .emoji-opt.sel { border-color: var(--vac); background: var(--vac-bg); }
+
+.child-toggle {
+  display: flex;
+  background: var(--surface);
+  border-radius: var(--r-sm);
+  padding: 3px;
+  border: 1px solid var(--border);
+  gap: 3px;
+}
+.child-opt {
+  flex: 1;
+  padding: 7px 6px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--dim);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+.child-opt.active { background: var(--vac); color: #000; }
+
+.form-actions { display: flex; gap: 8px; margin-top: 14px; }
+.btn-primary {
+  flex: 1;
+  padding: 11px;
+  background: linear-gradient(135deg, var(--vac), var(--vac2));
+  border: none;
+  border-radius: var(--r-sm);
+  color: #000;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  font-size: 14px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn-primary:hover { opacity: 0.88; }
+.btn-cancel {
+  padding: 11px 16px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--dim);
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* Rules Cards */
+.rules-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px;
+  margin-bottom: 10px;
+}
+.rules-card h4 { font-size: 14px; margin-bottom: 12px; }
+.rule-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.rule-row:last-child { border-bottom: none; }
+.rule-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.rule-text { flex: 1; font-size: 12px; color: var(--dim); }
+.rule-coins { font-size: 12px; font-weight: 900; color: var(--vac); white-space: nowrap; }
+
+/* ═══════════════════════════════════
+   SCREEN 2 — DASHBOARD
+═══════════════════════════════════ */
+
+/* Vacation Banner */
+.vac-banner {
+  margin: 16px 20px 14px;
+  background: linear-gradient(135deg, rgba(245,158,11,0.18) 0%, rgba(252,211,77,0.08) 100%);
+  border: 1px solid rgba(245,158,11,0.28);
+  border-radius: var(--r);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.vac-banner::after {
+  content: '🌸';
+  position: absolute;
+  right: 14px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 36px;
+  opacity: 0.25;
+}
+.vac-banner-icon { font-size: 26px; }
+.vac-banner-text h3 { font-size: 15px; color: var(--vac); }
+.vac-banner-text p { font-size: 11px; color: var(--dim); margin-top: 2px; }
+.vac-day-badge {
+  position: absolute;
+  right: 58px; top: 12px;
+  background: rgba(245,158,11,0.18);
+  border: 1px solid rgba(245,158,11,0.35);
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 900;
+  color: var(--vac);
+  padding: 3px 8px;
+}
+
+/* Stats Row */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 8px;
+  margin: 0 20px 16px;
+}
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 12px;
+  text-align: center;
+}
+.stat-value { font-size: 22px; font-weight: 900; }
+.stat-label { font-size: 9px; font-weight: 800; color: var(--muted); margin-top: 3px; letter-spacing: 0.03em; }
+
+/* Week Calendar */
+.week-section { padding: 0 20px 16px; }
+.week-label { font-size: 10px; font-weight: 900; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
+.week-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 5px; }
+
+.day-cell {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 1px;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: transform 0.15s;
+  position: relative;
+}
+.day-cell:hover { transform: scale(1.06); }
+.day-letter { font-size: 8px; font-weight: 900; opacity: 0.5; }
+.day-num { font-size: 15px; font-weight: 900; }
+.day-icon { font-size: 10px; }
+.day-coins-small { font-size: 8px; font-weight: 800; }
+
+.day-cell.school { background: var(--school-bg); border-color: rgba(59,130,246,0.2); }
+.day-cell.school .day-coins-small { color: var(--school2); }
+.day-cell.weekend { background: var(--wknd-bg); border-color: rgba(139,92,246,0.2); }
+.day-cell.weekend .day-coins-small { color: var(--wknd2); }
+.day-cell.vacation { background: var(--vac-bg); border-color: rgba(245,158,11,0.22); }
+.day-cell.vacation .day-coins-small { color: var(--vac2); }
+.day-cell.sick { background: var(--sick-bg); border-color: rgba(244,63,94,0.22); }
+.day-cell.future { background: var(--card); border-color: var(--border); opacity: 0.38; }
+.day-cell.today-cell { border-color: var(--vac) !important; box-shadow: 0 0 0 3px rgba(245,158,11,0.14), 0 0 12px rgba(245,158,11,0.12); }
+
+/* Today Expanded Panel */
+.today-expanded {
+  background: var(--card);
+  border: 1px solid rgba(245,158,11,0.28);
+  border-radius: var(--r);
+  padding: 16px;
+  margin-top: 10px;
+  animation: fadeIn 0.2s ease;
+}
+.today-expanded h4 { font-size: 15px; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.today-type-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px; font-weight: 900;
+  background: var(--vac-bg);
+  border: 1px solid rgba(245,158,11,0.3);
+  color: var(--vac);
+}
+.sick-toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+.sick-label { font-size: 13px; color: var(--dim); }
+
+/* Toggle Switch */
+.toggle-sw { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+.toggle-sw input { opacity: 0; width: 0; height: 0; }
+.toggle-track {
+  position: absolute; inset: 0;
+  background: var(--card2);
+  border-radius: 24px;
+  cursor: pointer;
+  transition: 0.2s;
+  border: 1px solid var(--border2);
+}
+.toggle-track::before {
+  content: '';
+  position: absolute;
+  width: 18px; height: 18px;
+  left: 3px; top: 2px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+.toggle-sw input:checked + .toggle-track { background: var(--sick); border-color: var(--sick); }
+.toggle-sw input:checked + .toggle-track::before { transform: translateX(20px); }
+.toggle-sw.green input:checked + .toggle-track { background: var(--green); border-color: var(--green); }
+
+/* Legend */
+.legend {
+  margin: 0 20px 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px 16px;
+}
+.legend-title { font-size: 10px; font-weight: 900; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+.legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.legend-row:last-child { margin-bottom: 0; }
+.legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.legend-dot.school { background: var(--school); }
+.legend-dot.weekend { background: var(--wknd); }
+.legend-dot.vacation { background: var(--vac); }
+.legend-dot.sick { background: var(--sick); }
+.legend-text { font-size: 12px; color: var(--dim); flex: 1; }
+.legend-max { font-size: 10px; font-weight: 900; color: var(--muted); }
+
+/* ═══════════════════════════════════
+   SCREEN 3 — DAILY MODAL
+═══════════════════════════════════ */
+
+.modal-wrap { display: flex; flex-direction: column; min-height: calc(100vh - 58px); background: var(--surface); }
+
+/* Modal Header */
+.modal-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+  background: var(--card);
+  position: sticky; top: 58px; z-index: 10;
+}
+.modal-close {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--dim);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.modal-close:hover { border-color: var(--border2); color: var(--text); }
+.modal-hinfo { flex: 1; }
+.modal-hinfo h3 { font-size: 15px; font-weight: 800; font-family: 'Nunito', sans-serif; }
+.modal-hinfo p { font-size: 11px; color: var(--dim); margin-top: 1px; }
+.day-pill {
+  padding: 5px 11px;
+  border-radius: 20px;
+  font-size: 11px; font-weight: 900;
+  background: linear-gradient(135deg, var(--vac), var(--vac2));
+  color: #000;
+  white-space: nowrap;
+}
+
+/* Modal Body */
+.modal-body { flex: 1; padding-bottom: 95px; }
+
+/* Collapsible Section */
+.ms { border-bottom: 1px solid var(--border); }
+.ms-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px;
+  cursor: pointer; user-select: none;
+  transition: background 0.18s;
+}
+.ms-header:hover { background: rgba(255,255,255,0.025); }
+.ms-emoji { font-size: 18px; }
+.ms-title { flex: 1; font-size: 14px; font-weight: 800; }
+.ms-badge {
+  font-size: 11px; font-weight: 900;
+  padding: 3px 9px;
+  border-radius: 20px;
+  transition: all 0.25s;
+}
+.ms-badge.earned { background: rgba(16,185,129,0.14); border: 1px solid rgba(16,185,129,0.25); color: var(--green); }
+.ms-badge.potential { background: var(--vac-bg); border: 1px solid rgba(245,158,11,0.22); color: var(--vac); }
+.ms-badge.zero { background: var(--card); border: 1px solid var(--border); color: var(--muted); }
+.chevron { font-size: 10px; color: var(--muted); transition: transform 0.28s; }
+.ms-header.open .chevron { transform: rotate(180deg); }
+
+.ms-body { display: none; padding: 2px 18px 16px; }
+.ms-body.open { display: block; animation: fadeIn 0.18s ease; }
+
+/* Form elements */
+.fg { margin-bottom: 11px; }
+.fl {
+  display: block; font-size: 10px; font-weight: 900;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--dim); margin-bottom: 6px;
+}
+
+/* Book Autocomplete */
+.book-wrap { position: relative; margin-bottom: 12px; }
+.book-drop {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-sm);
+  z-index: 30;
+  display: none;
+  overflow: hidden;
+}
+.book-drop.open { display: block; animation: fadeIn 0.15s ease; }
+.book-opt {
+  padding: 10px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+  color: var(--dim);
+}
+.book-opt:last-child { border-bottom: none; }
+.book-opt:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+
+/* Stepper Grid */
+.stepper-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.stepper-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; }
+.stepper-inner { display: flex; align-items: center; }
+.stp-btn {
+  width: 42px; height: 46px;
+  background: var(--card);
+  border: none;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 300;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.stp-btn:hover { background: var(--card2); }
+.stp-center { flex: 1; text-align: center; padding: 6px 0; }
+.stp-val { font-size: 20px; font-weight: 900; line-height: 1; }
+.stp-unit { font-size: 9px; color: var(--muted); font-weight: 700; letter-spacing: 0.05em; }
+
+/* Slider */
+.slider-marks { display: flex; justify-content: space-between; font-size: 9px; font-weight: 800; color: var(--muted); margin-bottom: 7px; }
+.slider-r {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+.slider-r::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 0 0 3px var(--vac), 0 2px 8px rgba(0,0,0,0.5);
+  cursor: pointer;
+}
+
+/* Coin Preview inline */
+.coin-hint {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px;
+  background: var(--vac-bg);
+  border: 1px solid rgba(245,158,11,0.2);
+  border-radius: var(--r-xs);
+  font-size: 12px; font-weight: 700;
+  color: var(--vac);
+  margin-bottom: 10px;
+  transition: all 0.3s;
+}
+
+/* Finish book row */
+.finish-row {
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(16,185,129,0.07);
+  border: 1px solid rgba(16,185,129,0.18);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.finish-label { font-size: 13px; font-weight: 700; }
+.finish-label em { color: var(--green); font-style: normal; }
+
+/* Sub-type tabs */
+.sub-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.sub-tab {
+  flex: 1; padding: 8px;
+  text-align: center;
+  font-size: 11px; font-weight: 800;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--dim);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.sub-tab.active { background: var(--vac-bg); border-color: rgba(245,158,11,0.3); color: var(--vac); }
+
+/* Subject pills */
+.subj-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.subj-pill {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px; font-weight: 800;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.subj-pill.sel { background: var(--vac-bg); border-color: rgba(245,158,11,0.38); color: var(--vac); }
+
+/* Lesson entry */
+.lesson-entry {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 10px 12px;
+  margin-bottom: 7px;
+  display: flex; align-items: center; gap: 10px;
+}
+.le-icon { font-size: 16px; }
+.le-name { flex: 1; font-size: 13px; font-weight: 700; }
+.le-coins { font-size: 11px; font-weight: 900; color: var(--green); }
+.le-del { color: var(--muted); font-size: 13px; cursor: pointer; padding: 4px; transition: color 0.15s; }
+.le-del:hover { color: var(--sick); }
+
+/* Help Pills */
+.help-pills { display: flex; gap: 8px; margin-bottom: 10px; }
+.help-pill {
+  flex: 1; padding: 13px;
+  text-align: center;
+  font-size: 13px; font-weight: 900;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--dim);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.help-pill.yes.active { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.38); color: var(--green); }
+.help-pill.no.active { background: rgba(244,63,94,0.1); border-color: rgba(244,63,94,0.3); color: var(--sick); }
+
+/* Room list */
+.room-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.room-item:last-child { border-bottom: none; }
+.room-chk {
+  width: 24px; height: 24px;
+  border-radius: 7px;
+  border: 2px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  transition: all 0.18s;
+  flex-shrink: 0;
+}
+.room-chk.on { background: var(--green); border-color: var(--green); }
+.room-label { font-size: 13px; color: var(--dim); transition: color 0.18s; }
+.room-label.on { color: var(--text); }
+
+/* Coin Footer */
+.coin-footer {
+  position: fixed;
+  bottom: 0;
+  left: 50%; transform: translateX(-50%);
+  width: 390px; max-width: 100%;
+  background: rgba(10,10,22,0.97);
+  backdrop-filter: blur(24px);
+  border-top: 1px solid var(--border);
+  padding: 10px 18px 18px;
+  z-index: 100;
+}
+.coins-breakdown {
+  display: flex; gap: 5px; flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.chip {
+  font-size: 10px; font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  white-space: nowrap;
+  transition: all 0.25s;
+}
+.chip.on { background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.22); color: var(--green); }
+.chip.vac { background: var(--vac-bg); border-color: rgba(245,158,11,0.22); color: var(--vac); }
+
+.coin-row { display: flex; align-items: center; gap: 10px; }
+.coin-lbl { font-size: 12px; color: var(--dim); font-weight: 700; }
+.coin-total {
+  font-size: 30px; font-weight: 900;
+  color: var(--vac);
+  font-family: 'DM Serif Display', serif;
+  transition: transform 0.15s;
+  min-width: 70px;
+}
+.coin-total.bump { animation: bump 0.28s ease; }
+.save-btn {
+  margin-left: auto;
+  padding: 11px 22px;
+  background: linear-gradient(135deg, var(--vac), var(--vac2));
+  border: none;
+  border-radius: var(--r-sm);
+  color: #000;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  font-size: 14px;
+  cursor: pointer;
+  transition: opacity 0.18s;
+}
+.save-btn:hover { opacity: 0.88; }
+
+textarea.form-input { resize: none; height: 68px; line-height: 1.5; }
+
+.sparkle {
+  position: fixed; pointer-events: none; z-index: 999;
+  font-size: 22px;
+  animation: sparkleFloat 0.9s ease forwards;
+}
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="screen-nav">
+  <button class="nav-btn active" onclick="go(1)">⚙️ Настройки</button>
+  <button class="nav-btn" onclick="go(2)">📅 Дашборд</button>
+  <button class="nav-btn" onclick="go(3)">📝 Модалка каникул</button>
+</nav>
+
+<div class="phone-frame">
+
+<!-- ═══ SCREEN 1: Settings ═══ -->
+<div class="screen active" id="s1">
+
+  <div class="page-header">
+    <h2>Периоды & Каникулы</h2>
+    <p>Настройте учебные периоды — система автоматически изменит набор активностей и правила монет</p>
+  </div>
+
+  <div class="settings-section">
+    <div class="section-label">Учебные периоды</div>
+
+    <div id="periods">
+      <div class="period-card spring">
+        <div class="period-icon spring">🌸</div>
+        <div class="period-info">
+          <div class="period-name">Весенние каникулы</div>
+          <div class="period-dates">25 мар – 6 апр 2026 · 13 дней</div>
+          <div class="period-badge">Все дети</div>
+        </div>
+        <div class="period-actions">
+          <button class="icon-btn">✏️</button>
+          <button class="icon-btn delete" onclick="delPeriod(this)">🗑</button>
+        </div>
+      </div>
+
+      <div class="period-card summer">
+        <div class="period-icon summer">🌴</div>
+        <div class="period-info">
+          <div class="period-name">Летние каникулы</div>
+          <div class="period-dates">1 июн – 31 авг 2026 · 92 дня</div>
+          <div class="period-badge">Адам, Алим</div>
+        </div>
+        <div class="period-actions">
+          <button class="icon-btn">✏️</button>
+          <button class="icon-btn delete" onclick="delPeriod(this)">🗑</button>
+        </div>
+      </div>
+
+      <div class="period-card winter">
+        <div class="period-icon winter">❄️</div>
+        <div class="period-info">
+          <div class="period-name">Зимние каникулы</div>
+          <div class="period-dates">28 дек 2025 – 11 янв 2026 · 15 дней</div>
+          <div class="period-badge">Все дети</div>
+        </div>
+        <div class="period-actions">
+          <button class="icon-btn">✏️</button>
+          <button class="icon-btn delete" onclick="delPeriod(this)">🗑</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Form -->
+    <div class="add-form" id="add-form">
+      <h4>Новый период</h4>
+      <div class="form-group">
+        <label class="fl">Название</label>
+        <input class="form-input" type="text" placeholder="Весенние каникулы">
+      </div>
+      <div class="date-row">
+        <div class="form-group">
+          <label class="fl">Начало</label>
+          <input class="form-input" type="date">
+        </div>
+        <div class="form-group">
+          <label class="fl">Конец</label>
+          <input class="form-input" type="date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="fl">Иконка</label>
+        <div class="emoji-row">
+          <div class="emoji-opt sel" onclick="pickEmoji(this)">🌸</div>
+          <div class="emoji-opt" onclick="pickEmoji(this)">🌴</div>
+          <div class="emoji-opt" onclick="pickEmoji(this)">❄️</div>
+          <div class="emoji-opt" onclick="pickEmoji(this)">🍂</div>
+          <div class="emoji-opt" onclick="pickEmoji(this)">🎄</div>
+          <div class="emoji-opt" onclick="pickEmoji(this)">☀️</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="fl">Применить к</label>
+        <div class="child-toggle">
+          <div class="child-opt active" onclick="pickChild(this)">Все дети</div>
+          <div class="child-opt" onclick="pickChild(this)">Адам</div>
+          <div class="child-opt" onclick="pickChild(this)">Алим</div>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" onclick="hideForm()">Сохранить</button>
+        <button class="btn-cancel" onclick="hideForm()">Отмена</button>
+      </div>
+    </div>
+
+    <button class="add-btn" id="add-btn" onclick="showForm()">+ Добавить период</button>
+  </div>
+
+  <div class="settings-section">
+    <div class="section-label">Правила монет по типу дня</div>
+
+    <div class="rules-card">
+      <h4>📅 Учебный день</h4>
+      <div class="rule-row"><div class="rule-dot" style="background:var(--school)"></div><div class="rule-text">Оценки: 5→+5, 4→+3, 3→−3, 2→−5, 1→−10</div></div>
+      <div class="rule-row"><div class="rule-dot" style="background:var(--school)"></div><div class="rule-text">Комната (≥3 из 5 пунктов)</div><div class="rule-coins">+3💰</div></div>
+      <div class="rule-row"><div class="rule-dot" style="background:var(--school)"></div><div class="rule-text">Хорошее поведение</div><div class="rule-coins">+5💰</div></div>
+      <div class="rule-row"><div class="rule-dot" style="background:var(--school)"></div><div class="rule-text">Тренер секции: 5→+10, 4→+5</div></div>
+    </div>
+
+    <div class="rules-card">
+      <h4>🌸 Каникулы &amp; 📅 Выходные</h4>
+      <div class="rule-row"><div class="rule-dot" style="background:var(--vac)"></div><div class="rule-text">Чтение ≥15 мин или ≥10 стр</div><div class="rule-coins">+3💰</div></div>
+      <div class="rule-row"><div class="rule-dot" style="background:var(--vac)"></div><div class="rule-text">Чтение ≥30 мин или ≥20 стр</div><div class="rule-coins">+5💰</div></div>
+      <div class="rule-row"><div class="rule-dot" style="background:var(--vac)"></div><div class="rule-text">Книга дочитана 🎉</div><div class="rule-coins">+10💰</div></div>
+      <div class="rule-row"><div class="rule-dot" style="background:var(--vac)"></div><div class="rule-text">Каждый доп. урок выполнен</div><div class="rule-coins">+3💰</div></div>
+      <div class="rule-row"><div class="rule-dot" style="background:var(--vac)"></div><div class="rule-text">Помощь по дому</div><div class="rule-coins">+3💰</div></div>
+      <div class="rule-row"><div class="rule-dot" style="background:var(--vac)"></div><div class="rule-text">Комната + Поведение (как обычно)</div><div class="rule-coins">+8💰</div></div>
+    </div>
+
+    <div class="rules-card">
+      <h4>🤒 День болезни</h4>
+      <div class="rule-row"><div class="rule-dot" style="background:var(--sick)"></div><div class="rule-text">Оценки / уроки — не ожидаются</div></div>
+      <div class="rule-row"><div class="rule-dot" style="background:var(--sick)"></div><div class="rule-text">Комната и поведение — грейс-период, штрафов нет</div></div>
+      <div class="rule-row"><div class="rule-dot" style="background:var(--sick)"></div><div class="rule-text">Лёгкое чтение — засчитывается</div><div class="rule-coins">+3💰</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 2: Dashboard ═══ -->
+<div class="screen" id="s2">
+
+  <div class="vac-banner">
+    <div class="vac-banner-icon">🌸</div>
+    <div class="vac-banner-text">
+      <h3>Весенние каникулы</h3>
+      <p>25 мар – 6 апр 2026</p>
+    </div>
+    <div class="vac-day-badge">День 3 из 13</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--vac)">+47</div>
+      <div class="stat-label">💰 ЗА НЕДЕЛЮ</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--school2)">2</div>
+      <div class="stat-label">📚 КНИГИ В МАР</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:var(--green)">3</div>
+      <div class="stat-label">🔥 СТРИК ДНЕЙ</div>
+    </div>
+  </div>
+
+  <div class="week-section">
+    <div class="week-label">Неделя · Адам</div>
+    <div class="week-grid">
+      <div class="day-cell vacation">
+        <div class="day-letter">ПН</div>
+        <div class="day-num">23</div>
+        <div class="day-coins-small">+14💰</div>
+      </div>
+      <div class="day-cell vacation">
+        <div class="day-letter">ВТ</div>
+        <div class="day-num">24</div>
+        <div class="day-coins-small">+19💰</div>
+      </div>
+      <div class="day-cell sick">
+        <div class="day-letter">СР</div>
+        <div class="day-num">25</div>
+        <div class="day-icon">🤒</div>
+      </div>
+      <div class="day-cell vacation today-cell" id="today-cell" onclick="toggleToday()">
+        <div class="day-letter">ЧТ</div>
+        <div class="day-num">27</div>
+        <div class="day-icon" id="today-icon">🌸</div>
+      </div>
+      <div class="day-cell future">
+        <div class="day-letter">ПТ</div>
+        <div class="day-num">28</div>
+      </div>
+      <div class="day-cell future" style="background:var(--wknd-bg);border-color:rgba(139,92,246,0.15);opacity:0.35">
+        <div class="day-letter">СБ</div>
+        <div class="day-num">29</div>
+      </div>
+      <div class="day-cell future" style="background:var(--wknd-bg);border-color:rgba(139,92,246,0.15);opacity:0.28">
+        <div class="day-letter">ВС</div>
+        <div class="day-num">30</div>
+      </div>
+    </div>
+
+    <div class="today-expanded" id="today-panel" style="display:none">
+      <h4>27 марта <span class="today-type-badge" id="type-badge">🌸 Каникулы</span></h4>
+      <div class="sick-toggle-row">
+        <div class="sick-label">🤒 Отметить «болеет сегодня»</div>
+        <label class="toggle-sw">
+          <input type="checkbox" id="sick-chk" onchange="toggleSick()">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+      <div id="sick-note" style="display:none;margin-top:10px">
+        <input class="form-input" type="text" placeholder="Что болит? (необязательно)">
+      </div>
+      <div style="margin-top:12px">
+        <button class="btn-primary" style="width:100%" onclick="go(3)">Заполнить день →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-title">Типы дней</div>
+    <div class="legend-row"><div class="legend-dot school"></div><div class="legend-text">Учебный — оценки, комната, поведение, спорт</div><div class="legend-max">до +50💰</div></div>
+    <div class="legend-row"><div class="legend-dot weekend"></div><div class="legend-text">Выходной — чтение, физра, помощь, комната</div><div class="legend-max">до +24💰</div></div>
+    <div class="legend-row"><div class="legend-dot vacation"></div><div class="legend-text">Каникулы — всё выходного + доп. уроки</div><div class="legend-max">до +36💰</div></div>
+    <div class="legend-row"><div class="legend-dot sick"></div><div class="legend-text">Болезнь — только чтение, без штрафов</div><div class="legend-max">до +13💰</div></div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 3: Daily Modal ═══ -->
+<div class="screen" id="s3">
+  <div class="modal-wrap">
+
+    <div class="modal-header">
+      <button class="modal-close" onclick="go(2)">✕</button>
+      <div class="modal-hinfo">
+        <h3>Адам · 27 марта, чт</h3>
+        <p>Заполни свой день</p>
+      </div>
+      <div class="day-pill">🌸 Каникулы</div>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- 📚 Reading -->
+      <div class="ms">
+        <div class="ms-header open" onclick="toggleSec(this)">
+          <div class="ms-emoji">📚</div>
+          <div class="ms-title">Чтение</div>
+          <div class="ms-badge earned" id="read-badge">+5💰</div>
+          <div class="chevron">▼</div>
+        </div>
+        <div class="ms-body open">
+          <div class="book-wrap">
+            <label class="fl">Книга</label>
+            <input class="form-input" type="text" value="Гарри Поттер и Кубок Огня" id="book-input" onfocus="openBooks()" onblur="closeBooks()">
+            <div class="book-drop" id="book-drop">
+              <div class="book-opt" onmousedown="pickBook('Гарри Поттер и Кубок Огня')">📖 Гарри Поттер и Кубок Огня <em style="margin-left:auto;font-size:10px;color:var(--muted)">чит.</em></div>
+              <div class="book-opt" onmousedown="pickBook('Приключения Тома Сойера')">📗 Приключения Тома Сойера</div>
+              <div class="book-opt" onmousedown="pickBook('Маленький принц')">📘 Маленький принц</div>
+              <div class="book-opt" onmousedown="pickBook('Робинзон Крузо')">📕 Робинзон Крузо</div>
+            </div>
+          </div>
+
+          <div class="stepper-grid">
+            <div>
+              <label class="fl">Страниц</label>
+              <div class="stepper-wrap">
+                <div class="stepper-inner">
+                  <button class="stp-btn" onclick="chPages(-5)">−</button>
+                  <div class="stp-center">
+                    <div class="stp-val" id="pages-v">25</div>
+                    <div class="stp-unit">СТРАНИЦ</div>
+                  </div>
+                  <button class="stp-btn" onclick="chPages(5)">+</button>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label class="fl">Минут</label>
+              <div class="stepper-wrap">
+                <div class="stepper-inner">
+                  <button class="stp-btn" onclick="chTime(-5)">−</button>
+                  <div class="stp-center">
+                    <div class="stp-val" id="time-v">35</div>
+                    <div class="stp-unit">МИНУТ</div>
+                  </div>
+                  <button class="stp-btn" onclick="chTime(5)">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="slider-marks">
+            <span>0</span><span>15 мин</span><span>30 мин</span><span>1 час</span><span>2 ч</span>
+          </div>
+          <input type="range" class="slider-r" id="time-sl" min="0" max="120" value="35" oninput="slTime(this.value)">
+
+          <div class="coin-hint" id="read-hint">🪙 35 мин / 25 стр → +5💰 (≥30 мин или ≥20 стр)</div>
+
+          <div class="finish-row">
+            <div class="finish-label">🎉 Книга дочитана! <em>+10💰</em></div>
+            <label class="toggle-sw green">
+              <input type="checkbox" id="book-done" onchange="calcRead()">
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+
+          <div class="fg">
+            <label class="fl">Заметка (необязательно)</label>
+            <textarea class="form-input" placeholder="Что запомнилось из книги?"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- 📖 Extra Lessons -->
+      <div class="ms">
+        <div class="ms-header open" onclick="toggleSec(this)">
+          <div class="ms-emoji">📖</div>
+          <div class="ms-title">Доп. уроки</div>
+          <div class="ms-badge earned" id="lesson-badge">+6💰</div>
+          <div class="chevron">▼</div>
+        </div>
+        <div class="ms-body open">
+          <div class="sub-tabs">
+            <div class="sub-tab active" onclick="pickTab(this)">📝 Повторение</div>
+            <div class="sub-tab" onclick="pickTab(this)">💻 Курс / репетитор</div>
+          </div>
+
+          <label class="fl">Предмет</label>
+          <div class="subj-pills">
+            <div class="subj-pill sel" onclick="this.classList.toggle('sel')">Математика</div>
+            <div class="subj-pill" onclick="this.classList.toggle('sel')">Русский</div>
+            <div class="subj-pill" onclick="this.classList.toggle('sel')">Английский</div>
+            <div class="subj-pill" onclick="this.classList.toggle('sel')">Физика</div>
+            <div class="subj-pill" onclick="this.classList.toggle('sel')">История</div>
+            <div class="subj-pill" onclick="this.classList.toggle('sel')">Биология</div>
+          </div>
+
+          <label class="fl" style="margin-top:4px">Выполнено</label>
+          <div id="lessons-list">
+            <div class="lesson-entry">
+              <div class="le-icon">✅</div>
+              <div class="le-name">Математика — повторение</div>
+              <div class="le-coins">+3💰</div>
+              <div class="le-del" onclick="delLesson(this)">✕</div>
+            </div>
+            <div class="lesson-entry">
+              <div class="le-icon">✅</div>
+              <div class="le-name">Английский — репетитор</div>
+              <div class="le-coins">+3💰</div>
+              <div class="le-del" onclick="delLesson(this)">✕</div>
+            </div>
+          </div>
+
+          <button class="add-btn" style="margin-top:4px" onclick="addLesson()">+ Добавить урок</button>
+        </div>
+      </div>
+
+      <!-- 🏠 Home Help -->
+      <div class="ms">
+        <div class="ms-header open" onclick="toggleSec(this)">
+          <div class="ms-emoji">🏠</div>
+          <div class="ms-title">Помощь по дому</div>
+          <div class="ms-badge earned" id="help-badge">+3💰</div>
+          <div class="chevron">▼</div>
+        </div>
+        <div class="ms-body open">
+          <div class="help-pills">
+            <div class="help-pill yes active" id="hp-yes" onclick="setHelp(true)">✅ Помог</div>
+            <div class="help-pill no" id="hp-no" onclick="setHelp(false)">❌ Не помог</div>
+          </div>
+          <div id="help-cmt">
+            <label class="fl">Что сделал?</label>
+            <input class="form-input" type="text" value="Помыл посуду и вынес мусор" placeholder="Опиши помощь...">
+          </div>
+        </div>
+      </div>
+
+      <!-- 🛏️ Room -->
+      <div class="ms">
+        <div class="ms-header" onclick="toggleSec(this)">
+          <div class="ms-emoji">🛏️</div>
+          <div class="ms-title">Комната</div>
+          <div class="ms-badge earned" id="room-badge">+3💰</div>
+          <div class="chevron">▼</div>
+        </div>
+        <div class="ms-body">
+          <div class="room-item" onclick="toggleRoom(this)">
+            <div class="room-chk on">✓</div><div class="room-label on">Застелена кровать</div>
+          </div>
+          <div class="room-item" onclick="toggleRoom(this)">
+            <div class="room-chk on">✓</div><div class="room-label on">Подметён пол</div>
+          </div>
+          <div class="room-item" onclick="toggleRoom(this)">
+            <div class="room-chk on">✓</div><div class="room-label on">Убрана парта</div>
+          </div>
+          <div class="room-item" onclick="toggleRoom(this)">
+            <div class="room-chk"></div><div class="room-label">Разобран шкаф</div>
+          </div>
+          <div class="room-item" onclick="toggleRoom(this)">
+            <div class="room-chk"></div><div class="room-label">Вынесен мусор</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ⭐ Behavior -->
+      <div class="ms">
+        <div class="ms-header" onclick="toggleSec(this)">
+          <div class="ms-emoji">⭐</div>
+          <div class="ms-title">Поведение</div>
+          <div class="ms-badge earned" id="beh-badge">+5💰</div>
+          <div class="chevron">▼</div>
+        </div>
+        <div class="ms-body">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0">
+            <span style="font-size:14px;font-weight:700">Хорошее поведение</span>
+            <label class="toggle-sw green">
+              <input type="checkbox" checked onchange="calcBehavior(this)">
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div style="font-size:11px;color:var(--dim);margin-top:6px;line-height:1.5">
+            В дни болезни 🤒 поведение автоматически считается хорошим — штрафов нет
+          </div>
+        </div>
+      </div>
+
+      <!-- 🏃 Sport -->
+      <div class="ms">
+        <div class="ms-header" onclick="toggleSec(this)">
+          <div class="ms-emoji">🏃</div>
+          <div class="ms-title">Спорт</div>
+          <div class="ms-badge zero" id="sport-badge">0💰</div>
+          <div class="chevron">▼</div>
+        </div>
+        <div class="ms-body">
+          <p style="font-size:13px;color:var(--dim);line-height:1.6">Домашние упражнения и секции — трекаются как обычно. Оценка тренера: 5→+10💰, 4→+5💰</p>
+        </div>
+      </div>
+
+    </div><!-- /modal-body -->
+
+    <!-- Sticky Coin Footer -->
+    <div class="coin-footer">
+      <div class="coins-breakdown">
+        <div class="chip vac" id="ch-read">📚 Чтение: +5💰</div>
+        <div class="chip vac" id="ch-lesson">📖 Уроки: +6💰</div>
+        <div class="chip on" id="ch-help">🏠 Помощь: +3💰</div>
+        <div class="chip on" id="ch-room">🛏️ Комната: +3💰</div>
+        <div class="chip on" id="ch-beh">⭐ Поведение: +5💰</div>
+      </div>
+      <div class="coin-row">
+        <div class="coin-lbl">Итого сегодня:</div>
+        <div class="coin-total" id="coin-total">+22💰</div>
+        <button class="save-btn">Сохранить</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- /phone-frame -->
+
+<script>
+// ─── Screen nav ───
+function go(n) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('s' + n).classList.add('active');
+  document.querySelectorAll('.nav-btn')[n-1].classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ─── Settings ───
+function showForm() {
+  document.getElementById('add-form').classList.add('visible');
+  document.getElementById('add-btn').style.display = 'none';
+}
+function hideForm() {
+  document.getElementById('add-form').classList.remove('visible');
+  document.getElementById('add-btn').style.display = '';
+}
+function delPeriod(btn) {
+  const card = btn.closest('.period-card');
+  card.style.animation = 'fadeOut 0.3s ease forwards';
+  setTimeout(() => card.remove(), 300);
+}
+function pickEmoji(el) {
+  document.querySelectorAll('.emoji-opt').forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function pickChild(el) {
+  el.closest('.child-toggle').querySelectorAll('.child-opt').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ─── Dashboard ───
+function toggleToday() {
+  const p = document.getElementById('today-panel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+function toggleSick() {
+  const sick = document.getElementById('sick-chk').checked;
+  document.getElementById('sick-note').style.display = sick ? 'block' : 'none';
+  const cell = document.getElementById('today-cell');
+  const icon = document.getElementById('today-icon');
+  const badge = document.getElementById('type-badge');
+  if (sick) {
+    cell.className = 'day-cell sick today-cell';
+    icon.textContent = '🤒';
+    badge.textContent = '🤒 Болеет';
+  } else {
+    cell.className = 'day-cell vacation today-cell';
+    icon.textContent = '🌸';
+    badge.textContent = '🌸 Каникулы';
+  }
+}
+
+// ─── Modal sections ───
+function toggleSec(header) {
+  const body = header.nextElementSibling;
+  header.classList.toggle('open');
+  body.classList.toggle('open');
+}
+
+// ─── Book autocomplete ───
+function openBooks() { document.getElementById('book-drop').classList.add('open'); }
+function closeBooks() { setTimeout(() => document.getElementById('book-drop').classList.remove('open'), 150); }
+function pickBook(name) { document.getElementById('book-input').value = name; }
+
+// ─── Pages stepper ───
+let pages = 25;
+function chPages(d) {
+  pages = Math.max(0, Math.min(500, pages + d));
+  document.getElementById('pages-v').textContent = pages;
+  calcRead();
+}
+
+// ─── Time stepper + slider ───
+let mins = 35;
+function chTime(d) {
+  mins = Math.max(0, Math.min(120, mins + d));
+  document.getElementById('time-v').textContent = mins;
+  document.getElementById('time-sl').value = mins;
+  updateSlider();
+  calcRead();
+}
+function slTime(v) {
+  mins = parseInt(v);
+  document.getElementById('time-v').textContent = mins;
+  updateSlider();
+  calcRead();
+}
+function updateSlider() {
+  const pct = (mins / 120) * 100;
+  document.getElementById('time-sl').style.background =
+    `linear-gradient(to right, var(--vac) 0%, var(--vac) ${pct}%, rgba(255,255,255,0.12) ${pct}%, rgba(255,255,255,0.12) 100%)`;
+}
+
+// ─── Reading coins ───
+function calcRead() {
+  const done = document.getElementById('book-done').checked;
+  let coins = 0, hint = '';
+  if (pages >= 20 || mins >= 30) {
+    coins = 5;
+    hint = `${mins} мин / ${pages} стр → +5💰 (≥30 мин или ≥20 стр)`;
+  } else if (pages >= 10 || mins >= 15) {
+    coins = 3;
+    hint = `${mins} мин / ${pages} стр → +3💰 (≥15 мин или ≥10 стр)`;
+  } else {
+    hint = `${mins} мин / ${pages} стр → 0💰 (нужно ≥15 мин или ≥10 стр)`;
+  }
+  if (done) { coins += 10; hint += ' + книга дочитана 🎉 +10💰'; }
+  document.getElementById('read-hint').textContent = '🪙 ' + hint;
+  setBadge('read-badge', coins);
+  document.getElementById('ch-read').textContent = '📚 Чтение: +' + coins + '💰';
+  document.getElementById('ch-read').className = 'chip ' + (coins > 0 ? 'vac' : '');
+  calcTotal();
+}
+
+// ─── Lessons ───
+function addLesson() {
+  const list = document.getElementById('lessons-list');
+  const e = document.createElement('div');
+  e.className = 'lesson-entry';
+  e.innerHTML = '<div class="le-icon">✅</div><div class="le-name">Новый урок</div><div class="le-coins">+3💰</div><div class="le-del" onclick="delLesson(this)">✕</div>';
+  list.appendChild(e);
+  calcLessons();
+}
+function delLesson(btn) {
+  btn.closest('.lesson-entry').remove();
+  calcLessons();
+}
+function calcLessons() {
+  const n = document.querySelectorAll('.lesson-entry').length;
+  const coins = n * 3;
+  setBadge('lesson-badge', coins);
+  document.getElementById('ch-lesson').textContent = '📖 Уроки: +' + coins + '💰';
+  document.getElementById('ch-lesson').className = 'chip ' + (coins > 0 ? 'vac' : '');
+  calcTotal();
+}
+function pickTab(el) {
+  el.closest('.sub-tabs').querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ─── Help ───
+let helped = true;
+function setHelp(v) {
+  helped = v;
+  document.getElementById('hp-yes').className = 'help-pill yes' + (v ? ' active' : '');
+  document.getElementById('hp-no').className = 'help-pill no' + (!v ? ' active' : '');
+  document.getElementById('help-cmt').style.display = v ? 'block' : 'none';
+  const coins = v ? 3 : 0;
+  setBadge('help-badge', coins);
+  const chip = document.getElementById('ch-help');
+  chip.textContent = '🏠 Помощь: +' + coins + '💰';
+  chip.className = 'chip' + (coins > 0 ? ' on' : '');
+  calcTotal();
+}
+
+// ─── Room ───
+function toggleRoom(row) {
+  const chk = row.querySelector('.room-chk');
+  const lbl = row.querySelector('.room-label');
+  chk.classList.toggle('on');
+  lbl.classList.toggle('on');
+  chk.textContent = chk.classList.contains('on') ? '✓' : '';
+  calcRoom();
+}
+function calcRoom() {
+  const n = document.querySelectorAll('.room-chk.on').length;
+  const coins = n >= 3 ? 3 : 0;
+  setBadge('room-badge', coins);
+  const chip = document.getElementById('ch-room');
+  chip.textContent = '🛏️ Комната: +' + coins + '💰';
+  chip.className = 'chip' + (coins > 0 ? ' on' : '');
+  calcTotal();
+}
+
+// ─── Behavior ───
+function calcBehavior(input) {
+  const coins = input.checked ? 5 : 0;
+  setBadge('beh-badge', coins);
+  const chip = document.getElementById('ch-beh');
+  chip.textContent = '⭐ Поведение: +' + coins + '💰';
+  chip.className = 'chip' + (coins > 0 ? ' on' : '');
+  calcTotal();
+}
+
+// ─── Badge helper ───
+function setBadge(id, coins) {
+  const el = document.getElementById(id);
+  el.textContent = coins > 0 ? '+' + coins + '💰' : '0💰';
+  el.className = 'ms-badge ' + (coins > 0 ? 'earned' : 'zero');
+}
+
+// ─── Total ───
+function calcTotal() {
+  const ids = ['read-badge','lesson-badge','help-badge','room-badge','beh-badge'];
+  const total = ids.reduce((sum, id) => {
+    const v = parseInt(document.getElementById(id).textContent) || 0;
+    return sum + v;
+  }, 0);
+  const el = document.getElementById('coin-total');
+  el.textContent = '+' + total + '💰';
+  el.classList.remove('bump');
+  void el.offsetWidth;
+  el.classList.add('bump');
+}
+
+// ─── Book done sparkles ───
+document.getElementById('book-done').addEventListener('change', function() {
+  if (!this.checked) return;
+  for (let i = 0; i < 7; i++) {
+    setTimeout(() => {
+      const s = document.createElement('div');
+      s.className = 'sparkle';
+      s.textContent = ['✨','💫','⭐','🌟','💰','🎉','📚'][i];
+      s.style.left = (10 + i * 12) + '%';
+      s.style.top = '50vh';
+      document.body.appendChild(s);
+      setTimeout(() => s.remove(), 900);
+    }, i * 80);
+  }
+});
+
+// Init slider fill
+updateSlider();
+</script>
+</body>
+</html>

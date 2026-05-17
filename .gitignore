@@ -33,3 +33,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .mcp.json
+
+# Claude Code local settings (may contain credentials)
+.claude/settings.local.json
