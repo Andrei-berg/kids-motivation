@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-last_updated: "2026-05-17T13:11:42.801Z"
+last_updated: "2026-05-17T13:17:15.200Z"
 progress:
   total_phases: 34
-  completed_phases: 17
+  completed_phases: 18
   total_plans: 76
-  completed_plans: 75
+  completed_plans: 76
 ---
 
 # STATE.md — Текущее состояние проекта
@@ -108,6 +108,7 @@ Resume file: None
 - [Phase 04.4]: AuditScreen uses 'tasks' icon as fallback for audit nav item (Icon component has no 'audit' SVG path)
 - [Phase 04.4-02]: coins_price in plan interface was wrong — actual RewardPurchase field is price_coins (auto-fixed Rule 1)
 - [Phase 04.4-02]: void insertAuditEvent fire-and-forget pattern established: audit failure never blocks parent workflows; repo-layer events minimal, component-layer events carry full context
+- [Phase 04.4]: arraybuffer used for JSZip output in export route — BodyInit compatible with Next.js Response; family-summary endpoint created for Danger Zone count display
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 - Three-strategy fetch handler: passthrough for /api/ and supabase.co, cache-first for /_next/static/, network-first for pages
