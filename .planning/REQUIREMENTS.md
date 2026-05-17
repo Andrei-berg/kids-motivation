@@ -24,8 +24,8 @@ Requirements for v4.0 PWA Polish milestone. Each maps to roadmap phases.
 
 ### Security / Compliance
 
-- [ ] **SEC-01**: User can delete account with full data cascade; data export available; consent gate shown for children under 13 (COPPA/GDPR)
-- [ ] **SEC-02**: Parent actions are recorded in an audit log (shop confirmations, settings changes, coin adjustments)
+- [x] **SEC-01**: User can delete account with full data cascade; data export available; consent gate shown for children under 13 (COPPA/GDPR)
+- [x] **SEC-02**: Parent actions are recorded in an audit log (shop confirmations, settings changes, coin adjustments)
 
 ### Desktop
 
@@ -70,8 +70,8 @@ Updated during roadmap creation.
 | UX-01 | Phase 4.2 (ux-polish) | Complete |
 | UX-02 | Phase 4.2 (ux-polish) | Pending |
 | LOC-01 | Phase 4.3 (localization) | Complete |
-| SEC-01 | Phase 4.4 (security-compliance) | Pending |
-| SEC-02 | Phase 4.4 (security-compliance) | Pending |
+| SEC-01 | Phase 4.4 (security-compliance) | Complete |
+| SEC-02 | Phase 4.4 (security-compliance) | Complete |
 | DSK-01 | Phase 4.5 (desktop) | Pending |
 | DSK-02 | Phase 4.5 (desktop) | Pending |
 | DSK-03 | Phase 4.5 (desktop) | Pending |

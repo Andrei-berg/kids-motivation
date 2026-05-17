@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
-status: unknown
-last_updated: "2026-05-17T03:17:26.733Z"
+status: in_progress
+last_updated: "2026-05-17T13:07:18Z"
 progress:
   total_phases: 34
   completed_phases: 17
   total_plans: 71
-  completed_plans: 71
+  completed_plans: 72
 ---
 
 # STATE.md — Текущее состояние проекта
@@ -21,8 +21,8 @@ progress:
 
 ```
 Milestone v4.0 PWA Polish — In Progress
-Phase 4.3 (localization): COMPLETE — all 7 plans executed, LOC-01 satisfied
-Last activity: 2026-05-17 — executed 04.3-06 (day-type labels, badge names/descriptions, audit log today/yesterday, shop templates, layout title all localized)
+Phase 4.4 (security-compliance): IN PROGRESS — plan 01/05 complete (audit DB foundation)
+Last activity: 2026-05-17 — executed 04.4-01 (parent_audit_events table, consent_given column, audit.repo.ts)
 ```
 
 Progress: [████░░░░░░] 20% (1/5 phases complete)
@@ -79,8 +79,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-17T03:16:25Z
-Stopped at: Completed 04.3-06-PLAN.md — all 5 remaining Russian string gaps closed (day-type labels, badge names/descriptions, audit log today/yesterday, shop templates, layout title). Phase 4.3 localization COMPLETE.
+Last session: 2026-05-17T13:07:18Z
+Stopped at: Completed 04.4-01-PLAN.md — parent_audit_events table + consent_given column migration + audit.repo.ts with insertAuditEvent/getAuditEvents
 Resume file: None
 
 ---
@@ -120,3 +120,9 @@ Resume file: None
 - useCountUp hook uses rAF with cubic ease-out (same pattern as AnimatedNum in kid/design/atoms.tsx) — no framer-motion for count-up, simpler and no extra dependency
 - ease: 'easeOut' as const required to satisfy Framer Motion's Easing type in strict TypeScript — plain string literal rejected
 - Activity feed capped at 8 items, badge grid at 12, wallet transactions at 10 — all animations complete under 500ms total
+
+### Phase 04.4 — Plan 01 (2026-05-17)
+- insertAuditEvent is non-blocking (catches errors, logs, never throws) — audit failures must not disrupt the parent action being audited
+- action_type enforced by both SQL CHECK constraint and TypeScript union type — double safety
+- consent_given uses three-state Boolean (NULL=not asked, TRUE=given, FALSE=withdrawn) to distinguish not-asked from denied
+- Used import { supabase } from '@/lib/supabase' singleton (consistent with all existing repos) instead of createClient() from plan template
