@@ -116,7 +116,7 @@ Plans:
   2. A browser set to Russian loads the app entirely in Russian — all labels, buttons, and error messages
   3. A user can switch language at any time via a visible language toggle and the UI updates immediately without page reload
   4. No hardcoded Russian or English strings remain in the codebase — all text passes through the i18n layer
-**Plans**: 6 plans
+**Plans**: 7 plans
 Plans:
 - [ ] 04.3-01-PLAN.md — i18n foundation: lib/i18n.tsx context + Zustand language slice + translation files (en/ru JSON) + LanguageToggle
 - [ ] 04.3-02-PLAN.md — Apply t() to navigation (NavBar, KidNav, ParentNav), auth pages, InstallPrompt, OfflineBanner, chat components
@@ -124,6 +124,7 @@ Plans:
 - [ ] 04.3-04-PLAN.md — Apply t() to modal components (DailyModal, CoachRatingModal, P2PTransfer, Goals, Shop, Exchange, Withdraw, Bulk) + WalletDashboard + AuditLogViewer
 - [ ] 04.3-05a-PLAN.md — Apply t() to wallboard, parent shop, onboarding, remaining client pages + components
 - [ ] 04.3-05b-PLAN.md — Apply t() to settings manager components (10) + server-side push files
+- [ ] 04.3-06-PLAN.md — Gap closure: fix day-type labels, badge titles, AuditLogViewer today/yesterday, parent shop templates, layout.tsx metadata
 
 ### Phase 4.4: security-compliance
 **Goal**: Families can trust their data is protected and parents have full visibility into account changes
@@ -198,4 +199,4 @@ Plans:
 
 ---
 
-*Created: 2026-03-01. Updated: 2026-05-16 — 04.3 planned: 5 plans (i18n foundation, nav/auth, kid pages, modals, settings/remaining).*
+*Created: 2026-03-01. Updated: 2026-05-17 — 04.3-06 gap closure plan added (5 gaps: day-type labels, badge titles, AuditLogViewer today/yesterday, shop templates, layout metadata).*
