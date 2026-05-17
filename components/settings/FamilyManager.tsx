@@ -34,6 +34,10 @@ export default function FamilyManager() {
   const [addChildError, setAddChildError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Consent gate (COPPA: required for children under 13)
+  const [showConsentGate, setShowConsentGate] = useState(false)
+  const [consentChecked, setConsentChecked] = useState(false)
+
   const currentYear = new Date().getFullYear()
   const yearOptions = Array.from({ length: 19 }, (_, i) => currentYear - i)
 
@@ -101,6 +105,21 @@ export default function FamilyManager() {
     if (!childName.trim()) { setAddChildError(t('settings.familyManager.childNameRequired')); return }
     if (!familyId || !userId) { setAddChildError(t('settings.familyManager.familyNotFound')); return }
 
+    const age = currentYear - birthYear
+
+    if (age < 13) {
+      // COPPA: show consent gate — do NOT create the child yet
+      setShowConsentGate(true)
+      return
+    }
+
+    // Child is 13+: create without consent gate (consent_given = null, no gate needed)
+    await doCreateChild(null)
+  }
+
+  // Design decision: consent denial = no child created = no pending state shown.
+  // If future flow requires deferred consent, add consent_given=false path here.
+  async function doCreateChild(consentGiven: boolean | null) {
     setAddingChild(true)
     setAddChildError('')
 
@@ -130,6 +149,7 @@ export default function FamilyManager() {
           display_name: childName.trim(),
           birth_year: birthYear,
           avatar_url: avatarUrl ?? null,
+          consent_given: consentGiven,
         })
         .select('id, display_name, avatar_url, role, user_id')
         .single()
@@ -138,6 +158,8 @@ export default function FamilyManager() {
 
       setMembers(prev => [...prev, newMember])
       resetAddChildForm()
+      setShowConsentGate(false)
+      setConsentChecked(false)
     } catch (err) {
       setAddChildError(err instanceof Error ? err.message : t('common.error'))
     } finally {
@@ -231,6 +253,103 @@ export default function FamilyManager() {
           )
         })}
       </div>
+
+      {/* Consent gate modal (COPPA: shown when child is under 13) */}
+      {showConsentGate && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.75)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+        >
+          <div
+            style={{
+              background: '#1a1a2e',
+              border: '1px solid rgba(99,102,241,0.4)',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '380px',
+              width: '100%',
+            }}
+          >
+            <div style={{ fontWeight: 700, fontSize: '18px', color: '#fff', marginBottom: '8px' }}>
+              {t('consent.title')}
+            </div>
+            <div style={{ fontSize: '14px', color: '#9ca3af', marginBottom: '16px' }}>
+              {t('consent.subtitle')}
+            </div>
+
+            <div style={{ fontSize: '13px', color: '#d1d5db', marginBottom: '4px', fontWeight: 600 }}>
+              {t('consent.dataListTitle')}
+            </div>
+            <ul style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '16px', paddingLeft: '16px' }}>
+              <li style={{ marginBottom: '4px' }}>{t('consent.dataItem1')}</li>
+              <li style={{ marginBottom: '4px' }}>{t('consent.dataItem2')}</li>
+              <li style={{ marginBottom: '4px' }}>{t('consent.dataItem3')}</li>
+              <li style={{ marginBottom: '4px' }}>{t('consent.dataItem4')}</li>
+            </ul>
+
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '20px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={consentChecked}
+                onChange={e => setConsentChecked(e.target.checked)}
+                style={{ marginTop: '2px', flexShrink: 0 }}
+              />
+              <span style={{ fontSize: '13px', color: '#d1d5db' }}>
+                {t('consent.checkboxLabel')}
+              </span>
+            </label>
+
+            {addChildError && (
+              <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '8px 12px', color: '#f87171', fontSize: '13px', marginBottom: '12px' }}>
+                {addChildError}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => doCreateChild(true)}
+                disabled={!consentChecked || addingChild}
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  background: consentChecked ? '#059669' : '#374151',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: '14px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  cursor: consentChecked && !addingChild ? 'pointer' : 'not-allowed',
+                  opacity: !consentChecked || addingChild ? 0.5 : 1,
+                }}
+              >
+                {addingChild ? '...' : t('consent.confirmBtn')}
+              </button>
+              <button
+                onClick={() => { setShowConsentGate(false); setConsentChecked(false) }}
+                style={{
+                  padding: '10px 16px',
+                  background: '#374151',
+                  color: '#9ca3af',
+                  fontSize: '14px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                {t('consent.cancelBtn')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add child form */}
       {showAddChild && (

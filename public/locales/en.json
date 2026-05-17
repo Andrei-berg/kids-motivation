@@ -1225,5 +1225,17 @@
     "children": "Children",
     "tasks": "Tasks",
     "stats": "Stats"
+  },
+  "consent": {
+    "title": "Parental Consent Required",
+    "subtitle": "This child is under 13. Parental consent is required before creating their account.",
+    "dataListTitle": "Data collected for this child:",
+    "dataItem1": "Grades and academic performance",
+    "dataItem2": "Daily behavior and room cleaning",
+    "dataItem3": "Coin balance and transaction history",
+    "dataItem4": "Chat messages within the family",
+    "checkboxLabel": "I consent as the parent/guardian to data collection for this child",
+    "confirmBtn": "Confirm & Create Account",
+    "cancelBtn": "Cancel"
   }
 }

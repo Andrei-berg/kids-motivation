@@ -203,7 +203,8 @@ export async function createFamily(
 export async function addChildToFamily(
   familyId: string,
   parentUserId: string,
-  child: { displayName: string; birthYear?: number; avatarUrl?: string }
+  child: { displayName: string; birthYear?: number; avatarUrl?: string },
+  consentGiven?: boolean | null
 ): Promise<ChildMember> {
   const supabase = createClient()
 
@@ -217,6 +218,7 @@ export async function addChildToFamily(
       display_name: child.displayName,
       birth_year: child.birthYear ?? null,
       avatar_url: child.avatarUrl ?? null,
+      consent_given: consentGiven ?? null,
     })
     .select('id')
     .single()
