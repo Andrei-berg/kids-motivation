@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-last_updated: "2026-05-16T17:18:52.140Z"
+last_updated: "2026-05-17T00:00:00.000Z"
 progress:
   total_phases: 34
   completed_phases: 16
@@ -13,7 +13,7 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-05-16 — executed 04.3-05b (all 10 settings components localized; push files marked TODO).
+> Обновляется после каждой фазы. Последнее обновление: 2026-05-17 — executed 04.3-04 (all 10 modal and wallet components localized; coachRatingModal.* namespace added).
 
 ---
 
@@ -21,8 +21,8 @@ progress:
 
 ```
 Milestone v4.0 PWA Polish — In Progress
-Phase 4.3 (localization): Plan 05b COMPLETE (full UI-layer localization done)
-Last activity: 2026-05-16 — executed 04.3-05b (SubjectsManager, ActivitiesManager, StreakSettings, CoinRulesEditor, NotificationSettings, FamilyManager localized; push server files marked TODO)
+Phase 4.3 (localization): Plan 04 COMPLETE (all 10 modal and wallet components localized)
+Last activity: 2026-05-17 — executed 04.3-04 (DailyModal, CoachRatingModal, P2PTransferModal, GoalsModal, ShopModal, ExchangeModal, WithdrawModal, BulkModal, WalletDashboard, AuditLogViewer localized)
 ```
 
 Progress: [████░░░░░░] 20% (1/5 phases complete)
@@ -79,8 +79,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-16T17:12:44Z
-Stopped at: Completed 04.3-03-PLAN.md — all 6 kid pages localized (achievements, wallet, shop, day, leaderboard, KidDayFillForm)
+Last session: 2026-05-17T00:00:00Z
+Stopped at: Completed 04.3-04-PLAN.md — all 10 modal and wallet components localized (DailyModal, CoachRatingModal, P2PTransferModal, GoalsModal, ShopModal, ExchangeModal, WithdrawModal, BulkModal, WalletDashboard, AuditLogViewer)
 Resume file: None
 
 ---
