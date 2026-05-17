@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-last_updated: "2026-05-17T00:00:00.000Z"
+last_updated: "2026-05-17T03:17:26.733Z"
 progress:
   total_phases: 34
-  completed_phases: 16
-  total_plans: 70
-  completed_plans: 69
+  completed_phases: 17
+  total_plans: 71
+  completed_plans: 71
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-05-17 — executed 04.3-04 (all 10 modal and wallet components localized; coachRatingModal.* namespace added).
+> Обновляется после каждой фазы. Последнее обновление: 2026-05-17 — executed 04.3-06 (all 5 remaining Russian string gaps closed; LOC-01 fully satisfied).
 
 ---
 
@@ -21,8 +21,8 @@ progress:
 
 ```
 Milestone v4.0 PWA Polish — In Progress
-Phase 4.3 (localization): Plan 04 COMPLETE (all 10 modal and wallet components localized)
-Last activity: 2026-05-17 — executed 04.3-04 (DailyModal, CoachRatingModal, P2PTransferModal, GoalsModal, ShopModal, ExchangeModal, WithdrawModal, BulkModal, WalletDashboard, AuditLogViewer localized)
+Phase 4.3 (localization): COMPLETE — all 7 plans executed, LOC-01 satisfied
+Last activity: 2026-05-17 — executed 04.3-06 (day-type labels, badge names/descriptions, audit log today/yesterday, shop templates, layout title all localized)
 ```
 
 Progress: [████░░░░░░] 20% (1/5 phases complete)
@@ -79,8 +79,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-17T00:00:00Z
-Stopped at: Completed 04.3-04-PLAN.md — all 10 modal and wallet components localized (DailyModal, CoachRatingModal, P2PTransferModal, GoalsModal, ShopModal, ExchangeModal, WithdrawModal, BulkModal, WalletDashboard, AuditLogViewer)
+Last session: 2026-05-17T03:16:25Z
+Stopped at: Completed 04.3-06-PLAN.md — all 5 remaining Russian string gaps closed (day-type labels, badge names/descriptions, audit log today/yesterday, shop templates, layout title). Phase 4.3 localization COMPLETE.
 Resume file: None
 
 ---
@@ -100,6 +100,9 @@ Resume file: None
 - [Phase 04.3]: todayLabel() uses toLocaleDateString with locale from useLanguage() — no hardcoded Russian day/month arrays
 - [Phase 04.3-05a]: CATEGORY_LABELS, ROLES, and DAYS arrays moved inside components to allow useT() hook access
 - [Phase 04.3-05a]: ru.json onboarding section extended with 60+ missing keys to match en.json
+- [Phase 04.3]: getDayType optional t param: t?() ternary with Russian string fallback preserves backward compat for server-side callers
+- [Phase 04.3]: BADGES keep original title/description for DB storage; new titleKey/descKey fields used for UI display only — t(badge.titleKey) at render time
+- [Phase 04.3]: STARTER_TEMPLATES use English canonical strings — written to DB as static strings, English is authoritative; parents can edit after loading
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 - Three-strategy fetch handler: passthrough for /api/ and supabase.co, cache-first for /_next/static/, network-first for pages
