@@ -2,18 +2,18 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
-status: in_progress
-last_updated: "2026-05-17T13:07:18Z"
+status: unknown
+last_updated: "2026-05-17T13:11:30.769Z"
 progress:
   total_phases: 34
   completed_phases: 17
-  total_plans: 71
-  completed_plans: 72
+  total_plans: 76
+  completed_plans: 75
 ---
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-05-17 — executed 04.3-06 (all 5 remaining Russian string gaps closed; LOC-01 fully satisfied).
+> Обновляется после каждой фазы. Последнее обновление: 2026-05-17 — executed 04.4-05 (COPPA consent gate in FamilyManager; consent_given written to family_members).
 
 ---
 
@@ -21,8 +21,8 @@ progress:
 
 ```
 Milestone v4.0 PWA Polish — In Progress
-Phase 4.4 (security-compliance): IN PROGRESS — plan 01/05 complete (audit DB foundation)
-Last activity: 2026-05-17 — executed 04.4-01 (parent_audit_events table, consent_given column, audit.repo.ts)
+Phase 4.4 (security-compliance): IN PROGRESS — plans 01 and 05 complete
+Last activity: 2026-05-17 — executed 04.4-05 (COPPA consent gate in FamilyManager, consent_given in onboarding-api.ts)
 ```
 
 Progress: [████░░░░░░] 20% (1/5 phases complete)
@@ -79,8 +79,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-17T13:07:18Z
-Stopped at: Completed 04.4-01-PLAN.md — parent_audit_events table + consent_given column migration + audit.repo.ts with insertAuditEvent/getAuditEvents
+Last session: 2026-05-17T13:10:00Z
+Stopped at: Completed 04.4-05-PLAN.md — COPPA consent gate in FamilyManager + consent_given in onboarding-api.ts
 Resume file: None
 
 ---
@@ -103,6 +103,9 @@ Resume file: None
 - [Phase 04.3]: getDayType optional t param: t?() ternary with Russian string fallback preserves backward compat for server-side callers
 - [Phase 04.3]: BADGES keep original title/description for DB storage; new titleKey/descKey fields used for UI display only — t(badge.titleKey) at render time
 - [Phase 04.3]: STARTER_TEMPLATES use English canonical strings — written to DB as static strings, English is authoritative; parents can edit after loading
+- [Phase 04.4]: COPPA consent denial = no child created = no pending state shown (correct COPPA behavior)
+- [Phase 04.4]: FamilyManager.tsx uses direct Supabase insert; consent_given added to both FamilyManager and addChildToFamily paths
+- [Phase 04.4]: AuditScreen uses 'tasks' icon as fallback for audit nav item (Icon component has no 'audit' SVG path)
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 - Three-strategy fetch handler: passthrough for /api/ and supabase.co, cache-first for /_next/static/, network-first for pages

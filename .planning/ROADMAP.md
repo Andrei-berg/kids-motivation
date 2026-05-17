@@ -197,7 +197,7 @@ Plans:
 | 4.1 pwa | v4.0 | 3/3 | Complete | 2026-04-26 |
 | 4.2 ux-polish | v4.0 | 4/4 | Complete | 2026-05-16 |
 | 4.3 localization | 4/6 | In Progress|  | - |
-| 4.4 security-compliance | v4.0 | 0/5 | Not started | - |
+| 4.4 security-compliance | 2/5 | In Progress|  | - |
 | 4.5 desktop | v4.0 | 0/? | Not started | - |
 | 5.1–5.3 | v5.0 | 0/? | Planned | - |
 | 6.1–6.3 | v6.0 | 0/? | Planned | - |
