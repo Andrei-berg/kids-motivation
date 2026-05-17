@@ -7,6 +7,8 @@ import type { ParentChild, ToastState } from '../types'
 import { getWalletSettings, updateWalletSettings } from '@/lib/wallet-api'
 import type { WalletSettings } from '@/lib/wallet-api'
 import { useLanguage, SUPPORTED_LANGUAGES } from '@/lib/i18n'
+import { insertAuditEvent } from '@/lib/repositories/audit.repo'
+import { useAppStore } from '@/lib/store'
 
 // ───── Child selector ─────
 function ChildSelector({ children, value, onChange }: {
@@ -141,6 +143,7 @@ function FamilyTab({ allChildren, notify }: { allChildren: ParentChild[]; notify
 
 // ───── Coins rules tab ─────
 function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => void }) {
+  const { familyId } = useAppStore()
   const [settings, setSettings] = useState<WalletSettings | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -159,6 +162,15 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
     try {
       await updateWalletSettings(settings)
       notify('Rules saved')
+      void insertAuditEvent({
+        family_id: familyId ?? '',
+        child_id: null,
+        action_type: 'settings_change',
+        description: 'Settings updated: coin reward rules',
+        coins_delta: null,
+        actor_user_id: null,
+        metadata: { tab: 'coins', field: 'wallet_settings' },
+      })
     } catch {
       notify('Failed to save', 'danger')
     } finally {
