@@ -36,4 +36,4 @@ export type ToastState = { msg: string; tone?: 'warn' | 'danger' } | null
 
 export type ModalState = { open: boolean; child: ParentChild | null; action: ActionType | null }
 
-export type Route = 'dashboard' | 'children' | 'tasks' | 'shop' | 'analytics' | 'settings' | 'child'
+export type Route = 'dashboard' | 'children' | 'tasks' | 'shop' | 'analytics' | 'settings' | 'child' | 'audit'

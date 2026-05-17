@@ -9,6 +9,7 @@ import { ChildrenScreen, TasksScreen, ShopScreen } from './screens/ChildrenTasks
 import AnalyticsScreen from './screens/Analytics'
 import SettingsScreen from './screens/Settings'
 import ChildProfile from './screens/ChildProfile'
+import AuditScreen from './screens/AuditScreen'
 import ActionModal from './screens/ActionModal'
 import ChatPanel from './screens/ChatPanel'
 import type { ParentChild, ActivityEntry, ActionType, ToastState, ModalState, Route } from './types'
@@ -225,6 +226,7 @@ export default function ParentCenter() {
     { id: 'tasks' as Route, label: t('parentNav.tasks'), icon: 'tasks' },
     { id: 'shop' as Route, label: t('nav.shop'), icon: 'shop' },
     { id: 'analytics' as Route, label: t('parentNav.stats'), icon: 'chart' },
+    { id: 'audit' as Route, label: t('audit.navLabel'), icon: 'tasks' },
   ]
   const pendingCount = pending.length
 
@@ -250,6 +252,8 @@ export default function ParentCenter() {
         return activeChild
           ? <ChildProfile child={activeChild} onBack={backFromChild} onAction={openAction}/>
           : null
+      case 'audit':
+        return <AuditScreen familyId={familyId ?? ''} children={children}/>
       default:
         return null
     }

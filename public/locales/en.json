@@ -1237,5 +1237,13 @@
     "checkboxLabel": "I consent as the parent/guardian to data collection for this child",
     "confirmBtn": "Confirm & Create Account",
     "cancelBtn": "Cancel"
+  },
+  "audit": {
+    "title": "Audit Log",
+    "navLabel": "Audit",
+    "filterAll": "All",
+    "loadMore": "Load more",
+    "noEvents": "No events yet",
+    "loading": "Loading..."
   }
 }
