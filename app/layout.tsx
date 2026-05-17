@@ -7,8 +7,8 @@ import { PageTransition } from '@/components/PageTransition'
 import { LanguageProvider } from '@/lib/i18n'
 
 export const metadata: Metadata = {
-  title: 'FamilyCoins — Мотивация для детей',
-  description: 'Семейная система мотивации для детей',
+  title: 'FamilyCoins — Kids Motivation',
+  description: 'Family motivation system for children',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,

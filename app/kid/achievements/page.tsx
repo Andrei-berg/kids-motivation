@@ -216,7 +216,7 @@ export default function AchievementsPage() {
                 <div style={{
                   marginTop: 6, fontFamily: T.fDisp, fontSize: 11, fontWeight: 800,
                   color: isEarned ? T.ink : T.ink3, textAlign: 'center', lineHeight: 1.15,
-                }}>{badge.title}</div>
+                }}>{t(badge.titleKey)}</div>
                 {isEarned ? (
                   <div style={{
                     marginTop: 4, padding: '1px 7px', borderRadius: 999,
@@ -260,8 +260,8 @@ export default function AchievementsPage() {
                 background: focused.r.labelBg, color: '#fff',
                 fontFamily: T.fDisp, fontSize: 10, fontWeight: 900, letterSpacing: 1,
               }}>{focused.r.label.toUpperCase()}</div>
-              <div style={{ fontFamily: T.fDisp, fontSize: 24, fontWeight: 900, color: T.ink, marginTop: 8 }}>{focused.title}</div>
-              <div style={{ fontFamily: T.fBody, fontSize: 14, color: T.ink3, marginTop: 4 }}>{focused.description}</div>
+              <div style={{ fontFamily: T.fDisp, fontSize: 24, fontWeight: 900, color: T.ink, marginTop: 8 }}>{t(focused.titleKey)}</div>
+              <div style={{ fontFamily: T.fBody, fontSize: 14, color: T.ink3, marginTop: 4 }}>{t(focused.descKey)}</div>
               {focused.isEarned ? (
                 <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.teal, fontWeight: 700, marginTop: 12 }}>
                   {t('achievements.earnedAt', { date: focused.earned?.earned_at ? new Date(focused.earned.earned_at).toLocaleDateString() : '' })}

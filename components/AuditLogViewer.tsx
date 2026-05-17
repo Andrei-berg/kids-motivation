@@ -34,7 +34,7 @@
  */
 
 import { useEffect, useState } from 'react'
-import { useT } from '@/lib/i18n'
+import { useT, useLanguage } from '@/lib/i18n'
 import { getAuditLog } from '@/lib/wallet-api'
 import type { AuditLog } from '@/lib/wallet-api'
 
@@ -52,6 +52,7 @@ export default function AuditLogViewer({
   showFilters = true
 }: AuditLogViewerProps) {
   const t = useT()
+  const { language } = useLanguage()
   const [logs, setLogs] = useState<AuditLog[]>([])
   const [filteredLogs, setFilteredLogs] = useState<AuditLog[]>([])
   const [loading, setLoading] = useState(true)
@@ -113,9 +114,9 @@ export default function AuditLogViewer({
     if (diffMins < 1) return t('auditLogExtra.justNow')
     if (diffMins < 60) return t('auditLogExtra.minsAgo', { mins: diffMins })
     if (diffHours < 24) return t('auditLogExtra.hoursAgo', { hours: diffHours })
-    if (diffDays === 0) return 'Сегодня ' + date.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })
-    if (diffDays === 1) return 'Вчера ' + date.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' })
-    return date.toLocaleString('ru', {
+    if (diffDays === 0) return t('auditLogExtra.today', { time: date.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' }) })
+    if (diffDays === 1) return t('auditLogExtra.yesterday', { time: date.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' }) })
+    return date.toLocaleString(language, {
       day: 'numeric',
       month: 'short',
       hour: '2-digit',

@@ -21,10 +21,11 @@ export function getDayType(
   date: string,
   isSick: boolean,
   vacationPeriods: VacationPeriod[],
-  childId?: string
+  childId?: string,
+  t?: (key: string) => string
 ): DayTypeInfo {
   if (isSick) {
-    return { type: 'sick', label: 'Болеет', emoji: '🤒' }
+    return { type: 'sick', label: t ? t('dayType.sick') : 'Болеет', emoji: '🤒' }
   }
 
   const period = vacationPeriods.find(p => {
@@ -45,10 +46,10 @@ export function getDayType(
   const d = new Date(date + 'T12:00:00')
   const dow = d.getDay()
   if (dow === 0 || dow === 6) {
-    return { type: 'weekend', label: 'Выходной', emoji: '📅' }
+    return { type: 'weekend', label: t ? t('dayType.weekend') : 'Выходной', emoji: '📅' }
   }
 
-  return { type: 'school', label: 'Учебный', emoji: '📚' }
+  return { type: 'school', label: t ? t('dayType.school') : 'Учебный', emoji: '📚' }
 }
 
 /** True for days where reading/help/lessons apply instead of school grades */

@@ -8,22 +8,22 @@ import type { Child } from '@/lib/api'
 import { useT } from '@/lib/i18n'
 
 const STARTER_TEMPLATES = [
-  { title: '+1 час на планшете', icon: '📱', category: 'virtual', price_coins: 150, description: 'Дополнительный час экранного времени' },
-  { title: 'Пицца на ужин — твой выбор', icon: '🍕', category: 'material', price_coins: 300, description: 'Заказать любимую пиццу' },
-  { title: 'Кино-вечер · твой фильм', icon: '🎬', category: 'experience', price_coins: 250, description: 'Выбираешь фильм на вечер' },
-  { title: '+30 минут не спать', icon: '🌙', category: 'virtual', price_coins: 180, description: 'Лечь спать на полчаса позже' },
-  { title: 'Друг с ночёвкой', icon: '🏕️', category: 'experience', price_coins: 500, description: 'Пригласить друга переночевать' },
-  { title: 'Пропустить 1 дело', icon: '🎟️', category: 'virtual', price_coins: 220, description: 'Отмена одного домашнего задания' },
-  { title: 'Поход в Бургер-Кинг', icon: '🍔', category: 'experience', price_coins: 350, description: 'Поход в фастфуд' },
-  { title: 'Аквапарк с семьёй', icon: '🏊', category: 'experience', price_coins: 1200, description: 'Поездка в аквапарк' },
-  { title: 'Новая Lego-фигурка', icon: '🧱', category: 'material', price_coins: 450, description: 'Купить новую фигурку Lego' },
-  { title: 'Новая книга на выбор', icon: '📚', category: 'material', price_coins: 400, description: 'Купить любую книгу на выбор' },
-  { title: '500₸ карманных', icon: '💵', category: 'money', price_coins: 333, description: 'Карманные деньги' },
-  { title: 'Картинг 15 минут', icon: '🏎️', category: 'experience', price_coins: 800, description: 'Поездка на картинге' },
-  { title: 'Поход в кино с попкорном', icon: '🍿', category: 'experience', price_coins: 600, description: 'Кино + попкорн' },
-  { title: 'Боулинг на выходных', icon: '🎳', category: 'experience', price_coins: 700, description: 'Игра в боулинг' },
-  { title: 'Купить любой стикер-пак', icon: '✨', category: 'material', price_coins: 120, description: 'Любой пак стикеров' },
-  { title: 'Заказ суши на двоих', icon: '🍣', category: 'material', price_coins: 550, description: 'Заказать суши' },
+  { title: '+1 hour tablet time', icon: '📱', category: 'virtual', price_coins: 150, description: 'Extra hour of screen time' },
+  { title: 'Pizza dinner — your choice', icon: '🍕', category: 'material', price_coins: 300, description: 'Order your favourite pizza' },
+  { title: 'Movie night · your pick', icon: '🎬', category: 'experience', price_coins: 250, description: 'You choose the film tonight' },
+  { title: '+30 minutes stay up', icon: '🌙', category: 'virtual', price_coins: 180, description: 'Go to bed 30 minutes later' },
+  { title: 'Friend sleepover', icon: '🏕️', category: 'experience', price_coins: 500, description: 'Invite a friend to stay the night' },
+  { title: 'Skip 1 chore', icon: '🎟️', category: 'virtual', price_coins: 220, description: 'Cancel one homework or chore' },
+  { title: 'Burger King trip', icon: '🍔', category: 'experience', price_coins: 350, description: 'Trip to fast food' },
+  { title: 'Water park with family', icon: '🏊', category: 'experience', price_coins: 1200, description: 'Day out at the water park' },
+  { title: 'New Lego set', icon: '🧱', category: 'material', price_coins: 450, description: 'Buy a new Lego figure or set' },
+  { title: 'New book of your choice', icon: '📚', category: 'material', price_coins: 400, description: 'Buy any book you want' },
+  { title: 'Pocket money', icon: '💵', category: 'money', price_coins: 333, description: 'Spending money' },
+  { title: 'Go-kart 15 min', icon: '🏎️', category: 'experience', price_coins: 800, description: 'Go-karting session' },
+  { title: 'Cinema with popcorn', icon: '🍿', category: 'experience', price_coins: 600, description: 'Movie + popcorn' },
+  { title: 'Bowling weekend', icon: '🎳', category: 'experience', price_coins: 700, description: 'Bowling game' },
+  { title: 'Any sticker pack', icon: '✨', category: 'material', price_coins: 120, description: 'Any sticker pack you like' },
+  { title: 'Sushi delivery for two', icon: '🍣', category: 'material', price_coins: 550, description: 'Order sushi' },
 ]
 
 type CategoryKey = 'virtual' | 'material' | 'experience' | 'money'

@@ -159,7 +159,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
   // Recompute day type when isSick or vacationPeriods change
   useEffect(() => {
-    setDayTypeInfo(getDayType(date, isSick, vacationPeriods, childId))
+    setDayTypeInfo(getDayType(date, isSick, vacationPeriods, childId, t))
   }, [isSick, vacationPeriods, date, childId])
 
   async function loadData() {

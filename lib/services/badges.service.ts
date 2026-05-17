@@ -7,8 +7,10 @@ import { getWeekRange, addDays } from '@/utils/helpers'
 
 interface Badge {
   key: string
-  title: string
-  description: string
+  title: string       // keep for backward compat (Russian fallback)
+  description: string // keep for backward compat
+  titleKey: string    // translation key for title
+  descKey: string     // translation key for description
   icon: string
   xp: number
 }
@@ -18,6 +20,8 @@ const BADGES: Badge[] = [
     key: 'week_excellent',
     title: 'Неделя отличника',
     description: '7 дней подряд только пятёрки',
+    titleKey: 'badges.week_excellent_title',
+    descKey: 'badges.week_excellent_desc',
     icon: '🌟',
     xp: 500
   },
@@ -25,6 +29,8 @@ const BADGES: Badge[] = [
     key: 'clean_master',
     title: 'Мастер чистоты',
     description: 'Комната убрана 30 дней подряд',
+    titleKey: 'badges.clean_master_title',
+    descKey: 'badges.clean_master_desc',
     icon: '🧹',
     xp: 800
   },
@@ -32,6 +38,8 @@ const BADGES: Badge[] = [
     key: 'sportsman',
     title: 'Спортсмен',
     description: 'Спорт 14 дней подряд',
+    titleKey: 'badges.sportsman_title',
+    descKey: 'badges.sportsman_desc',
     icon: '💪',
     xp: 600
   },
@@ -39,6 +47,8 @@ const BADGES: Badge[] = [
     key: 'goal_achiever',
     title: 'Целеустремлённый',
     description: 'Достиг первой цели',
+    titleKey: 'badges.goal_achiever_title',
+    descKey: 'badges.goal_achiever_desc',
     icon: '🎯',
     xp: 1000
   },
@@ -46,6 +56,8 @@ const BADGES: Badge[] = [
     key: 'perfect_week',
     title: 'Идеальная неделя',
     description: 'Неделя без штрафов',
+    titleKey: 'badges.perfect_week_title',
+    descKey: 'badges.perfect_week_desc',
     icon: '👑',
     xp: 400
   },
@@ -53,6 +65,8 @@ const BADGES: Badge[] = [
     key: 'study_lover',
     title: 'Любитель учёбы',
     description: 'Оценки 14 дней подряд',
+    titleKey: 'badges.study_lover_title',
+    descKey: 'badges.study_lover_desc',
     icon: '📚',
     xp: 400
   },
@@ -60,6 +74,8 @@ const BADGES: Badge[] = [
     key: 'coin_saver',
     title: 'Копилка',
     description: 'Накопи 500 монет, не тратя',
+    titleKey: 'badges.coin_saver_title',
+    descKey: 'badges.coin_saver_desc',
     icon: '💰',
     xp: 300
   },
@@ -67,6 +83,8 @@ const BADGES: Badge[] = [
     key: 'first_purchase',
     title: 'Первая покупка',
     description: 'Первая покупка в магазине',
+    titleKey: 'badges.first_purchase_title',
+    descKey: 'badges.first_purchase_desc',
     icon: '🛒',
     xp: 200
   },
@@ -74,6 +92,8 @@ const BADGES: Badge[] = [
     key: 'streak_30',
     title: 'Серия 30 дней',
     description: 'Любая серия достигла 30 дней подряд',
+    titleKey: 'badges.streak_30_title',
+    descKey: 'badges.streak_30_desc',
     icon: '🔥',
     xp: 700
   },
@@ -81,6 +101,8 @@ const BADGES: Badge[] = [
     key: 'full_week_grades',
     title: 'Отличный дневник',
     description: 'Оценки получены каждый день учебной недели',
+    titleKey: 'badges.full_week_grades_title',
+    descKey: 'badges.full_week_grades_desc',
     icon: '📋',
     xp: 350
   }
