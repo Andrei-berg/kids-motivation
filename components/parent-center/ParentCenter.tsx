@@ -19,6 +19,8 @@ import { getStreaks } from '@/lib/repositories/children.repo'
 import { getWeekScore } from '@/lib/services/coins.service'
 import { getWeekRange } from '@/utils/helpers'
 import { getSubjects } from '@/lib/flexible-api'
+import { insertAuditEvent } from '@/lib/repositories/audit.repo'
+import { useAppStore } from '@/lib/store'
 
 function ParentCenterSkeleton() {
   return (
@@ -51,6 +53,7 @@ function ParentCenterSkeleton() {
 
 export default function ParentCenter() {
   const t = useT()
+  const { familyId } = useAppStore()
   const [route, setRoute] = useState<Route>('dashboard')
   const [openChild, setOpenChild] = useState<string | null>(null)
   const [chatOpen, setChatOpen] = useState(false)
@@ -162,6 +165,15 @@ export default function ParentCenter() {
     const map: Record<ActionType, string> = { reward: 'Rewarded', penalty: 'Penalty applied to', bonus: 'Bonus for', freeze: 'Froze streak for' }
     notify(`${map[data.action]} ${data.child.name}${data.action !== 'freeze' ? ' · ' + (data.amount > 0 ? '+' : '') + data.amount + '🪙' : ''}`,
       data.action === 'penalty' ? 'warn' : undefined)
+    void insertAuditEvent({
+      family_id: familyId ?? '',
+      child_id: data.child.id,
+      action_type: 'coin_adjust',
+      description: `${data.action === 'reward' ? 'Rewarded' : data.action === 'penalty' ? 'Penalized' : 'Bonus for'} ${data.child.name}: ${data.amount > 0 ? '+' : ''}${data.amount}💰${data.reason ? ` — ${data.reason}` : ''}`,
+      coins_delta: data.action === 'freeze' ? null : data.amount,
+      actor_user_id: null,
+      metadata: { action: data.action, reason: data.reason },
+    })
   }
 
   const handleApprove = async (p: RewardPurchase) => {
@@ -169,6 +181,15 @@ export default function ParentCenter() {
       await approvePurchase(p.id)
       setPending(prev => prev.filter(x => x.id !== p.id))
       notify(`Approved: ${p.reward_title}`)
+      void insertAuditEvent({
+        family_id: familyId ?? '',
+        child_id: p.child_id ?? null,
+        action_type: 'shop_approve',
+        description: `Approved shop purchase: ${p.reward_title} (${p.price_coins}💰) for ${children.find(c => c.id === p.child_id)?.name ?? p.child_id}`,
+        coins_delta: -(p.price_coins ?? 0),
+        actor_user_id: null,
+        metadata: { purchase_id: p.id },
+      })
     } catch {
       notify('Failed to approve', 'danger')
     }
@@ -179,6 +200,15 @@ export default function ParentCenter() {
       await rejectPurchase(p.id)
       setPending(prev => prev.filter(x => x.id !== p.id))
       notify(`Declined: ${p.reward_title}`, 'warn')
+      void insertAuditEvent({
+        family_id: familyId ?? '',
+        child_id: p.child_id ?? null,
+        action_type: 'shop_reject',
+        description: `Rejected shop purchase: ${p.reward_title} for ${children.find(c => c.id === p.child_id)?.name ?? p.child_id}`,
+        coins_delta: null,
+        actor_user_id: null,
+        metadata: { purchase_id: p.id },
+      })
     } catch {
       notify('Failed to decline', 'danger')
     }
