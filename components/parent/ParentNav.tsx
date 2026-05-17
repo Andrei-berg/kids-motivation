@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useT } from '@/lib/i18n'
-import { LanguageToggle } from '@/components/LanguageToggle'
 
 const NAV_LINK_DEFS = [
   {
@@ -110,7 +109,6 @@ export default function ParentNav() {
             </Link>
           )
         })}
-        <LanguageToggle className="ml-2" />
         <button
           onClick={handleSignOut}
           className="ml-auto flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"

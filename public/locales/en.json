@@ -1219,5 +1219,11 @@
     "previewBadNote": "❌ WHY COME IF YOU WERE LAZY?",
     "previewBadHint": "Sport is not just a checkbox for coins!",
     "previewBadChoice": "Two options: come and WORK HARD, or don't come at all."
+  },
+  "parentNav": {
+    "home": "Home",
+    "children": "Children",
+    "tasks": "Tasks",
+    "stats": "Stats"
   }
 }

@@ -6,7 +6,6 @@ import { supabase } from '@/lib/supabase'
 import { useAppStore } from '@/lib/store'
 import { T } from './design/tokens'
 import { useT } from '@/lib/i18n'
-import { LanguageToggle } from '@/components/LanguageToggle'
 
 const TAB_DEFS = [
   { href: '/kid/day',          labelKey: 'kidNav.myDay',    icon: 'home',   color: T.coral  },
@@ -88,7 +87,6 @@ export default function KidNav() {
           )
         })}
         <div className="flex-1"/>
-        <LanguageToggle />
         <button onClick={handleLogout} title={t('kidNav.logout')}
           className="flex items-center justify-center w-10 h-10 rounded-2xl text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">

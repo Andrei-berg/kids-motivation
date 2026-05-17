@@ -4,6 +4,13 @@ import { useAppStore } from './store'
 import en from '../public/locales/en.json'
 import ru from '../public/locales/ru.json'
 
+export const SUPPORTED_LANGUAGES = [
+  { code: 'ru', label: 'Русский', flag: '🇷🇺' },
+  { code: 'en', label: 'English', flag: '🇬🇧' },
+]
+
+const localeMap: Record<string, Record<string, unknown>> = { en, ru }
+
 function getNestedValue(obj: Record<string, unknown>, key: string): string {
   const parts = key.split('.')
   let current: unknown = obj
@@ -20,7 +27,7 @@ const I18nContext = createContext<TFn>((key) => key)
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const language = useAppStore((s) => s.language)
-  const translations = (language === 'ru' ? ru : en) as Record<string, unknown>
+  const translations = (localeMap[language] ?? en) as Record<string, unknown>
 
   const t = useCallback((key: string, vars?: Record<string, string | number>): string => {
     let str = getNestedValue(translations, key)

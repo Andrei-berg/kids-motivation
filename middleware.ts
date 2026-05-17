@@ -1,6 +1,11 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
+function isMobileUA(request: NextRequest) {
+  const ua = request.headers.get('user-agent') ?? ''
+  return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)
+}
+
 export async function middleware(request: NextRequest) {
   const { supabaseResponse, user, supabase } = await updateSession(request)
 
@@ -40,7 +45,7 @@ export async function middleware(request: NextRequest) {
       if (!membership) {
         url.pathname = '/onboarding'
       } else if (membership.role === 'parent') {
-        url.pathname = '/parent/dashboard'
+        url.pathname = isMobileUA(request) ? '/parent-center' : '/parent/dashboard'
       } else if (membership.role === 'child') {
         url.pathname = '/kid/day'
       } else {
@@ -54,6 +59,13 @@ export async function middleware(request: NextRequest) {
     if (!membershipError && !membership && !isPublicPath && !isOnboardingPath) {
       const url = request.nextUrl.clone()
       url.pathname = '/onboarding'
+      return NextResponse.redirect(url)
+    }
+
+    // Parent on mobile accessing desktop view → redirect to mobile view
+    if (membership?.role === 'parent' && pathname === '/parent/dashboard' && isMobileUA(request)) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/parent-center'
       return NextResponse.redirect(url)
     }
 

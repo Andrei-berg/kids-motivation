@@ -6,6 +6,7 @@ import { Card, Btn, Pill, Field, Toggle, Tabs, Icon } from '../ui'
 import type { ParentChild, ToastState } from '../types'
 import { getWalletSettings, updateWalletSettings } from '@/lib/wallet-api'
 import type { WalletSettings } from '@/lib/wallet-api'
+import { useLanguage, SUPPORTED_LANGUAGES } from '@/lib/i18n'
 
 // ───── Child selector ─────
 function ChildSelector({ children, value, onChange }: {
@@ -30,6 +31,34 @@ function ChildSelector({ children, value, onChange }: {
 }
 
 // ───── Family tab ─────
+function LanguageCard() {
+  const { language, setLanguage } = useLanguage()
+  return (
+    <Card pad={16}>
+      <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Language</div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        {SUPPORTED_LANGUAGES.map(lang => {
+          const active = language === lang.code
+          return (
+            <button key={lang.code} onClick={() => setLanguage(lang.code)} style={{
+              flex: 1, height: 40, borderRadius: T.rM,
+              background: active ? T.indigoSoft : T.bg1,
+              border: `1px solid ${active ? 'rgba(108,92,231,0.4)' : T.cardBorder}`,
+              color: active ? T.text : T.muted,
+              fontFamily: T.fBody, fontSize: 14, fontWeight: active ? 700 : 500,
+              cursor: 'pointer', transition: 'all .15s',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}>
+              <span>{lang.flag}</span>
+              <span>{lang.label}</span>
+            </button>
+          )
+        })}
+      </div>
+    </Card>
+  )
+}
+
 function FamilyTab({ allChildren, notify }: { allChildren: ParentChild[]; notify: (msg: string, tone?: string) => void }) {
   const [copied, setCopied] = useState(false)
   const code = 'FAMILY'
@@ -43,6 +72,7 @@ function FamilyTab({ allChildren, notify }: { allChildren: ParentChild[]; notify
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <LanguageCard />
       <Card pad={16}>
         <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Invite code</div>
         <div style={{

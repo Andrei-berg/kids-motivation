@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useT } from '@/lib/i18n'
 import { T, CHILD_ACCENTS } from './tokens'
 import { Icon, Toast } from './ui'
 import Dashboard from './screens/Dashboard'
@@ -49,6 +50,7 @@ function ParentCenterSkeleton() {
 }
 
 export default function ParentCenter() {
+  const t = useT()
   const [route, setRoute] = useState<Route>('dashboard')
   const [openChild, setOpenChild] = useState<string | null>(null)
   const [chatOpen, setChatOpen] = useState(false)
@@ -188,11 +190,11 @@ export default function ParentCenter() {
   const activeChild = children.find(c => c.id === openChild) ?? null
 
   const navItems = [
-    { id: 'dashboard' as Route, label: 'Home', icon: 'home' },
-    { id: 'children' as Route, label: 'Children', icon: 'users' },
-    { id: 'tasks' as Route, label: 'Tasks', icon: 'tasks' },
-    { id: 'shop' as Route, label: 'Shop', icon: 'shop' },
-    { id: 'analytics' as Route, label: 'Stats', icon: 'chart' },
+    { id: 'dashboard' as Route, label: t('parentNav.home'), icon: 'home' },
+    { id: 'children' as Route, label: t('parentNav.children'), icon: 'users' },
+    { id: 'tasks' as Route, label: t('parentNav.tasks'), icon: 'tasks' },
+    { id: 'shop' as Route, label: t('nav.shop'), icon: 'shop' },
+    { id: 'analytics' as Route, label: t('parentNav.stats'), icon: 'chart' },
   ]
   const pendingCount = pending.length
 

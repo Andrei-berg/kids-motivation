@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation'
 import { useAppStore } from '@/lib/store'
 import { useFamilyMembers } from '@/lib/hooks/useFamilyMembers'
 import { useT } from '@/lib/i18n'
-import { LanguageToggle } from './LanguageToggle'
 
 export default function NavBar() {
   const pathname = usePathname()
@@ -64,8 +63,6 @@ export default function NavBar() {
           ⚙️
         </Link>
 
-        {/* Language toggle */}
-        <LanguageToggle />
       </div>
     </div>
   )
