@@ -1245,5 +1245,27 @@
     "loadMore": "Load more",
     "noEvents": "No events yet",
     "loading": "Loading..."
+  },
+  "account": {
+    "tabLabel": "Account",
+    "exportTitle": "Export Your Data",
+    "exportSub": "Download a ZIP of all family data",
+    "exportDesc": "Includes children profiles, all grades, coin history, transactions, chat, badges, and expenses.",
+    "exportBtn": "📥 Download Data Export",
+    "exporting": "Exporting...",
+    "exportSuccess": "Export downloaded successfully",
+    "exportError": "Export failed. Please try again.",
+    "dangerZone": "⚠️ Danger Zone",
+    "deleteDesc": "Permanently delete your account and all family data. This action cannot be undone.",
+    "deleteSummaryTitle": "This will permanently remove:",
+    "deleteSummaryChildren": "{{count}} child profile(s)",
+    "deleteSummaryTransactions": "{{count}} coin transactions",
+    "deleteSummaryGrades": "{{count}} grade entries",
+    "downloadFirst": "Before deleting,",
+    "downloadFirstLink": "download your data first",
+    "typeToConfirm": "Type DELETE to confirm account deletion:",
+    "deleteBtn": "Delete My Account",
+    "deleting": "Deleting...",
+    "deleteError": "Deletion failed. Please try again."
   }
 }

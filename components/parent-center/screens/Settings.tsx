@@ -6,7 +6,7 @@ import { Card, Btn, Pill, Field, Toggle, Tabs, Icon } from '../ui'
 import type { ParentChild, ToastState } from '../types'
 import { getWalletSettings, updateWalletSettings } from '@/lib/wallet-api'
 import type { WalletSettings } from '@/lib/wallet-api'
-import { useLanguage, SUPPORTED_LANGUAGES } from '@/lib/i18n'
+import { useLanguage, SUPPORTED_LANGUAGES, useT } from '@/lib/i18n'
 import { insertAuditEvent } from '@/lib/repositories/audit.repo'
 import { useAppStore } from '@/lib/store'
 
@@ -340,17 +340,149 @@ function QuickLinksTab() {
   )
 }
 
+// ───── Account tab ─────
+function AccountTab({ notify, familyId }: { notify: (msg: string, tone?: string) => void; familyId: string | null }) {
+  const t = useT()
+  const [confirmText, setConfirmText] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [dataSummary, setDataSummary] = useState<{ children: number; transactions: number; grades: number } | null>(null)
+  const CONFIRM_WORD = 'DELETE'
+
+  useEffect(() => {
+    async function fetchSummary() {
+      try {
+        const res = await fetch('/api/family-summary')
+        if (res.ok) {
+          const data = await res.json()
+          setDataSummary(data)
+        }
+      } catch {
+        // Summary is best-effort — silently ignore errors
+      }
+    }
+    fetchSummary()
+  }, [])
+
+  async function handleExport() {
+    setExporting(true)
+    try {
+      const res = await fetch('/api/export')
+      if (!res.ok) throw new Error('Export failed')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'family-export.zip'
+      a.click()
+      URL.revokeObjectURL(url)
+      notify(t('account.exportSuccess'))
+      void insertAuditEvent({
+        family_id: familyId ?? '',
+        child_id: null,
+        action_type: 'data_export',
+        description: 'Family data exported as ZIP',
+        coins_delta: null,
+        actor_user_id: null,
+        metadata: {},
+      })
+    } catch {
+      notify(t('account.exportError'), 'danger')
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  async function handleDeleteAccount() {
+    if (confirmText !== CONFIRM_WORD) return
+    setDeleting(true)
+    try {
+      const res = await fetch('/api/delete-account', { method: 'DELETE' })
+      if (!res.ok) throw new Error('Deletion failed')
+      window.location.href = '/'
+    } catch {
+      notify(t('account.deleteError'), 'danger')
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <div style={{ padding: '16px 0' }}>
+      {/* Data Export Section */}
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{t('account.exportTitle')}</div>
+        <div style={{ fontSize: 11, color: T.faint, marginBottom: 10 }}>{t('account.exportSub')}</div>
+        <p style={{ fontSize: 13, color: T.muted, margin: '0 0 12px' }}>{t('account.exportDesc')}</p>
+        <Btn variant="outline" onClick={handleExport} disabled={exporting}>
+          {exporting ? t('account.exporting') : t('account.exportBtn')}
+        </Btn>
+      </Card>
+
+      {/* Danger Zone */}
+      <div style={{ border: `1.5px solid ${T.danger}`, borderRadius: T.rL, padding: 16, marginTop: 8 }}>
+        <p style={{ margin: '0 0 8px', fontFamily: T.fHead, fontSize: 14, fontWeight: 700, color: T.danger }}>{t('account.dangerZone')}</p>
+        <p style={{ fontSize: 13, color: T.textDim, margin: '0 0 12px' }}>{t('account.deleteDesc')}</p>
+
+        {/* Data summary — shows what will be deleted */}
+        {dataSummary && (
+          <div style={{ background: T.card, border: `1px solid ${T.cardBorder}`, borderRadius: T.r, padding: '10px 12px', marginBottom: 12, fontSize: 13, color: T.muted }}>
+            <p style={{ margin: '0 0 4px', fontWeight: 600, color: T.textDim }}>{t('account.deleteSummaryTitle')}</p>
+            <ul style={{ margin: 0, paddingLeft: 18 }}>
+              <li>{t('account.deleteSummaryChildren', { count: String(dataSummary.children) })}</li>
+              <li>{t('account.deleteSummaryTransactions', { count: String(dataSummary.transactions) })}</li>
+              <li>{t('account.deleteSummaryGrades', { count: String(dataSummary.grades) })}</li>
+            </ul>
+          </div>
+        )}
+
+        {/* Download-before-delete nudge — prominent, above type-to-confirm */}
+        <div style={{ marginBottom: 12, padding: '8px 12px', background: T.card, borderRadius: T.r, border: `1px solid ${T.cardBorder}` }}>
+          <span style={{ fontSize: 13, color: T.muted }}>{t('account.downloadFirst')} </span>
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            style={{ background: 'none', border: 'none', color: T.indigo, fontSize: 13, cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+          >
+            {t('account.downloadFirstLink')} →
+          </button>
+        </div>
+
+        <p style={{ fontSize: 12, color: T.muted, margin: '0 0 8px' }}>
+          {t('account.typeToConfirm', { word: CONFIRM_WORD })}
+        </p>
+        <input
+          value={confirmText}
+          onChange={e => setConfirmText(e.target.value)}
+          placeholder={CONFIRM_WORD}
+          style={{ width: '100%', background: T.card, border: `1px solid ${T.cardBorder}`, borderRadius: T.r, color: T.text, padding: '8px 12px', fontFamily: T.fMono, fontSize: 14, marginBottom: 12, boxSizing: 'border-box' }}
+        />
+        <Btn
+          variant="danger"
+          onClick={handleDeleteAccount}
+          disabled={confirmText !== CONFIRM_WORD || deleting}
+          full
+        >
+          {deleting ? t('account.deleting') : t('account.deleteBtn')}
+        </Btn>
+      </div>
+    </div>
+  )
+}
+
 // ───── Settings root ─────
 export default function SettingsScreen({ allChildren, notify }: {
   allChildren: ParentChild[]
   notify: (msg: string, tone?: string) => void
 }) {
   const [tab, setTab] = useState('family')
+  const { familyId } = useAppStore()
+  const t = useT()
   const tabs = [
     { id: 'family', label: 'Family', icon: '📁' },
     { id: 'coins', label: 'Coins Rules', icon: '🪙' },
     { id: 'child', label: 'Child', icon: '👤' },
     { id: 'more', label: 'More', icon: '🔗' },
+    { id: 'account', label: t('account.tabLabel'), icon: '🔐' },
   ]
 
   const content: Record<string, JSX.Element> = {
@@ -358,6 +490,7 @@ export default function SettingsScreen({ allChildren, notify }: {
     coins: <CoinsRulesTab notify={notify}/>,
     child: <ChildTab allChildren={allChildren} notify={notify}/>,
     more: <QuickLinksTab/>,
+    account: <AccountTab notify={notify} familyId={familyId}/>,
   }
 
   return (

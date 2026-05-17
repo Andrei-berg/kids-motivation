@@ -1213,5 +1213,27 @@
     "loadMore": "Ещё",
     "noEvents": "Пока нет событий",
     "loading": "Загрузка..."
+  },
+  "account": {
+    "tabLabel": "Аккаунт",
+    "exportTitle": "Экспорт данных",
+    "exportSub": "Скачать ZIP со всеми данными семьи",
+    "exportDesc": "Включает профили детей, оценки, историю монет, транзакции, чат, достижения и расходы.",
+    "exportBtn": "📥 Скачать данные",
+    "exporting": "Экспортируем...",
+    "exportSuccess": "Экспорт скачан успешно",
+    "exportError": "Ошибка экспорта. Попробуйте снова.",
+    "dangerZone": "⚠️ Опасная зона",
+    "deleteDesc": "Безвозвратно удалить аккаунт и все данные семьи. Это действие нельзя отменить.",
+    "deleteSummaryTitle": "Будет безвозвратно удалено:",
+    "deleteSummaryChildren": "{{count}} профиль(ей) детей",
+    "deleteSummaryTransactions": "{{count}} транзакций монет",
+    "deleteSummaryGrades": "{{count}} записей оценок",
+    "downloadFirst": "Перед удалением",
+    "downloadFirstLink": "скачайте ваши данные",
+    "typeToConfirm": "Введите DELETE для подтверждения удаления аккаунта:",
+    "deleteBtn": "Удалить мой аккаунт",
+    "deleting": "Удаляем...",
+    "deleteError": "Ошибка удаления. Попробуйте снова."
   }
 }
