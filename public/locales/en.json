@@ -294,6 +294,8 @@
     "categoryMaterial": "Material",
     "categoryExperience": "Experience",
     "categoryMoney": "For money",
+    "starterLoadBtn": "Load example rewards",
+    "starterLoaded": "{{count}} example rewards added!",
     "yes": "Yes",
     "no": "No"
   },
@@ -964,6 +966,8 @@
     "justNow": "Just now",
     "minsAgo": "{{mins}} min ago",
     "hoursAgo": "{{hours}} h ago",
+    "today": "Today {{time}}",
+    "yesterday": "Yesterday {{time}}",
     "actorSystem": "🤖 System",
     "actorParent": "👨‍👩‍👦 Parent",
     "actorChild": "👦 {{name}}",
@@ -1146,6 +1150,33 @@
     "amountError": "Amount must be greater than 0!",
     "maxError": "Maximum per transfer: {{max}} 💰",
     "dealDescError": "Describe what needs to be done!"
+  },
+  "badges": {
+    "week_excellent_title": "Excellence Week",
+    "week_excellent_desc": "7 days in a row with only top grades",
+    "clean_master_title": "Cleanliness Master",
+    "clean_master_desc": "Room cleaned 30 days in a row",
+    "sportsman_title": "Sportsman",
+    "sportsman_desc": "Sport 14 days in a row",
+    "goal_achiever_title": "Goal Achiever",
+    "goal_achiever_desc": "Achieved first savings goal",
+    "perfect_week_title": "Perfect Week",
+    "perfect_week_desc": "A week without penalties",
+    "study_lover_title": "Study Lover",
+    "study_lover_desc": "Grades entered 14 days in a row",
+    "coin_saver_title": "Coin Saver",
+    "coin_saver_desc": "Saved 500 coins without spending",
+    "first_purchase_title": "First Purchase",
+    "first_purchase_desc": "First purchase in the shop",
+    "streak_30_title": "30-Day Streak",
+    "streak_30_desc": "Any streak reached 30 days in a row",
+    "full_week_grades_title": "Full Grade Week",
+    "full_week_grades_desc": "Grades entered every school day this week"
+  },
+  "dayType": {
+    "sick": "Sick",
+    "weekend": "Weekend",
+    "school": "School"
   },
   "coachRatingModal": {
     "heading": "💪 COACH RATING",

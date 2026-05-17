@@ -294,6 +294,8 @@
     "categoryMaterial": "Материальный",
     "categoryExperience": "Опыт",
     "categoryMoney": "За деньги",
+    "starterLoadBtn": "Загрузить примеры наград",
+    "starterLoaded": "Добавлено {{count}} примеров!",
     "yes": "Да",
     "no": "Нет"
   },
@@ -932,6 +934,8 @@
     "justNow": "Только что",
     "minsAgo": "{{mins}} мин назад",
     "hoursAgo": "{{hours}} ч назад",
+    "today": "Сегодня {{time}}",
+    "yesterday": "Вчера {{time}}",
     "actorSystem": "🤖 Система",
     "actorParent": "👨‍👩‍👦 Родитель",
     "actorChild": "👦 {{name}}",
@@ -1114,6 +1118,33 @@
     "amountError": "Сумма должна быть больше 0!",
     "maxError": "Максимум за раз: {{max}} 💰",
     "dealDescError": "Опиши что нужно сделать!"
+  },
+  "badges": {
+    "week_excellent_title": "Неделя отличника",
+    "week_excellent_desc": "7 дней подряд только пятёрки",
+    "clean_master_title": "Мастер чистоты",
+    "clean_master_desc": "Комната убрана 30 дней подряд",
+    "sportsman_title": "Спортсмен",
+    "sportsman_desc": "Спорт 14 дней подряд",
+    "goal_achiever_title": "Целеустремлённый",
+    "goal_achiever_desc": "Достиг первой цели",
+    "perfect_week_title": "Идеальная неделя",
+    "perfect_week_desc": "Неделя без штрафов",
+    "study_lover_title": "Любитель учёбы",
+    "study_lover_desc": "Оценки 14 дней подряд",
+    "coin_saver_title": "Копилка",
+    "coin_saver_desc": "Накопи 500 монет, не тратя",
+    "first_purchase_title": "Первая покупка",
+    "first_purchase_desc": "Первая покупка в магазине",
+    "streak_30_title": "Серия 30 дней",
+    "streak_30_desc": "Любая серия достигла 30 дней подряд",
+    "full_week_grades_title": "Отличный дневник",
+    "full_week_grades_desc": "Оценки получены каждый день учебной недели"
+  },
+  "dayType": {
+    "sick": "Болеет",
+    "weekend": "Выходной",
+    "school": "Учебный"
   },
   "coachRatingModal": {
     "heading": "💪 ОЦЕНКА ТРЕНЕРА",
