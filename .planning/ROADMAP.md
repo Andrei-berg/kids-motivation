@@ -135,7 +135,13 @@ Plans:
   2. A parent can export all family data as a downloadable file from Settings
   3. When a child under 13 is registered, a parental consent screen appears and must be completed before the child account activates
   4. Every parent action — shop confirmation, coin adjustment, settings change — appears as a timestamped entry in an audit log visible to the parent
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 04.4-01-PLAN.md — DB migration: parent_audit_events table + consent_given column; audit.repo.ts
+- [ ] 04.4-02-PLAN.md — Audit instrumentation: wire insertAuditEvent into shop approve/reject and coin adjust actions
+- [ ] 04.4-03-PLAN.md — Audit screen in ParentCenter: AuditScreen component + Route 'audit' + nav item + i18n
+- [ ] 04.4-04-PLAN.md — Data export (ZIP download) + account deletion Danger Zone in Settings Account tab
+- [ ] 04.4-05-PLAN.md — COPPA consent gate in FamilyManager: modal when child is under 13 + consent_given stored
 
 ### Phase 4.5: desktop
 **Goal**: Families using the app on a laptop or desktop get a purpose-built wide-screen layout — not a stretched phone screen
@@ -191,7 +197,7 @@ Plans:
 | 4.1 pwa | v4.0 | 3/3 | Complete | 2026-04-26 |
 | 4.2 ux-polish | v4.0 | 4/4 | Complete | 2026-05-16 |
 | 4.3 localization | 4/6 | In Progress|  | - |
-| 4.4 security-compliance | v4.0 | 0/? | Not started | - |
+| 4.4 security-compliance | v4.0 | 0/5 | Not started | - |
 | 4.5 desktop | v4.0 | 0/? | Not started | - |
 | 5.1–5.3 | v5.0 | 0/? | Planned | - |
 | 6.1–6.3 | v6.0 | 0/? | Planned | - |
@@ -199,4 +205,4 @@ Plans:
 
 ---
 
-*Created: 2026-03-01. Updated: 2026-05-17 — 04.3-06 gap closure plan added (5 gaps: day-type labels, badge titles, AuditLogViewer today/yesterday, shop templates, layout metadata).*
+*Created: 2026-03-01. Updated: 2026-05-17 — Phase 4.4 planned: 5 plans covering DB foundation, audit instrumentation, audit screen, data export + account deletion, and COPPA consent gate.*
