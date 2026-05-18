@@ -26,9 +26,10 @@ type Props = {
   pending: RewardPurchase[]
   onApprove: (p: RewardPurchase) => void
   onDecline: (p: RewardPurchase) => void
+  desktop?: boolean
 }
 
-export default function ChatPanel({ open, onClose, children, pending, onApprove, onDecline }: Props) {
+export default function ChatPanel({ open, onClose, children, pending, onApprove, onDecline, desktop }: Props) {
   const [msgs, setMsgs] = useState<ChatMsg[]>(INITIAL_MSGS)
   const [input, setInput] = useState('')
   const [who, setWho] = useState('family')
@@ -49,7 +50,150 @@ export default function ChatPanel({ open, onClose, children, pending, onApprove,
     ...children.map(c => ({ id: c.id, name: c.name, avatar: c.avatar, accent: c.accent, unread: 0 })),
   ]
 
-  if (!open) return null
+  const pendingCount = pending.length
+
+  if (!open && !desktop) return null
+
+  if (desktop) {
+    return (
+      <div style={{
+        background: T.bg1, borderLeft: `1px solid ${T.cardBorder}`,
+        display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden',
+      }}>
+        {/* Header */}
+        <div style={{ padding: '18px 14px 0', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div>
+              <div style={{ fontFamily: T.fHead, fontSize: 14, fontWeight: 600, color: T.text, letterSpacing: '-0.01em' }}>Family chat</div>
+              <div style={{ fontSize: 10, color: T.muted, marginTop: 1 }}>{rooms.length} members · live</div>
+            </div>
+            {pendingCount > 0 && (
+              <Pill tone="warn" style={{ height: 20, fontSize: 9 }}>{pendingCount}</Pill>
+            )}
+          </div>
+
+          {/* Room tabs */}
+          <div style={{
+            display: 'flex', gap: 5, overflowX: 'auto', scrollbarWidth: 'none' as any,
+            paddingBottom: 12, borderBottom: `1px solid ${T.cardBorder}`,
+          }}>
+            {rooms.map(r => (
+              <button key={r.id} onClick={() => setWho(r.id)} style={{
+                flex: '0 0 auto', height: 28, padding: '0 9px 0 6px',
+                background: who === r.id ? T.cardHi : 'transparent',
+                border: `1px solid ${who === r.id ? r.accent + '55' : T.cardBorder}`,
+                borderRadius: T.rPill, display: 'inline-flex', alignItems: 'center', gap: 5,
+                color: who === r.id ? T.text : T.muted,
+                fontFamily: T.fBody, fontSize: 11, fontWeight: 600, cursor: 'pointer', transition: 'all .12s',
+              }}>
+                <span style={{ fontSize: 12 }}>{r.avatar}</span>
+                <span>{r.name}</span>
+                {r.unread > 0 && (
+                  <span style={{
+                    minWidth: 15, height: 15, padding: '0 4px',
+                    background: T.danger, borderRadius: T.rPill,
+                    color: '#fff', fontSize: 9, fontWeight: 700,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.fMono,
+                  }}>{r.unread}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Messages */}
+        <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {/* Pending requests */}
+          {who === 'family' && pending.map(p => (
+            <Card key={p.id} pad={12} style={{ alignSelf: 'stretch', background: T.warningSoft, border: `1px solid rgba(255,217,61,0.25)` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <Pill tone="warn" icon="bell">SHOP REQUEST</Pill>
+              </div>
+              <div style={{ fontSize: 12, color: T.text, marginBottom: 10 }}>
+                {children.find(c => c.id === p.child_id)?.name ?? 'Child'} wants{' '}
+                <span style={{ fontFamily: T.fMono, color: T.cyan, fontWeight: 600 }}>{p.reward_title} — {p.frozen_coins}🪙</span>
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <Btn variant="ghost" size="sm" icon="x" onClick={() => onDecline(p)} full>Decline</Btn>
+                <Btn variant="primary" size="sm" icon="check" onClick={() => onApprove(p)} full>Approve</Btn>
+              </div>
+            </Card>
+          ))}
+
+          {msgs.map((m, i) => {
+            const isMe = m.from === 'parent'
+            const child = children.find(c => c.id === m.from)
+            if (m.from === 'sys') {
+              return (
+                <div key={i} style={{ alignSelf: 'center', display: 'inline-flex', alignItems: 'center', gap: 5,
+                  padding: '5px 10px', background: T.cardHi, border: `1px solid ${T.cardBorder}`,
+                  borderRadius: T.rPill, fontSize: 10, color: T.muted }}>
+                  <span style={{ fontSize: 11 }}>✨</span>
+                  <span>{m.text}</span>
+                  {m.amt && <Coin v={m.amt}/>}
+                </div>
+              )
+            }
+            return (
+              <div key={i} style={{
+                display: 'flex', gap: 6, alignItems: 'flex-end',
+                alignSelf: isMe ? 'flex-end' : 'flex-start', maxWidth: '84%',
+              }}>
+                {!isMe && child && (
+                  <div style={{ width: 24, height: 24, borderRadius: '50%', fontSize: 14, flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${child.accent}33` }}>
+                    {child.avatar}
+                  </div>
+                )}
+                <div>
+                  {!isMe && child && <div style={{ fontSize: 9, color: T.muted, marginBottom: 2, marginLeft: 3 }}>{child.name}</div>}
+                  <div style={{
+                    padding: '8px 12px',
+                    background: isMe ? T.indigo : T.cardHi,
+                    color: isMe ? '#fff' : T.text,
+                    borderRadius: isMe ? '16px 16px 3px 16px' : '3px 16px 16px 16px',
+                    fontSize: 13, lineHeight: 1.4,
+                    boxShadow: isMe ? `0 4px 14px ${T.indigo}33` : 'none',
+                  }}>{m.text}</div>
+                  <div style={{ fontSize: 9, color: T.faint, marginTop: 2, textAlign: isMe ? 'right' : 'left', marginLeft: 3, marginRight: 3, fontFamily: T.fMono }}>{m.time}</div>
+                </div>
+              </div>
+            )
+          })}
+          {msgs.length === 0 && pending.length === 0 && (
+            <div style={{ alignSelf: 'center', color: T.muted, fontSize: 12 }}>No messages yet</div>
+          )}
+        </div>
+
+        {/* Input */}
+        <div style={{
+          padding: '8px 10px 12px', borderTop: `1px solid ${T.cardBorder}`,
+          background: T.bg1, display: 'flex', gap: 7, alignItems: 'center', flexShrink: 0,
+        }}>
+          <div style={{
+            flex: 1, height: 36, padding: '0 12px',
+            background: T.cardHi, border: `1px solid ${T.cardBorder}`, borderRadius: T.rPill,
+            display: 'flex', alignItems: 'center',
+          }}>
+            <input value={input} onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && send()}
+              placeholder="Message family…"
+              style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: T.text, fontSize: 13, fontFamily: T.fBody }}
+            />
+          </div>
+          <button onClick={send} style={{
+            width: 36, height: 36, borderRadius: '50%',
+            background: input.trim() ? T.indigo : T.cardHi,
+            border: 'none', color: '#fff', cursor: 'pointer',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            boxShadow: input.trim() ? `0 4px 14px ${T.indigo}55` : 'none', transition: 'all .15s',
+          }}>
+            <Icon name="send" size={16}/>
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{

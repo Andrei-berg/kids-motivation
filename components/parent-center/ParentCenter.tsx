@@ -23,6 +23,17 @@ import { getSubjects } from '@/lib/flexible-api'
 import { insertAuditEvent } from '@/lib/repositories/audit.repo'
 import { useAppStore } from '@/lib/store'
 
+function useDesktop() {
+  const [is, setIs] = useState(false)
+  useEffect(() => {
+    const check = () => setIs(window.innerWidth >= 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return is
+}
+
 function ParentCenterSkeleton() {
   return (
     <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -66,6 +77,7 @@ export default function ParentCenter() {
   const [rewards, setRewards] = useState<Reward[]>([])
   const [activity, setActivity] = useState<ActivityEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const isDesktop = useDesktop()
 
   const notify = (msg: string, tone?: 'warn' | 'danger') => {
     setToast({ msg, tone })
@@ -257,6 +269,164 @@ export default function ParentCenter() {
       default:
         return null
     }
+  }
+
+  if (isDesktop) {
+    return (
+      <div style={{
+        position: 'fixed', inset: 0,
+        display: 'grid',
+        gridTemplateColumns: '240px 1fr 320px',
+        background: T.bg0, fontFamily: T.fBody, color: T.text, overflow: 'hidden',
+      }}>
+        <style dangerouslySetInnerHTML={{__html: `
+          @import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
+          * { box-sizing: border-box; }
+          ::-webkit-scrollbar { width: 4px; height: 4px; }
+          ::-webkit-scrollbar-track { background: transparent; }
+          ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+          @keyframes spin { to { transform: rotate(360deg); } }
+          input[type="number"]::-webkit-outer-spin-button,
+          input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+          input[type="number"] { -moz-appearance: textfield; }
+        `}}/>
+
+        {/* ── SIDEBAR ── */}
+        <aside style={{
+          background: T.bg1, borderRight: `1px solid ${T.cardBorder}`,
+          display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden',
+        }}>
+          {/* Logo / wordmark */}
+          <div style={{
+            padding: '20px 18px 16px', borderBottom: `1px solid ${T.cardBorder}`, flexShrink: 0,
+            display: 'flex', alignItems: 'center', gap: 11,
+          }}>
+            <div style={{
+              width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+              background: `linear-gradient(135deg, ${T.indigo}, ${T.cyan})`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 15, fontWeight: 700, color: '#fff', fontFamily: T.fHead,
+              boxShadow: `0 4px 14px ${T.indigo}55`,
+            }}>P</div>
+            <div>
+              <div style={{ fontFamily: T.fHead, fontSize: 13, fontWeight: 600, color: T.text, letterSpacing: '-0.01em' }}>Parent Center</div>
+              <div style={{ fontSize: 10, color: T.muted, marginTop: 1 }}>{children.length} {children.length === 1 ? 'child' : 'children'} · synced</div>
+            </div>
+          </div>
+
+          {/* Nav items */}
+          <nav style={{ flex: 1, padding: '10px', display: 'flex', flexDirection: 'column', gap: 1, overflowY: 'auto' }}>
+            {navItems.map(n => {
+              const active = route === n.id || (n.id === 'children' && route === 'child')
+              return (
+                <button key={n.id} onClick={() => setRoute(n.id)} style={{
+                  width: '100%', height: 38, padding: '0 12px',
+                  background: active ? T.indigoSoft : 'transparent',
+                  border: `1px solid ${active ? T.indigo + '44' : 'transparent'}`,
+                  borderRadius: 9, display: 'flex', alignItems: 'center', gap: 10,
+                  color: active ? T.indigoHi : T.textDim, cursor: 'pointer',
+                  fontFamily: T.fBody, fontSize: 13, fontWeight: 600, textAlign: 'left',
+                  transition: 'all .12s', position: 'relative',
+                }}>
+                  {active && (
+                    <span style={{
+                      position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
+                      width: 3, height: 16, background: T.indigoHi, borderRadius: '0 3px 3px 0',
+                      boxShadow: `0 0 8px ${T.indigo}88`,
+                    }}/>
+                  )}
+                  <Icon name={n.icon} size={15} stroke={active ? 2 : 1.6}/>
+                  <span style={{ flex: 1 }}>{n.label}</span>
+                  {n.id === 'shop' && pendingCount > 0 && (
+                    <span style={{
+                      minWidth: 18, height: 18, padding: '0 5px',
+                      background: T.danger, borderRadius: T.rPill,
+                      color: '#fff', fontSize: 10, fontWeight: 700,
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      fontFamily: T.fMono,
+                    }}>{pendingCount}</span>
+                  )}
+                </button>
+              )
+            })}
+          </nav>
+
+          {/* Settings at bottom */}
+          <div style={{ padding: '10px 10px 16px', borderTop: `1px solid ${T.cardBorder}`, flexShrink: 0 }}>
+            <button onClick={() => setRoute('settings')} style={{
+              width: '100%', height: 38, padding: '0 12px',
+              background: route === 'settings' ? T.indigoSoft : 'transparent',
+              border: `1px solid ${route === 'settings' ? T.indigo + '44' : 'transparent'}`,
+              borderRadius: 9, display: 'flex', alignItems: 'center', gap: 10,
+              color: route === 'settings' ? T.indigoHi : T.textDim,
+              cursor: 'pointer', fontFamily: T.fBody, fontSize: 13, fontWeight: 600,
+              transition: 'all .12s',
+            }}>
+              <Icon name="bell" size={15}/>
+              <span>Settings</span>
+            </button>
+          </div>
+        </aside>
+
+        {/* ── MAIN CONTENT ── */}
+        <main style={{
+          display: 'flex', flexDirection: 'column',
+          height: '100vh', overflow: 'hidden', background: T.bg0,
+        }}>
+          {/* Desktop top bar */}
+          <div style={{
+            flexShrink: 0, height: 54,
+            display: 'flex', alignItems: 'center', padding: '0 24px',
+            background: T.bg1, borderBottom: `1px solid ${T.cardBorder}`, gap: 12,
+          }}>
+            <div style={{ flex: 1, fontFamily: T.fHead, fontSize: 15, fontWeight: 600, color: T.text, letterSpacing: '-0.01em' }}>
+              {navItems.find(n => n.id === route || (n.id === 'children' && route === 'child'))?.label ?? 'Parent Center'}
+            </div>
+            {pendingCount > 0 && (
+              <div style={{
+                height: 28, padding: '0 10px',
+                background: T.dangerSoft, border: `1px solid ${T.danger}44`,
+                borderRadius: T.rPill, display: 'inline-flex', alignItems: 'center', gap: 6,
+                color: T.danger, fontSize: 11, fontWeight: 700, fontFamily: T.fMono,
+              }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: T.danger }}/>
+                {pendingCount} pending
+              </div>
+            )}
+            <div style={{
+              height: 28, padding: '0 12px',
+              background: `${T.indigo}22`,
+              border: `1px solid ${T.indigo}44`,
+              borderRadius: T.rPill, display: 'inline-flex', alignItems: 'center', gap: 7,
+              color: T.indigoHi, fontSize: 11, fontWeight: 700, fontFamily: T.fBody,
+            }}>
+              <div style={{
+                width: 18, height: 18, borderRadius: '50%',
+                background: `linear-gradient(135deg, ${T.indigo}, ${T.cyan})`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 9, fontWeight: 700, color: '#fff',
+              }}>P</div>
+              Parent
+            </div>
+          </div>
+
+          {/* Screen content */}
+          <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
+            {loading ? <ParentCenterSkeleton /> : renderScreen()}
+          </div>
+        </main>
+
+        {/* ── CHAT PANEL (always visible column) ── */}
+        <ChatPanel
+          open={true} onClose={() => {}} desktop={true}
+          children={children} pending={pending}
+          onApprove={handleApprove} onDecline={handleDecline}
+        />
+
+        <ActionModal open={modal.open} child={modal.child} action={modal.action} onClose={closeAction} onConfirm={confirmAction}/>
+        <Toast toast={toast}/>
+      </div>
+    )
   }
 
   return (
