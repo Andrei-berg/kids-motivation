@@ -18,6 +18,17 @@ function todayLabel(language: string): string {
   return new Date().toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
+function useDesktop() {
+  const [is, setIs] = useState(false)
+  useEffect(() => {
+    const check = () => setIs(window.innerWidth >= 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return is
+}
+
 function LoadingSkeleton() {
   return (
     <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -46,6 +57,7 @@ export default function KidDayPage() {
   const [dayType, setDayType] = useState<'school' | 'weekend' | 'vacation'>('school')
   const [editMode, setEditMode] = useState(false)
   const [confetti, setConfetti] = useState(0)
+  const isDesktop = useDesktop()
 
   const today = normalizeDate(new Date())
 
@@ -117,106 +129,216 @@ export default function KidDayPage() {
   const showForm = todayDay === null || editMode
 
   return (
-    <div style={{ maxWidth: 500, margin: '0 auto', position: 'relative' }}>
+    <div style={isDesktop ? {
+      display: 'grid',
+      gridTemplateColumns: '300px 1fr',
+      minHeight: '100vh',
+    } : {
+      maxWidth: 500, margin: '0 auto', position: 'relative',
+    }}>
       <Confetti trigger={confetti}/>
 
-      {/* ─── Top header ─── */}
-      <div style={{ padding: '12px 16px 0', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <Avatar size={38} skin="#F5C9A1" hair="#2B1810" shirt={T.coral}/>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: T.fDisp, fontSize: 15, fontWeight: 900, color: T.ink }}>{t('kidDayPage.greeting', { name: child?.name ?? '...' })}</div>
-          <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 600 }}>{t('kidDayPage.levelDay', { level, date: todayLabel(language) })}</div>
-        </div>
-        <StreakFlame days={streakDays}/>
-      </div>
-
-      {showForm ? (
-        // ─── Fill form ───
-        <>
-          {editMode && todayDay && (
-            <div style={{ padding: '8px 16px 0', display: 'flex', justifyContent: 'flex-end' }}>
-              <button onClick={() => setEditMode(false)} style={{
-                height: 30, padding: '0 12px', borderRadius: 15, border: `1.5px solid ${T.line}`,
-                background: '#fff', cursor: 'pointer', fontFamily: T.fBody, fontSize: 12, color: T.ink3, fontWeight: 700,
-              }}>{t('kidDayPage.backBtn')}</button>
-            </div>
-          )}
-          {activeMemberId && (
-            <KidDayFillForm
-              childId={activeMemberId}
-              date={today}
-              fillMode={fillMode as 1 | 2 | 3}
-              dayType={dayType}
-              existingDay={todayDay}
-              onSaved={handleFillSaved}
-            />
-          )}
-        </>
-      ) : (
-        // ─── Day filled summary ───
-        <div style={{ paddingBottom: 110 }}>
-          <div style={{ padding: '14px 16px 0' }}>
-            <div style={{
-              background: `linear-gradient(135deg, ${T.teal} 0%, #3DB8B0 100%)`,
-              borderRadius: 28, padding: 20, position: 'relative', overflow: 'hidden',
-              boxShadow: `0 10px 30px ${T.teal}40`,
-            }}>
-              <div style={{ position: 'absolute', top: -30, right: -30, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.15)' }}/>
-              <div style={{ fontFamily: T.fBody, fontSize: 11, color: 'rgba(255,255,255,0.8)', fontWeight: 700, letterSpacing: 1.5, position: 'relative' }}>{t('kidDayPage.filledToday')}</div>
-              <div style={{ fontFamily: T.fDisp, fontSize: 26, fontWeight: 900, color: '#fff', marginTop: 4, position: 'relative' }}>{t('kidDayPage.greatJob')}</div>
-              <div style={{ fontFamily: T.fBody, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4, position: 'relative' }}>{todayLabel(language)}</div>
-              <button onClick={() => setEditMode(true)} style={{
-                marginTop: 14, height: 40, padding: '0 18px', borderRadius: 20, border: 'none', cursor: 'pointer',
-                background: 'rgba(255,255,255,0.2)', color: '#fff',
-                fontFamily: T.fDisp, fontSize: 13, fontWeight: 800, position: 'relative',
-              }}>{t('kidDayPage.editBtn')}</button>
+      {/* ── LEFT: Stats panel (desktop only) OR inline header (mobile) ── */}
+      {isDesktop ? (
+        <div style={{
+          padding: '32px 24px',
+          borderRight: `1.5px solid rgba(0,0,0,0.07)`,
+          background: 'rgba(61,190,168,0.03)',
+          display: 'flex', flexDirection: 'column', gap: 20,
+          position: 'sticky', top: 0, height: '100vh', overflowY: 'auto',
+        }}>
+          {/* Avatar + greeting */}
+          <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+            <Avatar size={52} skin="#F5C9A1" hair="#2B1810" shirt={T.coral}/>
+            <div>
+              <div style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 900, color: T.ink }}>
+                {t('kidDayPage.greeting', { name: child?.name ?? '…' })}
+              </div>
+              <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 600 }}>
+                {t('kidDayPage.levelDay', { level, date: todayLabel(language) })}
+              </div>
             </div>
           </div>
 
-          {/* Stats row */}
-          <div style={{ display: 'flex', gap: 10, padding: '14px 16px 0' }}>
-            <div style={{
-              flex: 1, background: '#fff', borderRadius: 22, padding: '14px 16px',
-              display: 'flex', alignItems: 'center', gap: 10,
-              border: `1.5px solid ${T.sunDeep}`, boxShadow: `0 4px 14px rgba(0,0,0,0.04)`,
-            }}>
-              <Coin size={26}/>
+          {/* Streak card */}
+          <div style={{
+            background: `linear-gradient(135deg, ${T.coral}18 0%, rgba(255,217,61,0.10) 100%)`,
+            borderRadius: 20, padding: '18px 20px',
+            border: `1.5px solid ${T.coral}30`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ fontSize: 38, lineHeight: 1 }}>🔥</div>
               <div>
-                <div style={{ fontFamily: T.fBody, fontSize: 10, color: T.ink3, fontWeight: 700 }}>{t('kidDayPage.balanceLabel')}</div>
-                <div style={{ fontFamily: T.fNum, fontSize: 20, fontWeight: 800, color: T.ink }}>
+                <div style={{ fontFamily: T.fNum, fontSize: 36, fontWeight: 800, color: T.coral, lineHeight: 1 }}>{streakDays}</div>
+                <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 700, marginTop: 2 }}>
+                  {t('kidDayPage.streakLabel')}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Coins card */}
+          <div style={{
+            background: `linear-gradient(135deg, rgba(78,205,196,0.16) 0%, rgba(78,205,196,0.06) 100%)`,
+            borderRadius: 20, padding: '18px 20px',
+            border: `1.5px solid rgba(78,205,196,0.28)`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <Coin size={36}/>
+              <div>
+                <div style={{ fontFamily: T.fNum, fontSize: 36, fontWeight: 800, color: T.teal, lineHeight: 1 }}>
                   <AnimatedNum value={coins}/>
                 </div>
-              </div>
-            </div>
-            <div style={{
-              flex: 1, background: '#fff', borderRadius: 22, padding: '14px 16px',
-              border: `1.5px solid ${T.line}`, boxShadow: `0 4px 14px rgba(0,0,0,0.04)`,
-              display: 'flex', alignItems: 'center', gap: 10,
-            }}>
-              <div style={{ fontSize: 22 }}>🔥</div>
-              <div>
-                <div style={{ fontFamily: T.fBody, fontSize: 10, color: T.ink3, fontWeight: 700 }}>{t('kidDayPage.streakLabel')}</div>
-                <div style={{ fontFamily: T.fNum, fontSize: 20, fontWeight: 800, color: T.coral }}>{t('kidDayPage.streakDays', { count: streakDays })}</div>
+                <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 700, marginTop: 2 }}>
+                  {t('kidDayPage.balanceLabel')}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Mood display */}
-          {todayDay?.mood && (
-            <div style={{ padding: '14px 16px 0' }}>
-              <div style={{ background: '#fff', borderRadius: 20, padding: '14px 16px', border: `1.5px solid ${T.line}`, display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ fontSize: 32 }}>
-                  {todayDay.mood === 'happy' ? '😄' : todayDay.mood === 'neutral' || todayDay.mood === 'meh' ? '🙂' : todayDay.mood === 'sad' ? '😔' : todayDay.mood === 'tired' ? '😴' : '😐'}
-                </div>
-                <div>
-                  <div style={{ fontFamily: T.fDisp, fontSize: 14, fontWeight: 800, color: T.ink }}>{t('kidDayPage.moodLabel')}</div>
-                  <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, marginTop: 2 }}>{t('kidDayPage.moodNote')}</div>
-                </div>
+          {/* Level card */}
+          <div style={{
+            background: '#fff', borderRadius: 20, padding: '16px 20px',
+            border: '1.5px solid rgba(0,0,0,0.07)',
+            display: 'flex', alignItems: 'center', gap: 14,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          }}>
+            <div style={{ fontSize: 32 }}>⭐</div>
+            <div>
+              <div style={{ fontFamily: T.fNum, fontSize: 30, fontWeight: 800, color: T.ink, lineHeight: 1 }}>{level}</div>
+              <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 700, marginTop: 2 }}>Level</div>
+            </div>
+          </div>
+
+          {/* Day-complete celebration (desktop only, when not in form mode) */}
+          {!showForm && (
+            <div style={{
+              background: `linear-gradient(135deg, ${T.teal} 0%, #3DB8B0 100%)`,
+              borderRadius: 20, padding: '18px 20px',
+              boxShadow: `0 8px 24px rgba(61,190,168,0.35)`,
+            }}>
+              <div style={{ fontFamily: T.fBody, fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 700, letterSpacing: 1.2 }}>
+                {t('kidDayPage.filledToday')}
               </div>
+              <div style={{ fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: '#fff', marginTop: 4 }}>
+                {t('kidDayPage.greatJob')}
+              </div>
+              <button onClick={() => setEditMode(true)} style={{
+                marginTop: 12, height: 34, padding: '0 16px', borderRadius: 17,
+                background: 'rgba(255,255,255,0.22)', border: 'none', color: '#fff',
+                fontFamily: T.fDisp, fontSize: 12, fontWeight: 800, cursor: 'pointer',
+              }}>{t('kidDayPage.editBtn')}</button>
             </div>
           )}
         </div>
+      ) : (
+        /* Mobile: existing inline header */
+        <div style={{ padding: '12px 16px 0', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Avatar size={38} skin="#F5C9A1" hair="#2B1810" shirt={T.coral}/>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: T.fDisp, fontSize: 15, fontWeight: 900, color: T.ink }}>
+              {t('kidDayPage.greeting', { name: child?.name ?? '...' })}
+            </div>
+            <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 600 }}>
+              {t('kidDayPage.levelDay', { level, date: todayLabel(language) })}
+            </div>
+          </div>
+          <StreakFlame days={streakDays}/>
+        </div>
       )}
+
+      {/* ── RIGHT (desktop) or full-width (mobile): form / summary ── */}
+      <div style={isDesktop ? { padding: '32px 32px', overflowY: 'auto' } : { position: 'relative' }}>
+        {showForm ? (
+          <>
+            {editMode && todayDay && (
+              <div style={{ padding: isDesktop ? '0 0 12px' : '8px 16px 0', display: 'flex', justifyContent: 'flex-end' }}>
+                <button onClick={() => setEditMode(false)} style={{
+                  height: 30, padding: '0 12px', borderRadius: 15,
+                  border: `1.5px solid ${T.line}`, background: '#fff',
+                  cursor: 'pointer', fontFamily: T.fBody, fontSize: 12, color: T.ink3, fontWeight: 700,
+                }}>{t('kidDayPage.backBtn')}</button>
+              </div>
+            )}
+            {activeMemberId && (
+              <KidDayFillForm
+                childId={activeMemberId}
+                date={today}
+                fillMode={fillMode as 1 | 2 | 3}
+                dayType={dayType}
+                existingDay={todayDay}
+                onSaved={handleFillSaved}
+              />
+            )}
+          </>
+        ) : (
+          /* Mobile summary cards — on desktop these are shown in the left stats panel already */
+          !isDesktop && (
+            <div style={{ paddingBottom: 110 }}>
+              <div style={{ padding: '14px 16px 0' }}>
+                <div style={{
+                  background: `linear-gradient(135deg, ${T.teal} 0%, #3DB8B0 100%)`,
+                  borderRadius: 28, padding: 20, position: 'relative', overflow: 'hidden',
+                  boxShadow: `0 10px 30px ${T.teal}40`,
+                }}>
+                  <div style={{ position: 'absolute', top: -30, right: -30, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.15)' }}/>
+                  <div style={{ fontFamily: T.fBody, fontSize: 11, color: 'rgba(255,255,255,0.8)', fontWeight: 700, letterSpacing: 1.5, position: 'relative' }}>{t('kidDayPage.filledToday')}</div>
+                  <div style={{ fontFamily: T.fDisp, fontSize: 26, fontWeight: 900, color: '#fff', marginTop: 4, position: 'relative' }}>{t('kidDayPage.greatJob')}</div>
+                  <div style={{ fontFamily: T.fBody, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4, position: 'relative' }}>{todayLabel(language)}</div>
+                  <button onClick={() => setEditMode(true)} style={{
+                    marginTop: 14, height: 40, padding: '0 18px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                    background: 'rgba(255,255,255,0.2)', color: '#fff',
+                    fontFamily: T.fDisp, fontSize: 13, fontWeight: 800, position: 'relative',
+                  }}>{t('kidDayPage.editBtn')}</button>
+                </div>
+              </div>
+
+              {/* Stats row */}
+              <div style={{ display: 'flex', gap: 10, padding: '14px 16px 0' }}>
+                <div style={{
+                  flex: 1, background: '#fff', borderRadius: 22, padding: '14px 16px',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  border: `1.5px solid ${T.sunDeep}`, boxShadow: `0 4px 14px rgba(0,0,0,0.04)`,
+                }}>
+                  <Coin size={26}/>
+                  <div>
+                    <div style={{ fontFamily: T.fBody, fontSize: 10, color: T.ink3, fontWeight: 700 }}>{t('kidDayPage.balanceLabel')}</div>
+                    <div style={{ fontFamily: T.fNum, fontSize: 20, fontWeight: 800, color: T.ink }}>
+                      <AnimatedNum value={coins}/>
+                    </div>
+                  </div>
+                </div>
+                <div style={{
+                  flex: 1, background: '#fff', borderRadius: 22, padding: '14px 16px',
+                  border: `1.5px solid ${T.line}`, boxShadow: `0 4px 14px rgba(0,0,0,0.04)`,
+                  display: 'flex', alignItems: 'center', gap: 10,
+                }}>
+                  <div style={{ fontSize: 22 }}>🔥</div>
+                  <div>
+                    <div style={{ fontFamily: T.fBody, fontSize: 10, color: T.ink3, fontWeight: 700 }}>{t('kidDayPage.streakLabel')}</div>
+                    <div style={{ fontFamily: T.fNum, fontSize: 20, fontWeight: 800, color: T.coral }}>{t('kidDayPage.streakDays', { count: streakDays })}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mood display */}
+              {todayDay?.mood && (
+                <div style={{ padding: '14px 16px 0' }}>
+                  <div style={{ background: '#fff', borderRadius: 20, padding: '14px 16px', border: `1.5px solid ${T.line}`, display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ fontSize: 32 }}>
+                      {todayDay.mood === 'happy' ? '😄' : todayDay.mood === 'neutral' || todayDay.mood === 'meh' ? '🙂' : todayDay.mood === 'sad' ? '😔' : todayDay.mood === 'tired' ? '😴' : '😐'}
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: T.fDisp, fontSize: 14, fontWeight: 800, color: T.ink }}>{t('kidDayPage.moodLabel')}</div>
+                      <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, marginTop: 2 }}>{t('kidDayPage.moodNote')}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        )}
+      </div>
     </div>
   )
 }
