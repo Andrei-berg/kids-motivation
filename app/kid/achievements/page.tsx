@@ -2,6 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+
+function useDesktop() {
+  const [is, setIs] = useState(false)
+  useEffect(() => {
+    const check = () => setIs(window.innerWidth >= 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return is
+}
 import { useAppStore } from '@/lib/store'
 import { getChildBadges, getAvailableBadges } from '@/lib/services/badges.service'
 import { api } from '@/lib/api'
@@ -61,6 +72,7 @@ function LoadingSkeleton() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function AchievementsPage() {
   const t = useT()
+  const isDesktop = useDesktop()
   const { activeMemberId } = useAppStore()
   const [loading, setLoading] = useState(true)
   const [child, setChild] = useState<Child | null>(null)
@@ -117,7 +129,7 @@ export default function AchievementsPage() {
   ]
 
   return (
-    <div style={{ paddingBottom: 110, maxWidth: 500, margin: '0 auto' }}>
+    <div style={isDesktop ? { paddingBottom: 110, padding: '0 32px 32px' } : { paddingBottom: 110, maxWidth: 500, margin: '0 auto' }}>
       {/* ═══ Hero ═════════════════════════════════════════════════════════════ */}
       <div style={{ padding: '12px 16px 0' }}>
         <div style={{
@@ -188,7 +200,7 @@ export default function AchievementsPage() {
       <div style={{ padding: '22px 16px 0' }}>
         <SectionHeader title={t('achievements.allBadges')}/>
         <motion.div variants={listV} initial="hidden" animate="show"
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 12 }}>
+          style={{ display: 'grid', gridTemplateColumns: isDesktop ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: 10, marginTop: 12 }}>
           {allBadges.slice(0, 12).map(badge => {
             const earned = earnedBadges.find(e => e.badge_key === badge.key)
             const isEarned = !!earned
