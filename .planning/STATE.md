@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-last_updated: "2026-05-17T13:17:15.200Z"
+last_updated: "2026-05-18T11:48:00.000Z"
 progress:
   total_phases: 34
   completed_phases: 18
@@ -13,7 +13,7 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-05-17 — executed 04.4-05 (COPPA consent gate in FamilyManager; consent_given written to family_members).
+> Обновляется после каждой фазы. Последнее обновление: 2026-05-18 — executed 04.5-04 (Kid Achievements 4-column badge grid + Kid Shop 3-column reward grid on desktop; completes phase 04.5-desktop).
 
 ---
 
@@ -21,11 +21,11 @@ progress:
 
 ```
 Milestone v4.0 PWA Polish — In Progress
-Phase 4.4 (security-compliance): IN PROGRESS — plans 01, 02, 03, 05 complete
-Last activity: 2026-05-17 — executed 04.4-03 (AuditScreen in ParentCenter + routing + i18n keys)
+Phase 4.5 (desktop): COMPLETE — all 4 plans executed
+Last activity: 2026-05-18 — executed 04.5-04 (Kid Achievements + Kid Shop desktop grid layouts)
 ```
 
-Progress: [████░░░░░░] 20% (1/5 phases complete)
+Progress: [████████░░] 80% (4/5 phases complete)
 
 ---
 
@@ -79,8 +79,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-17T13:17:15Z
-Stopped at: Completed 04.4-04-PLAN.md — Data export ZIP + account deletion cascade + Settings Account tab with Danger Zone (checkpoint approved)
+Last session: 2026-05-18T11:48:00Z
+Stopped at: Completed 04.5-04-PLAN.md — Kid Achievements 4-column badge grid + Kid Shop 3-column reward grid on desktop (DSK-03 complete)
 Resume file: None
 
 ---
@@ -132,3 +132,8 @@ Resume file: None
 - action_type enforced by both SQL CHECK constraint and TypeScript union type — double safety
 - consent_given uses three-state Boolean (NULL=not asked, TRUE=given, FALSE=withdrawn) to distinguish not-asked from denied
 - Used import { supabase } from '@/lib/supabase' singleton (consistent with all existing repos) instead of createClient() from plan template
+
+### Phase 04.5 — Plan 04 (2026-05-18)
+- Achievements badge grid mobile fallback kept as repeat(3, 1fr) — existing mobile layout used 3 columns, not 2; preserves mobile experience byte-for-byte
+- Shop both real-rewards and virtual-items grids updated together — consistent 3-column desktop layout across both tabs
+- Balance strip in Shop left unchanged — already spans full container width, no inner maxWidth to remove
