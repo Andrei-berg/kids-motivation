@@ -1,6 +1,17 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+
+function useDesktop() {
+  const [is, setIs] = useState(false)
+  useEffect(() => {
+    const check = () => setIs(window.innerWidth >= 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return is
+}
 import { useAppStore } from '@/lib/store'
 import { getWallet, getRewards, getPurchases } from '@/lib/repositories/wallet.repo'
 import { requestPurchase } from '@/app/kid/shop/actions'
@@ -21,6 +32,7 @@ function LoadingSkeleton() {
 
 export default function KidShopPage() {
   const t = useT()
+  const isDesktop = useDesktop()
   const { activeMemberId } = useAppStore()
   const [tab, setTab] = useState<'real' | 'virtual'>('real')
   const [loading, setLoading] = useState(true)
@@ -79,7 +91,7 @@ export default function KidShopPage() {
   }
 
   return (
-    <div style={{ paddingBottom: 110, maxWidth: 500, margin: '0 auto' }}>
+    <div style={isDesktop ? { paddingBottom: 110, padding: '0 32px 32px' } : { paddingBottom: 110, maxWidth: 500, margin: '0 auto' }}>
       {toast && (
         <div style={{ position: 'fixed', top: 16, left: 16, right: 16, zIndex: 60, background: T.teal, color: '#fff', padding: '12px 16px', borderRadius: 16, fontFamily: T.fDisp, fontWeight: 800, fontSize: 14, textAlign: 'center', boxShadow: '0 8px 20px rgba(0,0,0,0.2)', animation: 'fadeIn 0.2s' }}>
           {toast}
@@ -134,7 +146,7 @@ export default function KidShopPage() {
             <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, marginBottom: 12, lineHeight: 1.4 }}>
               {t('kidShop.virtualComingSoon')}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? 'repeat(3, 1fr)' : '1fr 1fr', gap: 10 }}>
               {VIRTUAL_ITEMS.map(item => {
                 const canAfford = coins >= item.price_coins
                 return (
@@ -168,7 +180,7 @@ export default function KidShopPage() {
             </div>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? 'repeat(3, 1fr)' : '1fr 1fr', gap: 10 }}>
             {rewards.map(item => {
               const price = item.price_coins ?? 0
               const canAfford = coins >= price
