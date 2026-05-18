@@ -6,6 +6,7 @@ import { T } from '../tokens'
 import { Card, Btn, Pill, Avatar, Sparkline, Ring, Coin, SectionH, Icon } from '../ui'
 import type { ParentChild, ActivityEntry, ActionType } from '../types'
 import type { RewardPurchase } from '@/lib/models/wallet.types'
+import { useT, useLanguage } from '@/lib/i18n'
 
 function useCountUp(target: number, duration = 800) {
   const [n, setN] = useState(0)
@@ -47,10 +48,12 @@ type Props = {
   onApprove: (p: RewardPurchase) => void
   onDecline: (p: RewardPurchase) => void
   onOpenChild: (id: string) => void
+  onFillDay?: () => void
 }
 
 function ChildCard({ child, onAction }: { child: ParentChild; onAction: Props['onAction'] }) {
   const animatedBalance = useCountUp(child.balance)
+  const t = useT()
   return (
     <Card pad={0} style={{ overflow: 'hidden' }}>
       <div style={{ padding: 16, display: 'flex', gap: 14, alignItems: 'center' }}>
@@ -78,12 +81,12 @@ function ChildCard({ child, onAction }: { child: ParentChild; onAction: Props['o
       <div style={{ padding: '0 16px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>
-            Last 7 days · coins
+            {t('parentCenter.dashboard.lastWeekCoins')}
           </div>
           <Sparkline data={child.week} color={child.accent} w={160} h={32}/>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Today</div>
+          <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('parentCenter.dashboard.today')}</div>
           <div style={{ fontFamily: T.fMono, fontSize: 14, color: T.text, fontWeight: 600 }}>
             {child.todayDone}/{child.todayTotal}
           </div>
@@ -95,10 +98,10 @@ function ChildCard({ child, onAction }: { child: ParentChild; onAction: Props['o
         background: T.cardBorder, borderTop: `1px solid ${T.cardBorder}`,
       }}>
         {([
-          { label: 'Reward', icon: '🌟', act: 'reward' as ActionType },
-          { label: 'Penalty', icon: '⚠️', act: 'penalty' as ActionType },
-          { label: 'Freeze', icon: '❄️', act: 'freeze' as ActionType },
-          { label: 'Bonus', icon: '💰', act: 'bonus' as ActionType },
+          { label: t('parentCenter.dashboard.reward'), icon: '🌟', act: 'reward' as ActionType },
+          { label: t('parentCenter.dashboard.penalty'), icon: '⚠️', act: 'penalty' as ActionType },
+          { label: t('parentCenter.dashboard.freeze'), icon: '❄️', act: 'freeze' as ActionType },
+          { label: t('parentCenter.dashboard.bonus'), icon: '💰', act: 'bonus' as ActionType },
         ]).map(b => (
           <button key={b.act}
             onClick={e => { e.stopPropagation(); onAction(child, b.act) }}
@@ -122,11 +125,16 @@ function ChildCard({ child, onAction }: { child: ParentChild; onAction: Props['o
 
 function ActivityRow({ a, allChildren }: { a: ActivityEntry; allChildren: ParentChild[] }) {
   const child = allChildren.find(c => c.id === a.who)
+  const t = useT()
   if (!child) return null
   const toneMap: Record<string, 'success' | 'danger' | 'indigo'> = {
     earn_coins: 'success', penalty: 'danger', bonus: 'indigo',
   }
-  const labelMap: Record<string, string> = { earn_coins: 'EARN', penalty: 'PENALTY', bonus: 'BONUS' }
+  const labelMap: Record<string, string> = {
+    earn_coins: t('parentCenter.dashboard.earn'),
+    penalty: t('parentCenter.dashboard.penaltyLabel'),
+    bonus: t('parentCenter.dashboard.bonusLabel'),
+  }
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderBottom: `1px solid ${T.cardBorder}` }}>
       <Avatar child={child} size={32} ring={false}/>
@@ -144,16 +152,19 @@ function ActivityRow({ a, allChildren }: { a: ActivityEntry; allChildren: Parent
   )
 }
 
-export default function Dashboard({ children, activity, pending, onAction, onApprove, onDecline, onOpenChild }: Props) {
+export default function Dashboard({ children, activity, pending, onAction, onApprove, onDecline, onOpenChild, onFillDay }: Props) {
   const filledCount = children.filter(c => c.todayPct > 50).length
+  const t = useT()
+  const { language } = useLanguage()
   const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+  const greeting = hour < 12 ? t('parentCenter.dashboard.goodMorning') : hour < 18 ? t('parentCenter.dashboard.goodAfternoon') : t('parentCenter.dashboard.goodEvening')
+  const locale = language === 'ru' ? 'ru-RU' : 'en-US'
 
   return (
     <div style={{ padding: '20px 16px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div>
         <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+          {new Date().toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' })}
         </div>
         <h1 style={{ margin: '4px 0 0', fontFamily: T.fHead, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>
           {greeting}
@@ -166,17 +177,17 @@ export default function Dashboard({ children, activity, pending, onAction, onApp
         </Ring>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>
-            Today filled: {filledCount} of {children.length} children
+            {t('parentCenter.dashboard.todayFilled').replace('{filled}', String(filledCount)).replace('{total}', String(children.length))}
           </div>
           <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
-            {filledCount < children.length ? 'Fill the remaining evaluations to close the day' : 'All set for today'}
+            {filledCount < children.length ? t('parentCenter.dashboard.fillRemaining') : t('parentCenter.dashboard.allSet')}
           </div>
         </div>
-        <Btn variant="solid" size="sm" onClick={() => window.location.href = '/parent/daily'}>Fill day</Btn>
+        <Btn variant="solid" size="sm" onClick={onFillDay}>{t('parentCenter.dashboard.fillDay')}</Btn>
       </Card>
 
       <div>
-        <SectionH title="Children" sub="Tap a card to open full profile"/>
+        <SectionH title={t('parentCenter.dashboard.children')} sub={t('parentCenter.dashboard.tapToOpen')}/>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {children.map(c => (
             <div key={c.id} onClick={() => onOpenChild(c.id)} style={{ cursor: 'pointer' }}>
@@ -185,7 +196,7 @@ export default function Dashboard({ children, activity, pending, onAction, onApp
           ))}
           {children.length === 0 && (
             <Card pad={24} style={{ textAlign: 'center' }}>
-              <div style={{ color: T.muted, fontSize: 13 }}>No children found</div>
+              <div style={{ color: T.muted, fontSize: 13 }}>{t('parentCenter.dashboard.noChildren')}</div>
             </Card>
           )}
         </div>
@@ -193,8 +204,11 @@ export default function Dashboard({ children, activity, pending, onAction, onApp
 
       {pending.length > 0 && (
         <div>
-          <SectionH title="Pending approvals" sub={`${pending.length} shop request${pending.length > 1 ? 's' : ''}`}
-            action={<Pill tone="warn" icon="bell">Action needed</Pill>}/>
+          <SectionH title={t('parentCenter.dashboard.pendingApprovals')}
+            sub={pending.length > 1
+              ? t('parentCenter.dashboard.shopRequestsPlural').replace('{count}', String(pending.length))
+              : t('parentCenter.dashboard.shopRequests').replace('{count}', String(pending.length))}
+            action={<Pill tone="warn" icon="bell">!</Pill>}/>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {pending.map(p => {
               const child = children.find(c => c.id === p.child_id)
@@ -204,14 +218,14 @@ export default function Dashboard({ children, activity, pending, onAction, onApp
                   <Avatar child={child} size={36}/>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>
-                      {child.name} wants <span style={{ color: T.cyan }}>{p.reward_title}</span>
+                      {child.name} {t('parentCenter.dashboard.wants')} <span style={{ color: T.cyan }}>{p.reward_title}</span>
                     </div>
                     <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
                       <span style={{ fontFamily: T.fMono, fontWeight: 600 }}>{p.frozen_coins}🪙</span>
                     </div>
                   </div>
-                  <Btn variant="ghost" size="sm" icon="x" onClick={() => onDecline(p)}>Decline</Btn>
-                  <Btn variant="primary" size="sm" icon="check" onClick={() => onApprove(p)}>Approve</Btn>
+                  <Btn variant="ghost" size="sm" icon="x" onClick={() => onDecline(p)}>{t('parentCenter.dashboard.decline')}</Btn>
+                  <Btn variant="primary" size="sm" icon="check" onClick={() => onApprove(p)}>{t('parentCenter.dashboard.approve')}</Btn>
                 </Card>
               )
             })}
@@ -220,8 +234,8 @@ export default function Dashboard({ children, activity, pending, onAction, onApp
       )}
 
       <div>
-        <SectionH title="Activity" sub="Recent actions across all children"
-          action={<Btn variant="outline" size="sm" icon="filter">All</Btn>}/>
+        <SectionH title={t('parentCenter.dashboard.activity')} sub={t('parentCenter.dashboard.recentActions')}
+          action={<Btn variant="outline" size="sm" icon="filter">{t('parentCenter.dashboard.allFilter')}</Btn>}/>
         <Card pad={0} style={{ overflow: 'hidden' }}>
           <motion.div variants={listVariants} initial="hidden" animate="show">
             {activity.slice(0, 8).map((a, i) => (
@@ -231,7 +245,7 @@ export default function Dashboard({ children, activity, pending, onAction, onApp
             ))}
           </motion.div>
           {activity.length === 0 && (
-            <div style={{ padding: '20px', textAlign: 'center', color: T.muted, fontSize: 13 }}>No recent activity</div>
+            <div style={{ padding: '20px', textAlign: 'center', color: T.muted, fontSize: 13 }}>{t('parentCenter.dashboard.noActivity')}</div>
           )}
           {activity.length > 0 && (
             <button
@@ -240,7 +254,7 @@ export default function Dashboard({ children, activity, pending, onAction, onApp
                 width: '100%', padding: 12, background: 'transparent', border: 'none',
                 color: T.muted, fontFamily: T.fBody, fontSize: 12, fontWeight: 600, cursor: 'pointer',
               }}>
-              View all activity →
+              {t('parentCenter.dashboard.viewAll')}
             </button>
           )}
         </Card>

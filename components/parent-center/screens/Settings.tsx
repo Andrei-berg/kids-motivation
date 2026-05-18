@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { T } from '../tokens'
-import { Card, Btn, Pill, Field, Toggle, Tabs, Icon } from '../ui'
-import type { ParentChild, ToastState } from '../types'
+import { Card, Btn, Pill, Icon, Tabs } from '../ui'
+import type { ParentChild } from '../types'
 import { getWalletSettings, updateWalletSettings } from '@/lib/wallet-api'
 import type { WalletSettings } from '@/lib/wallet-api'
 import { useLanguage, SUPPORTED_LANGUAGES, useT } from '@/lib/i18n'
@@ -35,9 +35,12 @@ function ChildSelector({ children, value, onChange }: {
 // ───── Family tab ─────
 function LanguageCard() {
   const { language, setLanguage } = useLanguage()
+  const t = useT()
   return (
     <Card pad={16}>
-      <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Language</div>
+      <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+        {t('parentCenter.settings.family.language')}
+      </div>
       <div style={{ display: 'flex', gap: 8 }}>
         {SUPPORTED_LANGUAGES.map(lang => {
           const active = language === lang.code
@@ -63,12 +66,13 @@ function LanguageCard() {
 
 function FamilyTab({ allChildren, notify }: { allChildren: ParentChild[]; notify: (msg: string, tone?: string) => void }) {
   const [copied, setCopied] = useState(false)
+  const t = useT()
   const code = 'FAMILY'
 
   const copy = async () => {
     await navigator.clipboard?.writeText(code).catch(() => {})
     setCopied(true)
-    notify('Invite code copied')
+    notify(t('parentCenter.settings.family.inviteCopied'))
     setTimeout(() => setCopied(false), 2000)
   }
 
@@ -76,7 +80,9 @@ function FamilyTab({ allChildren, notify }: { allChildren: ParentChild[]; notify
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <LanguageCard />
       <Card pad={16}>
-        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Invite code</div>
+        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+          {t('parentCenter.settings.family.inviteCode')}
+        </div>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10, padding: 14, borderRadius: T.rM,
           background: T.bg1, border: `1px dashed ${T.indigo}55`, marginBottom: 10,
@@ -86,18 +92,22 @@ function FamilyTab({ allChildren, notify }: { allChildren: ParentChild[]; notify
             letterSpacing: '0.3em', flex: 1, textAlign: 'center',
           }}>{code}</span>
           <Btn variant={copied ? 'success' : 'primary'} size="md" icon={copied ? 'check' : 'copy'} onClick={copy}>
-            {copied ? 'Copied' : 'Copy'}
+            {copied ? t('parentCenter.settings.family.copied') : t('parentCenter.settings.family.copy')}
           </Btn>
         </div>
         <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.5 }}>
-          Child opens <span style={{ fontFamily: T.fMono, color: T.textDim }}>/onboarding/join</span> and enters this code to connect to your family.
+          {t('parentCenter.settings.family.inviteHint')} <span style={{ fontFamily: T.fMono, color: T.textDim }}>/onboarding/join</span> {t('parentCenter.settings.family.inviteHint2')}
         </div>
       </Card>
 
       <Card pad={16}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Members</div>
-          <Btn variant="ghost" size="sm" icon="plus" onClick={() => window.location.href = '/register'}>Add child</Btn>
+          <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            {t('parentCenter.settings.family.members')}
+          </div>
+          <Btn variant="ghost" size="sm" icon="plus" onClick={() => window.location.href = '/register'}>
+            {t('parentCenter.settings.family.addChild')}
+          </Btn>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0' }}>
@@ -107,11 +117,13 @@ function FamilyTab({ allChildren, notify }: { allChildren: ParentChild[]; notify
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
             }}>👤</div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, color: T.text, fontWeight: 600 }}>Parent <span style={{ fontSize: 12, color: T.muted, fontWeight: 400 }}>(you)</span></div>
+              <div style={{ fontSize: 14, color: T.text, fontWeight: 600 }}>
+                Parent <span style={{ fontSize: 12, color: T.muted, fontWeight: 400 }}>{t('parentCenter.settings.family.you')}</span>
+              </div>
             </div>
-            <Pill tone="indigo">PARENT</Pill>
+            <Pill tone="indigo">{t('parentCenter.settings.family.roleParent')}</Pill>
           </div>
-          {allChildren.map((c, i) => (
+          {allChildren.map((c) => (
             <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderTop: `1px solid ${T.cardBorder}` }}>
               <div style={{
                 width: 40, height: 40, borderRadius: '50%', fontSize: 22,
@@ -120,9 +132,11 @@ function FamilyTab({ allChildren, notify }: { allChildren: ParentChild[]; notify
               }}>{c.avatar}</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, color: T.text, fontWeight: 600 }}>{c.name}</div>
-                <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{c.age} years · LVL {c.level}</div>
+                <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
+                  {t('parentCenter.settings.family.yearsLvl').replace('{age}', String(c.age)).replace('{level}', String(c.level))}
+                </div>
               </div>
-              <Pill>CHILD</Pill>
+              <Pill>{t('parentCenter.settings.family.roleChild')}</Pill>
             </div>
           ))}
         </div>
@@ -131,10 +145,12 @@ function FamilyTab({ allChildren, notify }: { allChildren: ParentChild[]; notify
       <Card pad={16}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ fontSize: 14, color: T.text, fontWeight: 600 }}>Parent PIN</div>
-            <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>Required to open this control center</div>
+            <div style={{ fontSize: 14, color: T.text, fontWeight: 600 }}>{t('parentCenter.settings.family.parentPin')}</div>
+            <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{t('parentCenter.settings.family.parentPinDesc')}</div>
           </div>
-          <Btn variant="ghost" size="sm" onClick={() => window.location.href = '/parent/settings'}>Manage</Btn>
+          <Btn variant="ghost" size="sm" onClick={() => window.location.href = '/parent/settings'}>
+            {t('parentCenter.settings.family.manage')}
+          </Btn>
         </div>
       </Card>
     </div>
@@ -144,6 +160,7 @@ function FamilyTab({ allChildren, notify }: { allChildren: ParentChild[]; notify
 // ───── Coins rules tab ─────
 function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => void }) {
   const { familyId } = useAppStore()
+  const t = useT()
   const [settings, setSettings] = useState<WalletSettings | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -152,7 +169,7 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
   }, [])
 
   if (!settings) {
-    return <div style={{ color: T.muted, padding: 20, textAlign: 'center' }}>Loading...</div>
+    return <div style={{ color: T.muted, padding: 20, textAlign: 'center' }}>{t('common.loading')}</div>
   }
 
   const up = (k: keyof WalletSettings, v: string) => setSettings(s => s ? { ...s, [k]: Number(v) || 0 } : s)
@@ -161,7 +178,7 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
     setSaving(true)
     try {
       await updateWalletSettings(settings)
-      notify('Rules saved')
+      notify(t('parentCenter.settings.coinsRules.saved'))
       void insertAuditEvent({
         family_id: familyId ?? '',
         child_id: null,
@@ -172,7 +189,7 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
         metadata: { tab: 'coins', field: 'wallet_settings' },
       })
     } catch {
-      notify('Failed to save', 'danger')
+      notify(t('parentCenter.settings.coinsRules.saveFailed'), 'danger')
     } finally {
       setSaving(false)
     }
@@ -200,33 +217,41 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <Card pad={16}>
-        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>School grades</div>
-        <RuleRow icon="🏆" label="Grade 5 — excellent" value={settings.coins_per_grade_5} rkey="coins_per_grade_5"/>
-        <RuleRow icon="👍" label="Grade 4 — good" value={settings.coins_per_grade_4} rkey="coins_per_grade_4"/>
-        <RuleRow icon="📉" label="Grade 3 — penalty" value={settings.coins_per_grade_3} rkey="coins_per_grade_3"/>
-        <RuleRow icon="⚠️" label="Grade 2 — penalty" value={settings.coins_per_grade_2} rkey="coins_per_grade_2"/>
-        <RuleRow icon="🚫" label="Grade 1 — penalty" value={settings.coins_per_grade_1} rkey="coins_per_grade_1"/>
+        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+          {t('parentCenter.settings.coinsRules.schoolGrades')}
+        </div>
+        <RuleRow icon="🏆" label={t('settings.coinRules.grade5')} value={settings.coins_per_grade_5} rkey="coins_per_grade_5"/>
+        <RuleRow icon="👍" label={t('settings.coinRules.grade4')} value={settings.coins_per_grade_4} rkey="coins_per_grade_4"/>
+        <RuleRow icon="📉" label={t('settings.coinRules.grade3')} value={settings.coins_per_grade_3} rkey="coins_per_grade_3"/>
+        <RuleRow icon="⚠️" label={t('settings.coinRules.grade2')} value={settings.coins_per_grade_2} rkey="coins_per_grade_2"/>
+        <RuleRow icon="🚫" label={t('settings.coinRules.grade1')} value={settings.coins_per_grade_1} rkey="coins_per_grade_1"/>
       </Card>
 
       <Card pad={16}>
-        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Chores & behavior</div>
-        <RuleRow icon="🧹" label="Room cleaned" value={settings.coins_per_room_task} rkey="coins_per_room_task"/>
-        <RuleRow icon="⭐" label="Good behavior" value={settings.coins_per_good_behavior} rkey="coins_per_good_behavior"/>
-        <RuleRow icon="🏃" label="Exercise" value={settings.coins_per_exercise} rkey="coins_per_exercise"/>
+        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+          {t('parentCenter.settings.coinsRules.chores')}
+        </div>
+        <RuleRow icon="🧹" label={t('settings.coinRules.roomCleaned')} value={settings.coins_per_room_task} rkey="coins_per_room_task"/>
+        <RuleRow icon="⭐" label={t('settings.coinRules.goodBehavior')} value={settings.coins_per_good_behavior} rkey="coins_per_good_behavior"/>
+        <RuleRow icon="🏃" label={t('settings.coinRules.exercise')} value={settings.coins_per_exercise} rkey="coins_per_exercise"/>
       </Card>
 
       <Card pad={16} style={{ background: `linear-gradient(135deg, ${T.cyanSoft}, ${T.card})` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-          <Pill tone="cyan">TRAINER</Pill>
-          <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Coach grades</div>
+          <Pill tone="cyan">{t('parentCenter.settings.coinsRules.trainer')}</Pill>
+          <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            {t('parentCenter.settings.coinsRules.coachGrades')}
+          </div>
         </div>
-        <RuleRow icon="🥇" label="Coach grade 5" value={settings.coins_per_coach_5} rkey="coins_per_coach_5"/>
-        <RuleRow icon="🥈" label="Coach grade 4" value={settings.coins_per_coach_4} rkey="coins_per_coach_4"/>
-        <RuleRow icon="🥉" label="Coach grade 3" value={settings.coins_per_coach_3} rkey="coins_per_coach_3"/>
+        <RuleRow icon="🥇" label={t('settings.coinRules.coachGrade5')} value={settings.coins_per_coach_5} rkey="coins_per_coach_5"/>
+        <RuleRow icon="🥈" label={t('settings.coinRules.coachGrade4')} value={settings.coins_per_coach_4} rkey="coins_per_coach_4"/>
+        <RuleRow icon="🥉" label={t('settings.coinRules.coachGrade3')} value={settings.coins_per_coach_3} rkey="coins_per_coach_3"/>
       </Card>
 
       <Card pad={16}>
-        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Real money exchange</div>
+        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+          {t('parentCenter.settings.coinsRules.exchange')}
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
             flex: 1, padding: 14, background: T.bg1, border: `1px solid ${T.cardBorder}`, borderRadius: T.rM,
@@ -242,7 +267,7 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
       </Card>
 
       <Btn variant="primary" size="lg" onClick={save} disabled={saving} full>
-        {saving ? 'Saving...' : 'Save rules'}
+        {saving ? t('parentCenter.settings.coinsRules.saving') : t('parentCenter.settings.coinsRules.saveBtn')}
       </Btn>
     </div>
   )
@@ -253,13 +278,14 @@ function ChildTab({ allChildren, notify }: { allChildren: ParentChild[]; notify:
   const [who, setWho] = useState(allChildren[0]?.id ?? '')
   const child = allChildren.find(c => c.id === who)
   const [selectedMode, setSelectedMode] = useState<number>(child?.mode ?? 1)
+  const t = useT()
 
   useEffect(() => { if (child) setSelectedMode(child.mode) }, [child?.id])
 
   const modeDefs = [
-    { id: 1, label: 'Basic', desc: 'Mood + extracurricular' },
-    { id: 2, label: 'Standard', desc: 'Room cleaning + mood + extracurricular' },
-    { id: 3, label: 'Full', desc: 'Room + mood + sports + extracurricular' },
+    { id: 1, label: t('parentCenter.settings.child.mode1Label'), desc: t('parentCenter.settings.child.mode1Desc') },
+    { id: 2, label: t('parentCenter.settings.child.mode2Label'), desc: t('parentCenter.settings.child.mode2Desc') },
+    { id: 3, label: t('parentCenter.settings.child.mode3Label'), desc: t('parentCenter.settings.child.mode3Desc') },
   ]
 
   return (
@@ -267,8 +293,12 @@ function ChildTab({ allChildren, notify }: { allChildren: ParentChild[]; notify:
       {allChildren.length > 1 && <ChildSelector children={allChildren} value={who} onChange={setWho}/>}
 
       <Card pad={16}>
-        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 3 }}>Independence mode</div>
-        <div style={{ fontSize: 11, color: T.faint, marginBottom: 12 }}>What {child?.name} can fill in themselves</div>
+        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 3 }}>
+          {t('parentCenter.settings.child.independenceMode')}
+        </div>
+        <div style={{ fontSize: 11, color: T.faint, marginBottom: 12 }}>
+          {t('parentCenter.settings.child.independenceModeDesc').replace('{name}', child?.name ?? '')}
+        </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {modeDefs.map(m => {
             const active = selectedMode === m.id
@@ -297,15 +327,17 @@ function ChildTab({ allChildren, notify }: { allChildren: ParentChild[]; notify:
         </div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>
           <Btn variant="primary" size="md" onClick={() => {
-            notify('Mode saved (manage fully in Settings)')
-          }}>Save</Btn>
+            notify(t('parentCenter.settings.child.modeSaved'))
+          }}>{t('common.save')}</Btn>
         </div>
       </Card>
 
       <Card pad={16} style={{ marginTop: 12 }}>
-        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Child login PIN</div>
+        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+          {t('parentCenter.settings.child.childPin')}
+        </div>
         <div style={{ padding: 10, background: T.indigoSoft, borderRadius: T.r, border: `1px solid rgba(108,92,231,0.2)`, fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-          💡 Manage child PINs in the full <Btn variant="ghost" size="sm" onClick={() => window.location.href = '/parent/settings'} style={{ marginLeft: 4 }}>Settings →</Btn>
+          💡 {t('parentCenter.settings.child.childPinManage')} <Btn variant="ghost" size="sm" onClick={() => window.location.href = '/parent/settings'} style={{ marginLeft: 4 }}>Settings →</Btn>
         </div>
       </Card>
     </div>
@@ -314,13 +346,14 @@ function ChildTab({ allChildren, notify }: { allChildren: ParentChild[]; notify:
 
 // ───── Quick links tab ─────
 function QuickLinksTab() {
+  const t = useT()
   const links = [
-    { icon: '📚', label: 'Manage subjects', href: '/parent/settings' },
-    { icon: '🏃', label: 'Manage sections / activities', href: '/parent/settings' },
-    { icon: '🌴', label: 'Vacation periods', href: '/parent/settings' },
-    { icon: '📋', label: 'Full audit log', href: '/audit' },
-    { icon: '💰', label: 'Wallets & transactions', href: '/parent/wallets' },
-    { icon: '🛒', label: 'Reward shop', href: '/parent/shop' },
+    { icon: '📚', label: t('parentCenter.settings.more.subjects'), href: '/parent/settings' },
+    { icon: '🏃', label: t('parentCenter.settings.more.sections'), href: '/parent/settings' },
+    { icon: '🌴', label: t('parentCenter.settings.more.vacations'), href: '/parent/settings' },
+    { icon: '📋', label: t('parentCenter.settings.more.audit'), href: '/audit' },
+    { icon: '💰', label: t('parentCenter.settings.more.wallets'), href: '/parent/wallets' },
+    { icon: '🛒', label: t('parentCenter.settings.more.shop'), href: '/parent/shop' },
   ]
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -408,7 +441,6 @@ function AccountTab({ notify, familyId }: { notify: (msg: string, tone?: string)
 
   return (
     <div style={{ padding: '16px 0' }}>
-      {/* Data Export Section */}
       <Card style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{t('account.exportTitle')}</div>
         <div style={{ fontSize: 11, color: T.faint, marginBottom: 10 }}>{t('account.exportSub')}</div>
@@ -418,12 +450,10 @@ function AccountTab({ notify, familyId }: { notify: (msg: string, tone?: string)
         </Btn>
       </Card>
 
-      {/* Danger Zone */}
       <div style={{ border: `1.5px solid ${T.danger}`, borderRadius: T.rL, padding: 16, marginTop: 8 }}>
         <p style={{ margin: '0 0 8px', fontFamily: T.fHead, fontSize: 14, fontWeight: 700, color: T.danger }}>{t('account.dangerZone')}</p>
         <p style={{ fontSize: 13, color: T.textDim, margin: '0 0 12px' }}>{t('account.deleteDesc')}</p>
 
-        {/* Data summary — shows what will be deleted */}
         {dataSummary && (
           <div style={{ background: T.card, border: `1px solid ${T.cardBorder}`, borderRadius: T.r, padding: '10px 12px', marginBottom: 12, fontSize: 13, color: T.muted }}>
             <p style={{ margin: '0 0 4px', fontWeight: 600, color: T.textDim }}>{t('account.deleteSummaryTitle')}</p>
@@ -435,7 +465,6 @@ function AccountTab({ notify, familyId }: { notify: (msg: string, tone?: string)
           </div>
         )}
 
-        {/* Download-before-delete nudge — prominent, above type-to-confirm */}
         <div style={{ marginBottom: 12, padding: '8px 12px', background: T.card, borderRadius: T.r, border: `1px solid ${T.cardBorder}` }}>
           <span style={{ fontSize: 13, color: T.muted }}>{t('account.downloadFirst')} </span>
           <button
@@ -478,10 +507,10 @@ export default function SettingsScreen({ allChildren, notify }: {
   const { familyId } = useAppStore()
   const t = useT()
   const tabs = [
-    { id: 'family', label: 'Family', icon: '📁' },
-    { id: 'coins', label: 'Coins Rules', icon: '🪙' },
-    { id: 'child', label: 'Child', icon: '👤' },
-    { id: 'more', label: 'More', icon: '🔗' },
+    { id: 'family', label: t('parentCenter.settings.tabs.family'), icon: '📁' },
+    { id: 'coins', label: t('parentCenter.settings.tabs.coinsRules'), icon: '🪙' },
+    { id: 'child', label: t('parentCenter.settings.tabs.child'), icon: '👤' },
+    { id: 'more', label: t('parentCenter.settings.tabs.more'), icon: '🔗' },
     { id: 'account', label: t('account.tabLabel'), icon: '🔐' },
   ]
 
@@ -496,8 +525,10 @@ export default function SettingsScreen({ allChildren, notify }: {
   return (
     <div style={{ padding: '20px 0 24px' }}>
       <div style={{ padding: '0 16px 16px' }}>
-        <h1 style={{ margin: 0, fontFamily: T.fHead, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Settings</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 13, color: T.muted }}>Configure the motivation system</p>
+        <h1 style={{ margin: 0, fontFamily: T.fHead, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>
+          {t('parentCenter.settings.title')}
+        </h1>
+        <p style={{ margin: '4px 0 0', fontSize: 13, color: T.muted }}>{t('parentCenter.settings.subtitle')}</p>
       </div>
       <div style={{ padding: '0 16px 16px', position: 'sticky', top: 0, background: `linear-gradient(to bottom, ${T.bg0} 80%, transparent)`, zIndex: 10 }}>
         <Tabs value={tab} onChange={setTab} tabs={tabs} scroll/>

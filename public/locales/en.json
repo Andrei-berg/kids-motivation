@@ -1267,5 +1267,99 @@
     "deleteBtn": "Delete My Account",
     "deleting": "Deleting...",
     "deleteError": "Deletion failed. Please try again."
+  },
+  "parentCenter": {
+    "settings": {
+      "title": "Settings",
+      "subtitle": "Configure the motivation system",
+      "tabs": {
+        "family": "Family",
+        "coinsRules": "Coins Rules",
+        "child": "Child",
+        "more": "More"
+      },
+      "family": {
+        "language": "Language",
+        "inviteCode": "Invite Code",
+        "copy": "Copy",
+        "copied": "Copied",
+        "inviteHint": "Child opens",
+        "inviteHint2": "and enters this code to connect to your family.",
+        "members": "Members",
+        "addChild": "Add child",
+        "you": "(you)",
+        "roleParent": "PARENT",
+        "roleChild": "CHILD",
+        "yearsLvl": "{age} years · LVL {level}",
+        "parentPin": "Parent PIN",
+        "parentPinDesc": "Required to open this control center",
+        "manage": "Manage",
+        "inviteCopied": "Invite code copied"
+      },
+      "coinsRules": {
+        "schoolGrades": "School Grades",
+        "chores": "Chores & Behavior",
+        "coachGrades": "Coach Grades",
+        "exchange": "Real Money Exchange",
+        "saved": "Rules saved",
+        "saveFailed": "Failed to save",
+        "saving": "Saving...",
+        "saveBtn": "Save rules",
+        "trainer": "TRAINER"
+      },
+      "child": {
+        "independenceMode": "Independence Mode",
+        "independenceModeDesc": "What {name} can fill in themselves",
+        "mode1Label": "Basic",
+        "mode2Label": "Standard",
+        "mode3Label": "Full",
+        "mode1Desc": "Mood + extracurricular",
+        "mode2Desc": "Room cleaning + mood + extracurricular",
+        "mode3Desc": "Room + mood + sports + extracurricular",
+        "modeSaved": "Mode saved (manage fully in Settings)",
+        "childPin": "Child Login PIN",
+        "childPinManage": "Manage child PINs in the full"
+      },
+      "more": {
+        "subjects": "Manage subjects",
+        "sections": "Manage sections / activities",
+        "vacations": "Vacation periods",
+        "audit": "Full audit log",
+        "wallets": "Wallets & transactions",
+        "shop": "Reward shop"
+      }
+    },
+    "dashboard": {
+      "fillDay": "Fill day",
+      "todayFilled": "Today filled: {filled} of {total} children",
+      "fillRemaining": "Fill the remaining evaluations to close the day",
+      "allSet": "All set for today",
+      "children": "Children",
+      "tapToOpen": "Tap a card to open full profile",
+      "lastWeekCoins": "Last 7 days · coins",
+      "today": "Today",
+      "reward": "Reward",
+      "penalty": "Penalty",
+      "freeze": "Freeze",
+      "bonus": "Bonus",
+      "goodMorning": "Good morning",
+      "goodAfternoon": "Good afternoon",
+      "goodEvening": "Good evening",
+      "pendingApprovals": "Pending approvals",
+      "shopRequests": "{count} shop request",
+      "shopRequestsPlural": "{count} shop requests",
+      "decline": "Decline",
+      "approve": "Approve",
+      "activity": "Activity",
+      "recentActions": "Recent actions across all children",
+      "allFilter": "All",
+      "viewAll": "View all activity →",
+      "noActivity": "No recent activity",
+      "noChildren": "No children found",
+      "wants": "wants",
+      "earn": "EARN",
+      "penaltyLabel": "PENALTY",
+      "bonusLabel": "BONUS"
+    }
   }
 }

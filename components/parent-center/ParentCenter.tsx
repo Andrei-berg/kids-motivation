@@ -12,6 +12,7 @@ import ChildProfile from './screens/ChildProfile'
 import AuditScreen from './screens/AuditScreen'
 import ActionModal from './screens/ActionModal'
 import ChatPanel from './screens/ChatPanel'
+import DailyModal from '@/components/DailyModal'
 import type { ParentChild, ActivityEntry, ActionType, ToastState, ModalState, Route } from './types'
 import type { RewardPurchase, Reward } from '@/lib/models/wallet.types'
 import { getChildren, getDay } from '@/lib/repositories/children.repo'
@@ -77,7 +78,15 @@ export default function ParentCenter() {
   const [rewards, setRewards] = useState<Reward[]>([])
   const [activity, setActivity] = useState<ActivityEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [dailyModal, setDailyModal] = useState<{ open: boolean; childId: string }>({ open: false, childId: '' })
+  const [refreshKey, setRefreshKey] = useState(0)
   const isDesktop = useDesktop()
+
+  const openFillDay = () => {
+    const firstChild = children[0]
+    if (firstChild) setDailyModal({ open: true, childId: firstChild.id })
+  }
+  const closeFillDay = () => setDailyModal(m => ({ ...m, open: false }))
 
   const notify = (msg: string, tone?: 'warn' | 'danger') => {
     setToast({ msg, tone })
@@ -170,7 +179,7 @@ export default function ParentCenter() {
       }
     }
     loadAll()
-  }, [])
+  }, [refreshKey])
 
   const openAction = (child: ParentChild, action: ActionType) => setModal({ open: true, child, action })
   const closeAction = () => setModal(m => ({ ...m, open: false }))
@@ -249,7 +258,8 @@ export default function ParentCenter() {
     switch (route) {
       case 'dashboard':
         return <Dashboard children={children} activity={activity} pending={pending}
-          onAction={openAction} onApprove={handleApprove} onDecline={handleDecline} onOpenChild={onOpenChild}/>
+          onAction={openAction} onApprove={handleApprove} onDecline={handleDecline} onOpenChild={onOpenChild}
+          onFillDay={openFillDay}/>
       case 'children':
         return <ChildrenScreen children={children} onOpenChild={onOpenChild}/>
       case 'tasks':
@@ -424,6 +434,7 @@ export default function ParentCenter() {
         />
 
         <ActionModal open={modal.open} child={modal.child} action={modal.action} onClose={closeAction} onConfirm={confirmAction}/>
+        <DailyModal isOpen={dailyModal.open} onClose={closeFillDay} childId={dailyModal.childId} date={new Date().toISOString().slice(0, 10)} onSave={() => { closeFillDay(); setRefreshKey(k => k + 1) }}/>
         <Toast toast={toast}/>
       </div>
     )
@@ -555,6 +566,8 @@ export default function ParentCenter() {
         open={modal.open} child={modal.child} action={modal.action}
         onClose={closeAction} onConfirm={confirmAction}
       />
+
+      <DailyModal isOpen={dailyModal.open} onClose={closeFillDay} childId={dailyModal.childId} date={new Date().toISOString().slice(0, 10)} onSave={() => { closeFillDay(); setRefreshKey(k => k + 1) }}/>
 
       <Toast toast={toast}/>
     </div>

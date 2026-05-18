@@ -1235,5 +1235,99 @@
     "deleteBtn": "Удалить мой аккаунт",
     "deleting": "Удаляем...",
     "deleteError": "Ошибка удаления. Попробуйте снова."
+  },
+  "parentCenter": {
+    "settings": {
+      "title": "Настройки",
+      "subtitle": "Настройка системы мотивации",
+      "tabs": {
+        "family": "Семья",
+        "coinsRules": "Правила монет",
+        "child": "Ребёнок",
+        "more": "Ещё"
+      },
+      "family": {
+        "language": "Язык",
+        "inviteCode": "Код приглашения",
+        "copy": "Копировать",
+        "copied": "Скопировано",
+        "inviteHint": "Ребёнок открывает",
+        "inviteHint2": "и вводит этот код, чтобы подключиться к семье.",
+        "members": "Участники",
+        "addChild": "Добавить ребёнка",
+        "you": "(вы)",
+        "roleParent": "РОДИТЕЛЬ",
+        "roleChild": "РЕБЁНОК",
+        "yearsLvl": "{age} лет · УР {level}",
+        "parentPin": "PIN родителя",
+        "parentPinDesc": "Требуется для открытия центра управления",
+        "manage": "Управление",
+        "inviteCopied": "Код скопирован"
+      },
+      "coinsRules": {
+        "schoolGrades": "Оценки",
+        "chores": "Уборка и поведение",
+        "coachGrades": "Оценки тренера",
+        "exchange": "Обмен на реальные деньги",
+        "saved": "Правила сохранены",
+        "saveFailed": "Ошибка сохранения",
+        "saving": "Сохранение...",
+        "saveBtn": "Сохранить правила",
+        "trainer": "ТРЕНЕР"
+      },
+      "child": {
+        "independenceMode": "Режим самостоятельности",
+        "independenceModeDesc": "Что {name} может заполнить самостоятельно",
+        "mode1Label": "Базовый",
+        "mode2Label": "Стандартный",
+        "mode3Label": "Полный",
+        "mode1Desc": "Настроение + внеклассное",
+        "mode2Desc": "Уборка + настроение + внеклассное",
+        "mode3Desc": "Уборка + настроение + спорт + внеклассное",
+        "modeSaved": "Режим сохранён (полные настройки → Settings)",
+        "childPin": "PIN ребёнка",
+        "childPinManage": "Управляйте PIN-кодами в полных"
+      },
+      "more": {
+        "subjects": "Управление предметами",
+        "sections": "Секции и занятия",
+        "vacations": "Периоды каникул",
+        "audit": "Полный журнал аудита",
+        "wallets": "Кошельки и транзакции",
+        "shop": "Магазин наград"
+      }
+    },
+    "dashboard": {
+      "fillDay": "Заполнить день",
+      "todayFilled": "Заполнено сегодня: {filled} из {total}",
+      "fillRemaining": "Заполните оставшиеся оценки чтобы закрыть день",
+      "allSet": "Всё готово на сегодня",
+      "children": "Дети",
+      "tapToOpen": "Нажмите на карточку для просмотра профиля",
+      "lastWeekCoins": "Последние 7 дней · монеты",
+      "today": "Сегодня",
+      "reward": "Награда",
+      "penalty": "Штраф",
+      "freeze": "Заморозить",
+      "bonus": "Бонус",
+      "goodMorning": "Доброе утро",
+      "goodAfternoon": "Добрый день",
+      "goodEvening": "Добрый вечер",
+      "pendingApprovals": "Ожидают подтверждения",
+      "shopRequests": "{count} запрос в магазине",
+      "shopRequestsPlural": "{count} запросов в магазине",
+      "decline": "Отклонить",
+      "approve": "Одобрить",
+      "activity": "Активность",
+      "recentActions": "Последние действия по всем детям",
+      "allFilter": "Все",
+      "viewAll": "Показать всю активность →",
+      "noActivity": "Нет активности",
+      "noChildren": "Дети не найдены",
+      "wants": "хочет",
+      "earn": "ЗАРАБОТОК",
+      "penaltyLabel": "ШТРАФ",
+      "bonusLabel": "БОНУС"
+    }
   }
 }
