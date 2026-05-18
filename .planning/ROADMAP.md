@@ -202,7 +202,7 @@ Plans:
 | 4.2 ux-polish | v4.0 | 4/4 | Complete | 2026-05-16 |
 | 4.3 localization | 4/6 | In Progress|  | - |
 | 4.4 security-compliance | 5/5 | Complete   | 2026-05-17 | - |
-| 4.5 desktop | v4.0 | 0/3 | Not started | - |
+| 4.5 desktop | 2/4 | In Progress|  | - |
 | 5.1–5.3 | v5.0 | 0/? | Planned | - |
 | 6.1–6.3 | v6.0 | 0/? | Planned | - |
 | 7.1–7.3 | v7.0 | 0/? | Planned | - |

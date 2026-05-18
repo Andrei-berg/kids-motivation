@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-last_updated: "2026-05-18T11:48:00.000Z"
+last_updated: "2026-05-18T11:49:55.055Z"
 progress:
-  total_phases: 34
+  total_phases: 35
   completed_phases: 18
-  total_plans: 76
-  completed_plans: 76
+  total_plans: 80
+  completed_plans: 78
 ---
 
 # STATE.md — Текущее состояние проекта
@@ -109,6 +109,9 @@ Resume file: None
 - [Phase 04.4-02]: coins_price in plan interface was wrong — actual RewardPurchase field is price_coins (auto-fixed Rule 1)
 - [Phase 04.4-02]: void insertAuditEvent fire-and-forget pattern established: audit failure never blocks parent workflows; repo-layer events minimal, component-layer events carry full context
 - [Phase 04.4]: arraybuffer used for JSZip output in export route — BodyInit compatible with Next.js Response; family-summary endpoint created for Danger Zone count display
+- [Phase 04.5-desktop]: useDesktop hook uses window.innerWidth >= 1024 with resize listener — same pattern as plan 01/02 (no Tailwind breakpoint needed, purely inline styles)
+- [Phase 04.5-desktop]: Kid Day left panel: position: sticky, height: 100vh so stats remain visible while scrolling the form
+- [Phase 04.5-desktop]: Kid Wallet: goals in right sticky 340px column, transactions in left fill column — desktop only
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 - Three-strategy fetch handler: passthrough for /api/ and supabase.co, cache-first for /_next/static/, network-first for pages
