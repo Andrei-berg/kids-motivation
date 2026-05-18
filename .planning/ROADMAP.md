@@ -152,7 +152,11 @@ Plans:
   2. Parent Center pages (dashboard, wallets, analytics, shop, settings) use multi-column content areas — no single-column mobile cards stretched wide
   3. Kid Screen pages (My Day, wallet, achievements, shop) display in a wide-screen layout designed for the space — content fills the screen purposefully
   4. The family chat panel occupies full available height on desktop without scroll gaps or dead whitespace
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 04.5-01-PLAN.md — ParentCenter desktop shell: sidebar nav (220px) + persistent chat panel (320px)
+- [ ] 04.5-02-PLAN.md — Parent Center screen layouts: 2-column grids for Dashboard, Analytics, Children, Shop, Settings
+- [ ] 04.5-03-PLAN.md — Kid Screen desktop layouts: 2-column pages for Day, Wallet, Achievements, Shop
 
 ---
 
@@ -198,11 +202,11 @@ Plans:
 | 4.2 ux-polish | v4.0 | 4/4 | Complete | 2026-05-16 |
 | 4.3 localization | 4/6 | In Progress|  | - |
 | 4.4 security-compliance | 5/5 | Complete   | 2026-05-17 | - |
-| 4.5 desktop | v4.0 | 0/? | Not started | - |
+| 4.5 desktop | v4.0 | 0/3 | Not started | - |
 | 5.1–5.3 | v5.0 | 0/? | Planned | - |
 | 6.1–6.3 | v6.0 | 0/? | Planned | - |
 | 7.1–7.3 | v7.0 | 0/? | Planned | - |
 
 ---
 
-*Created: 2026-03-01. Updated: 2026-05-17 — Phase 4.4 planned: 5 plans covering DB foundation, audit instrumentation, audit screen, data export + account deletion, and COPPA consent gate.*
+*Created: 2026-03-01. Updated: 2026-05-18 — Phase 4.5 planned: 3 plans covering ParentCenter desktop shell, parent screen 2-column layouts, and Kid Screen desktop layouts.*
