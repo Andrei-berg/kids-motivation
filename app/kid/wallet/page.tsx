@@ -12,6 +12,17 @@ import { T } from '@/components/kid/design/tokens'
 import { Coin, CoinPill, AnimatedNum, SectionHeader, KMButton } from '@/components/kid/design/atoms'
 import { useT } from '@/lib/i18n'
 
+function useDesktop() {
+  const [is, setIs] = useState(false)
+  useEffect(() => {
+    const check = () => setIs(window.innerWidth >= 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return is
+}
+
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 function LoadingSkeleton() {
   return (
@@ -44,6 +55,7 @@ export default function KidWalletPage() {
   const [transactions, setTransactions] = useState<WalletTransaction[]>([])
   const [weekScore, setWeekScore] = useState<number>(0)
   const [goals, setGoals] = useState<any[]>([])
+  const isDesktop = useDesktop()
 
   const loadData = useCallback(async () => {
     if (!activeMemberId) { setLoading(false); return }
@@ -83,7 +95,7 @@ export default function KidWalletPage() {
   ]
 
   return (
-    <div style={{ paddingBottom: 110, maxWidth: 500, margin: '0 auto' }}>
+    <div style={isDesktop ? {} : { paddingBottom: 110, maxWidth: 500, margin: '0 auto' }}>
       {/* ═══ Balance hero ═════════════════════════════════════════════════════ */}
       <div style={{ padding: '12px 16px 0' }}>
         <div style={{
@@ -157,46 +169,64 @@ export default function KidWalletPage() {
         </div>
       </div>
 
-      {/* ═══ Goals ════════════════════════════════════════════════════════════ */}
-      {goals.length > 0 && (
-        <div style={{ padding: '22px 16px 0' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-            <h3 style={{ margin: 0, fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>{t('kidWallet.savingsGoals')}</h3>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {goals.map((g: any) => <GoalCard key={g.id} g={g} coins={coins}/>)}
-          </div>
-        </div>
-      )}
+      {/* ═══ 2-column below on desktop ════════════════════════════════════════ */}
+      <div style={isDesktop ? {
+        display: 'grid',
+        gridTemplateColumns: '1fr 340px',
+        gap: 24,
+        padding: '24px 16px 32px',
+        alignItems: 'start',
+      } : {}}>
 
-      {/* ═══ Transactions ═════════════════════════════════════════════════════ */}
-      <div style={{ padding: '24px 16px 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-          <h3 style={{ margin: 0, fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>{t('kidWallet.history')}</h3>
-          <span style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, fontWeight: 600 }}>{t('kidWallet.lastTransactions')}</span>
-        </div>
-        {transactions.length === 0 ? (
-          <div style={{
-            background: '#fff', borderRadius: 22, padding: 24, textAlign: 'center',
-            border: `1.5px solid ${T.line}`,
-          }}>
-            <div style={{ fontSize: 32 }}>💸</div>
-            <div style={{ fontFamily: T.fDisp, fontSize: 15, fontWeight: 800, color: T.ink3, marginTop: 8 }}>
-              {t('kidWallet.noTransactions')}
+        {/* LEFT: transaction list */}
+        <div>
+          {/* ═══ Transactions ═════════════════════════════════════════════════════ */}
+          <div style={{ padding: isDesktop ? '0' : '24px 16px 0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+              <h3 style={{ margin: 0, fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>{t('kidWallet.history')}</h3>
+              <span style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, fontWeight: 600 }}>{t('kidWallet.lastTransactions')}</span>
             </div>
-          </div>
-        ) : (
-          <div style={{ background: '#fff', borderRadius: 22, padding: 4, border: `1.5px solid ${T.line}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
-            <motion.div variants={listV} initial="hidden" animate="show">
-              {transactions.slice(0, 10).map((x, i) => (
-                <motion.div key={x.id} variants={itemV}>
-                  <TxnRow x={x} isLast={i === Math.min(transactions.length, 10) - 1}/>
+            {transactions.length === 0 ? (
+              <div style={{
+                background: '#fff', borderRadius: 22, padding: 24, textAlign: 'center',
+                border: `1.5px solid ${T.line}`,
+              }}>
+                <div style={{ fontSize: 32 }}>💸</div>
+                <div style={{ fontFamily: T.fDisp, fontSize: 15, fontWeight: 800, color: T.ink3, marginTop: 8 }}>
+                  {t('kidWallet.noTransactions')}
+                </div>
+              </div>
+            ) : (
+              <div style={{ background: '#fff', borderRadius: 22, padding: 4, border: `1.5px solid ${T.line}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
+                <motion.div variants={listV} initial="hidden" animate="show">
+                  {transactions.slice(0, 10).map((x, i) => (
+                    <motion.div key={x.id} variants={itemV}>
+                      <TxnRow x={x} isLast={i === Math.min(transactions.length, 10) - 1}/>
+                    </motion.div>
+                  ))}
                 </motion.div>
-              ))}
-            </motion.div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
+
+        {/* RIGHT: goals — sticky on desktop */}
+        <div style={isDesktop ? { position: 'sticky', top: 24 } : {}}>
+          {/* ═══ Goals ════════════════════════════════════════════════════════════ */}
+          {goals.length > 0 && (
+            <div style={{ padding: isDesktop ? '0' : '22px 16px 0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+                <h3 style={{ margin: 0, fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>{t('kidWallet.savingsGoals')}</h3>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {goals.map((g: any) => <GoalCard key={g.id} g={g} coins={coins}/>)}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
+
+      {!isDesktop && <div style={{ height: 110 }}/>}
     </div>
   )
 }
