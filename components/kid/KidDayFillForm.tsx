@@ -143,6 +143,14 @@ export function KidDayFillForm({
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [kidGrades, setKidGrades] = useState<Record<string, GradeEntry[]>>({})
 
+  // IDs of activities already awarded on a previous save — used to prevent
+  // double-awarding coins when the child edits and re-saves the form.
+  const [prevAwardedActivityIds, setPrevAwardedActivityIds] = useState<Set<string>>(new Set())
+  // Which sections already had an attended visit recorded before this edit.
+  const [prevAttendedSectionIds, setPrevAttendedSectionIds] = useState<Set<string>>(new Set())
+  // Whether the book-finish bonus was already awarded before this edit.
+  const [prevBookFinished, setPrevBookFinished] = useState(false)
+
   // ── Reading state ────────────────────────────────────────────────────────
   const [reading, setReading] = useState({
     bookTitle: '',
@@ -208,6 +216,7 @@ export function KidDayFillForm({
           bookFinished: existingReading.book_finished ?? false,
           note: existingReading.note ?? '',
         })
+        if (existingReading.book_finished) setPrevBookFinished(true)
       }
 
       // Pre-check activities that were previously saved
@@ -218,7 +227,14 @@ export function KidDayFillForm({
             .map((l: any) => l.activity_id as string)
         )
         setCheckedActivities(doneIds)
+        setPrevAwardedActivityIds(doneIds)
       }
+
+      // Track sections that already had an attended visit (to skip coin re-award)
+      const alreadyAttended = new Set<string>(
+        (sectionsData ?? []).filter((s: any) => s.visit?.attended).map((s: any) => s.id as string)
+      )
+      setPrevAttendedSectionIds(alreadyAttended)
 
       // Pre-fill grades for school days
       if (subs) {
@@ -389,8 +405,9 @@ export function KidDayFillForm({
 
       await saveDay({ ...dayParams, roomProofUrl: roomProofSignedUrl })
 
-      // Award room coins if applicable
-      if (roomOk) {
+      // Award room coins only on first save — isChildFilled means coins were
+      // already awarded on a previous submission.
+      if (roomOk && !isChildFilled) {
         await awardCoinsForRoom(childId)
       }
 
@@ -402,8 +419,9 @@ export function KidDayFillForm({
         }))
         await saveActivityLogs(childId, date, logs)
 
-        // Award coins for each checked activity
+        // Award coins only for activities newly checked in this session.
         for (const id of Array.from(checkedActivities)) {
+          if (prevAwardedActivityIds.has(id)) continue
           const act = activities.find(a => a.id === id)
           if (act && act.coins > 0) {
             await updateWalletCoins(childId, act.coins, act.name, act.emoji)
@@ -444,7 +462,9 @@ export function KidDayFillForm({
         if (section.visit) {
           const note = sectionNotes[section.id] ?? { progress: '', coachRating: null }
           await markSectionVisit(section.id, date, section.visit.attended, note.progress || undefined, undefined)
-          if (section.visit.attended && note.coachRating && note.coachRating >= 1 && note.coachRating <= 5) {
+          // Only award sport coins for visits that weren't already recorded.
+          const isNewVisit = !prevAttendedSectionIds.has(section.id)
+          if (isNewVisit && section.visit.attended && note.coachRating && note.coachRating >= 1 && note.coachRating <= 5) {
             await awardCoinsForSport(childId, note.coachRating, section.name)
           }
         }
@@ -463,8 +483,8 @@ export function KidDayFillForm({
           // current_page added via migration
           ...(reading.currentPage ? { current_page: Number(reading.currentPage) } : {}),
         } as any)
-        // Award coins for finishing a book
-        if (reading.bookFinished) {
+        // Award book-finish bonus only once.
+        if (reading.bookFinished && !prevBookFinished) {
           const bookCoins = (settings as any)?.coins_per_book ?? 20
           if (bookCoins > 0) {
             await updateWalletCoins(childId, bookCoins, `Книга: ${reading.bookTitle.trim()}`, '📚')
@@ -479,9 +499,12 @@ export function KidDayFillForm({
         notifyStreakEvents(childId, '', streakEvents).catch(() => {})
       })
 
-      const streakBonus = await getStreakBonuses(childId)
-      if (streakBonus > 0) {
-        await updateWalletCoins(childId, streakBonus, 'streak_bonus', '🔥')
+      // Streak bonus only on first save — streaks don't change on re-save.
+      if (!isChildFilled) {
+        const streakBonus = await getStreakBonuses(childId)
+        if (streakBonus > 0) {
+          await updateWalletCoins(childId, streakBonus, 'streak_bonus', '🔥')
+        }
       }
 
       await checkAndAwardBadges(childId, date)
