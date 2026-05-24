@@ -729,7 +729,16 @@
       "noName": "No name",
       "pendingJoin": "awaiting join",
       "cancel": "Cancel"
-    }
+    },
+    "tabs": {
+      "children": "Children",
+      "schedule": "Schedule",
+      "activities": "Activities"
+    },
+    "auditBtn": "Audit log",
+    "walletsBtn": "Wallets",
+    "pinInfo": "Set PINs in the full settings page so children can log in to their accounts.",
+    "managePins": "Manage PINs & Settings"
   },
   "onboarding": {
     "title": "Welcome to FamilyCoins",
@@ -829,7 +838,16 @@
     "sending": "Sending...",
     "cancel": "Cancel",
     "noMessages": "No messages yet. Be the first! 👋",
-    "familyChat": "Family Chat"
+    "familyChat": "Family Chat",
+    "title": "Family Chat",
+    "members": "members",
+    "familyRoom": "Family",
+    "shopRequest": "SHOP REQUEST",
+    "child": "Child",
+    "wants": "wants",
+    "decline": "Decline",
+    "approve": "Approve",
+    "messagePlaceholder": "Message family…"
   },
   "manifest": {
     "appName": "FamilyCoins",
@@ -1276,7 +1294,8 @@
         "family": "Family",
         "coinsRules": "Coins Rules",
         "child": "Child",
-        "more": "More"
+        "more": "More",
+        "children": "Children"
       },
       "family": {
         "language": "Language",
@@ -1361,5 +1380,19 @@
       "penaltyLabel": "PENALTY",
       "bonusLabel": "BONUS"
     }
+  },
+  "wallets": {
+    "title": "Wallets",
+    "subtitle": "Balances and transaction history",
+    "coins": "Coins",
+    "money": "Money",
+    "earned": "earned total",
+    "savedUp": "saved up",
+    "transactions": "Recent Transactions",
+    "noTransactions": "No transactions yet"
+  },
+  "dashboard": {
+    "pending": "pending",
+    "familyCount": "Family · {{count}} children"
   }
 }

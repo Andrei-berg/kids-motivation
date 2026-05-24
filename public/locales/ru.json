@@ -697,7 +697,16 @@
       "noName": "Без имени",
       "pendingJoin": "ожидает присоединения",
       "cancel": "Отмена"
-    }
+    },
+    "tabs": {
+      "children": "Дети",
+      "schedule": "Расписание",
+      "activities": "Активности"
+    },
+    "auditBtn": "Журнал",
+    "walletsBtn": "Кошельки",
+    "pinInfo": "Установите PIN-коды на странице настроек, чтобы дети могли войти в свои аккаунты.",
+    "managePins": "PIN-коды и Настройки"
   },
   "onboarding": {
     "title": "Добро пожаловать в FamilyCoins",
@@ -787,17 +796,26 @@
     "exitButton": "Выйти из просмотра"
   },
   "chat": {
-    "placeholder": "Сообщение...",
+    "placeholder": "Написать сообщение…",
     "send": "Отправить",
     "reactions": "Реакции",
     "stickers": "Стикеры",
     "camera": "Камера",
     "gallery": "Галерея",
-    "caption": "Подпись (необязательно)…",
+    "caption": "Подпись к фото",
     "sending": "Отправка…",
     "cancel": "Отмена",
-    "noMessages": "Пока нет сообщений. Напишите первым! 👋",
-    "familyChat": "Семейный чат"
+    "noMessages": "Сообщений пока нет",
+    "familyChat": "Семейный чат",
+    "title": "Семейный чат",
+    "members": "участников",
+    "familyRoom": "Семья",
+    "shopRequest": "ЗАПРОС В МАГАЗИНЕ",
+    "child": "Ребёнок",
+    "wants": "хочет",
+    "decline": "Отклонить",
+    "approve": "Одобрить",
+    "messagePlaceholder": "Сообщение семье…"
   },
   "manifest": {
     "appName": "FamilyCoins",
@@ -1244,7 +1262,8 @@
         "family": "Семья",
         "coinsRules": "Правила монет",
         "child": "Ребёнок",
-        "more": "Ещё"
+        "more": "Ещё",
+        "children": "Дети"
       },
       "family": {
         "language": "Язык",
@@ -1329,5 +1348,19 @@
       "penaltyLabel": "ШТРАФ",
       "bonusLabel": "БОНУС"
     }
+  },
+  "wallets": {
+    "title": "Кошельки",
+    "subtitle": "Балансы и история транзакций",
+    "coins": "Монеты",
+    "money": "Деньги",
+    "earned": "заработано всего",
+    "savedUp": "накоплено",
+    "transactions": "Последние транзакции",
+    "noTransactions": "Транзакций пока нет"
+  },
+  "dashboard": {
+    "pending": "ожидают",
+    "familyCount": "Семья · {{count}} детей"
   }
 }

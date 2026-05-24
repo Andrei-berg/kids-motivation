@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useT } from '@/lib/i18n'
+import { useT, useLanguage, SUPPORTED_LANGUAGES } from '@/lib/i18n'
 import { T, CHILD_ACCENTS } from './tokens'
 import { Icon, Toast } from './ui'
 import Dashboard from './screens/Dashboard'
@@ -10,6 +10,7 @@ import AnalyticsScreen from './screens/Analytics'
 import SettingsScreen from './screens/Settings'
 import ChildProfile from './screens/ChildProfile'
 import AuditScreen from './screens/AuditScreen'
+import WalletsScreen from './screens/WalletsScreen'
 import ActionModal from './screens/ActionModal'
 import ChatPanel from './screens/ChatPanel'
 import DailyModal from '@/components/DailyModal'
@@ -67,6 +68,7 @@ function ParentCenterSkeleton() {
 export default function ParentCenter() {
   const t = useT()
   const { familyId } = useAppStore()
+  const { language, setLanguage } = useLanguage()
   const [route, setRoute] = useState<Route>('dashboard')
   const [openChild, setOpenChild] = useState<string | null>(null)
   const [chatOpen, setChatOpen] = useState(false)
@@ -251,6 +253,24 @@ export default function ParentCenter() {
   ]
   const pendingCount = pending.length
 
+  const langNext = SUPPORTED_LANGUAGES.find(l => l.code !== language) ?? SUPPORTED_LANGUAGES[0]
+  const LangToggle = ({ style }: { style?: React.CSSProperties }) => (
+    <button
+      onClick={() => setLanguage(langNext.code)}
+      title={langNext.label}
+      style={{
+        height: 30, padding: '0 10px', borderRadius: T.rPill,
+        background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+        color: T.textDim, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+        display: 'inline-flex', alignItems: 'center', gap: 5, transition: 'all .15s',
+        flexShrink: 0, ...style,
+      }}
+    >
+      <span>{SUPPORTED_LANGUAGES.find(l => l.code === language)?.flag}</span>
+      <span style={{ fontSize: 11 }}>{language.toUpperCase()}</span>
+    </button>
+  )
+
   const renderScreen = () => {
     if (loading) {
       return <ParentCenterSkeleton />
@@ -269,13 +289,15 @@ export default function ParentCenter() {
       case 'analytics':
         return <AnalyticsScreen children={children} activity={activity}/>
       case 'settings':
-        return <SettingsScreen allChildren={children} notify={(msg, tone) => notify(msg, tone as any)}/>
+        return <SettingsScreen allChildren={children} notify={(msg, tone) => notify(msg, tone as any)} onNavigate={setRoute}/>
       case 'child':
         return activeChild
           ? <ChildProfile child={activeChild} onBack={backFromChild} onAction={openAction}/>
           : null
       case 'audit':
         return <AuditScreen familyId={familyId ?? ''} children={children}/>
+      case 'wallets':
+        return <WalletsScreen children={children}/>
       default:
         return null
     }
@@ -320,7 +342,7 @@ export default function ParentCenter() {
             }}>P</div>
             <div>
               <div style={{ fontFamily: T.fHead, fontSize: 13, fontWeight: 600, color: T.text, letterSpacing: '-0.01em' }}>Parent Center</div>
-              <div style={{ fontSize: 10, color: T.muted, marginTop: 1 }}>{children.length} {children.length === 1 ? 'child' : 'children'} · synced</div>
+              <div style={{ fontSize: 10, color: T.muted, marginTop: 1 }}>{children.length} · synced</div>
             </div>
           </div>
 
@@ -361,8 +383,8 @@ export default function ParentCenter() {
             })}
           </nav>
 
-          {/* Settings at bottom */}
-          <div style={{ padding: '10px 10px 16px', borderTop: `1px solid ${T.cardBorder}`, flexShrink: 0 }}>
+          {/* Settings + lang at bottom */}
+          <div style={{ padding: '10px 10px 16px', borderTop: `1px solid ${T.cardBorder}`, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
             <button onClick={() => setRoute('settings')} style={{
               width: '100%', height: 38, padding: '0 12px',
               background: route === 'settings' ? T.indigoSoft : 'transparent',
@@ -372,9 +394,10 @@ export default function ParentCenter() {
               cursor: 'pointer', fontFamily: T.fBody, fontSize: 13, fontWeight: 600,
               transition: 'all .12s',
             }}>
-              <Icon name="bell" size={15}/>
-              <span>Settings</span>
+              <Icon name="settings" size={15}/>
+              <span style={{ flex: 1 }}>{t('nav.settings')}</span>
             </button>
+            <LangToggle style={{ width: '100%', justifyContent: 'center' }}/>
           </div>
         </aside>
 
@@ -400,9 +423,10 @@ export default function ParentCenter() {
                 color: T.danger, fontSize: 11, fontWeight: 700, fontFamily: T.fMono,
               }}>
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: T.danger }}/>
-                {pendingCount} pending
+                {pendingCount} {t('dashboard.pending')}
               </div>
             )}
+            <LangToggle/>
             <div style={{
               height: 28, padding: '0 12px',
               background: `${T.indigo}22`,
@@ -431,6 +455,7 @@ export default function ParentCenter() {
           open={true} onClose={() => {}} desktop={true}
           children={children} pending={pending}
           onApprove={handleApprove} onDecline={handleDecline}
+          familyId={familyId ?? ''}
         />
 
         <ActionModal open={modal.open} child={modal.child} action={modal.action} onClose={closeAction} onConfirm={confirmAction}/>
@@ -459,27 +484,28 @@ export default function ParentCenter() {
 
       {/* Top bar */}
       <div style={{
-        flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10,
-        padding: '12px 16px', background: T.bg1, borderBottom: `1px solid ${T.cardBorder}`, zIndex: 50,
+        flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8,
+        padding: '10px 14px', background: T.bg1, borderBottom: `1px solid ${T.cardBorder}`, zIndex: 50,
       }}>
         <div style={{
           width: 30, height: 30, borderRadius: 8,
           background: `linear-gradient(135deg, ${T.indigo}, ${T.cyan})`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 15, fontWeight: 700, color: '#fff',
-          boxShadow: `0 3px 12px ${T.indigo}55`,
+          boxShadow: `0 3px 12px ${T.indigo}55`, flexShrink: 0,
         }}>P</div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: T.fHead, fontSize: 15, fontWeight: 600, color: T.text, letterSpacing: '-0.01em' }}>Parent Center</div>
-          <div style={{ fontSize: 10, color: T.muted, marginTop: 1 }}>Family · {children.length} {children.length === 1 ? 'child' : 'children'}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: T.fHead, fontSize: 14, fontWeight: 600, color: T.text, letterSpacing: '-0.01em' }}>Parent Center</div>
+          <div style={{ fontSize: 10, color: T.muted }}>{t('dashboard.familyCount', { count: String(children.length) })}</div>
         </div>
+        <LangToggle/>
         <button onClick={() => setRoute('settings')} style={{
           width: 32, height: 32, borderRadius: '50%',
           background: T.cardHi, border: `1px solid ${T.cardBorder}`,
           color: T.text, cursor: 'pointer', position: 'relative',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
         }}>
-          <Icon name="bell" size={15}/>
+          <Icon name="settings" size={15}/>
           {pendingCount > 0 && (
             <span style={{
               position: 'absolute', top: -2, right: -2,
@@ -491,13 +517,6 @@ export default function ParentCenter() {
             }}>{pendingCount}</span>
           )}
         </button>
-        <button style={{
-          width: 32, height: 32, borderRadius: '50%',
-          background: `linear-gradient(135deg, ${T.indigo}, ${T.cyan})`,
-          border: 'none', color: '#fff', cursor: 'pointer',
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 13, fontWeight: 700,
-        }}>P</button>
       </div>
 
       {/* Content */}
@@ -560,6 +579,7 @@ export default function ParentCenter() {
         open={chatOpen} onClose={() => setChatOpen(false)}
         children={children} pending={pending}
         onApprove={handleApprove} onDecline={handleDecline}
+        familyId={familyId ?? ''}
       />
 
       <ActionModal
