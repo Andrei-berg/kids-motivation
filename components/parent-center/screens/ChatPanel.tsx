@@ -21,6 +21,15 @@ type Props = {
   desktop?: boolean
 }
 
+// ─── View mode ────────────────────────────────────────────────────────────────
+type ViewMode = 'mixed' | 'split'
+type ChatTab  = 'messages' | 'activity'
+const VIEW_MODE_KEY = 'chat_view_mode_v1'
+function loadViewMode(): ViewMode {
+  if (typeof window === 'undefined') return 'mixed'
+  return (localStorage.getItem(VIEW_MODE_KEY) as ViewMode) || 'mixed'
+}
+
 // ─── Activity classification (dark theme) ─────────────────────────────────────
 type ActivityType = 'streak' | 'badge' | 'coins_gain' | 'coins_loss' | 'generic'
 interface ActivityInfo { icon: string; type: ActivityType; label: string }
@@ -96,6 +105,100 @@ function processMessages(msgs: ChatMessage[]): ProcessedItem[] {
     }
   }
   return out
+}
+
+// ─── Dark view mode toggle ────────────────────────────────────────────────────
+function DarkViewModeToggle({ mode, onToggle, desktop }: { mode: ViewMode; onToggle: () => void; desktop?: boolean }) {
+  return (
+    <div style={{ display: 'inline-flex', background: T.bg2, borderRadius: 999, padding: 2, border: `1px solid ${T.cardBorder}` }}>
+      {(['mixed', 'split'] as ViewMode[]).map(m => (
+        <button key={m} onClick={() => mode !== m && onToggle()} style={{
+          padding: desktop ? '2px 9px' : '3px 11px', borderRadius: 999, border: 'none',
+          cursor: mode !== m ? 'pointer' : 'default',
+          fontFamily: T.fBody, fontSize: desktop ? 10 : 11, fontWeight: 600,
+          background: mode === m ? T.cardHi : 'transparent',
+          color: mode === m ? T.text : T.faint,
+          boxShadow: mode === m ? `0 1px 4px rgba(0,0,0,.3)` : 'none',
+          transition: 'all .15s',
+        }}>
+          {m === 'mixed' ? 'Лента' : 'Раздельно'}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function DarkChatTabBar({ active, onChange, desktop }: { active: ChatTab; onChange: (t: ChatTab) => void; desktop?: boolean }) {
+  return (
+    <div style={{ display: 'flex', gap: 5, padding: desktop ? '6px 0 10px' : '6px 0 12px', borderBottom: `1px solid ${T.cardBorder}`, flexShrink: 0 }}>
+      {([
+        ['messages', '💬 Сообщения', T.indigo],
+        ['activity', '✨ Активность', '#F59E0B'],
+      ] as [ChatTab, string, string][]).map(([tab, label, color]) => (
+        <button key={tab} onClick={() => onChange(tab)} style={{
+          padding: desktop ? '4px 12px' : '5px 14px', borderRadius: T.rPill, cursor: 'pointer',
+          fontFamily: T.fBody, fontSize: desktop ? 11 : 12, fontWeight: 600,
+          background: active === tab ? `${color}20` : 'transparent',
+          color: active === tab ? color : T.muted,
+          border: `1px solid ${active === tab ? color + '55' : T.cardBorder}`,
+          transition: 'all .15s',
+        }}>{label}</button>
+      ))}
+    </div>
+  )
+}
+
+// ─── Dark activity feed ───────────────────────────────────────────────────────
+function DarkActivityFeedFull({ messages, desktop }: { messages: ChatMessage[]; desktop?: boolean }) {
+  const systemMsgs = messages.filter(m => m.message_type === 'system')
+  if (systemMsgs.length === 0) {
+    return (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, color: T.muted }}>
+        <span style={{ fontSize: 36 }}>✨</span>
+        <span style={{ fontFamily: T.fBody, fontSize: desktop ? 12 : 13 }}>Нет активности</span>
+      </div>
+    )
+  }
+  // group by day
+  const days: { dateStr: string; label: string; msgs: ChatMessage[]; delta: number }[] = []
+  for (const msg of systemMsgs) {
+    const dateStr = new Date(msg.created_at).toDateString()
+    let day = days.find(d => d.dateStr === dateStr)
+    if (!day) { day = { dateStr, label: formatDate(msg.created_at), msgs: [], delta: 0 }; days.push(day) }
+    day.msgs.push(msg)
+    const g = msg.content?.match(/\+(\d+)/); if (g) day.delta += parseInt(g[1])
+    const l = msg.content?.match(/-(\d+)/);  if (l) day.delta -= parseInt(l[1])
+  }
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: desktop ? '8px 0' : '10px 0' }}>
+      {[...days].reverse().map(day => (
+        <div key={day.dateStr} style={{ marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: desktop ? '0 0 6px' : '0 0 8px' }}>
+            <span style={{ fontFamily: T.fBody, fontSize: desktop ? 10 : 11, fontWeight: 700, color: T.textDim, flexShrink: 0 }}>{day.label}</span>
+            <div style={{ flex: 1, height: 1, background: T.cardBorder }} />
+            {day.delta !== 0 && (
+              <span style={{ fontFamily: T.fMono, fontSize: desktop ? 9 : 10, fontWeight: 700, color: day.delta > 0 ? T.success : T.danger, padding: '1px 7px', borderRadius: T.rPill, background: day.delta > 0 ? 'rgba(0,230,118,.1)' : 'rgba(255,107,107,.1)', border: `1px solid ${day.delta > 0 ? 'rgba(0,230,118,.3)' : 'rgba(255,107,107,.3)'}`, flexShrink: 0 }}>
+                {day.delta > 0 ? '+' : ''}{day.delta} 🪙
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {[...day.msgs].reverse().map(m => {
+              const { icon, type, label } = classifySystemMessage(m.content)
+              const c = DARK_ACT[type]
+              return (
+                <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: desktop ? '6px 10px' : '7px 12px', borderRadius: desktop ? 8 : 10, background: c.bg, border: `1px solid ${c.border}`, boxShadow: c.glow }}>
+                  <span style={{ fontSize: desktop ? 13 : 14, flexShrink: 0, marginTop: 1 }}>{icon}</span>
+                  <span style={{ fontFamily: T.fBody, fontSize: desktop ? 11 : 12, color: c.text, lineHeight: 1.4, flex: 1 }}>{stripLeadingEmoji(label)}</span>
+                  <span style={{ fontFamily: T.fMono, fontSize: 9, color: T.faint, flexShrink: 0, marginTop: 2 }}>{formatTime(m.created_at)}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -307,7 +410,16 @@ export default function ChatPanel({ open, onClose, children, pending, onApprove,
   const [parentMemberId, setParentMemberId] = useState<string | null>(null)
   const [parentName, setParentName] = useState('Parent')
   const [loading, setLoading] = useState(true)
+  const [viewMode, setViewMode] = useState<ViewMode>(loadViewMode)
+  const [activeTab, setActiveTab] = useState<ChatTab>('messages')
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  function toggleViewMode() {
+    const next: ViewMode = viewMode === 'mixed' ? 'split' : 'mixed'
+    setViewMode(next)
+    localStorage.setItem(VIEW_MODE_KEY, next)
+    if (next === 'mixed') setActiveTab('messages')
+  }
 
   useEffect(() => {
     if (!familyId) return
@@ -363,9 +475,14 @@ export default function ChatPanel({ open, onClose, children, pending, onApprove,
     ...children.map(c => ({ id: c.id, name: c.name, avatar: c.avatar, accent: c.accent })),
   ]
 
-  const visibleMessages = who === 'family'
+  const allVisible = who === 'family'
     ? messages
     : messages.filter(m => m.sender_id === who || m.sender_role === 'parent')
+
+  // In split/messages mode: strip system events from the chat stream
+  const visibleMessages = viewMode === 'split'
+    ? allVisible.filter(m => m.message_type !== 'system')
+    : allVisible
 
   const processed = processMessages(visibleMessages)
 
@@ -405,10 +522,18 @@ export default function ChatPanel({ open, onClose, children, pending, onApprove,
       ref={scrollRef}
       style={{
         flex: 1, overflowY: 'auto',
-        padding: desktop ? '10px 12px' : '8px 14px 12px',
+        padding: viewMode === 'split' && activeTab === 'activity' ? (desktop ? '8px 12px' : '10px 14px') : (desktop ? '10px 12px' : '8px 14px 12px'),
         display: 'flex', flexDirection: 'column', gap: desktop ? 4 : 6,
       }}
     >
+      {/* Activity feed tab */}
+      {viewMode === 'split' && activeTab === 'activity' && (
+        <DarkActivityFeedFull messages={allVisible} desktop={desktop} />
+      )}
+
+      {/* Normal chat content */}
+      {(viewMode === 'mixed' || activeTab === 'messages') && (
+      <>
       {/* Shop requests banner — only in family room */}
       {who === 'family' && (
         <ShopBanner
@@ -500,6 +625,8 @@ export default function ChatPanel({ open, onClose, children, pending, onApprove,
           )
         })
       )}
+      </>
+      )}
     </div>
   )
 
@@ -545,46 +672,34 @@ export default function ChatPanel({ open, onClose, children, pending, onApprove,
         <>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <div>
-              <div style={{ fontFamily: T.fHead, fontSize: 14, fontWeight: 600, color: T.text, letterSpacing: '-0.01em' }}>
-                {t('chat.title')}
-              </div>
-              <div style={{ fontSize: 10, color: T.muted, marginTop: 1 }}>
-                {rooms.length} {t('chat.members')} · live
-              </div>
+              <div style={{ fontFamily: T.fHead, fontSize: 14, fontWeight: 600, color: T.text, letterSpacing: '-0.01em' }}>{t('chat.title')}</div>
+              <div style={{ fontSize: 10, color: T.muted, marginTop: 1 }}>{rooms.length} {t('chat.members')} · live</div>
             </div>
-            {pending.length > 0 && (
-              <div style={{
-                minWidth: 18, height: 18, padding: '0 5px',
-                background: T.danger, borderRadius: T.rPill,
-                color: '#fff', fontSize: 9, fontWeight: 700,
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.fMono,
-              }}>{pending.length}</div>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {pending.length > 0 && <div style={{ minWidth: 18, height: 18, padding: '0 5px', background: T.danger, borderRadius: T.rPill, color: '#fff', fontSize: 9, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.fMono }}>{pending.length}</div>}
+              <DarkViewModeToggle mode={viewMode} onToggle={toggleViewMode} desktop={desktop} />
+            </div>
           </div>
           {renderRoomTabs()}
+          {viewMode === 'split' && <DarkChatTabBar active={activeTab} onChange={setActiveTab} desktop={desktop} />}
         </>
       ) : (
         <>
           <div style={{ width: 34, height: 4, background: T.faint, borderRadius: 2, margin: '0 auto 12px' }}/>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <div>
-              <h2 style={{ margin: 0, fontFamily: T.fHead, fontSize: 20, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>
-                {t('chat.title')}
-              </h2>
-              <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
-                {rooms.length} {t('chat.members')} · synced
-              </div>
+              <h2 style={{ margin: 0, fontFamily: T.fHead, fontSize: 20, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>{t('chat.title')}</h2>
+              <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{rooms.length} {t('chat.members')} · synced</div>
             </div>
-            <button onClick={onClose} style={{
-              width: 32, height: 32, borderRadius: '50%',
-              background: T.cardHi, border: `1px solid ${T.cardBorder}`,
-              color: T.text, cursor: 'pointer',
-              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <Icon name="x" size={14}/>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <DarkViewModeToggle mode={viewMode} onToggle={toggleViewMode} />
+              <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: '50%', background: T.cardHi, border: `1px solid ${T.cardBorder}`, color: T.text, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name="x" size={14}/>
+              </button>
+            </div>
           </div>
           {renderRoomTabs()}
+          {viewMode === 'split' && <DarkChatTabBar active={activeTab} onChange={setActiveTab} />}
         </>
       )}
     </div>
