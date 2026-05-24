@@ -434,7 +434,7 @@ export async function getSectionsForDate(childId: string, date: string): Promise
 // ============================================================================
 
 export async function getExtraActivities(childId: string, dayType?: string): Promise<ExtraActivity[]> {
-  let query = supabase
+  const { data, error } = await supabase
     .from('extra_activities')
     .select('*')
     .eq('child_id', childId)
@@ -442,16 +442,43 @@ export async function getExtraActivities(childId: string, dayType?: string): Pro
     .order('sort_order')
     .order('created_at')
 
-  const { data, error } = await query
   if (error) throw error
+  const activities = (data || []) as ExtraActivity[]
 
-  const activities = data || []
-
-  // Filter by day_type if provided
-  if (dayType) {
-    return activities.filter(a => a.day_types.includes(dayType))
-  }
+  if (dayType) return activities.filter(a => a.day_types.includes(dayType) || a.day_types.includes('always'))
   return activities
+}
+
+/**
+ * Returns activities for a specific date, filtered by:
+ * 1. days_of_week (0=Mon…6=Sun) — empty means all days
+ * 2. day_types ('school'|'weekend'|'vacation'|'always') — must include currentDayType or 'always'
+ */
+export async function getActivitiesForDay(childId: string, date: string, currentDayType: string): Promise<ExtraActivity[]> {
+  const { data, error } = await supabase
+    .from('extra_activities')
+    .select('*')
+    .eq('child_id', childId)
+    .eq('is_active', true)
+    .order('sort_order')
+    .order('created_at')
+
+  if (error) throw error
+  const activities = (data || []) as ExtraActivity[]
+
+  // Convert JS day (0=Sun…6=Sat) → our system (0=Mon…6=Sun)
+  const jsDay = new Date(date + 'T12:00:00').getDay()
+  const dayIndex = jsDay === 0 ? 6 : jsDay - 1
+
+  return activities.filter(a => {
+    // day_types filter
+    const dayTypes = a.day_types || []
+    if (dayTypes.length > 0 && !dayTypes.includes('always') && !dayTypes.includes(currentDayType)) return false
+    // days_of_week filter (empty = all days)
+    const dow = a.days_of_week || []
+    if (dow.length > 0 && !dow.includes(dayIndex)) return false
+    return true
+  })
 }
 
 export async function addExtraActivity(activity: {
@@ -460,6 +487,11 @@ export async function addExtraActivity(activity: {
   name: string
   emoji: string
   dayTypes: string[]
+  category?: string
+  trackingType?: string
+  daysOfWeek?: number[]
+  quantityGoal?: number
+  quantityUnit?: string
   coins: number
   sortOrder?: number
 }): Promise<ExtraActivity> {
@@ -471,6 +503,11 @@ export async function addExtraActivity(activity: {
       name: activity.name,
       emoji: activity.emoji,
       day_types: activity.dayTypes,
+      category: activity.category || 'other',
+      tracking_type: activity.trackingType || 'checkbox',
+      days_of_week: activity.daysOfWeek || [],
+      quantity_goal: activity.quantityGoal || null,
+      quantity_unit: activity.quantityUnit || null,
       coins: activity.coins,
       sort_order: activity.sortOrder ?? 0,
       is_active: true,
@@ -479,7 +516,7 @@ export async function addExtraActivity(activity: {
     .single()
 
   if (error) throw error
-  return data
+  return data as ExtraActivity
 }
 
 export async function updateExtraActivity(
@@ -488,6 +525,11 @@ export async function updateExtraActivity(
     name: string
     emoji: string
     dayTypes: string[]
+    category: string
+    trackingType: string
+    daysOfWeek: number[]
+    quantityGoal: number | null
+    quantityUnit: string | null
     coins: number
     sortOrder: number
     isActive: boolean
@@ -497,6 +539,11 @@ export async function updateExtraActivity(
   if (updates.name !== undefined) updateData.name = updates.name
   if (updates.emoji !== undefined) updateData.emoji = updates.emoji
   if (updates.dayTypes !== undefined) updateData.day_types = updates.dayTypes
+  if (updates.category !== undefined) updateData.category = updates.category
+  if (updates.trackingType !== undefined) updateData.tracking_type = updates.trackingType
+  if (updates.daysOfWeek !== undefined) updateData.days_of_week = updates.daysOfWeek
+  if (updates.quantityGoal !== undefined) updateData.quantity_goal = updates.quantityGoal
+  if (updates.quantityUnit !== undefined) updateData.quantity_unit = updates.quantityUnit
   if (updates.coins !== undefined) updateData.coins = updates.coins
   if (updates.sortOrder !== undefined) updateData.sort_order = updates.sortOrder
   if (updates.isActive !== undefined) updateData.is_active = updates.isActive
@@ -536,7 +583,15 @@ export async function getActivityLogs(childId: string, date: string): Promise<Ac
 export async function saveActivityLogs(
   childId: string,
   date: string,
-  logs: { activityId: string; done: boolean; note?: string }[]
+  logs: {
+    activityId: string
+    done: boolean
+    note?: string
+    quantityDone?: number
+    durationMinutes?: number
+    rating?: number
+    bookmarkPage?: number
+  }[]
 ): Promise<void> {
   if (logs.length === 0) return
 
@@ -546,6 +601,10 @@ export async function saveActivityLogs(
     activity_id: l.activityId,
     done: l.done,
     note: l.note || null,
+    quantity_done: l.quantityDone ?? null,
+    duration_minutes: l.durationMinutes ?? null,
+    rating: l.rating ?? null,
+    bookmark_page: l.bookmarkPage ?? null,
   }))
 
   const { error } = await supabase

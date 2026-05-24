@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useT } from '@/lib/i18n'
 import { api } from '@/lib/api'
 import { flexibleApi, Subject, ExerciseType } from '@/lib/flexible-api'
-import { getSectionsForDate, markSectionVisit, Section, SectionVisit, ExtraActivity, getExtraActivities, getActivityLogs, saveActivityLogs } from '@/lib/expenses-api'
+import { getSectionsForDate, markSectionVisit, Section, SectionVisit, ExtraActivity, getActivitiesForDay, getActivityLogs, saveActivityLogs } from '@/lib/expenses-api'
 import { updateStreaks, getStreakBonuses } from '@/lib/streaks'
 import { updateWalletCoins, awardCoinsForGrade, awardCoinsForRoom, awardCoinsForBehavior, awardCoinsForSport } from '@/lib/wallet-api'
 import { checkAndAwardBadges } from '@/lib/badges'
@@ -138,10 +138,14 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   const [bookFinished, setBookFinished] = useState(false)
   const [readingNote, setReadingNote] = useState('')
 
-  // ДОП. ЗАНЯТИЯ (vacation + weekend) — catalog-based
+  // ДОП. ЗАНЯТИЯ — catalog-based, pre-filtered by getActivitiesForDay
   const [activities, setActivities] = useState<ExtraActivity[]>([])
   const [activityDone, setActivityDone] = useState<Record<string, boolean>>({})
   const [activityNote, setActivityNote] = useState<Record<string, string>>({})
+  const [activityPages, setActivityPages] = useState<Record<string, number>>({})
+  const [activityDuration, setActivityDuration] = useState<Record<string, number>>({})
+  const [activityRating, setActivityRating] = useState<Record<string, number>>({})
+  const [activityBookmark, setActivityBookmark] = useState<Record<string, number>>({})
 
   // ПОМОЩЬ ПО ДОМУ (vacation + weekend)
   const [homeHelp, setHomeHelp] = useState(false)
@@ -194,6 +198,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
       }
 
       // Load existing day data
+      let isSickLocal = false
       try {
         const dayData = await api.getDay(childId, date)
         if (dayData) {
@@ -206,7 +211,8 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
           setGoodBehavior(dayData.good_behavior)
           setDiaryNotDone(dayData.diary_not_done)
           setDayNote(dayData.note_child || '')
-          setIsSick(dayData.is_sick ?? false)
+          isSickLocal = dayData.is_sick ?? false
+          setIsSick(isSickLocal)
           setHomeHelp(dayData.home_help ?? false)
           setHomeHelpNote(dayData.home_help_note || '')
           setHomeworkDone(dayData.homework_done ?? false)
@@ -260,21 +266,34 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
         }
       } catch {}
 
-      // Extra activities catalog + logs for today
+      // Extra activities — pre-filtered by date/dayType/days_of_week
       try {
+        const localDayType = getDayType(date, isSickLocal, periods, childId, t).type
         const [activitiesData, logsData] = await Promise.all([
-          getExtraActivities(childId),
+          getActivitiesForDay(childId, date, localDayType),
           getActivityLogs(childId, date),
         ])
         setActivities(activitiesData)
         const doneMap: Record<string, boolean> = {}
         const noteMap: Record<string, string> = {}
+        const pagesMap: Record<string, number> = {}
+        const durationMap: Record<string, number> = {}
+        const ratingMap: Record<string, number> = {}
+        const bookmarkMap: Record<string, number> = {}
         logsData.forEach(l => {
           doneMap[l.activity_id] = l.done
           noteMap[l.activity_id] = l.note || ''
+          if (l.quantity_done != null) pagesMap[l.activity_id] = l.quantity_done
+          if (l.duration_minutes != null) durationMap[l.activity_id] = l.duration_minutes
+          if (l.rating != null) ratingMap[l.activity_id] = l.rating
+          if (l.bookmark_page != null) bookmarkMap[l.activity_id] = l.bookmark_page
         })
         setActivityDone(doneMap)
         setActivityNote(noteMap)
+        setActivityPages(pagesMap)
+        setActivityDuration(durationMap)
+        setActivityRating(ratingMap)
+        setActivityBookmark(bookmarkMap)
       } catch {}
 
     } catch (err) {
@@ -298,6 +317,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
     setIsSick(false); setHomeHelp(false); setHomeHelpNote(''); setHomeworkDone(false)
     setBookTitle(''); setPagesRead(0); setMinutesRead(0); setBookFinished(false); setReadingNote('')
     setActivities([]); setActivityDone({}); setActivityNote({})
+    setActivityPages({}); setActivityDuration({}); setActivityRating({}); setActivityBookmark({})
     setStatus(''); setError(false)
   }
 
@@ -414,13 +434,16 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
         ? saveReadingLog({ child_id: childId, date, book_title: bookTitle, pages_read: pagesRead, minutes_read: minutesRead, book_finished: bookFinished, note: readingNote })
         : Promise.resolve()
 
-      // Save activity logs for current day type (vacation or weekend)
-      const visibleActivities = activities.filter(a => a.day_types.includes(dayType))
-      const saveActivities = (dayType === 'vacation' || dayType === 'weekend') && visibleActivities.length > 0
-        ? saveActivityLogs(childId, date, visibleActivities.map(a => ({
+      // Save activity logs — activities already pre-filtered by getActivitiesForDay
+      const saveActivities = activities.length > 0
+        ? saveActivityLogs(childId, date, activities.map(a => ({
             activityId: a.id,
             done: activityDone[a.id] ?? false,
             note: activityNote[a.id] || undefined,
+            quantityDone: activityPages[a.id] ?? undefined,
+            durationMinutes: activityDuration[a.id] ?? undefined,
+            rating: activityRating[a.id] ?? undefined,
+            bookmarkPage: activityBookmark[a.id] ?? undefined,
           })))
         : Promise.resolve()
 
@@ -496,7 +519,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
   const readingCoins = calcReadingCoins(pagesRead, minutesRead, bookFinished)
   const activityCoins = activities
-    .filter(a => a.day_types.includes(dayTypeInfo.type) && activityDone[a.id])
+    .filter(a => activityDone[a.id])
     .reduce((sum, a) => sum + a.coins, 0)
   const helpCoins = calcHomeHelpCoins(homeHelp)
   const homeworkCoins = homeworkDone ? 5 : 0
@@ -650,66 +673,140 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
               </div>
             )}
 
-            {/* ── ДОП. ЗАНЯТИЯ (vacation + weekend, catalog-based) ── */}
-            {(dayType === 'vacation' || dayType === 'weekend') && (() => {
-              const dayActivities = activities.filter(a => a.day_types.includes(dayType))
-              if (dayActivities.length === 0) return null
-              return (
-                <div className="scroll-section">
-                  <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
-                    <span className="scroll-section-icon">📋</span>
-                    <span className="scroll-section-title">{t('dailyModal.extraActivities')}</span>
-                    {activityCoins > 0 && (
-                      <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.22)', padding: '2px 8px', borderRadius: '20px' }}>
-                        +{activityCoins}💰
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ padding: '12px 0 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {dayActivities.map(a => {
-                      const done = activityDone[a.id] ?? false
-                      return (
-                        <div
-                          key={a.id}
-                          style={{
-                            padding: '10px 14px',
-                            background: done ? 'rgba(16,185,129,0.07)' : 'rgba(255,255,255,0.03)',
-                            border: `1.5px solid ${done ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.08)'}`,
-                            borderRadius: '10px',
-                          }}
-                        >
-                          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                            <input
-                              type="checkbox"
-                              checked={done}
-                              onChange={e => setActivityDone(prev => ({ ...prev, [a.id]: e.target.checked }))}
-                              style={{ width: '18px', height: '18px', accentColor: '#10B981', flexShrink: 0 }}
-                            />
-                            <span style={{ fontSize: '18px', flexShrink: 0 }}>{a.emoji}</span>
-                            <span style={{ flex: 1, fontSize: '13px', fontWeight: 800, color: done ? '#fff' : 'rgba(238,238,255,0.7)' }}>
-                              {a.name}
-                            </span>
-                            <span style={{ fontSize: '11px', fontWeight: 900, color: '#10B981', flexShrink: 0 }}>
-                              +{a.coins}💰
-                            </span>
-                          </label>
-                          {done && (
+            {/* ── ДОП. ЗАНЯТИЯ (catalog-based, pre-filtered by getActivitiesForDay) ── */}
+            {activities.length > 0 && (
+              <div className="scroll-section">
+                <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
+                  <span className="scroll-section-icon">📋</span>
+                  <span className="scroll-section-title">{t('dailyModal.extraActivities')}</span>
+                  {activityCoins > 0 && (
+                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.22)', padding: '2px 8px', borderRadius: '20px' }}>
+                      +{activityCoins}💰
+                    </span>
+                  )}
+                </div>
+                <div style={{ padding: '12px 0 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {activities.map(a => {
+                    const done = activityDone[a.id] ?? false
+                    const trackType = a.tracking_type || 'checkbox'
+                    return (
+                      <div
+                        key={a.id}
+                        style={{
+                          padding: '10px 14px',
+                          background: done ? 'rgba(16,185,129,0.07)' : 'rgba(255,255,255,0.03)',
+                          border: `1.5px solid ${done ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.08)'}`,
+                          borderRadius: '10px',
+                        }}
+                      >
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={done}
+                            onChange={e => setActivityDone(prev => ({ ...prev, [a.id]: e.target.checked }))}
+                            style={{ width: '18px', height: '18px', accentColor: '#10B981', flexShrink: 0 }}
+                          />
+                          <span style={{ fontSize: '18px', flexShrink: 0 }}>{a.emoji}</span>
+                          <span style={{ flex: 1, fontSize: '13px', fontWeight: 800, color: done ? '#fff' : 'rgba(238,238,255,0.7)' }}>
+                            {a.name}
+                          </span>
+                          <span style={{ fontSize: '11px', fontWeight: 900, color: '#10B981', flexShrink: 0 }}>
+                            +{a.coins}💰
+                          </span>
+                        </label>
+
+                        {/* Tracking-type-specific inputs, shown when checked */}
+                        {done && trackType === 'pages' && (
+                          <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 1 100px' }}>
+                              <span style={{ fontSize: '11px', color: 'rgba(238,238,255,0.45)', whiteSpace: 'nowrap' }}>📄 стр.</span>
+                              <input
+                                className="premium-input"
+                                type="number"
+                                min={0}
+                                placeholder="0"
+                                value={activityPages[a.id] ?? ''}
+                                onChange={e => setActivityPages(prev => ({ ...prev, [a.id]: parseInt(e.target.value) || 0 }))}
+                                style={{ fontSize: '13px', padding: '6px 8px', width: '70px' }}
+                              />
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 1 100px' }}>
+                              <span style={{ fontSize: '11px', color: 'rgba(238,238,255,0.45)', whiteSpace: 'nowrap' }}>⏱ мин.</span>
+                              <input
+                                className="premium-input"
+                                type="number"
+                                min={0}
+                                placeholder="0"
+                                value={activityDuration[a.id] ?? ''}
+                                onChange={e => setActivityDuration(prev => ({ ...prev, [a.id]: parseInt(e.target.value) || 0 }))}
+                                style={{ fontSize: '13px', padding: '6px 8px', width: '70px' }}
+                              />
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 1 120px' }}>
+                              <span style={{ fontSize: '11px', color: 'rgba(238,238,255,0.45)', whiteSpace: 'nowrap' }}>🔖 закл.</span>
+                              <input
+                                className="premium-input"
+                                type="number"
+                                min={0}
+                                placeholder="0"
+                                value={activityBookmark[a.id] ?? ''}
+                                onChange={e => setActivityBookmark(prev => ({ ...prev, [a.id]: parseInt(e.target.value) || 0 }))}
+                                style={{ fontSize: '13px', padding: '6px 8px', width: '70px' }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {done && trackType === 'duration' && (
+                          <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ fontSize: '11px', color: 'rgba(238,238,255,0.45)' }}>⏱ минут</span>
                             <input
                               className="premium-input"
-                              type="text"
-                              placeholder={t('dailyModal.activityNotePlaceholder')}
-                              value={activityNote[a.id] || ''}
-                              onChange={e => setActivityNote(prev => ({ ...prev, [a.id]: e.target.value }))}
-                              style={{ marginTop: '8px', fontSize: '13px', padding: '8px 10px' }}
+                              type="number"
+                              min={0}
+                              placeholder="0"
+                              value={activityDuration[a.id] ?? ''}
+                              onChange={e => setActivityDuration(prev => ({ ...prev, [a.id]: parseInt(e.target.value) || 0 }))}
+                              style={{ fontSize: '13px', padding: '6px 8px', width: '80px' }}
                             />
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
+                          </div>
+                        )}
+
+                        {done && trackType === 'rating' && (
+                          <div style={{ marginTop: '8px', display: 'flex', gap: '4px' }}>
+                            {[1, 2, 3, 4, 5].map(star => (
+                              <button
+                                key={star}
+                                onClick={() => setActivityRating(prev => ({ ...prev, [a.id]: star }))}
+                                style={{
+                                  flex: 1, padding: '6px', fontSize: '16px', borderRadius: '8px', border: '1px solid',
+                                  borderColor: (activityRating[a.id] ?? 0) >= star ? 'rgba(251,191,36,0.5)' : 'rgba(255,255,255,0.08)',
+                                  background: (activityRating[a.id] ?? 0) >= star ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.03)',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                ⭐
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {done && (
+                          <input
+                            className="premium-input"
+                            type="text"
+                            placeholder={t('dailyModal.activityNotePlaceholder')}
+                            value={activityNote[a.id] || ''}
+                            onChange={e => setActivityNote(prev => ({ ...prev, [a.id]: e.target.value }))}
+                            style={{ marginTop: '8px', fontSize: '13px', padding: '8px 10px' }}
+                          />
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
-              )
-            })()}
+              </div>
+            )}
 
             {/* ── ПОМОЩЬ ПО ДОМУ (vacation + weekend) ────────── */}
             {(isNonSchoolDay(dayType)) && (

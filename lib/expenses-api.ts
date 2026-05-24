@@ -32,6 +32,7 @@ export {
   markSectionVisit,
   getSectionsForDate,
   getExtraActivities,
+  getActivitiesForDay,
   addExtraActivity,
   updateExtraActivity,
   deleteExtraActivity,

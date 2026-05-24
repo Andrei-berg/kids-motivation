@@ -11,348 +11,524 @@ import {
 import { useFamilyMembers } from '@/lib/hooks/useFamilyMembers'
 import { useT } from '@/lib/i18n'
 
-const EMOJIS = ['📖', '✏️', '🧮', '🔬', '🌍', '🎨', '🎵', '💻', '♟️', '🏃', '🤸', '🧩', '📝', '🌱', '🍳', '🔧']
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-const COINS_OPTIONS = [1, 2, 3, 5, 7, 10]
+type Category = 'academic' | 'physical' | 'creative' | 'chore' | 'other'
+type TrackingType = 'checkbox' | 'pages' | 'duration' | 'rating'
+type DayType = 'school' | 'weekend' | 'vacation' | 'always'
 
-type DayTypeTab = 'vacation' | 'weekend'
-
-interface ActivityForm {
-  name: string
-  emoji: string
-  dayTypes: string[]
-  coins: number
+interface FormState {
+  name: string; emoji: string; category: Category; trackingType: TrackingType
+  quantityGoal: string; quantityUnit: string; days: number[]
+  dayType: DayType; coins: number; isActive: boolean
 }
 
-const EMPTY_FORM: ActivityForm = {
-  name: '',
-  emoji: '📖',
-  dayTypes: ['vacation', 'weekend'],
-  coins: 3,
+const EMPTY_FORM: FormState = {
+  name: '', emoji: '📖', category: 'academic', trackingType: 'checkbox',
+  quantityGoal: '', quantityUnit: '', days: [0, 1, 2, 3, 4],
+  dayType: 'always', coins: 3, isActive: true,
 }
+
+// ─── Config ───────────────────────────────────────────────────────────────────
+
+const CAT: Record<Category, { label: string; color: string; bg: string }> = {
+  academic:  { label: 'Учёба',      color: '#60a5fa', bg: 'rgba(96,165,250,0.12)'  },
+  physical:  { label: 'Спорт',      color: '#34d399', bg: 'rgba(52,211,153,0.12)'  },
+  creative:  { label: 'Творчество', color: '#f472b6', bg: 'rgba(244,114,182,0.12)' },
+  chore:     { label: 'Быт',        color: '#fb923c', bg: 'rgba(251,146,60,0.12)'  },
+  other:     { label: 'Другое',     color: '#a78bfa', bg: 'rgba(167,139,250,0.12)' },
+}
+
+const TRACK: Record<TrackingType, { label: string; icon: string; desc: string }> = {
+  checkbox: { label: 'Чекбокс', icon: '✓',  desc: 'Сделал / не сделал'          },
+  pages:    { label: 'Чтение',  icon: '📄', desc: 'Страницы + время + закладка' },
+  duration: { label: 'Время',   icon: '⏱',  desc: 'Минуты занятий'              },
+  rating:   { label: 'Оценка',  icon: '⭐', desc: 'Самооценка 1-5'              },
+}
+
+const DAYS_SHORT = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс']
+
+const DAY_TYPE_BADGE: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  always:   { label: 'Всегда', color: 'rgba(255,255,255,0.45)', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.08)' },
+  school:   { label: 'Школа',  color: '#60a5fa', bg: 'rgba(96,165,250,0.1)',   border: 'rgba(96,165,250,0.2)'  },
+  weekend:  { label: 'Вых',    color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',   border: 'rgba(251,191,36,0.2)'  },
+  vacation: { label: 'Кан',    color: '#f472b6', bg: 'rgba(244,114,182,0.1)',  border: 'rgba(244,114,182,0.2)' },
+}
+
+const DAY_TYPE_OPTS: { value: DayType; label: string }[] = [
+  { value: 'always',  label: 'Всегда'      },
+  { value: 'school',  label: 'Учебные дни' },
+  { value: 'weekend', label: 'Выходные'    },
+  { value: 'vacation',label: 'Каникулы'    },
+]
+
+const COINS_OPTIONS = [1, 2, 3, 5, 7, 10, 15]
+const EMOJIS = ['📖','✏️','🧮','🔬','🌍','🎨','🎵','💻','♟️','🏃','🤸','🧩','📝','🌱','🍳','🔧','🧹','📐','🎯','🌟','🎸','🎤','🧪','📷']
+
+// ─── Templates ────────────────────────────────────────────────────────────────
+
+const TEMPLATES = [
+  { id:'academic', emoji:'📚', name:'Учёба', desc:'ДЗ, чтение, повторение', activities: [
+    { name:'Домашнее задание', emoji:'✏️', category:'academic'  as Category, trackingType:'checkbox' as TrackingType, days:[0,1,2,3,4], dayType:'school'  as DayType, coins:5 },
+    { name:'Чтение',           emoji:'📖', category:'academic'  as Category, trackingType:'pages'    as TrackingType, days:[0,1,2,3,4,5,6], dayType:'always' as DayType, coins:3, quantityGoal:20, quantityUnit:'стр' },
+  ]},
+  { id:'sport', emoji:'🏃', name:'Спорт', desc:'Зарядка, активность', activities: [
+    { name:'Зарядка',  emoji:'🏃', category:'physical' as Category, trackingType:'duration' as TrackingType, days:[0,2,4,5,6], dayType:'always'  as DayType, coins:5, quantityGoal:15, quantityUnit:'мин' },
+    { name:'Прогулка', emoji:'🚶', category:'physical' as Category, trackingType:'duration' as TrackingType, days:[5,6],       dayType:'weekend' as DayType, coins:3, quantityGoal:30, quantityUnit:'мин' },
+  ]},
+  { id:'reading', emoji:'📖', name:'Чтение', desc:'Книги, журналы', activities: [
+    { name:'Вечернее чтение', emoji:'📖', category:'academic' as Category, trackingType:'pages' as TrackingType, days:[0,1,2,3,4,5,6], dayType:'always' as DayType, coins:4, quantityGoal:15, quantityUnit:'стр' },
+  ]},
+  { id:'creative', emoji:'🎨', name:'Творчество', desc:'Рисование, музыка', activities: [
+    { name:'Рисование',           emoji:'🎨', category:'creative' as Category, trackingType:'duration' as TrackingType, days:[5,6],   dayType:'weekend' as DayType, coins:3, quantityGoal:20, quantityUnit:'мин' },
+    { name:'Игра на инструменте', emoji:'🎵', category:'creative' as Category, trackingType:'duration' as TrackingType, days:[1,3,5], dayType:'always'  as DayType, coins:5, quantityGoal:15, quantityUnit:'мин' },
+  ]},
+]
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ActivitiesManager() {
   const t = useT()
   const { members } = useFamilyMembers()
   const children = members.filter(m => m.role === 'child')
+
   const [childId, setChildId] = useState('')
-  const [tab, setTab] = useState<DayTypeTab>('vacation')
+  const [activities, setActivities] = useState<ExtraActivity[]>([])
+  const [loading, setLoading] = useState(false)
+  const [showModal, setShowModal] = useState(false)
+  const [showTemplates, setShowTemplates] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [form, setForm] = useState<FormState>(EMPTY_FORM)
+  const [saving, setSaving] = useState(false)
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (!childId && children.length > 0) setChildId(children[0].id)
   }, [children, childId])
-  const [activities, setActivities] = useState<ExtraActivity[]>([])
-  const [loading, setLoading] = useState(false)
-  const [showForm, setShowForm] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState<ActivityForm>(EMPTY_FORM)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
 
-  useEffect(() => { loadActivities() }, [childId])
+  useEffect(() => { if (childId) load() }, [childId])
 
-  async function loadActivities() {
+  async function load() {
     setLoading(true)
-    try {
-      const data = await getExtraActivities(childId)
-      setActivities(data)
-    } catch (e: any) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
-    }
+    try { setActivities(await getExtraActivities(childId)) }
+    catch (e: any) { setError(e.message) }
+    finally { setLoading(false) }
   }
 
-  const filtered = activities.filter(a => a.day_types.includes(tab))
-
-  function openAdd() {
-    setForm({ ...EMPTY_FORM, dayTypes: [tab] })
-    setEditingId(null)
-    setShowForm(true)
-    setError('')
-  }
+  function openAdd() { setForm(EMPTY_FORM); setEditingId(null); setShowModal(true); setError('') }
 
   function openEdit(a: ExtraActivity) {
-    setForm({ name: a.name, emoji: a.emoji, dayTypes: a.day_types, coins: a.coins })
-    setEditingId(a.id)
-    setShowForm(true)
-    setError('')
+    const dayType = (a.day_types?.includes('always') ? 'always' : a.day_types?.[0] || 'always') as DayType
+    setForm({
+      name: a.name, emoji: a.emoji,
+      category: (a.category || 'other') as Category,
+      trackingType: (a.tracking_type || 'checkbox') as TrackingType,
+      quantityGoal: a.quantity_goal?.toString() || '',
+      quantityUnit: a.quantity_unit || '',
+      days: a.days_of_week || [],
+      dayType,
+      coins: a.coins, isActive: a.is_active,
+    })
+    setEditingId(a.id); setShowModal(true); setError('')
   }
 
-  function toggleDayType(dt: string) {
-    setForm(prev => ({
-      ...prev,
-      dayTypes: prev.dayTypes.includes(dt)
-        ? prev.dayTypes.filter(d => d !== dt)
-        : [...prev.dayTypes, dt],
-    }))
+  function toggleFormDay(day: number) {
+    setForm(p => ({ ...p, days: p.days.includes(day) ? p.days.filter(d => d !== day) : [...p.days, day].sort((a,b)=>a-b) }))
   }
 
   async function handleSave() {
-    if (!form.name.trim()) { setError(t('settings.activitiesManager.name')); return }
-    if (form.dayTypes.length === 0) { setError(t('settings.activitiesManager.addActivity')); return }
+    if (!form.name.trim()) { setError('Введите название'); return }
     setSaving(true); setError('')
     try {
+      const payload = {
+        name: form.name.trim(), emoji: form.emoji, category: form.category,
+        trackingType: form.trackingType, daysOfWeek: form.days,
+        dayTypes: [form.dayType],
+        quantityGoal: form.quantityGoal ? parseInt(form.quantityGoal) : undefined,
+        quantityUnit: form.quantityUnit || undefined,
+        coins: form.coins,
+      }
       if (editingId) {
-        await updateExtraActivity(editingId, {
-          name: form.name.trim(),
-          emoji: form.emoji,
-          dayTypes: form.dayTypes,
-          coins: form.coins,
-        })
+        await updateExtraActivity(editingId, { ...payload, isActive: form.isActive })
       } else {
+        await addExtraActivity({ childId, ...payload })
+      }
+      setShowModal(false); setEditingId(null)
+      await load()
+    } catch (e: any) { setError(e.message) }
+    finally { setSaving(false) }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Удалить активность?')) return
+    try { await deleteExtraActivity(id); await load() }
+    catch (e: any) { setError(e.message) }
+  }
+
+  async function toggleActive(a: ExtraActivity) {
+    try { await updateExtraActivity(a.id, { isActive: !a.is_active }); await load() }
+    catch {}
+  }
+
+  async function toggleGridDay(a: ExtraActivity, day: number) {
+    const cur = a.days_of_week || []
+    const next = cur.includes(day) ? cur.filter(d => d !== day) : [...cur, day].sort((x,y)=>x-y)
+    try { await updateExtraActivity(a.id, { daysOfWeek: next }); await load() }
+    catch {}
+  }
+
+  async function applyTemplate(tmpl: typeof TEMPLATES[number]) {
+    setSaving(true)
+    try {
+      for (const ta of tmpl.activities) {
         await addExtraActivity({
-          childId,
-          name: form.name.trim(),
-          emoji: form.emoji,
-          dayTypes: form.dayTypes,
-          coins: form.coins,
+          childId, name: ta.name, emoji: ta.emoji, category: ta.category,
+          trackingType: ta.trackingType, daysOfWeek: ta.days, dayTypes: [ta.dayType],
+          coins: ta.coins,
+          quantityGoal: (ta as any).quantityGoal,
+          quantityUnit: (ta as any).quantityUnit,
         })
       }
-      setShowForm(false)
-      setEditingId(null)
-      await loadActivities()
-    } catch (e: any) {
-      setError(e.message)
-    } finally {
-      setSaving(false)
-    }
+      setShowTemplates(false)
+      await load()
+    } catch (e: any) { setError(e.message) }
+    finally { setSaving(false) }
   }
 
-  async function handleDelete(a: ExtraActivity) {
-    if (!confirm(t('settings.activitiesManager.deleteConfirm'))) return
-    try {
-      await deleteExtraActivity(a.id)
-      await loadActivities()
-    } catch (e: any) {
-      setError(e.message)
-    }
-  }
+  // ─── Render ───────────────────────────────────────────────────────────────
 
-  async function moveUp(a: ExtraActivity) {
-    const list = [...filtered]
-    const idx = list.findIndex(x => x.id === a.id)
-    if (idx <= 0) return
-    const prev = list[idx - 1]
-    await Promise.all([
-      updateExtraActivity(a.id, { sortOrder: prev.sort_order }),
-      updateExtraActivity(prev.id, { sortOrder: a.sort_order }),
-    ])
-    await loadActivities()
-  }
-
-  async function moveDown(a: ExtraActivity) {
-    const list = [...filtered]
-    const idx = list.findIndex(x => x.id === a.id)
-    if (idx >= list.length - 1) return
-    const next = list[idx + 1]
-    await Promise.all([
-      updateExtraActivity(a.id, { sortOrder: next.sort_order }),
-      updateExtraActivity(next.id, { sortOrder: a.sort_order }),
-    ])
-    await loadActivities()
-  }
-
-  const dayTypeLabel = (dt: string) => dt === 'vacation' ? `🌴 ${t('kidDay.vacationDay')}` : `📅 ${t('kidDay.weekendDay')}`
+  const sh: React.CSSProperties = { display:'flex', alignItems:'center', gap:6, padding:'7px 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer' }
 
   return (
     <div>
-      <div style={{ marginBottom: '16px' }}>
-        <div style={{ fontSize: '16px', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>📋 {t('settings.activitiesManager.title')}</div>
-        <div style={{ fontSize: '13px', color: 'rgba(238,238,255,0.5)' }}>
-          {t('settings.activitiesManager.addActivity')}
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16, flexWrap:'wrap' }}>
+        <div style={{ flex:1 }}>
+          <div style={{ fontSize:16, fontWeight:800, color:'#fff', marginBottom:3 }}>🎯 Активности</div>
+          <div style={{ fontSize:12, color:'rgba(238,238,255,0.4)' }}>
+            Настройте что ребёнок делает каждый день — появится в форме автоматически
+          </div>
         </div>
-      </div>
-
-      {/* Child selector */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-        {children.map(c => (
-          <button
-            key={c.id}
-            onClick={() => { setChildId(c.id); setShowForm(false) }}
-            style={{
-              flex: 1, padding: '10px', fontSize: '13px', fontWeight: 800,
-              borderRadius: '10px', border: '1.5px solid', cursor: 'pointer',
-              borderColor: childId === c.id ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.1)',
-              background: childId === c.id ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.03)',
-              color: childId === c.id ? '#F59E0B' : 'rgba(238,238,255,0.5)',
-            }}
-          >
-            {c.display_name}
-          </button>
-        ))}
-      </div>
-
-      {/* Day type tabs */}
-      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px' }}>
-        {(['vacation', 'weekend'] as const).map(t => (
-          <button
-            key={t}
-            onClick={() => { setTab(t); setShowForm(false) }}
-            style={{
-              flex: 1, padding: '8px', fontSize: '13px', fontWeight: 800,
-              borderRadius: '10px', border: '1.5px solid', cursor: 'pointer',
-              borderColor: tab === t ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.1)',
-              background: tab === t ? 'rgba(245,158,11,0.08)' : 'rgba(255,255,255,0.03)',
-              color: tab === t ? '#F59E0B' : 'rgba(238,238,255,0.4)',
-            }}
-          >
-            {dayTypeLabel(t)}
-          </button>
-        ))}
-        <button
-          onClick={openAdd}
-          style={{
-            padding: '8px 14px', fontSize: '12px', fontWeight: 800,
-            borderRadius: '10px', border: 'none', cursor: 'pointer',
-            background: 'rgba(245,158,11,0.7)', color: '#000',
-          }}
-        >
-          + {t('settings.activitiesManager.addActivity')}
+        <button onClick={() => setShowTemplates(true)} style={{ ...sh, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'rgba(238,238,255,0.6)' }}>
+          📦 Шаблоны
+        </button>
+        <button onClick={openAdd} style={{ ...sh, background:'rgba(16,185,129,0.18)', border:'1px solid rgba(16,185,129,0.4)', color:'#34d399' }}>
+          + Добавить
         </button>
       </div>
 
-      {error && (
-        <div style={{ padding: '10px 12px', background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.3)', borderRadius: '8px', color: '#F43F5E', fontSize: '13px', marginBottom: '12px' }}>
-          {error}
-        </div>
-      )}
-
-      {/* Add/Edit form */}
-      {showForm && (
-        <div style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
-          <div style={{ fontSize: '14px', fontWeight: 800, color: '#F59E0B', marginBottom: '12px' }}>
-            {editingId ? `✏️ ${t('common.edit')}` : `➕ ${t('settings.activitiesManager.addActivity')}`}
-          </div>
-
-          {/* Emoji picker */}
-          <div style={{ marginBottom: '12px' }}>
-            <div className="premium-label">{t('settings.categoryManager.emoji')}</div>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
-              {EMOJIS.map(e => (
-                <button
-                  key={e}
-                  onClick={() => setForm(p => ({ ...p, emoji: e }))}
-                  style={{
-                    width: '36px', height: '36px', fontSize: '18px',
-                    borderRadius: '8px', border: '1.5px solid', cursor: 'pointer',
-                    borderColor: form.emoji === e ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.08)',
-                    background: form.emoji === e ? 'rgba(245,158,11,0.12)' : 'rgba(255,255,255,0.03)',
-                  }}
-                >
-                  {e}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ marginBottom: '10px' }}>
-            <div className="premium-label">{t('settings.activitiesManager.name')} *</div>
-            <input className="premium-input" placeholder={t('settings.activitiesManager.name')} value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
-          </div>
-
-          {/* Day types */}
-          <div style={{ marginBottom: '12px' }}>
-            <div className="premium-label">{t('settings.activitiesManager.addActivity')}</div>
-            <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-              {(['vacation', 'weekend'] as const).map(dt => (
-                <button
-                  key={dt}
-                  onClick={() => toggleDayType(dt)}
-                  style={{
-                    flex: 1, padding: '8px', fontSize: '12px', fontWeight: 800,
-                    borderRadius: '10px', border: '1.5px solid', cursor: 'pointer',
-                    borderColor: form.dayTypes.includes(dt) ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.1)',
-                    background: form.dayTypes.includes(dt) ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.03)',
-                    color: form.dayTypes.includes(dt) ? '#F59E0B' : 'rgba(238,238,255,0.4)',
-                  }}
-                >
-                  {dayTypeLabel(dt)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Coins */}
-          <div style={{ marginBottom: '14px' }}>
-            <div className="premium-label">{t('settings.taskManager.coins')}</div>
-            <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
-              {COINS_OPTIONS.map(c => (
-                <button
-                  key={c}
-                  onClick={() => setForm(p => ({ ...p, coins: c }))}
-                  style={{
-                    flex: 1, padding: '8px 4px', fontSize: '12px', fontWeight: 800,
-                    borderRadius: '8px', border: '1.5px solid', cursor: 'pointer',
-                    borderColor: form.coins === c ? 'rgba(16,185,129,0.5)' : 'rgba(255,255,255,0.1)',
-                    background: form.coins === c ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.03)',
-                    color: form.coins === c ? '#10B981' : 'rgba(238,238,255,0.4)',
-                  }}
-                >
-                  +{c}💰
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              style={{ flex: 1, padding: '10px', fontSize: '13px', fontWeight: 800, borderRadius: '10px', border: 'none', cursor: 'pointer', background: 'rgba(245,158,11,0.8)', color: '#000' }}
-            >
-              {saving ? '...' : `💾 ${t('settings.activitiesManager.save')}`}
+      {/* Child selector */}
+      {children.length > 1 && (
+        <div style={{ display:'flex', gap:6, marginBottom:14 }}>
+          {children.map(c => (
+            <button key={c.id} onClick={() => setChildId(c.id)} style={{
+              ...sh,
+              background: childId === c.id ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.04)',
+              border: `1.5px solid ${childId === c.id ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.08)'}`,
+              color: childId === c.id ? '#34d399' : 'rgba(238,238,255,0.4)',
+            }}>
+              {c.display_name}
             </button>
-            <button
-              onClick={() => { setShowForm(false); setEditingId(null); setError('') }}
-              style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 800, borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', color: 'rgba(238,238,255,0.5)' }}
-            >
-              {t('settings.activitiesManager.cancel')}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Activity list */}
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '20px', color: 'rgba(238,238,255,0.4)', fontSize: '13px' }}>{t('common.loading')}</div>
-      ) : filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '24px', color: 'rgba(238,238,255,0.3)', fontSize: '13px' }}>
-          {t('settings.activitiesManager.addActivity')}
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          {filtered.map((a, idx) => (
-            <div
-              key={a.id}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '10px 12px',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '10px',
-              }}
-            >
-              <span style={{ fontSize: '20px', flexShrink: 0 }}>{a.emoji}</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '13px', fontWeight: 800, color: '#fff' }}>{a.name}</div>
-                <div style={{ fontSize: '11px', color: 'rgba(238,238,255,0.4)', marginTop: '2px' }}>
-                  {a.day_types.map(dayTypeLabel).join(' · ')}
-                </div>
-              </div>
-              <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', padding: '2px 7px', borderRadius: '6px', flexShrink: 0 }}>
-                +{a.coins}💰
-              </span>
-              <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                <button onClick={() => moveUp(a)} disabled={idx === 0} style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', color: 'rgba(238,238,255,0.4)', opacity: idx === 0 ? 0.3 : 1 }}>↑</button>
-                <button onClick={() => moveDown(a)} disabled={idx === filtered.length - 1} style={{ padding: '4px 6px', fontSize: '11px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', color: 'rgba(238,238,255,0.4)', opacity: idx === filtered.length - 1 ? 0.3 : 1 }}>↓</button>
-                <button onClick={() => openEdit(a)} style={{ padding: '4px 8px', fontSize: '12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', color: 'rgba(238,238,255,0.5)' }}>✏️</button>
-                <button onClick={() => handleDelete(a)} style={{ padding: '4px 8px', fontSize: '12px', borderRadius: '6px', border: '1px solid rgba(244,63,94,0.2)', cursor: 'pointer', background: 'rgba(244,63,94,0.06)', color: '#F43F5E' }}>🗑️</button>
-              </div>
-            </div>
           ))}
         </div>
       )}
+
+      {error && <div style={{ padding:'8px 12px', background:'rgba(244,63,94,0.1)', border:'1px solid rgba(244,63,94,0.3)', borderRadius:8, color:'#F43F5E', fontSize:12, marginBottom:10 }}>{error}</div>}
+
+      {loading ? (
+        <div style={{ textAlign:'center', padding:24, color:'rgba(238,238,255,0.3)', fontSize:13 }}>Загрузка…</div>
+      ) : activities.length === 0 ? (
+        <div style={{ textAlign:'center', padding:'40px 20px' }}>
+          <div style={{ fontSize:40, marginBottom:12 }}>🎯</div>
+          <div style={{ fontSize:14, fontWeight:700, color:'#fff', marginBottom:6 }}>Нет активностей</div>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.35)', maxWidth:220, margin:'0 auto 20px', lineHeight:1.5 }}>
+            Добавьте первую активность или выберите шаблон
+          </div>
+          <div style={{ display:'flex', gap:8, justifyContent:'center' }}>
+            <button onClick={() => setShowTemplates(true)} style={{ ...sh, background:'rgba(245,158,11,0.15)', border:'1px solid rgba(245,158,11,0.35)', color:'#fbbf24' }}>📦 Шаблон</button>
+            <button onClick={openAdd} style={{ ...sh, background:'rgba(16,185,129,0.15)', border:'1px solid rgba(16,185,129,0.35)', color:'#34d399' }}>+ Создать</button>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Weekly grid */}
+          <div style={{ overflowX:'auto', borderRadius:12, border:'1px solid rgba(255,255,255,0.07)', background:'rgba(255,255,255,0.02)' }}>
+            <div style={{ minWidth:580 }}>
+              {/* Column headers */}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr repeat(7,28px) 70px 60px', gap:0, padding:'8px 12px 6px', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
+                <div style={hdr}>Активность</div>
+                {DAYS_SHORT.map(d => <div key={d} style={{ ...hdr, textAlign:'center' }}>{d}</div>)}
+                <div style={{ ...hdr, textAlign:'center' }}>Тип</div>
+                <div style={{ ...hdr, textAlign:'right' }}>💰</div>
+              </div>
+
+              {activities.map((a, idx) => {
+                const cat = CAT[(a.category as Category) || 'other']
+                const track = TRACK[(a.tracking_type as TrackingType) || 'checkbox']
+                const badge = DAY_TYPE_BADGE[a.day_types?.[0] || 'always'] || DAY_TYPE_BADGE.always
+                const hov = hoveredId === a.id
+                return (
+                  <div key={a.id}
+                    onMouseEnter={() => setHoveredId(a.id)}
+                    onMouseLeave={() => setHoveredId(null)}
+                    style={{
+                      display:'grid', gridTemplateColumns:'1fr repeat(7,28px) 70px 60px', gap:0,
+                      padding:'9px 12px', alignItems:'center',
+                      borderBottom: idx < activities.length-1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                      background: hov ? 'rgba(255,255,255,0.025)' : 'transparent',
+                      opacity: a.is_active ? 1 : 0.42, transition:'background 0.15s, opacity 0.2s',
+                    }}
+                  >
+                    <div style={{ display:'flex', alignItems:'center', gap:8, paddingRight:8, minWidth:0 }}>
+                      <span style={{ fontSize:17, flexShrink:0 }}>{a.emoji}</span>
+                      <div style={{ minWidth:0, flex:1 }}>
+                        <div style={{ fontSize:12, fontWeight:700, color:'#e8e8f0', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{a.name}</div>
+                        <div style={{ display:'flex', gap:4, alignItems:'center', marginTop:2 }}>
+                          <span style={{ fontSize:9, fontWeight:700, padding:'1px 4px', borderRadius:3, color:cat.color, background:cat.bg }}>{cat.label}</span>
+                          <span style={{ fontSize:9, color:'rgba(255,255,255,0.3)' }}>{track.icon} {track.desc}</span>
+                        </div>
+                      </div>
+                      <div style={{ display:'flex', gap:3, flexShrink:0, opacity: hov ? 1 : 0, transition:'opacity 0.15s' }}>
+                        <button onClick={() => openEdit(a)} title="Изменить" style={actionBtn}>✏️</button>
+                        <button onClick={() => toggleActive(a)} title={a.is_active ? 'Выключить' : 'Включить'}
+                          style={{ ...actionBtn, borderColor: a.is_active ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.1)', color: a.is_active ? '#34d399' : 'rgba(238,238,255,0.35)' }}>
+                          {a.is_active ? '●' : '○'}
+                        </button>
+                        <button onClick={() => handleDelete(a.id)} title="Удалить" style={{ ...actionBtn, borderColor:'rgba(244,63,94,0.25)', color:'#f43f5e' }}>✕</button>
+                      </div>
+                    </div>
+
+                    {[0,1,2,3,4,5,6].map(day => {
+                      const on = (a.days_of_week || []).includes(day)
+                      const isWknd = day >= 5
+                      return (
+                        <div key={day} style={{ display:'flex', alignItems:'center', justifyContent:'center' }}>
+                          <button onClick={() => toggleGridDay(a, day)} title={`${DAYS_SHORT[day]}`}
+                            style={{
+                              width:15, height:15, borderRadius:'50%', border:'none', cursor:'pointer', padding:0,
+                              background: on ? (isWknd ? 'rgba(251,191,36,0.9)' : 'rgba(16,185,129,0.9)') : 'rgba(255,255,255,0.08)',
+                              boxShadow: on ? (isWknd ? '0 0 5px rgba(251,191,36,0.35)' : '0 0 5px rgba(16,185,129,0.35)') : 'none',
+                              transition:'all 0.13s',
+                            }} />
+                        </div>
+                      )
+                    })}
+
+                    <div style={{ display:'flex', justifyContent:'center' }}>
+                      <span style={{ fontSize:9, fontWeight:700, padding:'2px 5px', borderRadius:4, color:badge.color, background:badge.bg, border:`1px solid ${badge.border}`, whiteSpace:'nowrap' }}>
+                        {badge.label}
+                      </span>
+                    </div>
+
+                    <div style={{ textAlign:'right', fontSize:12, fontWeight:800, color:'#fbbf24' }}>+{a.coins}💰</div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div style={{ display:'flex', gap:12, marginTop:10, flexWrap:'wrap', fontSize:11, color:'rgba(255,255,255,0.3)' }}>
+            <LegDot color="rgba(16,185,129,0.9)" label="Пн–Пт" />
+            <LegDot color="rgba(251,191,36,0.9)"  label="Сб–Вс" />
+            <LegDot color="rgba(255,255,255,0.08)" label="Выключен" />
+            <span style={{ marginLeft:'auto' }}>Нажмите на точку — переключить день</span>
+          </div>
+        </>
+      )}
+
+      {/* ── TEMPLATES OVERLAY ─────────────────────────────────────────────── */}
+      {showTemplates && (
+        <Overlay onClose={() => setShowTemplates(false)}>
+          <div style={{ fontSize:15, fontWeight:800, color:'#fff', marginBottom:3 }}>📦 Шаблоны</div>
+          <div style={{ fontSize:12, color:'rgba(255,255,255,0.35)', marginBottom:18 }}>Готовые наборы для быстрого старта</div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+            {TEMPLATES.map(tmpl => (
+              <div key={tmpl.id} style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, padding:12 }}>
+                <div style={{ fontSize:22, marginBottom:5 }}>{tmpl.emoji}</div>
+                <div style={{ fontSize:13, fontWeight:800, color:'#fff', marginBottom:2 }}>{tmpl.name}</div>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)', marginBottom:8, lineHeight:1.4 }}>{tmpl.desc}</div>
+                <div style={{ marginBottom:10 }}>
+                  {tmpl.activities.map((a,i) => <div key={i} style={{ fontSize:10, color:'rgba(255,255,255,0.45)', marginBottom:2 }}>{a.emoji} {a.name}</div>)}
+                </div>
+                <button
+                  onClick={() => applyTemplate(tmpl)} disabled={saving}
+                  style={{ width:'100%', padding:'7px 0', borderRadius:7, background:'rgba(16,185,129,0.15)', border:'1px solid rgba(16,185,129,0.3)', color:'#34d399', fontSize:12, fontWeight:700, cursor:'pointer' }}
+                >
+                  {saving ? '…' : 'Подключить'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </Overlay>
+      )}
+
+      {/* ── ADD / EDIT MODAL ──────────────────────────────────────────────── */}
+      {showModal && (
+        <Overlay onClose={() => { setShowModal(false); setEditingId(null) }}>
+          <div style={{ fontSize:15, fontWeight:800, color:'#fff', marginBottom:18 }}>
+            {editingId ? '✏️ Редактировать' : '➕ Новая активность'}
+          </div>
+
+          {/* Emoji */}
+          <FL>Эмодзи</FL>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginBottom:14 }}>
+            {EMOJIS.map(e => (
+              <button key={e} onClick={() => setForm(p=>({...p,emoji:e}))}
+                style={{ width:34, height:34, fontSize:17, borderRadius:7, cursor:'pointer',
+                  border:`1.5px solid ${form.emoji===e?'rgba(16,185,129,0.5)':'rgba(255,255,255,0.07)'}`,
+                  background: form.emoji===e?'rgba(16,185,129,0.12)':'rgba(255,255,255,0.03)' }}>
+                {e}
+              </button>
+            ))}
+          </div>
+
+          <FL>Название *</FL>
+          <input value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} placeholder="Например: Чтение" style={inp} />
+
+          <FL>Категория</FL>
+          <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:14 }}>
+            {(Object.entries(CAT) as [Category, typeof CAT[Category]][]).map(([k,c]) => (
+              <button key={k} onClick={() => setForm(p=>({...p,category:k}))}
+                style={{ padding:'6px 11px', borderRadius:7, fontSize:11, fontWeight:700, cursor:'pointer',
+                  background: form.category===k ? c.bg : 'rgba(255,255,255,0.03)',
+                  border:`1.5px solid ${form.category===k ? c.color+'55' : 'rgba(255,255,255,0.07)'}`,
+                  color: form.category===k ? c.color : 'rgba(238,238,255,0.4)' }}>
+                {c.label}
+              </button>
+            ))}
+          </div>
+
+          <FL>Тип отслеживания</FL>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6, marginBottom:14 }}>
+            {(Object.entries(TRACK) as [TrackingType, typeof TRACK[TrackingType]][]).map(([k,c]) => (
+              <button key={k} onClick={() => setForm(p=>({...p,trackingType:k}))}
+                style={{ padding:'9px 11px', borderRadius:9, textAlign:'left', cursor:'pointer',
+                  background: form.trackingType===k ? 'rgba(108,92,231,0.14)' : 'rgba(255,255,255,0.03)',
+                  border:`1.5px solid ${form.trackingType===k ? 'rgba(108,92,231,0.45)' : 'rgba(255,255,255,0.07)'}`,
+                  color: form.trackingType===k ? '#c4baff' : 'rgba(238,238,255,0.4)' }}>
+                <div style={{ fontSize:15, marginBottom:2 }}>{c.icon}</div>
+                <div style={{ fontSize:11, fontWeight:700 }}>{c.label}</div>
+                <div style={{ fontSize:10, opacity:0.55, marginTop:1, lineHeight:1.3 }}>{c.desc}</div>
+              </button>
+            ))}
+          </div>
+
+          {form.trackingType === 'pages' && (
+            <div style={{ marginBottom:14, padding:11, background:'rgba(96,165,250,0.06)', border:'1px solid rgba(96,165,250,0.15)', borderRadius:9 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:'#60a5fa', marginBottom:8 }}>📖 Режим чтения</div>
+              <div>
+                <div style={{ fontSize:10, color:'rgba(255,255,255,0.4)', marginBottom:3 }}>Цель страниц в день</div>
+                <input type="number" min="1" value={form.quantityGoal} placeholder="20"
+                  onChange={e=>setForm(p=>({...p,quantityGoal:e.target.value,quantityUnit:'стр'}))} style={inp} />
+              </div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.35)', lineHeight:1.5 }}>В форме: страниц • минут • закладка</div>
+            </div>
+          )}
+
+          {form.trackingType === 'duration' && (
+            <>
+              <FL>Цель (минут)</FL>
+              <input type="number" min="1" value={form.quantityGoal} placeholder="15"
+                onChange={e=>setForm(p=>({...p,quantityGoal:e.target.value,quantityUnit:'мин'}))} style={inp} />
+            </>
+          )}
+
+          <FL>Дни недели</FL>
+          <div style={{ display:'flex', gap:4, marginBottom:14 }}>
+            {DAYS_SHORT.map((d,i) => {
+              const on = form.days.includes(i); const wknd = i>=5
+              return (
+                <button key={i} onClick={() => toggleFormDay(i)}
+                  style={{ flex:1, padding:'7px 0', borderRadius:7, fontSize:10, fontWeight:700, cursor:'pointer',
+                    background: on ? (wknd?'rgba(251,191,36,0.15)':'rgba(16,185,129,0.15)') : 'rgba(255,255,255,0.04)',
+                    border:`1.5px solid ${on ? (wknd?'rgba(251,191,36,0.4)':'rgba(16,185,129,0.4)') : 'rgba(255,255,255,0.07)'}`,
+                    color: on ? (wknd?'#fbbf24':'#34d399') : 'rgba(238,238,255,0.28)' }}>
+                  {d}
+                </button>
+              )
+            })}
+          </div>
+
+          <FL>Тип дня</FL>
+          <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:14 }}>
+            {DAY_TYPE_OPTS.map(o => (
+              <button key={o.value} onClick={() => setForm(p=>({...p,dayType:o.value}))}
+                style={{ padding:'6px 12px', borderRadius:7, fontSize:11, fontWeight:700, cursor:'pointer',
+                  background: form.dayType===o.value ? 'rgba(167,139,250,0.14)' : 'rgba(255,255,255,0.03)',
+                  border:`1.5px solid ${form.dayType===o.value ? 'rgba(167,139,250,0.45)' : 'rgba(255,255,255,0.07)'}`,
+                  color: form.dayType===o.value ? '#c4baff' : 'rgba(238,238,255,0.4)' }}>
+                {o.label}
+              </button>
+            ))}
+          </div>
+
+          <FL>Монеты за выполнение</FL>
+          <div style={{ display:'flex', gap:4, marginBottom:14 }}>
+            {COINS_OPTIONS.map(c => (
+              <button key={c} onClick={() => setForm(p=>({...p,coins:c}))}
+                style={{ flex:1, padding:'7px 0', borderRadius:7, fontSize:10, fontWeight:800, cursor:'pointer',
+                  background: form.coins===c ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.04)',
+                  border:`1.5px solid ${form.coins===c ? 'rgba(245,158,11,0.45)' : 'rgba(255,255,255,0.07)'}`,
+                  color: form.coins===c ? '#fbbf24' : 'rgba(238,238,255,0.3)' }}>
+                +{c}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'9px 11px', background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:9, marginBottom:18 }}>
+            <div>
+              <div style={{ fontSize:12, fontWeight:700, color:'#e8e8f0' }}>Активна</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.3)', marginTop:1 }}>Показывать в ежедневной форме</div>
+            </div>
+            <button onClick={() => setForm(p=>({...p,isActive:!p.isActive}))}
+              style={{ width:42, height:23, borderRadius:12, border:'none', cursor:'pointer', flexShrink:0, position:'relative',
+                background: form.isActive ? 'rgba(16,185,129,0.85)' : 'rgba(255,255,255,0.1)', transition:'background 0.2s' }}>
+              <div style={{ position:'absolute', top:2, left: form.isActive ? 21 : 2, width:19, height:19, borderRadius:'50%', background:'#fff', transition:'left 0.18s', boxShadow:'0 1px 3px rgba(0,0,0,0.35)' }} />
+            </button>
+          </div>
+
+          {error && <div style={{ padding:'7px 10px', background:'rgba(244,63,94,0.1)', border:'1px solid rgba(244,63,94,0.3)', borderRadius:7, color:'#F43F5E', fontSize:11, marginBottom:12 }}>{error}</div>}
+
+          <div style={{ display:'flex', gap:7 }}>
+            <button onClick={handleSave} disabled={saving || !form.name.trim()}
+              style={{ flex:1, padding:'11px 0', borderRadius:10, border:'none',
+                background: form.name.trim() ? 'rgba(16,185,129,0.9)' : 'rgba(255,255,255,0.07)',
+                color: form.name.trim() ? '#051a10' : 'rgba(255,255,255,0.25)',
+                fontSize:13, fontWeight:800, cursor: form.name.trim() ? 'pointer' : 'not-allowed' }}>
+              {saving ? '…' : '💾 Сохранить'}
+            </button>
+            <button onClick={() => { setShowModal(false); setEditingId(null) }}
+              style={{ padding:'11px 16px', borderRadius:10, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.09)', color:'rgba(238,238,255,0.45)', fontSize:13, fontWeight:600, cursor:'pointer' }}>
+              Отмена
+            </button>
+          </div>
+        </Overlay>
+      )}
+    </div>
+  )
+}
+
+// ─── Tiny helpers ─────────────────────────────────────────────────────────────
+
+const hdr: React.CSSProperties = { fontSize:10, fontWeight:600, color:'rgba(255,255,255,0.28)', textTransform:'uppercase', letterSpacing:'0.06em' }
+const actionBtn: React.CSSProperties = { width:21, height:21, fontSize:11, borderRadius:5, cursor:'pointer', border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.04)', color:'rgba(238,238,255,0.45)', display:'flex', alignItems:'center', justifyContent:'center' }
+const inp: React.CSSProperties = { width:'100%', padding:'9px 11px', borderRadius:9, marginBottom:14, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'#e8e8f0', fontSize:13, boxSizing:'border-box', outline:'none' }
+
+function FL({ children }: { children: React.ReactNode }) {
+  return <div style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:7 }}>{children}</div>
+}
+function LegDot({ color, label }: { color: string; label: string }) {
+  return <span style={{ display:'flex', alignItems:'center', gap:4 }}><span style={{ width:9, height:9, borderRadius:'50%', background:color, display:'inline-block' }}/>{label}</span>
+}
+function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', zIndex:50, display:'flex', alignItems:'flex-end', justifyContent:'center', backdropFilter:'blur(4px)' }}>
+      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:580, background:'linear-gradient(to bottom,#141419,#111116)', border:'1px solid rgba(255,255,255,0.09)', borderRadius:'18px 18px 0 0', padding:'18px 18px 42px', maxHeight:'92dvh', overflowY:'auto' }}>
+        <div style={{ width:34, height:4, background:'rgba(255,255,255,0.14)', borderRadius:2, margin:'0 auto 20px' }}/>
+        {children}
+      </div>
     </div>
   )
 }

@@ -63,7 +63,16 @@ export interface ExtraActivity {
   family_id: string | null
   name: string
   emoji: string
-  day_types: string[]  // ['vacation'] | ['weekend'] | ['vacation','weekend']
+  /** 'school' | 'weekend' | 'vacation' | 'always' — which day types to show */
+  day_types: string[]
+  /** 'academic' | 'physical' | 'creative' | 'chore' | 'other' */
+  category: string
+  /** 'checkbox' | 'pages' | 'duration' | 'rating' */
+  tracking_type: string
+  /** 0=Mon … 6=Sun; empty = all days */
+  days_of_week: number[]
+  quantity_goal: number | null
+  quantity_unit: string | null
   coins: number
   sort_order: number
   is_active: boolean
@@ -77,5 +86,9 @@ export interface ActivityLog {
   activity_id: string
   done: boolean
   note: string | null
+  quantity_done: number | null
+  duration_minutes: number | null
+  rating: number | null
+  bookmark_page: number | null
   created_at: string
 }
