@@ -520,8 +520,16 @@ export async function createPurchaseRequest(
     return data
   }
 
-  // Normal flow: freeze coins, create pending request
-  const frozenCoins = reward.reward_type === 'coins' ? (reward.price_coins || 0) : 0
+  // Normal flow: deduct coins immediately, parent confirms delivery later
+  const priceCoins = reward.reward_type === 'coins' ? (reward.price_coins || 0) : 0
+  const newCoins = wallet.coins - priceCoins
+
+  if (priceCoins > 0) {
+    await supabase
+      .from('wallet')
+      .update({ coins: newCoins, total_spent_coins: wallet.total_spent_coins + priceCoins })
+      .eq('child_id', childId)
+  }
 
   const purchase = {
     reward_id: rewardId,
@@ -532,9 +540,9 @@ export async function createPurchaseRequest(
     price_coins: reward.price_coins,
     price_money: reward.price_money,
     status: 'pending',
-    frozen_coins: frozenCoins,
+    frozen_coins: 0,
     fulfilled: false,
-    balance_after_coins: wallet.coins,
+    balance_after_coins: newCoins,
     balance_after_money: Number(wallet.money),
   }
 
@@ -574,7 +582,9 @@ export async function approvePurchase(
   const wallet = await getWallet(purchase.child_id)
   if (!wallet) throw new Error('Wallet not found')
 
-  if (purchase.reward_type === 'coins') {
+  // frozen_coins > 0 only for legacy purchases created before the immediate-deduction fix.
+  // New purchases have frozen_coins = 0 because coins are deducted at request time.
+  if (purchase.reward_type === 'coins' && purchase.frozen_coins > 0) {
     await updateWalletCoins(
       purchase.child_id,
       -purchase.frozen_coins,

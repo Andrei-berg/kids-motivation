@@ -835,12 +835,12 @@
     "sending": "Отправка…"
   },
   "kidShopApproval": {
-    "waiting": "Ждём родителя",
-    "done": "Готово! 🎉",
+    "waiting": "Монеты списаны!",
+    "done": "Монеты потрачены 💸",
     "stepSent": "Запрос отправлен",
-    "stepSeen": "Родитель уведомлён",
-    "stepApproved": "Одобрено!",
-    "greatBtn": "Отлично!"
+    "stepSeen": "Монеты списаны",
+    "stepApproved": "Ждём вручения от родителя",
+    "greatBtn": "Понятно!"
   },
   "kidDayPage": {
     "noChild": "Ребёнок не определён",

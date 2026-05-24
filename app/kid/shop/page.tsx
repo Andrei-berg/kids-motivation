@@ -326,8 +326,8 @@ function ApprovalSheet({ item, onClose }: { item: Reward; onClose: () => void })
   return (
     <div onClick={stage === 'approved' ? onClose : undefined} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 0.2s', padding: 20 }}>
       <div style={{ width: '100%', background: '#fff', borderRadius: 28, padding: 24, animation: 'popIn 0.35s cubic-bezier(.2,.9,.3,1.3)' }}>
-        <div style={{ width: 72, height: 72, borderRadius: '50%', background: stage === 'approved' ? `linear-gradient(135deg, ${T.teal}, #3DB8B0)` : `linear-gradient(135deg, ${T.sun}, ${T.sunDeep})`, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, boxShadow: `0 10px 24px ${stage === 'approved' ? T.teal : T.sunDeep}66` }}>
-          {stage === 'approved' ? '✓' : '⏳'}
+        <div style={{ width: 72, height: 72, borderRadius: '50%', background: stage === 'approved' ? `linear-gradient(135deg, ${T.sun}, ${T.sunDeep})` : `linear-gradient(135deg, ${T.teal}, #3DB8B0)`, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, boxShadow: `0 10px 24px ${stage === 'approved' ? T.sunDeep : T.teal}66` }}>
+          {stage === 'approved' ? '🎁' : '💸'}
         </div>
         <div style={{ fontFamily: T.fDisp, fontSize: 22, fontWeight: 900, color: T.ink, textAlign: 'center', marginTop: 14 }}>
           {stage === 'approved' ? t('kidShopApproval.done') : t('kidShopApproval.waiting')}

@@ -867,12 +867,12 @@
     "sending": "Sending…"
   },
   "kidShopApproval": {
-    "waiting": "Waiting for parent",
-    "done": "Done! 🎉",
+    "waiting": "Coins spent!",
+    "done": "Coins spent 💸",
     "stepSent": "Request sent",
-    "stepSeen": "Parent notified",
-    "stepApproved": "Approved!",
-    "greatBtn": "Great!"
+    "stepSeen": "Coins deducted",
+    "stepApproved": "Waiting for parent to deliver",
+    "greatBtn": "Got it!"
   },
   "kidDayPage": {
     "noChild": "Child not found",
