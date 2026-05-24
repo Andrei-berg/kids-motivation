@@ -7,6 +7,53 @@ import ChatThread from '@/components/chat/ChatThread'
 import { T } from '@/components/kid/design/tokens'
 import { useT } from '@/lib/i18n'
 
+type ViewMode = 'mixed' | 'split'
+type ChatTab  = 'messages' | 'activity'
+const VIEW_MODE_KEY = 'chat_view_mode_v1'
+
+function loadViewMode(): ViewMode {
+  if (typeof window === 'undefined') return 'mixed'
+  return (localStorage.getItem(VIEW_MODE_KEY) as ViewMode) || 'mixed'
+}
+
+function ViewModeToggle({ mode, onToggle }: { mode: ViewMode; onToggle: () => void }) {
+  return (
+    <div style={{ display: 'inline-flex', background: T.lineSoft, borderRadius: 999, padding: 2, border: `1px solid ${T.line}` }}>
+      {(['mixed', 'split'] as ViewMode[]).map(m => (
+        <button key={m} onClick={() => mode !== m && onToggle()} style={{
+          padding: '4px 12px', borderRadius: 999, border: 'none',
+          cursor: mode !== m ? 'pointer' : 'default',
+          fontFamily: T.fBody, fontSize: 12, fontWeight: 600,
+          background: mode === m ? '#fff' : 'transparent',
+          color: mode === m ? T.ink2 : T.ink3,
+          boxShadow: mode === m ? '0 1px 4px rgba(0,0,0,.08)' : 'none',
+          transition: 'all .15s',
+        }}>
+          {m === 'mixed' ? 'Лента' : 'Раздельно'}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function ChatTabBar({ active, onChange }: { active: ChatTab; onChange: (t: ChatTab) => void }) {
+  return (
+    <div style={{ display: 'flex', gap: 6, padding: '8px 14px 10px', borderBottom: `1px solid ${T.line}`, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', flexShrink: 0 }}>
+      {([['messages', '💬 Сообщения', T.coral], ['activity', '✨ Активность', T.plum]] as [ChatTab, string, string][]).map(([tab, label, color]) => (
+        <button key={tab} onClick={() => onChange(tab)} style={{
+          padding: '6px 16px', borderRadius: 999, cursor: 'pointer',
+          fontFamily: T.fBody, fontSize: 13, fontWeight: 600,
+          background: active === tab ? color : 'transparent',
+          color: active === tab ? '#fff' : T.ink3,
+          border: active === tab ? 'none' : `1px solid ${T.line}`,
+          boxShadow: active === tab ? `0 3px 10px ${color}44` : 'none',
+          transition: 'all .15s',
+        }}>{label}</button>
+      ))}
+    </div>
+  )
+}
+
 export default function KidChatPage() {
   const t = useT()
   const activeMemberId = useAppStore((s) => s.activeMemberId)
@@ -15,6 +62,19 @@ export default function KidChatPage() {
   const [senderName, setSenderName] = useState<string>('')
   const [memberCount, setMemberCount] = useState<number>(0)
   const [loading, setLoading] = useState(true)
+  const [viewMode, setViewMode] = useState<ViewMode>('mixed')
+  const [activeTab, setActiveTab] = useState<ChatTab>('messages')
+
+  useEffect(() => {
+    setViewMode(loadViewMode())
+  }, [])
+
+  function toggleViewMode() {
+    const next: ViewMode = viewMode === 'mixed' ? 'split' : 'mixed'
+    setViewMode(next)
+    localStorage.setItem(VIEW_MODE_KEY, next)
+    if (next === 'mixed') setActiveTab('messages')
+  }
 
   useEffect(() => {
     async function init() {
@@ -44,13 +104,12 @@ export default function KidChatPage() {
     <div style={{ minHeight: '100vh', background: T.bg, display: 'flex', flexDirection: 'column', paddingBottom: 90 }}>
       {/* Header */}
       <div style={{
-        padding: '14px 16px 12px',
         background: 'rgba(255,255,255,0.92)',
         backdropFilter: 'blur(20px)',
         borderBottom: `1px solid ${T.line}`,
         position: 'sticky', top: 0, zIndex: 10,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, maxWidth: 600, margin: '0 auto' }}>
+        <div style={{ padding: '14px 16px 12px', display: 'flex', alignItems: 'center', gap: 12, maxWidth: 600, margin: '0 auto' }}>
           {/* Stacked avatars */}
           <div style={{ position: 'relative', width: 50, height: 40, flexShrink: 0 }}>
             <div style={{
@@ -83,16 +142,14 @@ export default function KidChatPage() {
             </div>
           </div>
 
-          {/* Family icon */}
-          <div style={{
-            width: 36, height: 36, borderRadius: 12,
-            background: `${T.coral}18`, border: `1px solid ${T.coral}30`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 18,
-          }}>
-            👨‍👩‍👧‍👦
-          </div>
+          {/* View mode toggle */}
+          <ViewModeToggle mode={viewMode} onToggle={toggleViewMode} />
         </div>
+
+        {/* Tab bar — shown below header in split mode */}
+        {viewMode === 'split' && (
+          <ChatTabBar active={activeTab} onChange={setActiveTab} />
+        )}
       </div>
 
       {/* Chat body */}
@@ -112,6 +169,10 @@ export default function KidChatPage() {
               currentMemberId={memberId}
               senderName={senderName}
               senderRole="child"
+              viewMode={viewMode}
+              activeTab={activeTab}
+              onToggleViewMode={toggleViewMode}
+              onTabChange={setActiveTab}
             />
           </div>
         ) : (

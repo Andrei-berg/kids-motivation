@@ -55,6 +55,13 @@ function TabIcon({ name, active, col }: { name: string; active: boolean; col: st
       <path d="M12 9.5v5" stroke={stroke} strokeWidth="2" strokeLinecap="round"/>
     </svg>
   )
+  if (name === 'chat') return (
+    <svg width={w} height={h} viewBox="0 0 24 24" fill="none">
+      <path d="M4 6a3 3 0 013-3h10a3 3 0 013 3v7a3 3 0 01-3 3h-4l-4 4v-4H7a3 3 0 01-3-3V6z"
+        stroke={stroke} strokeWidth="2" strokeLinejoin="round"
+        fill={active ? col + '22' : 'none'}/>
+    </svg>
+  )
   return null
 }
 
@@ -75,7 +82,7 @@ export default function KidNav() {
   return (
     <>
       {/* Desktop sidebar */}
-      <nav className="hidden md:flex fixed top-0 left-0 bottom-0 z-50 flex-col bg-white border-r border-gray-100 w-16 items-center py-4 gap-2">
+      <nav className="hidden lg:flex fixed top-0 left-0 bottom-0 z-50 flex-col bg-white border-r border-gray-100 w-16 items-center py-4 gap-2">
         {TABS.map(tab => {
           const isActive = pathname === tab.href || pathname.startsWith(tab.href + '/')
           return (
@@ -86,6 +93,17 @@ export default function KidNav() {
             </Link>
           )
         })}
+        {/* Chat tab — desktop only (mobile uses FAB) */}
+        {(() => {
+          const isActive = pathname === '/kid/chat'
+          return (
+            <Link href="/kid/chat" title={t('kidNav.chat')}
+              className="flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all"
+              style={{ background: isActive ? T.plum + '18' : 'transparent' }}>
+              <TabIcon name="chat" active={isActive} col={T.plum}/>
+            </Link>
+          )
+        })()}
         <div className="flex-1"/>
         <button onClick={handleLogout} title={t('kidNav.logout')}
           className="flex items-center justify-center w-10 h-10 rounded-2xl text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all">
@@ -97,7 +115,7 @@ export default function KidNav() {
 
       {/* Mobile bottom bar */}
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-50"
         style={{ padding: '0 10px calc(10px + env(safe-area-inset-bottom, 0px))' }}
         aria-label={t('nav.navigation')}
       >
@@ -139,7 +157,7 @@ export default function KidNav() {
       {/* Mobile logout — top right */}
       <button
         onClick={handleLogout}
-        className="md:hidden fixed top-3 right-3 z-50 flex items-center justify-center"
+        className="lg:hidden fixed top-3 right-3 z-50 flex items-center justify-center"
         style={{
           width: 44, height: 44, borderRadius: 12,
           background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)',

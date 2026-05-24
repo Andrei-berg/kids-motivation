@@ -19,7 +19,7 @@ export default function KidChatFAB() {
       boxShadow: `0 8px 22px ${T.coral}66, 0 2px 6px rgba(0,0,0,0.1)`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       textDecoration: 'none',
-    }} className="md:hidden" aria-label={t('kidChat.title')}>
+    }} className="lg:hidden" aria-label={t('kidChat.title')}>
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
         <path d="M4 6a3 3 0 013-3h10a3 3 0 013 3v8a3 3 0 01-3 3h-4l-4 4v-4H7a3 3 0 01-3-3V6z"
           fill="#fff" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round"/>

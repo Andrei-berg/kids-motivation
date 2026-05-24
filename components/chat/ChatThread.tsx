@@ -22,6 +22,10 @@ interface ChatThreadProps {
   currentMemberId: string
   senderName: string
   senderRole: 'parent' | 'child'
+  viewMode?: ViewMode
+  activeTab?: ChatTab
+  onToggleViewMode?: () => void
+  onTabChange?: (tab: ChatTab) => void
 }
 
 // ─── Design tokens (kid light theme) ─────────────────────────────────────────
@@ -381,6 +385,10 @@ export default function ChatThread({
   currentMemberId,
   senderName,
   senderRole,
+  viewMode: externalViewMode,
+  activeTab: externalActiveTab,
+  onToggleViewMode,
+  onTabChange,
 }: ChatThreadProps) {
   const t = useT()
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -391,17 +399,33 @@ export default function ChatThread({
   const [photoCaption, setPhotoCaption] = useState('')
   const [photoUploading, setPhotoUploading] = useState(false)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<ViewMode>(loadViewMode)
-  const [activeTab, setActiveTab] = useState<ChatTab>('messages')
+  const [internalViewMode, setInternalViewMode] = useState<ViewMode>(loadViewMode)
+  const [internalActiveTab, setInternalActiveTab] = useState<ChatTab>('messages')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
 
+  const isControlled = onToggleViewMode !== undefined
+  const viewMode = isControlled ? (externalViewMode ?? 'mixed') : internalViewMode
+  const activeTab = isControlled ? (externalActiveTab ?? 'messages') : internalActiveTab
+
   function toggleViewMode() {
-    const next: ViewMode = viewMode === 'mixed' ? 'split' : 'mixed'
-    setViewMode(next)
-    localStorage.setItem(VIEW_MODE_KEY, next)
-    if (next === 'mixed') setActiveTab('messages')
+    if (isControlled) {
+      onToggleViewMode()
+    } else {
+      const next: ViewMode = internalViewMode === 'mixed' ? 'split' : 'mixed'
+      setInternalViewMode(next)
+      localStorage.setItem(VIEW_MODE_KEY, next)
+      if (next === 'mixed') setInternalActiveTab('messages')
+    }
+  }
+
+  function handleTabChange(tab: ChatTab) {
+    if (isControlled) {
+      onTabChange?.(tab)
+    } else {
+      setInternalActiveTab(tab)
+    }
   }
 
   useEffect(() => {
@@ -527,11 +551,11 @@ export default function ChatThread({
       <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handlePhotoSelect} />
       <input ref={galleryInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoSelect} />
 
-      {/* View mode toggle */}
-      <ViewModeToggle mode={viewMode} onToggle={toggleViewMode} />
+      {/* View mode toggle — only shown when not externally controlled */}
+      {!isControlled && <ViewModeToggle mode={viewMode} onToggle={toggleViewMode} />}
 
-      {/* Tab bar (split mode only) */}
-      {viewMode === 'split' && <ChatTabBar active={activeTab} onChange={setActiveTab} />}
+      {/* Tab bar (split mode only) — only shown when not externally controlled */}
+      {viewMode === 'split' && !isControlled && <ChatTabBar active={activeTab} onChange={handleTabChange} />}
 
       {/* Content area */}
       {viewMode === 'split' && activeTab === 'activity' ? (

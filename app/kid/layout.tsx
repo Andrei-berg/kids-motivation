@@ -30,7 +30,7 @@ export default async function KidLayout({ children }: { children: React.ReactNod
         <KidNav />
         <CelebrationOverlay />
         <KidChatFAB />
-        <main className="pb-24 md:pb-0 md:pl-16">
+        <main className="pb-24 lg:pb-0 lg:pl-16">
           {children}
         </main>
       </div>
@@ -47,7 +47,7 @@ export default async function KidLayout({ children }: { children: React.ReactNod
       <KidNav />
       <CelebrationOverlay />
       <KidChatFAB />
-      <main className="pb-24 md:pb-0 md:pl-16">
+      <main className="pb-24 lg:pb-0 lg:pl-16">
         {children}
       </main>
     </div>
