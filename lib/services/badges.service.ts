@@ -341,16 +341,25 @@ async function awardBadge(childId: string, badgeKey: string) {
   const badge = BADGES.find(b => b.key === badgeKey)
   if (!badge) return
 
+  // Fetch child first — family_id is required by RLS WITH CHECK on badges insert
+  const { data: child } = await supabase
+    .from('children')
+    .select('xp, level, family_id, name')
+    .eq('id', childId)
+    .single()
+
+  if (!child) return
+
   const { data: existing } = await supabase
     .from('badges')
-    .select('*')
+    .select('id')
     .eq('child_id', childId)
     .eq('badge_key', badgeKey)
     .maybeSingle()
 
   if (existing) return
 
-  await supabase
+  const { error: insertError } = await supabase
     .from('badges')
     .insert({
       child_id: childId,
@@ -358,24 +367,22 @@ async function awardBadge(childId: string, badgeKey: string) {
       title: badge.title,
       description: badge.description,
       icon: badge.icon,
-      xp_reward: badge.xp
+      xp_reward: badge.xp,
+      family_id: child.family_id,
     })
 
-  const { data: child } = await supabase
-    .from('children')
-    .select('xp, level, family_id, name')
-    .eq('id', childId)
-    .single()
-
-  if (child) {
-    const newXP = child.xp + badge.xp
-    const newLevel = Math.floor(newXP / 1000) + 1
-
-    await supabase
-      .from('children')
-      .update({ xp: newXP, level: newLevel })
-      .eq('id', childId)
+  if (insertError) {
+    console.warn('[awardBadge] insert failed:', insertError.message)
+    return
   }
+
+  const newXP = child.xp + badge.xp
+  const newLevel = Math.floor(newXP / 1000) + 1
+
+  await supabase
+    .from('children')
+    .update({ xp: newXP, level: newLevel })
+    .eq('id', childId)
 
   try {
     const { notifyChild } = await import('@/app/actions/push-notifications')
@@ -390,7 +397,7 @@ async function awardBadge(childId: string, badgeKey: string) {
   }
 
   try {
-    if (child?.family_id) {
+    if (child.family_id) {
       const { postSystemMessage } = await import('@/lib/repositories/chat.repo')
       await postSystemMessage({
         familyId: child.family_id,

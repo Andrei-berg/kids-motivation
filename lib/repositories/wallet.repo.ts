@@ -476,6 +476,14 @@ export async function createPurchaseRequest(
     if (wallet.coins < (reward.price_coins || 0)) throw new Error('Insufficient coins')
   }
 
+  // Fetch family_id — required by RLS WITH CHECK on reward_purchases insert
+  const { data: childRow } = await supabase
+    .from('children')
+    .select('family_id')
+    .eq('id', childId)
+    .single()
+  const familyId = childRow?.family_id ?? null
+
   const autoApprove = (reward as any).auto_approve === true
 
   if (autoApprove) {
@@ -502,6 +510,7 @@ export async function createPurchaseRequest(
       processed_at: new Date().toISOString(),
       balance_after_coins: newCoins,
       balance_after_money: Number(wallet.money),
+      family_id: familyId,
     }
 
     const { data, error } = await supabase
@@ -544,6 +553,7 @@ export async function createPurchaseRequest(
     fulfilled: false,
     balance_after_coins: newCoins,
     balance_after_money: Number(wallet.money),
+    family_id: familyId,
   }
 
   const { data, error } = await supabase

@@ -1,25 +1,24 @@
 'use server'
 
 import { createPurchaseRequest } from '@/lib/repositories/wallet.repo'
+import { checkAndAwardBadges } from '@/lib/services/badges.service'
 import { notifyParent } from '@/app/actions/push-notifications'
 import { createClient } from '@/lib/supabase/server'
 import type { RewardPurchase } from '@/lib/models/wallet.types'
 
-/**
- * Server action: create a shop purchase request and notify parents.
- * Wraps createPurchaseRequest so that notifyParent (a server action)
- * runs server-side — dynamic-importing it from a client component would
- * not run it server-side.
- *
- * Push failure is non-blocking: caught in try/catch so it never breaks
- * the purchase flow.
- */
 export async function requestPurchase(
   childId: string,
   rewardId: string
 ): Promise<RewardPurchase> {
-  // Create the purchase request (runs entirely server-side here)
   const purchase = await createPurchaseRequest(childId, rewardId)
+
+  // Check badges after purchase (first_purchase badge, coin_saver, etc.)
+  try {
+    const today = new Date().toISOString().slice(0, 10)
+    await checkAndAwardBadges(childId, today)
+  } catch (e) {
+    console.warn('[requestPurchase] badge check failed:', e)
+  }
 
   // Only notify parents for pending purchases (auto-approved ones don't need it)
   if (purchase.status === 'pending') {
@@ -40,7 +39,6 @@ export async function requestPurchase(
         )
       }
     } catch (e) {
-      // Non-blocking: push failure must never break the purchase flow
       console.warn('[requestPurchase] parent push failed:', e)
     }
   }

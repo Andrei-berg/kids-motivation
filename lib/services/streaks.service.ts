@@ -6,7 +6,7 @@ import { supabase } from '../supabase'
 import { normalizeDate, addDays } from '@/utils/helpers'
 
 export interface StreakEvent {
-  type: 'room' | 'study' | 'sport'
+  type: 'room' | 'study' | 'sport' | 'strong_week'
   event: 'broken' | 'record'
   previousCount: number
   newCount: number
@@ -48,6 +48,7 @@ export async function updateStreaks(childId: string, date: string): Promise<Stre
   const roomStreak = calculateRoomStreak(days, today)
   const studyStreak = calculateStudyStreak(grades || [], today)
   const sportStreak = calculateSportStreak(sports || [], today)
+  const behaviorStreak = calculateBehaviorStreak(days, today)
 
   const { data: child } = await supabase
     .from('children')
@@ -56,15 +57,16 @@ export async function updateStreaks(childId: string, date: string): Promise<Stre
     .maybeSingle()
   const familyId = child?.family_id ?? null
 
-  const [roomEvent, studyEvent, sportEvent] = await Promise.all([
+  const [roomEvent, studyEvent, sportEvent, behaviorEvent] = await Promise.all([
     updateStreak(childId, 'room', roomStreak.current, roomStreak.best, familyId),
     updateStreak(childId, 'study', studyStreak.current, studyStreak.best, familyId),
     updateStreak(childId, 'sport', sportStreak.current, sportStreak.best, familyId),
+    updateStreak(childId, 'strong_week', behaviorStreak.current, behaviorStreak.best, familyId),
   ])
 
   const events: StreakEvents = {
-    broken: [roomEvent, studyEvent, sportEvent].filter((e): e is StreakEvent => e?.event === 'broken'),
-    records: [roomEvent, studyEvent, sportEvent].filter((e): e is StreakEvent => e?.event === 'record'),
+    broken: [roomEvent, studyEvent, sportEvent, behaviorEvent].filter((e): e is StreakEvent => e?.event === 'broken'),
+    records: [roomEvent, studyEvent, sportEvent, behaviorEvent].filter((e): e is StreakEvent => e?.event === 'record'),
   }
   return events
 }
@@ -148,9 +150,35 @@ export function calculateSportStreak(sports: any[], today: string) {
   return { current, best }
 }
 
+export function calculateBehaviorStreak(days: any[], today: string) {
+  let current = 0
+  let best = 0
+  let streak = 0
+
+  let checkDate = today
+  for (let i = 0; i < 30; i++) {
+    const day = days.find(d => d.date === checkDate)
+
+    if (day && day.good_behavior) {
+      streak++
+      if (checkDate === today) current = streak
+    } else {
+      if (streak > best) best = streak
+      if (checkDate === today) current = 0
+      streak = 0
+    }
+
+    checkDate = addDays(checkDate, -1)
+  }
+
+  if (streak > best) best = streak
+
+  return { current, best }
+}
+
 async function updateStreak(
   childId: string,
-  type: 'room' | 'study' | 'sport',
+  type: 'room' | 'study' | 'sport' | 'strong_week',
   current: number,
   best: number,
   familyId?: string | null
@@ -185,9 +213,11 @@ async function updateStreak(
       event = { type, event: 'record', previousCount: 0, newCount: current }
     }
 
+    // Use upsert so that stale rows with family_id=null get overwritten with correct family_id.
+    // The DB trigger (supabase-migration-family-id-fix.sql) covers INSERT; upsert handles UPDATE path.
     await supabase
       .from('streaks')
-      .insert({
+      .upsert({
         child_id: childId,
         streak_type: type,
         current_count: current,
@@ -195,12 +225,12 @@ async function updateStreak(
         last_updated: normalizeDate(new Date()),
         active: current > 0,
         ...(familyId ? { family_id: familyId } : {}),
-      })
+      }, { onConflict: 'child_id,streak_type', ignoreDuplicates: false })
   }
 
   if (event?.event === 'record' && familyId && [7, 14, 30].includes(current)) {
     try {
-      const typeLabel = type === 'room' ? 'Комната' : type === 'study' ? 'Учёба' : 'Спорт'
+      const typeLabel = type === 'room' ? 'Комната' : type === 'study' ? 'Учёба' : type === 'sport' ? 'Спорт' : 'Поведение'
       const { data: childRow } = await supabase
         .from('children')
         .select('name')
