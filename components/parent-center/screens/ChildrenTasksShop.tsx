@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { T } from '../tokens'
 import { Card, Btn, Pill, Avatar, Bar, Coin, Icon, Tabs, SectionH } from '../ui'
 import type { ParentChild } from '../types'
 import type { RewardPurchase, Reward } from '@/lib/models/wallet.types'
+import { getRewards, addReward, updateReward, deleteReward } from '@/lib/repositories/wallet.repo'
 
 // ═══════════ CHILDREN ═══════════
 export function ChildrenScreen({ children, onOpenChild }: {
@@ -179,90 +180,274 @@ export function TasksScreen() {
   )
 }
 
+// ═══════════ SHOP TEMPLATES ═══════════
+const REWARD_TEMPLATES = [
+  { title: '+1 час планшета', icon: '📱', category: 'virtual', price_coins: 150, description: 'Дополнительный час экранного времени' },
+  { title: 'Пицца — твой выбор', icon: '🍕', category: 'material', price_coins: 300, description: 'Заказать любую пиццу' },
+  { title: 'Кино — ты выбираешь', icon: '🎬', category: 'experience', price_coins: 250, description: 'Сам выбираешь фильм вечером' },
+  { title: '+30 мин не спать', icon: '🌙', category: 'virtual', price_coins: 180, description: 'Лечь спать на 30 минут позже' },
+  { title: 'Друг ночевать', icon: '🏕️', category: 'experience', price_coins: 500, description: 'Позвать друга ночевать' },
+  { title: 'Пропустить 1 дело', icon: '🎟️', category: 'virtual', price_coins: 220, description: 'Отменить одно домашнее дело' },
+  { title: 'Burger King', icon: '🍔', category: 'experience', price_coins: 350, description: 'Поход в фастфуд' },
+  { title: 'Аквапарк всей семьёй', icon: '🏊', category: 'experience', price_coins: 1200, description: 'День в аквапарке' },
+  { title: 'Новый Lego', icon: '🧱', category: 'material', price_coins: 450, description: 'Купить новый набор Lego' },
+  { title: 'Книга по выбору', icon: '📚', category: 'material', price_coins: 400, description: 'Купить любую книгу' },
+  { title: 'Карманные деньги', icon: '💵', category: 'money', price_coins: 333, description: 'Деньги на карманные расходы' },
+  { title: 'Картинг 15 мин', icon: '🏎️', category: 'experience', price_coins: 800, description: 'Сессия картинга' },
+  { title: 'Кино с попкорном', icon: '🍿', category: 'experience', price_coins: 600, description: 'Фильм + попкорн' },
+  { title: 'Боулинг', icon: '🎳', category: 'experience', price_coins: 700, description: 'Игра в боулинг' },
+  { title: 'Суши на двоих', icon: '🍣', category: 'material', price_coins: 550, description: 'Заказать суши' },
+]
+
+const STICKER_TEMPLATES = [
+  { title: 'Minecraft стикеры', icon: '⛏️', category: 'material', price_coins: 100, description: 'Набор стикеров Minecraft' },
+  { title: 'Roblox стикеры', icon: '🎮', category: 'material', price_coins: 100, description: 'Набор стикеров Roblox' },
+  { title: 'Футбол стикеры', icon: '⚽', category: 'material', price_coins: 80, description: 'Стикеры футбольных клубов и игроков' },
+  { title: 'Животные стикеры', icon: '🐾', category: 'material', price_coins: 80, description: 'Милые животные — котики, собачки' },
+  { title: 'Супергерои стикеры', icon: '🦸', category: 'material', price_coins: 120, description: 'Marvel или DC стикеры' },
+  { title: 'Аниме стикеры', icon: '🌸', category: 'material', price_coins: 100, description: 'Стикеры в стиле аниме' },
+  { title: 'Космос стикеры', icon: '🚀', category: 'material', price_coins: 90, description: 'Планеты, ракеты, астронавты' },
+  { title: 'Динозавры стикеры', icon: '🦕', category: 'material', price_coins: 90, description: 'Стикеры с динозаврами' },
+  { title: 'Among Us стикеры', icon: '🟥', category: 'material', price_coins: 100, description: 'Стикеры Among Us' },
+  { title: 'Poppy Playtime стикеры', icon: '🧸', category: 'material', price_coins: 110, description: 'Хагги Вагги и друзья' },
+  { title: 'Машинки стикеры', icon: '🚗', category: 'material', price_coins: 80, description: 'Гоночные машины и авто' },
+  { title: 'Emoji стикеры большие', icon: '😎', category: 'material', price_coins: 70, description: 'Большой набор смайлов' },
+  { title: 'Звёздные войны стикеры', icon: '⚔️', category: 'material', price_coins: 120, description: 'Стикеры Звёздных войн' },
+  { title: 'Покемон стикеры', icon: '⚡', category: 'material', price_coins: 110, description: 'Пикачу и другие покемоны' },
+  { title: 'Спортивные наклейки', icon: '🏆', category: 'material', price_coins: 90, description: 'Баскетбол, теннис, плавание' },
+  { title: 'Глиттер стикеры', icon: '✨', category: 'material', price_coins: 130, description: 'Блестящие голографические стикеры' },
+  { title: 'Пираты стикеры', icon: '🏴‍☠️', category: 'material', price_coins: 85, description: 'Пиратская тематика' },
+  { title: 'Monsterverse стикеры', icon: '🦖', category: 'material', price_coins: 100, description: 'Годзилла и монстры' },
+  { title: 'Гарри Поттер стикеры', icon: '🧙', category: 'material', price_coins: 110, description: 'Волшебный мир Гарри Поттера' },
+  { title: 'Ninja стикеры', icon: '🥷', category: 'material', price_coins: 90, description: 'Ниндзя и восточные мотивы' },
+]
+
+type CategoryKey = 'virtual' | 'material' | 'experience' | 'money'
+const CATEGORY_LABELS: Record<CategoryKey, string> = { virtual: 'Виртуальное', material: 'Вещь', experience: 'Впечатление', money: 'Деньги' }
+
+interface RewardForm {
+  icon: string; title: string; description: string
+  category: CategoryKey; price_coins: number; is_active: boolean
+}
+const DEFAULT_FORM: RewardForm = { icon: '🎁', title: '', description: '', category: 'material', price_coins: 100, is_active: true }
+
 // ═══════════ SHOP ═══════════
-export function ShopScreen({ pending, rewards, onApprove, onDecline }: {
+export function ShopScreen({ pending, onApprove, onDecline, children = [] }: {
   pending: RewardPurchase[]
-  rewards: Reward[]
+  rewards?: Reward[]  // kept for backwards compat but not used — ShopScreen manages own state
   onApprove: (p: RewardPurchase) => void
   onDecline: (p: RewardPurchase) => void
   children?: ParentChild[]
 }) {
   const [tab, setTab] = useState('items')
-  const physicalRewards = rewards.filter(r => !r.category.toLowerCase().includes('virtual'))
-  const virtualRewards = rewards.filter(r => r.category.toLowerCase().includes('virtual'))
-  const displayRewards = tab === 'virtual' ? virtualRewards : physicalRewards
+  const [rewards, setRewards] = useState<Reward[]>([])
+  const [loadingRewards, setLoadingRewards] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [form, setForm] = useState<RewardForm>(DEFAULT_FORM)
+  const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [loadingTpl, setLoadingTpl] = useState(false)
+  const [loadingStk, setLoadingStk] = useState(false)
+  const [tplLoaded, setTplLoaded] = useState(false)
+  const [stkLoaded, setStkLoaded] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const reload = useCallback(async () => {
+    try {
+      const data = await getRewards({ activeOnly: false })
+      setRewards(data)
+    } catch { setError('Ошибка загрузки') } finally { setLoadingRewards(false) }
+  }, [])
+
+  useEffect(() => { reload() }, [reload])
+
+  function openAdd() { setEditingId(null); setForm(DEFAULT_FORM); setShowForm(true) }
+  function openEdit(r: Reward) {
+    setEditingId(r.id)
+    setForm({ icon: r.icon, title: r.title, description: r.description ?? '', category: (r.category as CategoryKey) ?? 'material', price_coins: r.price_coins ?? 100, is_active: r.is_active })
+    setShowForm(true)
+  }
+  function closeForm() { setShowForm(false); setEditingId(null) }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault()
+    if (!form.title.trim()) return
+    setSaving(true)
+    try {
+      const payload = { icon: form.icon, title: form.title.trim(), description: form.description.trim() || null, category: form.category, reward_type: 'coins' as const, price_coins: form.price_coins, is_active: form.is_active, for_child: null }
+      if (editingId) await updateReward(editingId, payload)
+      else await addReward(payload)
+      closeForm(); await reload()
+    } catch (e: any) { setError(e?.message ?? 'Ошибка') } finally { setSaving(false) }
+  }
+
+  async function handleDelete(id: string) {
+    try { await deleteReward(id); setDeletingId(null); await reload() }
+    catch (e: any) { setError(e?.message ?? 'Ошибка удаления') }
+  }
+
+  async function toggleActive(r: Reward) {
+    try { await updateReward(r.id, { is_active: !r.is_active }); await reload() }
+    catch (e: any) { setError(e?.message ?? 'Ошибка') }
+  }
+
+  async function loadTemplates(list: typeof REWARD_TEMPLATES, onDone: () => void, setLoading: (v: boolean) => void) {
+    setLoading(true); setError(null)
+    for (const item of list) {
+      try { await addReward({ ...item, reward_type: 'coins', is_active: true, for_child: null }) }
+      catch { /* skip duplicates */ }
+    }
+    await reload(); onDone(); setLoading(false)
+  }
+
+  const inp: React.CSSProperties = { background: T.bg1, color: T.text, borderRadius: 8, padding: '7px 10px', border: `1px solid ${T.cardBorder}`, outline: 'none', width: '100%', fontSize: 13, fontFamily: T.fBody }
+
+  const stickerRewards = rewards.filter(r => r.title.toLowerCase().includes('стикер') || r.title.toLowerCase().includes('sticker'))
+  const otherRewards = rewards.filter(r => !stickerRewards.some(s => s.id === r.id))
+  const displayRewards = tab === 'stickers' ? stickerRewards : otherRewards
 
   return (
-    <div style={{ padding: '20px 16px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div style={{ padding: '20px 16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
           <h1 style={{ margin: 0, fontFamily: T.fHead, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Reward Shop</h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: T.muted }}>What kids can trade coins for</p>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: T.muted }}>{rewards.length} rewards · {stickerRewards.length} stickers</p>
         </div>
-        <Btn variant="primary" size="md" icon="plus" onClick={() => window.location.href = '/parent/shop'}>Add</Btn>
+        <Btn variant="primary" size="md" icon="plus" onClick={openAdd}>Add</Btn>
       </div>
 
+      {error && (
+        <div style={{ background: T.dangerSoft, border: `1px solid ${T.danger}44`, borderRadius: T.r, padding: '8px 12px', fontSize: 12, color: T.danger, display: 'flex', justifyContent: 'space-between' }}>
+          {error} <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', color: T.danger, cursor: 'pointer', fontSize: 12 }}>✕</button>
+        </div>
+      )}
+
+      {/* Template buttons */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button
+          onClick={() => loadTemplates(STICKER_TEMPLATES, () => setStkLoaded(true), setLoadingStk)}
+          disabled={loadingStk || stkLoaded}
+          style={{ height: 30, padding: '0 12px', borderRadius: T.rPill, border: `1px solid ${T.cardBorder}`, background: stkLoaded ? T.successSoft : T.bg1, color: stkLoaded ? T.success : T.textDim, fontSize: 12, fontWeight: 700, cursor: stkLoaded || loadingStk ? 'default' : 'pointer', fontFamily: T.fBody }}
+        >
+          {loadingStk ? '⏳' : stkLoaded ? '✓ Стикеры добавлены' : `🎯 + Стикеры (${STICKER_TEMPLATES.length})`}
+        </button>
+        <button
+          onClick={() => loadTemplates(REWARD_TEMPLATES, () => setTplLoaded(true), setLoadingTpl)}
+          disabled={loadingTpl || tplLoaded}
+          style={{ height: 30, padding: '0 12px', borderRadius: T.rPill, border: `1px solid ${T.cardBorder}`, background: tplLoaded ? T.successSoft : T.bg1, color: tplLoaded ? T.success : T.textDim, fontSize: 12, fontWeight: 700, cursor: tplLoaded || loadingTpl ? 'default' : 'pointer', fontFamily: T.fBody }}
+        >
+          {loadingTpl ? '⏳' : tplLoaded ? '✓ Шаблоны добавлены' : `📦 + Шаблоны (${REWARD_TEMPLATES.length})`}
+        </button>
+      </div>
+
+      {/* Inline add/edit form */}
+      {showForm && (
+        <Card pad={16} style={{ border: `1px solid ${T.indigo}44` }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 12 }}>{editingId ? 'Редактировать награду' : 'Новая награда'}</div>
+          <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input style={{ ...inp, width: 52, textAlign: 'center', fontSize: 20 }} value={form.icon} onChange={e => setForm(f => ({ ...f, icon: e.target.value }))} maxLength={4}/>
+              <input style={{ ...inp, flex: 1 }} placeholder="Название" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required maxLength={60}/>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <select style={{ ...inp, flex: 1 }} value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value as CategoryKey }))}>
+                {Object.entries(CATEGORY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+              <input style={{ ...inp, width: 90 }} type="number" min={1} value={form.price_coins} onChange={e => setForm(f => ({ ...f, price_coins: parseInt(e.target.value) || 1 }))} placeholder="Монеты"/>
+            </div>
+            <input style={inp} placeholder="Описание (опционально)" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}/>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="submit" disabled={saving} style={{ height: 28, padding: '0 14px', borderRadius: 8, border: 'none', background: T.indigo, color: '#fff', fontSize: 12, fontWeight: 700, cursor: saving ? 'default' : 'pointer', fontFamily: T.fBody }}>{saving ? 'Сохранение...' : editingId ? 'Сохранить' : 'Добавить'}</button>
+              <button type="button" onClick={closeForm} style={{ height: 28, padding: '0 14px', borderRadius: 8, border: `1px solid ${T.cardBorder}`, background: 'transparent', color: T.muted, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: T.fBody }}>Отмена</button>
+            </div>
+          </form>
+        </Card>
+      )}
+
       <Tabs value={tab} onChange={setTab} tabs={[
-        { id: 'items', label: 'Items', icon: '🛒' },
-        { id: 'virtual', label: 'Virtual', icon: '🎨' },
-        { id: 'queue', label: `Queue (${pending.length})`, icon: '⏳' },
+        { id: 'items', label: 'Награды', icon: '🛒' },
+        { id: 'stickers', label: `Стикеры (${stickerRewards.length})`, icon: '🎯' },
+        { id: 'queue', label: `Очередь (${pending.length})`, icon: '⏳' },
       ]}/>
 
-      {(tab === 'items' || tab === 'virtual') && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+      {(tab === 'items' || tab === 'stickers') && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {loadingRewards && <div style={{ color: T.muted, fontSize: 13, textAlign: 'center', padding: 20 }}>Загрузка...</div>}
+          {!loadingRewards && displayRewards.length === 0 && (
+            <Card pad={24} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 32, marginBottom: 6 }}>{tab === 'stickers' ? '🎯' : '🛒'}</div>
+              <div style={{ color: T.text, fontSize: 14, fontWeight: 600 }}>
+                {tab === 'stickers' ? 'Нет стикеров — нажми "+ Стикеры" выше' : 'Нет наград'}
+              </div>
+            </Card>
+          )}
           {displayRewards.map(r => (
-            <Card key={r.id} pad={14} hover style={{ position: 'relative' }}>
-              <div style={{
-                width: 48, height: 48, borderRadius: T.r, background: T.bg1, border: `1px solid ${T.cardBorder}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, marginBottom: 10,
-              }}>{r.icon}</div>
-              <div style={{ fontSize: 13, color: T.text, fontWeight: 600, lineHeight: 1.2 }}>{r.title}</div>
-              <div style={{ fontSize: 10, color: T.muted, marginTop: 3 }}>{r.category}</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
-                <span style={{ fontFamily: T.fMono, fontSize: 14, fontWeight: 700, color: T.cyan }}>
-                  {r.price_coins ?? 0}🪙
-                </span>
+            <Card key={r.id} pad={12} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 38, height: 38, borderRadius: T.r, background: T.bg1, border: `1px solid ${T.cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>{r.icon}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</div>
+                <div style={{ fontSize: 11, color: T.muted, marginTop: 2, fontFamily: T.fMono }}>{r.price_coins}🪙 · {CATEGORY_LABELS[r.category as CategoryKey] ?? r.category}</div>
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
+                <button
+                  onClick={() => toggleActive(r)}
+                  style={{ height: 22, padding: '0 8px', borderRadius: T.rPill, border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 700, background: r.is_active ? T.successSoft : T.bg1, color: r.is_active ? T.success : T.muted }}
+                >{r.is_active ? '● активна' : '○ скрыта'}</button>
+                <button onClick={() => openEdit(r)} style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', fontSize: 14, padding: '2px 4px' }}>✏️</button>
+                {deletingId === r.id ? (
+                  <>
+                    <button onClick={() => handleDelete(r.id)} style={{ background: T.dangerSoft, border: 'none', color: T.danger, cursor: 'pointer', borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 700 }}>Да</button>
+                    <button onClick={() => setDeletingId(null)} style={{ background: T.bg1, border: 'none', color: T.muted, cursor: 'pointer', borderRadius: 6, padding: '3px 8px', fontSize: 11 }}>Нет</button>
+                  </>
+                ) : (
+                  <button onClick={() => setDeletingId(r.id)} style={{ background: 'none', border: 'none', color: T.muted, cursor: 'pointer', fontSize: 14, padding: '2px 4px' }}>🗑️</button>
+                )}
               </div>
             </Card>
           ))}
-          {displayRewards.length === 0 && (
-            <Card pad={24} style={{ textAlign: 'center', gridColumn: '1 / -1' }}>
-              <div style={{ fontSize: 32, marginBottom: 6 }}>🛒</div>
-              <div style={{ color: T.text, fontSize: 14, fontWeight: 600 }}>No items yet</div>
-              <div style={{ color: T.muted, fontSize: 12, marginTop: 4 }}>Add rewards for kids to redeem</div>
-            </Card>
-          )}
         </div>
       )}
 
       {tab === 'queue' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {pending.map(p => (
-            <Card key={p.id} pad={14}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                <div style={{
-                  width: 36, height: 36, borderRadius: T.r, background: T.bg1,
-                  border: `1px solid ${T.cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
-                }}>{p.reward_icon}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>Requested</div>
-                  <div style={{ fontSize: 15, color: T.cyan, fontWeight: 600, marginTop: 2 }}>{p.reward_title}</div>
+          {pending.map(p => {
+            const child = children.find(c => c.id === p.child_id)
+            const priceCoins = p.price_coins ?? p.frozen_coins
+            return (
+              <Card key={p.id} pad={14}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: T.r, background: T.bg1, border: `1px solid ${T.cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{p.reward_icon}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>
+                      {child ? (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontSize: 16 }}>{child.avatar || '👤'}</span>
+                          <span style={{ color: T.cyan }}>{child.name}</span>
+                          <span style={{ color: T.muted }}>запросил</span>
+                        </span>
+                      ) : (
+                        <span style={{ color: T.muted }}>Запрошено</span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 15, color: T.text, fontWeight: 700, marginTop: 2 }}>{p.reward_title}</div>
+                  </div>
+                  <div style={{ fontFamily: T.fMono, fontSize: 15, fontWeight: 700, color: T.text }}>{priceCoins}🪙</div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: T.fMono, fontSize: 15, fontWeight: 700, color: T.text }}>{p.frozen_coins}🪙</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Btn variant="danger" size="md" icon="x" onClick={() => onDecline(p)} full>Отклонить</Btn>
+                  <Btn variant="success" size="md" icon="check" onClick={() => onApprove(p)} full>Одобрить</Btn>
                 </div>
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <Btn variant="danger" size="md" icon="x" onClick={() => onDecline(p)} full>Decline</Btn>
-                <Btn variant="success" size="md" icon="check" onClick={() => onApprove(p)} full>Approve</Btn>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            )
+          })}
           {pending.length === 0 && (
             <Card pad={24} style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 32, marginBottom: 6 }}>✨</div>
-              <div style={{ color: T.text, fontSize: 14, fontWeight: 600 }}>No pending requests</div>
-              <div style={{ color: T.muted, fontSize: 12, marginTop: 4 }}>Kids' shop requests will appear here</div>
+              <div style={{ color: T.text, fontSize: 14, fontWeight: 600 }}>Нет ожидающих запросов</div>
+              <div style={{ color: T.muted, fontSize: 12, marginTop: 4 }}>Запросы детей появятся здесь</div>
             </Card>
           )}
         </div>

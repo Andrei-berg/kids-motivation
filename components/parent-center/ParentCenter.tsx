@@ -15,9 +15,10 @@ import ActionModal from './screens/ActionModal'
 import ChatPanel from './screens/ChatPanel'
 import DailyModal from '@/components/DailyModal'
 import type { ParentChild, ActivityEntry, ActionType, ToastState, ModalState, Route } from './types'
-import type { RewardPurchase, Reward } from '@/lib/models/wallet.types'
+import type { RewardPurchase } from '@/lib/models/wallet.types'
 import { getChildren, getDay } from '@/lib/repositories/children.repo'
-import { getWallet, getPendingPurchases, approvePurchase, rejectPurchase, getTransactions, getRewards } from '@/lib/repositories/wallet.repo'
+import { getWallet, getPendingPurchases, getTransactions } from '@/lib/repositories/wallet.repo'
+import { approvePurchaseAction, rejectPurchaseAction } from '@/app/parent/shop/actions'
 import { getStreaks } from '@/lib/repositories/children.repo'
 import { getWeekScore } from '@/lib/services/coins.service'
 import { getWeekRange } from '@/utils/helpers'
@@ -77,7 +78,6 @@ export default function ParentCenter() {
 
   const [children, setChildren] = useState<ParentChild[]>([])
   const [pending, setPending] = useState<RewardPurchase[]>([])
-  const [rewards, setRewards] = useState<Reward[]>([])
   const [activity, setActivity] = useState<ActivityEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [dailyModal, setDailyModal] = useState<{ open: boolean; childId: string }>({ open: false, childId: '' })
@@ -102,9 +102,8 @@ export default function ParentCenter() {
         const weekStart = getWeekRange(new Date()).start
 
         const rawChildren = await getChildren()
-        const [pendingData, rewardsData, txData] = await Promise.all([
+        const [pendingData, txData] = await Promise.all([
           getPendingPurchases().catch(() => [] as RewardPurchase[]),
-          getRewards({ activeOnly: true }).catch(() => [] as Reward[]),
           getTransactions(undefined, 30).catch(() => []),
         ])
 
@@ -172,7 +171,6 @@ export default function ParentCenter() {
 
         setChildren(parentChildren)
         setPending(pendingData)
-        setRewards(rewardsData)
         setActivity(acts)
       } catch (e) {
         console.error('[ParentCenter] load error', e)
@@ -202,39 +200,22 @@ export default function ParentCenter() {
 
   const handleApprove = async (p: RewardPurchase) => {
     try {
-      await approvePurchase(p.id)
+      await approvePurchaseAction(p.id)
       setPending(prev => prev.filter(x => x.id !== p.id))
       notify(`Approved: ${p.reward_title}`)
-      void insertAuditEvent({
-        family_id: familyId ?? '',
-        child_id: p.child_id ?? null,
-        action_type: 'shop_approve',
-        description: `Approved shop purchase: ${p.reward_title} (${p.price_coins}💰) for ${children.find(c => c.id === p.child_id)?.name ?? p.child_id}`,
-        coins_delta: -(p.price_coins ?? 0),
-        actor_user_id: null,
-        metadata: { purchase_id: p.id },
-      })
-    } catch {
-      notify('Failed to approve', 'danger')
+    } catch (e: any) {
+      notify(`Failed to approve: ${e?.message ?? 'unknown error'}`, 'danger')
     }
   }
 
   const handleDecline = async (p: RewardPurchase) => {
     try {
-      await rejectPurchase(p.id)
+      await rejectPurchaseAction(p.id)
       setPending(prev => prev.filter(x => x.id !== p.id))
-      notify(`Declined: ${p.reward_title}`, 'warn')
-      void insertAuditEvent({
-        family_id: familyId ?? '',
-        child_id: p.child_id ?? null,
-        action_type: 'shop_reject',
-        description: `Rejected shop purchase: ${p.reward_title} for ${children.find(c => c.id === p.child_id)?.name ?? p.child_id}`,
-        coins_delta: null,
-        actor_user_id: null,
-        metadata: { purchase_id: p.id },
-      })
-    } catch {
-      notify('Failed to decline', 'danger')
+      const refunded = p.price_coins && p.frozen_coins === 0 ? ` (↩️ ${p.price_coins}🪙 returned)` : ''
+      notify(`Declined: ${p.reward_title}${refunded}`, 'warn')
+    } catch (e: any) {
+      notify(`Failed to decline: ${e?.message ?? 'unknown error'}`, 'danger')
     }
   }
 
@@ -285,7 +266,7 @@ export default function ParentCenter() {
       case 'tasks':
         return <TasksScreen/>
       case 'shop':
-        return <ShopScreen pending={pending} rewards={rewards} onApprove={handleApprove} onDecline={handleDecline}/>
+        return <ShopScreen pending={pending} onApprove={handleApprove} onDecline={handleDecline} children={children}/>
       case 'analytics':
         return <AnalyticsScreen children={children} activity={activity}/>
       case 'settings':
