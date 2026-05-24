@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { getRewards, addReward, updateReward, deleteReward } from '@/lib/repositories/wallet.repo'
 import type { Reward } from '@/lib/models/wallet.types'
 import { getChildren } from '@/lib/api'
@@ -36,6 +37,7 @@ const DEFAULT_FORM: FormData = { icon: '🎁', title: '', description: '', categ
 
 export default function ParentShopPage() {
   const t = useT()
+  const router = useRouter()
   const CATEGORY_LABELS: Record<CategoryKey, string> = {
     virtual: t('parentShop.categoryVirtual'),
     material: t('parentShop.categoryMaterial'),
@@ -118,8 +120,12 @@ export default function ParentShopPage() {
 
   return (
     <div style={{ ...s, maxWidth: 700, margin: '0 auto', padding: '24px 16px', color: '#f1f5f9' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>{t('parentShop.title')}</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+        <button
+          onClick={() => router.push('/parent-center')}
+          style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#e8e8f0', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+        >←</button>
+        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, flex: 1 }}>{t('parentShop.title')}</h1>
         <div style={{ display: 'flex', gap: 8 }}>
           <button style={btn(templatesLoaded ? '#374151' : '#1e40af')} onClick={loadStarterTemplates} disabled={loadingTemplates || templatesLoaded}>
             {loadingTemplates ? t('parentShop.loadingTemplates') : templatesLoaded ? t('parentShop.templatesLoaded') : t('parentShop.loadTemplates', { count: STARTER_TEMPLATES.length })}
