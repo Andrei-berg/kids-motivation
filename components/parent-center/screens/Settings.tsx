@@ -9,6 +9,7 @@ import type { WalletSettings } from '@/lib/wallet-api'
 import { useLanguage, SUPPORTED_LANGUAGES, useT } from '@/lib/i18n'
 import { insertAuditEvent } from '@/lib/repositories/audit.repo'
 import { useAppStore } from '@/lib/store'
+import { repairAchievements } from '@/app/actions/repair-achievements'
 import PeriodsManager from '@/components/settings/PeriodsManager'
 import SectionsManager from '@/components/settings/SectionsManager'
 import SubjectsManager from '@/components/settings/SubjectsManager'
@@ -352,6 +353,8 @@ function AccountTab({ notify, familyId }: { notify: (msg: string, tone?: string)
   const [confirmText, setConfirmText] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [repairing, setRepairing] = useState(false)
+  const [repairLog, setRepairLog] = useState<string[] | null>(null)
   const [dataSummary, setDataSummary] = useState<{ children: number; transactions: number; grades: number } | null>(null)
   const CONFIRM_WORD = 'DELETE'
 
@@ -386,8 +389,47 @@ function AccountTab({ notify, familyId }: { notify: (msg: string, tone?: string)
     }
   }
 
+  async function handleRepairAchievements() {
+    setRepairing(true)
+    setRepairLog(null)
+    try {
+      const results = await repairAchievements()
+      const lines = results.flatMap(r => {
+        if (r.error) return [`${r.name}: ошибка — ${r.error}`]
+        if (r.badgesAwarded.length === 0) return [`${r.name}: новых значков нет`]
+        return r.badgesAwarded.map(k => `${r.name}: выдан значок «${k}» (+${r.xpAfter - r.xpBefore} XP)`)
+      })
+      setRepairLog(lines)
+      const total = results.reduce((s, r) => s + r.badgesAwarded.length, 0)
+      notify(total > 0 ? `Выдано значков: ${total}` : 'Все значки уже на месте')
+    } catch (e) {
+      notify('Ошибка пересчёта', 'danger')
+    } finally {
+      setRepairing(false)
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <Card pad={16}>
+        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+          Пересчёт достижений
+        </div>
+        <div style={{ fontSize: 11, color: T.faint, marginBottom: 10 }}>
+          Ретроактивно выдаёт все значки которые были заработаны но не сохранились из-за технической ошибки
+        </div>
+        <Btn variant="outline" onClick={handleRepairAchievements} disabled={repairing} full>
+          {repairing ? 'Пересчитываю...' : '🔧 Пересчитать достижения'}
+        </Btn>
+        {repairLog && (
+          <div style={{ marginTop: 10, background: T.card, border: `1px solid ${T.cardBorder}`, borderRadius: T.r, padding: '8px 12px' }}>
+            {repairLog.map((line, i) => (
+              <div key={i} style={{ fontSize: 12, color: T.muted, lineHeight: 1.6 }}>{line}</div>
+            ))}
+          </div>
+        )}
+      </Card>
+
       <Card pad={16}>
         <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{t('account.exportTitle')}</div>
         <div style={{ fontSize: 11, color: T.faint, marginBottom: 10 }}>{t('account.exportSub')}</div>
