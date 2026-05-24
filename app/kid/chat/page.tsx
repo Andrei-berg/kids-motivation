@@ -13,6 +13,7 @@ export default function KidChatPage() {
   const [familyId, setFamilyId] = useState<string | null>(null)
   const [memberId, setMemberId] = useState<string | null>(null)
   const [senderName, setSenderName] = useState<string>('')
+  const [memberCount, setMemberCount] = useState<number>(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -27,6 +28,12 @@ export default function KidChatPage() {
         setFamilyId(member.family_id)
         setMemberId(member.id)
         setSenderName(member.display_name || '')
+        // Count family members for the "online" indicator
+        const { count } = await supabase
+          .from('family_members')
+          .select('*', { count: 'exact', head: true })
+          .eq('family_id', member.family_id)
+        setMemberCount(count ?? 0)
       }
       setLoading(false)
     }
@@ -37,32 +44,66 @@ export default function KidChatPage() {
     <div style={{ minHeight: '100vh', background: T.bg, display: 'flex', flexDirection: 'column', paddingBottom: 90 }}>
       {/* Header */}
       <div style={{
-        padding: '16px 16px 12px',
-        background: 'rgba(255,255,255,0.9)',
+        padding: '14px 16px 12px',
+        background: 'rgba(255,255,255,0.92)',
         backdropFilter: 'blur(20px)',
         borderBottom: `1px solid ${T.line}`,
         position: 'sticky', top: 0, zIndex: 10,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, maxWidth: 600, margin: '0 auto' }}>
-          <div style={{ position: 'relative', width: 46, height: 46, flexShrink: 0 }}>
-            <div style={{ position: 'absolute', left: 0, top: 4, width: 28, height: 28, borderRadius: 14, background: '#FF8FB1', border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.fDisp, fontWeight: 800, color: '#fff', fontSize: 13 }}>М</div>
-            <div style={{ position: 'absolute', right: 0, top: 0, width: 28, height: 28, borderRadius: 14, background: '#6C5CE7', border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.fDisp, fontWeight: 800, color: '#fff', fontSize: 13 }}>П</div>
+          {/* Stacked avatars */}
+          <div style={{ position: 'relative', width: 50, height: 40, flexShrink: 0 }}>
+            <div style={{
+              position: 'absolute', left: 0, top: 6,
+              width: 28, height: 28, borderRadius: 14,
+              background: `${T.pink}CC`, border: '2px solid #fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: T.fDisp, fontWeight: 800, color: '#fff', fontSize: 13,
+            }}>М</div>
+            <div style={{
+              position: 'absolute', right: 0, top: 0,
+              width: 32, height: 32, borderRadius: 16,
+              background: `${T.plum}CC`, border: '2px solid #fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: T.fDisp, fontWeight: 800, color: '#fff', fontSize: 14,
+              boxShadow: `0 2px 8px ${T.plum}44`,
+            }}>П</div>
           </div>
+
+          {/* Title + status */}
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: T.fDisp, fontSize: 18, fontWeight: 900, color: T.ink }}>{t('kidChat.title')}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
-              <div style={{ width: 7, height: 7, borderRadius: 999, background: T.teal }}/>
-              <span style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 600 }}>{t('kidChat.online')}</span>
+            <div style={{ fontFamily: T.fDisp, fontSize: 18, fontWeight: 900, color: T.ink, lineHeight: 1.1 }}>
+              {t('kidChat.title')}
             </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 }}>
+              <div style={{ width: 6, height: 6, borderRadius: 999, background: T.teal }}/>
+              <span style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 600 }}>
+                {memberCount > 0 ? `${memberCount} ${t('kidChat.online')}` : t('kidChat.online')}
+              </span>
+            </div>
+          </div>
+
+          {/* Family icon */}
+          <div style={{
+            width: 36, height: 36, borderRadius: 12,
+            background: `${T.coral}18`, border: `1px solid ${T.coral}30`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 18,
+          }}>
+            👨‍👩‍👧‍👦
           </div>
         </div>
       </div>
 
       {/* Chat body */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', maxWidth: 600, width: '100%', margin: '0 auto', padding: '0 0' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', maxWidth: 600, width: '100%', margin: '0 auto' }}>
         {loading ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', border: `3px solid ${T.coral}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }}/>
+            <div style={{
+              width: 32, height: 32, borderRadius: '50%',
+              border: `3px solid ${T.coral}`, borderTopColor: 'transparent',
+              animation: 'spin 0.8s linear infinite',
+            }}/>
           </div>
         ) : familyId && memberId ? (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -77,8 +118,12 @@ export default function KidChatPage() {
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32, textAlign: 'center' }}>
             <div>
               <div style={{ fontSize: 40 }}>💬</div>
-              <div style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 800, color: T.ink3, marginTop: 12 }}>{t('kidChat.profileNotFound')}</div>
-              <div style={{ fontFamily: T.fBody, fontSize: 13, color: T.ink3, marginTop: 4 }}>{t('kidChat.loginAgain')}</div>
+              <div style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 800, color: T.ink3, marginTop: 12 }}>
+                {t('kidChat.profileNotFound')}
+              </div>
+              <div style={{ fontFamily: T.fBody, fontSize: 13, color: T.ink3, marginTop: 4 }}>
+                {t('kidChat.loginAgain')}
+              </div>
             </div>
           </div>
         )}
