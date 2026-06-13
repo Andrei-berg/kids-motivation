@@ -103,6 +103,89 @@ export async function insertTx(
   if (error) throw error
 }
 
+/**
+ * Server-side reward purchase: validates the reward + balance, deducts coins
+ * immediately, and creates the reward_purchases row (auto_approve → 'approved',
+ * else 'pending'). Shared by /api/wallet/purchase and the kid requestPurchase
+ * server action. Caller must have already authorized childId.
+ * Returns the created purchase row.
+ */
+export async function processPurchase(
+  admin: Admin,
+  familyId: string,
+  childId: string,
+  rewardId: string,
+): Promise<Record<string, unknown>> {
+  const { data: reward, error: rewardErr } = await admin
+    .from('rewards')
+    .select('*')
+    .eq('id', rewardId)
+    .eq('family_id', familyId)
+    .maybeSingle()
+  if (rewardErr || !reward) throw new AuthError('Reward not found', 404)
+  if (!reward.is_active) throw new AuthError('Reward is not active', 400)
+
+  const wallet = await loadWallet(admin, childId)
+  const isCoins = reward.reward_type === 'coins'
+  const priceCoins = isCoins ? reward.price_coins || 0 : 0
+  if (isCoins && wallet.coins < priceCoins) throw new AuthError('Insufficient coins', 400)
+
+  const autoApprove = reward.auto_approve === true
+  const newCoins = wallet.coins - priceCoins
+
+  if (priceCoins > 0) {
+    const { error } = await admin
+      .from('wallet')
+      .update({ coins: newCoins, total_spent_coins: wallet.total_spent_coins + priceCoins })
+      .eq('child_id', childId)
+    if (error) throw error
+  }
+
+  const { data: created, error: insErr } = await admin
+    .from('reward_purchases')
+    .insert([{
+      reward_id: rewardId,
+      child_id: childId,
+      reward_title: reward.title,
+      reward_icon: reward.icon,
+      reward_type: reward.reward_type,
+      price_coins: reward.price_coins,
+      price_money: reward.price_money,
+      status: autoApprove ? 'approved' : 'pending',
+      frozen_coins: 0,
+      fulfilled: false,
+      ...(autoApprove ? { processed_by: 'auto', processed_at: new Date().toISOString() } : {}),
+      balance_after_coins: newCoins,
+      balance_after_money: Number(wallet.money),
+      family_id: familyId,
+    }])
+    .select()
+    .single()
+  if (insErr) throw insErr
+
+  await admin
+    .from('rewards')
+    .update({ purchase_count: (reward.purchase_count ?? 0) + 1 })
+    .eq('id', rewardId)
+
+  if (priceCoins > 0) {
+    await insertTx(admin, childId, {
+      family_id: familyId,
+      transaction_type: 'spend_coins',
+      coins_change: -priceCoins,
+      money_change: 0,
+      description: `Куплено: ${reward.title}`,
+      icon: reward.icon,
+      related_id: created.id,
+      related_type: 'reward',
+      balance_after_coins: newCoins,
+      balance_after_money: Number(wallet.money),
+    })
+  }
+
+  return created
+}
+
 export type AwardIntent = {
   coins: number
   description: string

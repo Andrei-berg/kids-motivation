@@ -5,7 +5,8 @@ import { T } from '../tokens'
 import { Card, Btn, Pill, Avatar, Bar, Coin, Icon, Tabs, SectionH } from '../ui'
 import type { ParentChild } from '../types'
 import type { RewardPurchase, Reward } from '@/lib/models/wallet.types'
-import { getRewards, addReward, updateReward, deleteReward } from '@/lib/repositories/wallet.repo'
+import { getRewards } from '@/lib/repositories/wallet.repo'
+import { addRewardApi, updateRewardApi, deleteRewardApi } from '@/lib/wallet-client'
 
 // ═══════════ CHILDREN ═══════════
 export function ChildrenScreen({ children, onOpenChild }: {
@@ -276,26 +277,26 @@ export function ShopScreen({ pending, onApprove, onDecline, children = [] }: {
     setSaving(true)
     try {
       const payload = { icon: form.icon, title: form.title.trim(), description: form.description.trim() || null, category: form.category, reward_type: 'coins' as const, price_coins: form.price_coins, is_active: form.is_active, for_child: null }
-      if (editingId) await updateReward(editingId, payload)
-      else await addReward(payload)
+      if (editingId) await updateRewardApi(editingId, payload)
+      else await addRewardApi(payload)
       closeForm(); await reload()
     } catch (e: any) { setError(e?.message ?? 'Ошибка') } finally { setSaving(false) }
   }
 
   async function handleDelete(id: string) {
-    try { await deleteReward(id); setDeletingId(null); await reload() }
+    try { await deleteRewardApi(id); setDeletingId(null); await reload() }
     catch (e: any) { setError(e?.message ?? 'Ошибка удаления') }
   }
 
   async function toggleActive(r: Reward) {
-    try { await updateReward(r.id, { is_active: !r.is_active }); await reload() }
+    try { await updateRewardApi(r.id, { is_active: !r.is_active }); await reload() }
     catch (e: any) { setError(e?.message ?? 'Ошибка') }
   }
 
   async function loadTemplates(list: typeof REWARD_TEMPLATES, onDone: () => void, setLoading: (v: boolean) => void) {
     setLoading(true); setError(null)
     for (const item of list) {
-      try { await addReward({ ...item, reward_type: 'coins', is_active: true, for_child: null }) }
+      try { await addRewardApi({ ...item, reward_type: 'coins', is_active: true, for_child: null }) }
       catch { /* skip duplicates */ }
     }
     await reload(); onDone(); setLoading(false)

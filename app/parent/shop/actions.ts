@@ -1,33 +1,71 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
-import { updateWalletCoins } from '@/lib/repositories/wallet.repo'
+import { createAdminClient, requireParent } from '@/lib/supabase/admin'
+import { loadWallet, insertTx } from '@/app/api/wallet/_lib'
 import { insertAuditEvent } from '@/lib/repositories/audit.repo'
 import type { RewardPurchase } from '@/lib/models/wallet.types'
 
-export async function approvePurchaseAction(purchaseId: string): Promise<RewardPurchase> {
-  const supabase = await createClient()
+// Adjust a child's coin balance via the service-role client (bypasses RLS) and
+// record the matching wallet transaction. Used for approve-time legacy deduct
+// and reject-time refunds. Mirrors the relevant parts of updateWalletCoins.
+async function adjustCoins(
+  admin: ReturnType<typeof createAdminClient>,
+  childId: string,
+  delta: number,
+  description: string,
+  icon: string,
+  relatedId: string,
+) {
+  const wallet = await loadWallet(admin, childId)
+  const newCoins = wallet.coins + delta
+  if (newCoins < 0) throw new Error('Insufficient coins')
+  const updates: Record<string, number> =
+    delta > 0
+      ? { coins: newCoins, total_earned_coins: wallet.total_earned_coins + delta }
+      : { coins: newCoins, total_spent_coins: wallet.total_spent_coins + Math.abs(delta) }
+  const { error } = await admin.from('wallet').update(updates).eq('child_id', childId)
+  if (error) throw error
+  await insertTx(admin, childId, {
+    family_id: wallet.family_id,
+    transaction_type: delta > 0 ? 'earn_coins' : 'spend_coins',
+    coins_change: delta,
+    money_change: 0,
+    description,
+    icon,
+    related_id: relatedId,
+    related_type: 'reward',
+    balance_after_coins: newCoins,
+    balance_after_money: Number(wallet.money),
+  })
+}
 
-  const { data: purchase, error: fetchError } = await supabase
+export async function approvePurchaseAction(purchaseId: string): Promise<RewardPurchase> {
+  const member = await requireParent()
+  const admin = createAdminClient()
+
+  const { data: purchase, error: fetchError } = await admin
     .from('reward_purchases')
     .select('*')
     .eq('id', purchaseId)
-    .single()
+    .eq('family_id', member.familyId)
+    .maybeSingle()
 
   if (fetchError || !purchase) throw new Error('Purchase not found')
   if (purchase.status !== 'pending') throw new Error('Purchase is not pending')
 
   // frozen_coins > 0 = legacy freeze flow (deduct now); 0 = already deducted at request time
   if (purchase.reward_type === 'coins' && purchase.frozen_coins > 0) {
-    await updateWalletCoins(
+    await adjustCoins(
+      admin,
       purchase.child_id,
       -purchase.frozen_coins,
       `Покупка одобрена: ${purchase.reward_title}`,
-      purchase.reward_icon
+      purchase.reward_icon,
+      purchaseId,
     )
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from('reward_purchases')
     .update({
       status: 'approved',
@@ -58,7 +96,7 @@ export async function approvePurchaseAction(purchaseId: string): Promise<RewardP
     action_type: 'shop_approve',
     description: `Approved shop purchase: ${purchase.reward_title} (${purchase.price_coins}💰)`,
     coins_delta: null,
-    actor_user_id: null,
+    actor_user_id: member.userId,
     metadata: { purchase_id: purchaseId },
   })
 
@@ -69,13 +107,15 @@ export async function rejectPurchaseAction(
   purchaseId: string,
   rejectionNote?: string
 ): Promise<RewardPurchase> {
-  const supabase = await createClient()
+  const member = await requireParent()
+  const admin = createAdminClient()
 
-  const { data: purchase, error: fetchError } = await supabase
+  const { data: purchase, error: fetchError } = await admin
     .from('reward_purchases')
     .select('*')
     .eq('id', purchaseId)
-    .single()
+    .eq('family_id', member.familyId)
+    .maybeSingle()
 
   if (fetchError || !purchase) throw new Error('Purchase not found')
   if (purchase.status !== 'pending') throw new Error('Purchase is not pending')
@@ -83,15 +123,17 @@ export async function rejectPurchaseAction(
   // Coins are deducted at request time (frozen_coins=0) — refund them on reject
   const priceCoins = purchase.price_coins ?? 0
   if (purchase.reward_type === 'coins' && purchase.frozen_coins === 0 && priceCoins > 0) {
-    await updateWalletCoins(
+    await adjustCoins(
+      admin,
       purchase.child_id,
       priceCoins,
       `Возврат: запрос отклонён — ${purchase.reward_title}`,
-      '↩️'
+      '↩️',
+      purchaseId,
     )
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from('reward_purchases')
     .update({
       status: 'rejected',
@@ -123,7 +165,7 @@ export async function rejectPurchaseAction(
     action_type: 'shop_reject',
     description: `Rejected shop purchase: ${purchase.reward_title} — coins refunded`,
     coins_delta: priceCoins > 0 ? priceCoins : null,
-    actor_user_id: null,
+    actor_user_id: member.userId,
     metadata: { purchase_id: purchaseId, refunded_coins: priceCoins },
   })
 

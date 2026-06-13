@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { T } from '../tokens'
 import { Card, Btn, Pill, Icon, Tabs } from '../ui'
 import type { ParentChild, Route } from '../types'
-import { getWalletSettings, updateWalletSettings } from '@/lib/wallet-api'
+import { getWalletSettings } from '@/lib/wallet-api'
+import { updateWalletSettingsApi } from '@/lib/wallet-client'
 import type { WalletSettings } from '@/lib/wallet-api'
 import { useLanguage, SUPPORTED_LANGUAGES, useT } from '@/lib/i18n'
 import { insertAuditEvent } from '@/lib/repositories/audit.repo'
@@ -141,7 +142,7 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
   const save = async () => {
     setSaving(true)
     try {
-      await updateWalletSettings(settings)
+      await updateWalletSettingsApi(settings)
       notify(t('parentCenter.settings.coinsRules.saved'))
       void insertAuditEvent({
         family_id: familyId ?? '', child_id: null,
