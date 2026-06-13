@@ -381,7 +381,8 @@ export async function markSectionVisit(
   date: string,
   attended: boolean,
   progressNote?: string,
-  trainerFeedback?: string
+  trainerFeedback?: string,
+  coachRating?: number | null
 ): Promise<SectionVisit> {
   const { data, error } = await supabase
     .from('section_visits')
@@ -390,7 +391,10 @@ export async function markSectionVisit(
       date,
       attended,
       progress_note: progressNote || null,
-      trainer_feedback: trainerFeedback || null
+      trainer_feedback: trainerFeedback || null,
+      // Persist the coach rating so coin awards can be reconciled server-side
+      // from the saved row (see /api/wallet/award) instead of trusting client.
+      coach_rating: coachRating ?? null,
     }, { onConflict: 'section_id,date' })
     .select()
     .single()

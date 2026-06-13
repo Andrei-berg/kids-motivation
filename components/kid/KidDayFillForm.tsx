@@ -10,13 +10,8 @@ import { saveDay } from '@/lib/repositories/children.repo'
 import { getExtraActivities, getActivityLogs, saveActivityLogs, getSectionsForDate, markSectionVisit } from '@/lib/repositories/expenses.repo'
 import { getActiveSubjects, getExerciseTypes, saveHomeExercise, getHomeExercises } from '@/lib/repositories/schedule.repo'
 import { getSubjectGradesForDate, saveSubjectGrade } from '@/lib/repositories/grades.repo'
-import {
-  getWalletSettings,
-  awardCoinsForRoom,
-  awardCoinsForSport,
-  updateWalletCoins,
-} from '@/lib/repositories/wallet.repo'
-import { updateStreaks, getStreakBonuses } from '@/lib/streaks'
+import { getWalletSettings } from '@/lib/repositories/wallet.repo'
+import { updateStreaks } from '@/lib/streaks'
 import { checkAndAwardBadges } from '@/lib/badges'
 import { compressImage, uploadPhoto, getSignedPhotoUrl } from '@/lib/photo-upload'
 import { supabase } from '@/lib/supabase'
@@ -405,28 +400,18 @@ export function KidDayFillForm({
 
       await saveDay({ ...dayParams, roomProofUrl: roomProofSignedUrl })
 
-      // Award room coins only on first save — isChildFilled means coins were
-      // already awarded on a previous submission.
-      if (roomOk && !isChildFilled) {
-        await awardCoinsForRoom(childId)
-      }
+      // Coin awards (room, activities, grades, sport, book, streak) are no
+      // longer credited from the client. After all of today's rows are saved,
+      // a single call to /api/wallet/award recomputes them server-side from the
+      // saved data (idempotent — safe to call on every save). See below.
 
-      // Save extra activities + award coins per activity
+      // Save extra activities
       if (activities.length > 0) {
         const logs = activities.map(act => ({
           activityId: act.id,
           done: checkedActivities.has(act.id),
         }))
         await saveActivityLogs(childId, date, logs)
-
-        // Award coins only for activities newly checked in this session.
-        for (const id of Array.from(checkedActivities)) {
-          if (prevAwardedActivityIds.has(id)) continue
-          const act = activities.find(a => a.id === id)
-          if (act && act.coins > 0) {
-            await updateWalletCoins(childId, act.coins, act.name, act.emoji)
-          }
-        }
       }
 
       // Save grades — only new (unsaved) entries with a grade set
@@ -443,11 +428,6 @@ export function KidDayFillForm({
               grade: entry.grade,
               note: entry.isDigital ? 'цифровое задание' : undefined,
             })
-            const coins = GRADE_COINS[entry.grade] ?? 0
-            if (coins !== 0) {
-              const label = entry.isDigital ? `Цифр. ${entry.grade} — ${subject}` : `Оценка ${entry.grade} — ${subject}`
-              await updateWalletCoins(childId, coins, label, '📚')
-            }
           }
         }
       }
@@ -461,12 +441,9 @@ export function KidDayFillForm({
       for (const section of sections) {
         if (section.visit) {
           const note = sectionNotes[section.id] ?? { progress: '', coachRating: null }
-          await markSectionVisit(section.id, date, section.visit.attended, note.progress || undefined, undefined)
-          // Only award sport coins for visits that weren't already recorded.
-          const isNewVisit = !prevAttendedSectionIds.has(section.id)
-          if (isNewVisit && section.visit.attended && note.coachRating && note.coachRating >= 1 && note.coachRating <= 5) {
-            await awardCoinsForSport(childId, note.coachRating, section.name)
-          }
+          // Persist the coach rating so /api/wallet/award can credit sport coins
+          // server-side from the saved visit row.
+          await markSectionVisit(section.id, date, section.visit.attended, note.progress || undefined, undefined, note.coachRating)
         }
       }
 
@@ -483,13 +460,6 @@ export function KidDayFillForm({
           // current_page added via migration
           ...(reading.currentPage ? { current_page: Number(reading.currentPage) } : {}),
         } as any)
-        // Award book-finish bonus only once.
-        if (reading.bookFinished && !prevBookFinished) {
-          const bookCoins = (settings as any)?.coins_per_book ?? 20
-          if (bookCoins > 0) {
-            await updateWalletCoins(childId, bookCoins, `Книга: ${reading.bookTitle.trim()}`, '📚')
-          }
-        }
       }
 
       triggerCoinFlyup(coinsPreview)
@@ -499,12 +469,19 @@ export function KidDayFillForm({
         notifyStreakEvents(childId, '', streakEvents).catch(() => {})
       })
 
-      // Streak bonus only on first save — streaks don't change on re-save.
-      if (!isChildFilled) {
-        const streakBonus = await getStreakBonuses(childId)
-        if (streakBonus > 0) {
-          await updateWalletCoins(childId, streakBonus, 'streak_bonus', '🔥')
-        }
+      // Credit all of today's coin awards server-side (idempotent). The server
+      // recomputes amounts from the saved rows — grades, room, behavior, sport,
+      // activities, book, streak bonus — so the client never grants coins.
+      // Runs after updateStreaks so the streak bonus reflects the new state.
+      try {
+        const res = await fetch('/api/wallet/award', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ childId, date }),
+        })
+        if (!res.ok) console.warn('[KidDayFillForm] award failed:', res.status)
+      } catch (e) {
+        console.warn('[KidDayFillForm] award request failed:', e)
       }
 
       await checkAndAwardBadges(childId, date)

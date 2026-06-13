@@ -5,8 +5,7 @@ import { useT } from '@/lib/i18n'
 import { api } from '@/lib/api'
 import { flexibleApi, Subject, ExerciseType } from '@/lib/flexible-api'
 import { getSectionsForDate, markSectionVisit, Section, SectionVisit, ExtraActivity, getActivitiesForDay, getActivityLogs, saveActivityLogs } from '@/lib/expenses-api'
-import { updateStreaks, getStreakBonuses } from '@/lib/streaks'
-import { updateWalletCoins, awardCoinsForGrade, awardCoinsForRoom, awardCoinsForBehavior, awardCoinsForSport } from '@/lib/wallet-api'
+import { updateStreaks } from '@/lib/streaks'
 import { checkAndAwardBadges } from '@/lib/badges'
 import { getGradeColor } from '@/utils/helpers'
 import { triggerConfetti } from '@/utils/confetti'
@@ -424,7 +423,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
       const saveSections = Promise.all(
         sections.filter(s => s.visit).map(section => {
           const notes = sectionNotes[section.id] || { progress: '', feedback: '', coachRating: null }
-          return markSectionVisit(section.id, date, section.visit!.attended, notes.progress || undefined, notes.feedback || undefined)
+          return markSectionVisit(section.id, date, section.visit!.attended, notes.progress || undefined, notes.feedback || undefined, notes.coachRating)
         })
       )
 
@@ -449,53 +448,25 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
       await Promise.all([saveDay, saveGrades, saveExercises, saveSections, saveReading, saveActivities])
 
-      // Award coins for daily activities (REQ-COIN-002/003/004/005)
-      const coinAwards: Promise<void>[] = []
-
-      // Grade coins — one award per grade saved
-      for (const grade of grades) {
-        if (grade.grade >= 1 && grade.grade <= 5) {
-          coinAwards.push(awardCoinsForGrade(childId, grade.grade, grade.subject))
-        }
-      }
-
-      // Room coins — awarded when 3 or more room tasks are checked
-      const roomScore = [roomBed, roomFloor, roomDesk, roomCloset, roomTrash].filter(Boolean).length
-      if (roomScore >= 3 && !isSickDay) {
-        coinAwards.push(awardCoinsForRoom(childId))
-      }
-
-      // Behavior coins — awarded when goodBehavior is true (or sick day override)
-      const effectiveBehavior = isSickDay ? true : goodBehavior
-      if (effectiveBehavior) {
-        coinAwards.push(awardCoinsForBehavior(childId))
-      }
-
-      // Sport/section coach rating coins — awarded per attended section with a numeric rating
-      for (const section of sections) {
-        if (section.visit) {
-          const notes = sectionNotes[section.id]
-          const coachRating = notes?.coachRating
-          if (coachRating && coachRating >= 1 && coachRating <= 5) {
-            coinAwards.push(awardCoinsForSport(childId, coachRating, section.name))
-          }
-        }
-      }
-
-      if (coinAwards.length > 0) {
-        await Promise.all(coinAwards)
-      }
-
       const streakEvents = await updateStreaks(childId, date)
       // Fire-and-forget: don't block save completion on push delivery
       import('@/app/actions/push-streaks').then(({ notifyStreakEvents }) => {
         notifyStreakEvents(childId, '', streakEvents).catch(() => {})
       })
 
-      // Award streak bonus coins if any threshold was crossed (REQ-COIN-007, REQ-COIN-008)
-      const bonus = await getStreakBonuses(childId)
-      if (bonus > 0) {
-        await updateWalletCoins(childId, bonus, 'streak_bonus', '🔥')
+      // Credit all coin awards server-side (idempotent). The server recomputes
+      // amounts from the saved rows — grades, room, behavior, sport, activities,
+      // book, streak bonus (REQ-COIN-002..008) — so no coins are granted from
+      // the client. Runs after updateStreaks so the streak bonus is current.
+      try {
+        const res = await fetch('/api/wallet/award', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ childId, date }),
+        })
+        if (!res.ok) console.warn('[DailyModal] award failed:', res.status)
+      } catch (e) {
+        console.warn('[DailyModal] award request failed:', e)
       }
 
       const badges = await checkAndAwardBadges(childId, date)

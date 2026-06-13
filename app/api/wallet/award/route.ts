@@ -103,23 +103,33 @@ export async function POST(req: NextRequest) {
       intents.push({ coins, description: label, icon: '📚', sourceType: 'grade', sourceId: g.id })
     }
 
-    // 3. Sport coach ratings (keyed per section_attendance row).
-    const { data: visits } = await admin
-      .from('section_attendance')
-      .select('id, attended, coach_rating, section_id')
+    // 3. Sport coach ratings. Visits live in section_visits keyed by section_id
+    //    (no child_id), so scope via the child's own sections. Keyed per
+    //    section_visits row.
+    const { data: childSections } = await admin
+      .from('sections')
+      .select('id, name')
       .eq('child_id', childId)
-      .eq('date', date)
-    for (const v of visits ?? []) {
-      if (!v.attended || !v.coach_rating || v.coach_rating < 1 || v.coach_rating > 5) continue
-      const coins = coachCoins(settings, v.coach_rating)
-      if (coins === 0) continue
-      intents.push({
-        coins,
-        description: `Тренировка: оценка тренера ${v.coach_rating}`,
-        icon: v.coach_rating === 5 ? '🔥' : v.coach_rating <= 2 ? '⚠️' : '💪',
-        sourceType: 'sport',
-        sourceId: v.id,
-      })
+    const sectionIds = (childSections ?? []).map((s) => s.id)
+    if (sectionIds.length > 0) {
+      const sectionName = new Map((childSections ?? []).map((s) => [s.id, s.name]))
+      const { data: visits } = await admin
+        .from('section_visits')
+        .select('id, section_id, attended, coach_rating')
+        .in('section_id', sectionIds)
+        .eq('date', date)
+      for (const v of visits ?? []) {
+        if (!v.attended || !v.coach_rating || v.coach_rating < 1 || v.coach_rating > 5) continue
+        const coins = coachCoins(settings, v.coach_rating)
+        if (coins === 0) continue
+        intents.push({
+          coins,
+          description: `${sectionName.get(v.section_id) ?? 'Тренировка'}: оценка тренера ${v.coach_rating}`,
+          icon: v.coach_rating === 5 ? '🔥' : v.coach_rating <= 2 ? '⚠️' : '💪',
+          sourceType: 'sport',
+          sourceId: v.id,
+        })
+      }
     }
 
     // 4. Extra activities (keyed per activity_logs row; coin value from the
