@@ -520,8 +520,9 @@ export async function completeOnboarding(
 // setChildPin
 // ---------------------------------------------------------------------------
 // Set or update a 4-digit PIN for a child (no-email login).
-// Calls /api/set-child-pin which uses service-role key server-side.
-// Stores SHA-256 hash in family_members.child_pin_hash.
+// Calls /api/set-child-pin which uses the service-role key server-side to
+// create/update a synthetic Supabase Auth user (password = PIN, stored as a
+// salted bcrypt hash by Supabase Auth). The PIN is not persisted anywhere else.
 // Safe to call from client components.
 
 export async function setChildPin(memberId: string, childId: string, pin: string): Promise<void> {

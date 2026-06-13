@@ -14,18 +14,19 @@ export async function middleware(request: NextRequest) {
   // Classify the path
   const isPublicPath =
     pathname.startsWith('/auth') ||
-    pathname === '/' ||
-    pathname.startsWith('/parent') // TODO: remove when parent auth is wired up
+    pathname === '/'
   const isOnboardingPath = pathname.startsWith('/onboarding')
   const isParentPath = pathname.startsWith('/parent')
   const isKidPath = pathname.startsWith('/kid')
   // isFamilyPath → pathname.startsWith('/family') — allowed for all authenticated members, no guard needed
 
-  // Preview mode: allow unauthenticated parents to access /kid/* with ?preview=true
+  // Preview mode: an authenticated parent may inspect /kid/* with ?preview=true.
+  // It is NOT a bypass for unauthenticated visitors — the !user check below still
+  // redirects anyone without a session away from /kid/*.
   const isPreviewMode = request.nextUrl.searchParams.get('preview') === 'true'
 
   // Not logged in + trying to access protected route → /
-  if (!user && !isPublicPath && !isOnboardingPath && !(isKidPath && isPreviewMode)) {
+  if (!user && !isPublicPath && !isOnboardingPath) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)

@@ -10,16 +10,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendPushToSubscription } from '@/app/actions/push'
+import { assertCronAuth } from '@/lib/cron-auth'
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  // Simple auth guard: require CRON_SECRET header to prevent abuse
-  const cronSecret = process.env.CRON_SECRET
-  if (cronSecret) {
-    const authHeader = request.headers.get('authorization')
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-  }
+  const denied = assertCronAuth(request)
+  if (denied) return denied
 
   let body: { memberId: string; title: string; body: string; url?: string }
   try {
