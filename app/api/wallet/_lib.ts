@@ -2,9 +2,26 @@
 // Shared helpers for server-side wallet routes. Server-only.
 
 import { NextResponse } from 'next/server'
-import { AuthError } from '@/lib/supabase/admin'
+import { AuthError, assertChildInFamily, type Membership } from '@/lib/supabase/admin'
 
 type Admin = ReturnType<typeof import('@/lib/supabase/admin').createAdminClient>
+
+/**
+ * Authorize an action targeting a specific child's wallet:
+ *  - a child member may only act on their own linked child;
+ *  - any family member's target child must belong to their family.
+ * Throws AuthError(403) otherwise.
+ */
+export async function authorizeChildAction(
+  admin: Admin,
+  member: Membership,
+  childId: string,
+): Promise<void> {
+  if (member.role === 'child' && member.childId !== childId) {
+    throw new AuthError('Forbidden', 403)
+  }
+  await assertChildInFamily(admin, childId, member.familyId)
+}
 
 /** Map a thrown error to a JSON response. AuthError carries its own status. */
 export function errorResponse(err: unknown): NextResponse {
@@ -59,9 +76,31 @@ export type WalletRow = {
   money: number
   total_earned_coins: number
   total_spent_coins: number
+  total_exchanged_coins: number
   total_earned_money: number
   total_spent_money: number
   family_id: string | null
+}
+
+/** Load a child's wallet row via the service client. Throws if missing. */
+export async function loadWallet(admin: Admin, childId: string): Promise<WalletRow> {
+  const { data, error } = await admin
+    .from('wallet')
+    .select('*')
+    .eq('child_id', childId)
+    .maybeSingle()
+  if (error || !data) throw new Error('Wallet not found')
+  return data as WalletRow
+}
+
+/** Insert a wallet_transactions row via the service client. */
+export async function insertTx(
+  admin: Admin,
+  childId: string,
+  tx: Record<string, unknown>,
+): Promise<void> {
+  const { error } = await admin.from('wallet_transactions').insert([{ child_id: childId, ...tx }])
+  if (error) throw error
 }
 
 export type AwardIntent = {
