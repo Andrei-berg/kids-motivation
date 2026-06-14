@@ -1,5 +1,8 @@
 // app/api/cron/reminders/route.ts
-// Vercel Cron: runs every 5 minutes via vercel.json
+// NOTE: NOT scheduled — removed from vercel.json (feature dropped for now). The
+// logic below assumes a 5-minute polling window, which needs a */5 cron (Vercel
+// Pro). Kept intact so the feature can be re-enabled later by adding the cron
+// back (schedule "*/5 * * * *") on a plan that allows it.
 // Sends push notifications for schedule items whose reminder time is now (±5 min window)
 // Auth: Vercel Cron sends Authorization: Bearer CRON_SECRET automatically
 // TODO: Phase 4.3+ — localize push notification strings based on family language preference stored in DB
