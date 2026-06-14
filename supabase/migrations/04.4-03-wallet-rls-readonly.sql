@@ -26,7 +26,7 @@ BEGIN
 
     -- Drop every existing policy on the table so no stale write policy remains.
     EXECUTE (
-      SELECT string_agg(format('DROP POLICY IF EXISTS %I ON public.%I;', polname, t), ' ')
+      SELECT string_agg(format('DROP POLICY IF EXISTS %I ON public.%I;', policyname, t), ' ')
       FROM pg_policies WHERE schemaname = 'public' AND tablename = t
     );
 
@@ -46,7 +46,7 @@ ALTER TABLE public.p2p_debts ENABLE ROW LEVEL SECURITY;
 DO $$
 DECLARE p text;
 BEGIN
-  FOR p IN SELECT polname FROM pg_policies WHERE schemaname='public' AND tablename='p2p_debts' LOOP
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname='public' AND tablename='p2p_debts' LOOP
     EXECUTE format('DROP POLICY IF EXISTS %I ON public.p2p_debts;', p);
   END LOOP;
 END $$;
