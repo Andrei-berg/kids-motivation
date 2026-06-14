@@ -5,17 +5,20 @@
 // TODO: Phase 4.3+ — localize push notification strings based on family language preference stored in DB
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { sendPushToSubscription } from '@/app/actions/push'
 import { assertCronAuth } from '@/lib/cron-auth'
+import { localDateString } from '@/utils/helpers'
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const denied = assertCronAuth(request)
   if (denied) return denied
 
-  const supabase = await createClient()
+  // Cron runs with no user session — use the service-role client so reads are
+  // not silently filtered to zero rows by the "TO authenticated" RLS policies.
+  const supabase = createAdminClient()
   const now = new Date()
-  const today = now.toISOString().split('T')[0] // "YYYY-MM-DD" UTC
+  const today = localDateString(now) // family-local (UTC+3) calendar day
 
   // Day of week: JS Sunday=0 → ISO Monday=1 … Sunday=7
   const jsDay = now.getDay()

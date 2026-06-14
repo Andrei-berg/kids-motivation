@@ -21,7 +21,7 @@ import { getWallet, getPendingPurchases, getTransactions } from '@/lib/repositor
 import { approvePurchaseAction, rejectPurchaseAction } from '@/app/parent/shop/actions'
 import { getStreaks } from '@/lib/repositories/children.repo'
 import { getWeekScore } from '@/lib/services/coins.service'
-import { getWeekRange } from '@/utils/helpers'
+import { getWeekRange, localDateString } from '@/utils/helpers'
 import { getSubjects } from '@/lib/flexible-api'
 import { insertAuditEvent } from '@/lib/repositories/audit.repo'
 import { useAppStore } from '@/lib/store'
@@ -98,7 +98,7 @@ export default function ParentCenter() {
   useEffect(() => {
     async function loadAll() {
       try {
-        const today = new Date().toISOString().slice(0, 10)
+        const today = localDateString()
         const weekStart = getWeekRange(new Date()).start
 
         const rawChildren = await getChildren()
@@ -440,7 +440,7 @@ export default function ParentCenter() {
         />
 
         <ActionModal open={modal.open} child={modal.child} action={modal.action} onClose={closeAction} onConfirm={confirmAction}/>
-        <DailyModal isOpen={dailyModal.open} onClose={closeFillDay} childId={dailyModal.childId} date={new Date().toISOString().slice(0, 10)} onSave={() => { closeFillDay(); setRefreshKey(k => k + 1) }}/>
+        <DailyModal isOpen={dailyModal.open} onClose={closeFillDay} childId={dailyModal.childId} date={localDateString()} onSave={() => { closeFillDay(); setRefreshKey(k => k + 1) }}/>
         <Toast toast={toast}/>
       </div>
     )
@@ -568,7 +568,7 @@ export default function ParentCenter() {
         onClose={closeAction} onConfirm={confirmAction}
       />
 
-      <DailyModal isOpen={dailyModal.open} onClose={closeFillDay} childId={dailyModal.childId} date={new Date().toISOString().slice(0, 10)} onSave={() => { closeFillDay(); setRefreshKey(k => k + 1) }}/>
+      <DailyModal isOpen={dailyModal.open} onClose={closeFillDay} childId={dailyModal.childId} date={localDateString()} onSave={() => { closeFillDay(); setRefreshKey(k => k + 1) }}/>
 
       <Toast toast={toast}/>
     </div>

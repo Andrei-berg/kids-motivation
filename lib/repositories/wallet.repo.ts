@@ -4,6 +4,7 @@
 
 import { supabase } from '../supabase'
 import { insertAuditEvent } from '@/lib/repositories/audit.repo'
+import { localDateString } from '@/utils/helpers'
 import type {
   Wallet,
   Reward,
@@ -871,6 +872,11 @@ export async function approveWithdrawal(
     .single()
 
   if (fetchError || !withdrawal) throw new Error('Withdrawal not found')
+  // Guard against double-processing: a withdrawal already in a terminal state
+  // must not deduct money again.
+  if (['approved', 'rejected', 'paid', 'completed'].includes(withdrawal.status)) {
+    throw new Error('Withdrawal already processed')
+  }
 
   const wallet = await getWallet(withdrawal.child_id)
   if (!wallet) throw new Error('Wallet not found')
@@ -1094,8 +1100,8 @@ export async function logSettingsChange(childId: string, description: string): P
 export async function getMonthlyPotential(childId: string): Promise<MonthlyPotential> {
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-  const fromDate = thirtyDaysAgo.toISOString().split('T')[0]
-  const toDate = new Date().toISOString().split('T')[0]
+  const fromDate = localDateString(thirtyDaysAgo)
+  const toDate = localDateString()
 
   const [{ data: grades }, { data: days }] = await Promise.all([
     supabase.from('subject_grades').select('grade').eq('child_id', childId).gte('date', fromDate).lte('date', toDate),

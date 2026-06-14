@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { checkAndAwardBadges } from '@/lib/services/badges.service'
 import { updateStreaks } from '@/lib/services/streaks.service'
+import { localDateString } from '@/utils/helpers'
 
 export interface RepairResult {
   childId: string
@@ -27,7 +28,7 @@ export async function repairAchievements(): Promise<RepairResult[]> {
 
   if (error || !children) throw new Error('Failed to load children')
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = localDateString()
   const results: RepairResult[] = []
 
   for (const child of children) {

@@ -19,6 +19,7 @@ import { getReadingLog, saveReadingLog } from '@/lib/vacation-api'
 import { T } from '@/components/kid/design/tokens'
 import { Confetti, AnimatedNum } from '@/components/kid/design/atoms'
 import { useT, useLanguage } from '@/lib/i18n'
+import { localDateString } from '@/utils/helpers'
 
 const GRADE_COINS: Record<number, number> = { 5: 5, 4: 3, 3: -3, 2: -5, 1: -10 }
 
@@ -159,7 +160,7 @@ export function KidDayFillForm({
 
   // ── Lock logic ───────────────────────────────────────────────────────────
   const isLocked = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10)
+    const today = localDateString()
     return date < today
   }, [date])
 

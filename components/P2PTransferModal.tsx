@@ -51,6 +51,7 @@
 import { useState } from 'react'
 import { useT } from '@/lib/i18n'
 import { createP2PTransfer, getWalletSettings } from '@/lib/wallet-api'
+import { localDateString } from '@/utils/helpers'
 
 interface P2PTransferModalProps {
   fromChildId: string
@@ -110,7 +111,7 @@ export default function P2PTransferModal({
 
       // Рассчитать дату возврата займа
       const loanDueDate = transferType === 'loan'
-        ? new Date(Date.now() + loanDueDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        ? localDateString(new Date(Date.now() + loanDueDays * 24 * 60 * 60 * 1000))
         : null
 
       // Создать перевод

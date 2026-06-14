@@ -38,6 +38,7 @@ import { useState } from 'react'
 import { useT } from '@/lib/i18n'
 import { supabase } from '@/lib/supabase'
 import { awardCoinsForSport } from '@/lib/wallet-api'
+import { localDateString } from '@/utils/helpers'
 
 interface CoachRatingModalProps {
   childId: string
@@ -56,7 +57,7 @@ export default function CoachRatingModal({
   const [sectionId, setSectionId] = useState('')
   const [coachRating, setCoachRating] = useState<number | null>(null)
   const [coachComment, setCoachComment] = useState('')
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+  const [date, setDate] = useState(localDateString())
   const [saving, setSaving] = useState(false)
 
   // Таблица наград/штрафов

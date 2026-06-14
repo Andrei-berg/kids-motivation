@@ -11,6 +11,21 @@ export function normalizeDate(date: Date | string): string {
 }
 
 /**
+ * Calendar date (YYYY-MM-DD) in the family's timezone (UTC+3, Moscow).
+ *
+ * Use this instead of `new Date().toISOString().slice(0,10)` whenever you need
+ * "today" / a local calendar date. Plain toISOString() returns the UTC date, so
+ * between 00:00 and 03:00 local time it yields YESTERDAY — which made day-fills,
+ * coin awards and "one per day" checks land on the wrong day. Shifting the
+ * instant by +3h before taking the UTC date gives the correct family-local day
+ * consistently on both the browser and the (UTC) server.
+ */
+const FAMILY_TZ_OFFSET_MIN = 3 * 60
+export function localDateString(date: Date = new Date()): string {
+  return new Date(date.getTime() + FAMILY_TZ_OFFSET_MIN * 60_000).toISOString().slice(0, 10)
+}
+
+/**
  * Получить понедельник текущей недели
  */
 export function getMonday(date: Date | string): string {

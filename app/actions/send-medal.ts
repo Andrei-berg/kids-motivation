@@ -4,6 +4,7 @@
 import { createAdminClient, requireParent, assertChildInFamily, AuthError } from '@/lib/supabase/admin'
 import { loadWallet, insertTx } from '@/app/api/wallet/_lib'
 import { notifyChild } from '@/app/actions/push-notifications'
+import { localDateString } from '@/utils/helpers'
 
 export interface SendMedalParams {
   childId: string       // children.id
@@ -42,7 +43,7 @@ export async function sendMedal(params: SendMedalParams): Promise<SendMedalResul
     throw e
   }
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = localDateString()
 
   // Check: only one medal per child per day
   const { data: existing } = await admin

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { addExpense, ExpenseCategory } from '@/lib/expenses-api'
 import type { FamilyMember } from '@/lib/hooks/useFamilyMembers'
 import { useT } from '@/lib/i18n'
+import { localDateString } from '@/utils/helpers'
 
 interface ExpenseModalProps {
   isOpen: boolean
@@ -34,7 +35,7 @@ export default function ExpenseModal({ isOpen, onClose, categories, onSuccess, m
   }, [isOpen, members])
 
   function getTodayDate() {
-    return new Date().toISOString().split('T')[0]
+    return localDateString()
   }
 
   function resetForm() {

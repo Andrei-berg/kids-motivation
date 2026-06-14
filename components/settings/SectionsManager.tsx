@@ -11,6 +11,7 @@ import {
 } from '@/lib/expenses-api'
 import { useFamilyMembers } from '@/lib/hooks/useFamilyMembers'
 import { useT } from '@/lib/i18n'
+import { localDateString } from '@/utils/helpers'
 
 const DAYS = [
   { key: 'mon', label: 'Mon' },
@@ -61,7 +62,7 @@ export default function SectionsManager() {
   const [error, setError] = useState('')
   const [tab, setTab] = useState<'active' | 'archive'>('active')
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = localDateString()
 
   useEffect(() => { loadSections() }, [childId])
 
