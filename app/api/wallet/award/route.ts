@@ -76,7 +76,15 @@ export async function POST(req: NextRequest) {
           sourceId: day.id,
         })
       }
-      if (day.good_behavior && settings.coins_per_good_behavior !== 0) {
+      // Behavior coins are a PARENT assessment — only credited when a parent (or
+      // extended member) triggers the award, never on a child's own day-fill.
+      // This preserves the pre-refactor behaviour (KidDayFillForm never awarded
+      // behaviour; only the parent DailyModal did).
+      if (
+        member.role !== 'child' &&
+        day.good_behavior &&
+        settings.coins_per_good_behavior !== 0
+      ) {
         intents.push({
           coins: settings.coins_per_good_behavior,
           description: 'Хорошее поведение',

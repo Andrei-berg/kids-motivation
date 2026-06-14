@@ -264,11 +264,24 @@ export function KidDayFillForm({
       const act = activities.find(a => a.id === id)
       if (act) total += act.coins
     })
-    // Grade coins (mode 3) — only unsaved (new) entries
+    // Grade coins (mode 3) — only unsaved (new) entries. Use wallet_settings so
+    // the preview matches what /api/wallet/award credits server-side; GRADE_COINS
+    // is only a fallback before settings load.
     Object.values(kidGrades).flat().forEach(e => {
-      if (!e.saved && e.grade !== null) total += GRADE_COINS[e.grade] ?? 0
+      if (e.saved || e.grade === null) return
+      const g = e.grade
+      if (settings) {
+        if (g === 5) total += settings.coins_per_grade_5
+        else if (g === 4) total += settings.coins_per_grade_4
+        else if (g === 3) total += settings.coins_per_grade_3
+        else if (g === 2) total += settings.coins_per_grade_2
+        else if (g === 1) total += settings.coins_per_grade_1
+      } else {
+        total += GRADE_COINS[g] ?? 0
+      }
     })
-    // Coach rating coins for attended sections
+    // Coach rating coins for attended sections. coins_per_coach_2/_1 are already
+    // negative (penalties), so always add — matching the server's award logic.
     if (settings) {
       sections.forEach(s => {
         const note = sectionNotes[s.id]
@@ -277,8 +290,8 @@ export function KidDayFillForm({
         if (r === 5) total += settings.coins_per_coach_5
         else if (r === 4) total += settings.coins_per_coach_4
         else if (r === 3) total += settings.coins_per_coach_3 // usually 0
-        else if (r === 2) total -= settings.coins_per_coach_2
-        else if (r === 1) total -= settings.coins_per_coach_1
+        else if (r === 2) total += settings.coins_per_coach_2
+        else if (r === 1) total += settings.coins_per_coach_1
       })
     }
     // Book finished bonus
