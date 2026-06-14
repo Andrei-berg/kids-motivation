@@ -8,92 +8,180 @@ IMPORTANT: Preserve the original code and logic as much as possible. Only change
 
 State your assumptions explicitly before writing code. If ambiguous, propose interpretations and ask.
 
+IMPORTANT: All money mutations (wallet balance, transactions, rewards, purchases, exchanges, withdrawals, p2p) MUST run server-side with the service-role client. The money tables are RLS-locked to SELECT-only for clients — direct client writes are denied. See **Money / security model** below. Never reintroduce a client-side wallet write.
+
 ## Commands
 
 ```bash
 npm run dev        # Dev server at http://localhost:3000
 npm run build      # Production build
-npm run lint       # ESLint
-npx tsc --noEmit   # Type check (no test suite exists)
+npm run lint       # ESLint (next lint) — exits 0; ~30 non-blocking warnings
+npx tsc --noEmit   # Type check
+npm test           # vitest run
 ```
+
+### Applying DB migrations
+
+DDL cannot go through the anon/service REST API. Apply SQL in `supabase/migrations/`
+either via the Supabase SQL Editor, or — if `SUPABASE_DB_URL` (a Postgres connection
+string, e.g. the Session pooler URI) is set in `.env.local` — via `pg`:
+
+```bash
+npm i pg --no-save
+node --env-file=.env.local -e 'import("pg").then(async({default:pg})=>{const fs=await import("fs");const c=new pg.Client({connectionString:process.env.SUPABASE_DB_URL});await c.connect();await c.query(fs.readFileSync("supabase/migrations/FILE.sql","utf8"));console.log("applied");await c.end()})'
+```
+
+Verification scripts (run against the live DB with the service-role key):
+`node --env-file=.env.local scripts/verify-wallet-rls.mjs` (RLS lock),
+`verify-award-idempotency.mjs`, `verify-award-reads.mjs`.
 
 ## Architecture
 
-**Next.js 14 App Router + Supabase (PostgreSQL) + Tailwind CSS + custom CSS**
+**Next.js 14 App Router + Supabase (PostgreSQL, Auth, RLS) + Tailwind CSS + custom CSS**
 
-Family motivation system for two children (Adam, Alim). Children earn coins for grades, room cleaning, and sport.
+A multi-family motivation system: any family registers, adds children, and the kids
+earn coins for grades, room cleaning, sport, reading, and custom activities, then spend
+them on parent-defined rewards. (The project began as a single-family app for two kids,
+Adam & Alim — some legacy top-level pages from that era still exist; see Routing.)
+
+### Auth & roles
+
+- Supabase Auth. **Parents** sign in with email/password (`/` is the login/register page).
+  **Children** sign in with a family code + 4-digit PIN at `/kid/login`, which calls
+  `supabase.auth.signInWithPassword` against a synthetic user `child_<childId>@internal.familycoins.app`
+  (password = PIN, stored as a salted bcrypt hash by Supabase Auth). PINs are set by
+  `/api/set-child-pin` (parent-guarded, service-role). No PIN hash is stored in our tables.
+- `family_members` links an auth user to a family with a `role` (`parent` | `child` | `extended`)
+  and, for children, a `child_id` → `children.id`.
+- `middleware.ts` is the gatekeeper: redirects unauthenticated users to `/`, does role-based
+  landing redirects, and guards `/parent/*` (parent only) and `/kid/*` (child only; a parent
+  may inspect with `?preview=true`). Uses `getUser()` (re-validates JWT), not `getSession()`.
 
 ### Global state
 
-`lib/store.ts` — Zustand v4 store with `persist` middleware. All pages read `childId` from here:
+`lib/store.ts` — Zustand with `persist` (key `v5_child`):
 
 ```ts
-const { childId, setChildId } = useAppStore() // 'adam' | 'alim'
+const { familyId, setFamilyId, activeMemberId, setActiveMemberId, language, setLanguage } = useAppStore()
+// activeMemberId = family_members.id of the selected child
 ```
 
-**Never** use `localStorage.getItem('v4_selected_kid')` or page-local `childId` state — all pages use the store.
+There is no global `childId`/`'adam'|'alim'` anymore. `children.id` is still `TEXT` but is a
+per-family identifier, not a hardcoded literal.
 
 ### Routing
 
-`app/page.tsx` → redirects to `/dashboard`. Key routes: `/dashboard`, `/wallet`, `/analytics`, `/wallboard`, `/expenses`, `/settings`, `/audit` (hidden, parent-only). Pages `/weekly` and `/potential/[childId]` are deleted — redirect to `/dashboard`.
+All pages are `'use client'`.
 
-All pages are `'use client'`. NavBar is rendered inside each page, not in the layout.
+- `/` — auth (login/register). `/onboarding/*` — family setup / join.
+- **Kid UI:** `/kid/login`, `/kid/day`, `/kid/wallet`, `/kid/shop`, `/kid/chat`,
+  `/kid/achievements`, `/kid/leaderboard`.
+- **Parent UI:** `/parent-center` (primary, mobile-first hub: dashboard, chat, wallets,
+  analytics, settings, shop/reward management). `/parent/dashboard` is the desktop view;
+  several `/parent/*` paths redirect into `/parent-center`.
+- `/family/*` — shared, any authenticated member.
+- **Legacy single-family pages still present:** `/dashboard`, `/wallet`, `/analytics`,
+  `/wallboard`, `/expenses`, `/settings`, `/streaks`, `/records`, `/audit`, `/coach-rating`.
+  Prefer the kid/parent-center equivalents for new work.
 
 ### lib/ — domain split
 
+```
+lib/models/        — types only
+lib/repositories/  — Supabase queries (children, grades, wallet, expenses, schedule, audit, chat…)
+lib/services/      — business logic (badges, streaks)
+lib/supabase/      — clients: client.ts (browser), server.ts (cookie-session, RLS-bound),
+                     middleware.ts (cookie sync), admin.ts (service-role + auth guards)
+lib/*.ts           — backward-compat re-export wrappers (old import paths still work)
+```
+
 | File | Responsibility |
 |---|---|
-| `api.ts` | Children, days, subject grades, home sport, goals, streaks, weekly data, `getWeekScore()` |
-| `wallet-api.ts` | Wallet balance, transactions, exchange, shop rewards, P2P transfers, withdrawals |
-| `flexible-api.ts` | Subjects, schedule, home exercises, exercise types |
-| `expenses-api.ts` | Expenses, sections (sports clubs), section visits |
-| `badges.ts` | Badge/achievement system, called after day save |
-| `streaks.ts` | Streak calculation, called after day save |
-| `store.ts` | Zustand global store for `childId` |
-| `supabase.ts` | Supabase client (throws on missing env vars) |
+| `lib/supabase/admin.ts` | Service-role client + `requireParent`/`requireFamilyMember`/`assertChildInFamily` guards. **Use for all privileged money writes.** |
+| `repositories/wallet.repo.ts` | Wallet/rewards/exchanges/withdrawals/transactions queries + `getWalletSettings` |
+| `repositories/children.repo.ts`, `grades.repo.ts` | Days, subject grades |
+| `repositories/expenses.repo.ts` | Expenses, sections (sports clubs), section visits (`section_visits`, incl. `coach_rating`) |
+| `repositories/schedule.repo.ts` | Subjects, schedule, home exercises |
+| `services/badges.service.ts`, `streaks.service.ts` | Achievements & streaks (run after a day is saved) |
+| `api.ts` | `getWeekScore()` and aggregate reads |
+| `utils/helpers.ts` | Date helpers — **use `localDateString()` for "today"**, never `toISOString().split('T')[0]` (that yields the UTC date, which is yesterday between 00:00–03:00 local UTC+3) |
 
-### DailyModal
+### Money / security model
 
-`components/DailyModal.tsx` — single-scroll form (no tabs). Sections: Учёба → Комната → День → Спорт → Секции. Save is a single batched `Promise.all`:
+Money tables (`wallet`, `wallet_transactions`, `wallet_settings`, `rewards`,
+`reward_purchases`, `coin_exchanges`, `cash_withdrawals`, `p2p_transfers`, `p2p_debts`)
+are **RLS SELECT-only for clients** (migration `04.4-03`). Clients read directly but
+cannot write. Every mutation goes through the server with the service-role client
+(bypasses RLS) behind an auth guard:
 
-```ts
-await Promise.all([saveDay, saveGrades, saveExercises, saveSections])
-await updateStreaks(childId, date)
-await checkAndAwardBadges(childId, date)
-```
+- **API routes** `app/api/wallet/*`: `award` (recomputes a day's coin awards from saved
+  rows — grades/room/behavior/sport/activities/book/streak — idempotent per
+  `(child_id, source_type, source_id)`; client sends only `{childId, date}`),
+  `purchase`, `exchange`, `withdraw`, `p2p`, `rewards` (parent CRUD), `settings` (parent).
+  Shared helpers in `app/api/wallet/_lib.ts`.
+- **Server actions** (`'use server'`): `app/parent/shop/actions.ts` (approve/reject + refund),
+  `app/kid/shop/actions.ts` (requestPurchase), `app/actions/send-medal.ts`. All use
+  service-role + guards.
+- Client write wrappers: `lib/wallet-client.ts` (fetch → the routes above).
+
+The kid/parent day-fill forms (`components/kid/KidDayFillForm.tsx`,
+`components/DailyModal.tsx`) save the day's rows, then POST `/api/wallet/award` — they no
+longer credit coins themselves. `coinsPreview` is only a client-side estimate for the flyup.
+
+### Reward rules
+
+Coin amounts are **per-family and configurable** in `wallet_settings` (edited via
+`/api/wallet/settings`). Defaults live in `app/api/wallet/_lib.ts` (`SETTINGS_DEFAULTS`)
+and `getWalletSettings`. Awards are computed server-side in `/api/wallet/award` from the
+saved grades/day/section/activity/reading rows — do not hardcode coin values in components.
 
 ### Analytics
 
-`app/analytics/page.tsx` reads raw data via `api.getWeekScore()` — **no finalization required**. Works for current week.
+`app/analytics/page.tsx` reads raw data via `api.getWeekScore(childId, weekStart)` — no
+finalization required; calculates coins directly from `days` + `subject_grades`.
 
-`api.getWeekScore(childId, weekStart)` calculates coins directly from `days` + `subject_grades` tables.
+### Cron / push
 
-### Reward rules (hardcoded in `lib/api.ts` and `lib/wallet-api.ts`)
-
-- Grades: 5→+5💰, 4→+3💰, 3→-3💰, 2→-5💰, 1→-10💰
-- Room (≥3/5 items): +3💰 per day
-- Good behavior: +5💰 per day
-- Sport coach rating: 5→+10💰, 4→+5💰, 3→0, 2→-3💰, 1→-10💰
+Vercel Cron (`vercel.json`): `/api/cron/missed-tasks` daily 20:00 UTC. Cron/push routes
+authenticate via `assertCronAuth` (`lib/cron-auth.ts`) — **fails closed** if `CRON_SECRET`
+is unset. Cron routes use the **service-role** client (a cookie client has no session in
+cron context → RLS returns 0 rows). `/api/cron/reminders` exists but is **unscheduled**
+(needs a `*/5` cron = Vercel Pro; feature parked). `notifyChild`/`notifyParent` are the
+canonical push dispatchers.
 
 ### Styling
 
-Pages mix Tailwind with custom classes in `app/globals.css`. Key custom classes: `premium-*` (modal, tabs, checklist, grade buttons), `dashboard-hero`, `day-status-grid`, `week-calendar`, `scroll-modal`, `scroll-section-*`. Do not remove any globals.css classes — all are used.
+Pages mix Tailwind with custom classes in `app/globals.css` (legacy pages) and inline-style
+design tokens in `components/kid/design/` and `components/parent-center/` (new UI). Do not
+remove `globals.css` classes — legacy pages rely on them.
 
 ### Environment
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+# Client (browser)
+NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+# Server (cookie-session client reads these WITHOUT the NEXT_PUBLIC_ prefix)
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=     # required — money routes/actions throw without it
+CRON_SECRET=                    # required in prod — cron/push fail closed without it
+SUPABASE_DB_URL=                # optional — Postgres conn string for applying migrations
+# Web Push
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_MAILTO=
 ```
 
-`.env.local` is git-ignored. Same vars needed in Vercel project settings for production (https://kids-motivation.vercel.app).
+`.env.local` is git-ignored. The same vars (except `SUPABASE_DB_URL`) must be set in the
+Vercel project for production (https://kids-motivation.vercel.app).
 
 ### Database
 
-SQL migration files in repo root: `supabase-schema-v2.sql` (main schema), `supabase-migration-flexible.sql` (subjects/schedule), `supabase-step3-expenses.sql` (expenses/sections). Run in Supabase SQL Editor to apply.
-
-Children have `id TEXT PRIMARY KEY` — values are `'adam'` and `'alim'`.
+SQL lives in `supabase/migrations/` (and `supabase/schema-v3.sql`). Apply in order via the
+Supabase SQL Editor or `pg` (see Commands). RLS is the security boundary — `rls.sql`
+installs family-isolation policies; `04.4-03` locks money tables to SELECT-only. The legacy
+root-level `supabase-*.sql` files are historical.
 
 ## Methodology
 
@@ -101,19 +189,11 @@ Children have `id TEXT PRIMARY KEY` — values are `'adam'` and `'alim'`.
 Read DESIGN_DECISIONS.md and .planning/ROADMAP.md for architecture and phase context.
 
 ### Documentation Source of Truth
-`project-docs/` — 10 files covering overview, requirements, architecture, tech stack, data model, API spec, security, coding standards, testing, deployment. Update when making architectural changes.
-
-### lib/ Code Organization
-```
-lib/models/       — types only
-lib/repositories/ — Supabase queries
-lib/services/     — business logic
-lib/*.ts          — backward compat re-export wrappers (old paths still work)
-```
-**Note:** lib/ refactor is planned but not yet executed — old files still contain full implementations.
+`project-docs/` — overview, requirements, architecture, tech stack, data model, API spec,
+security, coding standards, testing, deployment. Update when making architectural changes.
 
 ### GSD — Execution Tool
-`.planning/` directory with ROADMAP.md, STATE.md, 24 phase plans.
+`.planning/` directory with ROADMAP.md, STATE.md, phase plans.
 - `/gsd:plan-phase N.M` — plan next phase
 - `/gsd:execute-phase` — execute plans
 - `/gsd:progress` — check current state
