@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { T } from '../tokens'
 import { Card, Btn, Pill, Avatar, Sparkline, Bar, Coin, Tabs, Icon } from '../ui'
 import type { ParentChild, ActionType } from '../types'
+import ExpensesPanel from './ExpensesPanel'
 
 type Props = {
   child: ParentChild
@@ -88,6 +89,7 @@ export default function ChildProfile({ child, onBack, onAction }: Props) {
           { id: 'overview', label: 'Overview' },
           { id: 'subjects', label: 'Subjects' },
           { id: 'goals', label: 'Goals' },
+          { id: 'expenses', label: 'Расходы' },
         ]}/>
       </div>
 
@@ -169,6 +171,10 @@ export default function ChildProfile({ child, onBack, onAction }: Props) {
               </Card>
             )}
           </div>
+        )}
+
+        {tab === 'expenses' && (
+          <ExpensesPanel lockedChildId={child.id} kids={[{ id: child.id, name: child.name }]}/>
         )}
 
         {tab === 'goals' && (

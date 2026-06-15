@@ -11,6 +11,7 @@ import SettingsScreen from './screens/Settings'
 import ChildProfile from './screens/ChildProfile'
 import AuditScreen from './screens/AuditScreen'
 import WalletsScreen from './screens/WalletsScreen'
+import ExpensesPanel from './screens/ExpensesPanel'
 import ActionModal from './screens/ActionModal'
 import ChatPanel from './screens/ChatPanel'
 import DailyModal from '@/components/DailyModal'
@@ -230,6 +231,7 @@ export default function ParentCenter() {
     { id: 'tasks' as Route, label: t('parentNav.tasks'), icon: 'tasks' },
     { id: 'shop' as Route, label: t('nav.shop'), icon: 'shop' },
     { id: 'analytics' as Route, label: t('parentNav.stats'), icon: 'chart' },
+    { id: 'expenses' as Route, label: 'Расходы', icon: 'wallet' },
     { id: 'audit' as Route, label: t('audit.navLabel'), icon: 'tasks' },
   ]
   const pendingCount = pending.length
@@ -279,6 +281,8 @@ export default function ParentCenter() {
         return <AuditScreen familyId={familyId ?? ''} children={children}/>
       case 'wallets':
         return <WalletsScreen children={children}/>
+      case 'expenses':
+        return <div style={{ padding: 16 }}><ExpensesPanel kids={children.map(c => ({ id: c.id, name: c.name }))}/></div>
       default:
         return null
     }
