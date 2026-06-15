@@ -70,6 +70,7 @@ Security migrations (2026-06-15 — already applied to prod):
 - `04.4-03-wallet-rls-readonly.sql` — money tables → SELECT-only for clients
 - `04.4-04-drop-anon-policies.sql` — drop 23 `*_anon_all` policies
 - `04.4-05-close-public-true-policies.sql` — replace 7 `public USING true` policies with family-isolation
+- `04.4-06-expense-section-link.sql` — `expenses.section_id` + `period` + partial unique (section monthly cost → per-month expense rows)
 
 Verification scripts (run against live DB with the service-role key):
 `scripts/verify-wallet-rls.mjs`, `verify-award-idempotency.mjs`, `verify-award-reads.mjs`.

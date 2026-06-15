@@ -227,6 +227,8 @@ getSections(childId?, date?): Promise<Section[]>
 getSectionsForDate(childId, date): Promise<(Section & { visit? })[]>  // respects schedule_days / start/end date
 addSection(section): Promise<Section>
 markSectionVisit(sectionId, date, attended, progressNote?, trainerFeedback?, coachRating?): Promise<SectionVisit>
+// Section monthly cost → expenses (idempotent; called when ExpensesPanel loads)
+ensureSectionExpenses(): Promise<number>   // generates one expense row per (section, month) for active sections with cost>0
 ```
 
 > Parent expenses UI: `components/parent-center/screens/ExpensesPanel.tsx`

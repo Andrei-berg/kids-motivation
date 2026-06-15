@@ -32,7 +32,8 @@ progress:
   withdrawal double-spend guard; reminders-cron отключён в vercel.json.
 - **Инфра:** ESLint сконфигурирован (`npm run lint` зелёный).
 - **Фича:** parent **Expenses** UI (вкладка у ребёнка + экран в parent-center,
-  CRUD + категории).
+  CRUD + категории). Стоимость секций (`sections.cost`) материализуется в expenses
+  по месяцам (миграция `04.4-06`, idempotent, read-only ♻️).
 - Verify-скрипты: `scripts/verify-wallet-rls.mjs`, `verify-award-idempotency.mjs`,
   `verify-award-reads.mjs`.
 

@@ -198,7 +198,7 @@ All data is scoped to `family_id`. RLS policies ensure cross-family isolation.
 | `schedule` | Legacy | Old school schedule (child_id TEXT) |
 | `subjects` | Legacy | Subject list per child |
 | `sections` | Legacy | Sports sections per child |
-| `expenses` | Legacy | Expense tracking |
+| `expenses` | Legacy | Expense tracking. `section_id`+`period` (migration 04.4-06) link auto-generated per-month rows to a section's monthly `cost`; partial UNIQUE(section_id, period) keeps generation idempotent. |
 | `goals` | Legacy | Savings goals |
 | `weeks` | Legacy | Weekly summaries |
 | `settings` | Legacy | Global key-value settings |

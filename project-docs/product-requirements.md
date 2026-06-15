@@ -151,6 +151,7 @@
 | REQ-EXP-002 | Expense categories: create / rename / hide / delete (emoji + name) | P2 | ✅ |
 | REQ-EXP-003 | Per-child view (ChildProfile tab) + family-wide screen with child filter | P2 | ✅ |
 | REQ-EXP-004 | Total + by-category breakdown | P2 | ✅ |
+| REQ-EXP-005 | Section monthly cost auto-appears in expenses as per-month rows (read-only ♻️) | P2 | ✅ 2026-06-15 |
 
 ## SECURITY — Security
 
