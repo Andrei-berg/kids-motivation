@@ -8,6 +8,7 @@ import {
   getExpenses, addExpense, updateExpense, deleteExpense,
   getAllExpenseCategories, addExpenseCategory, toggleCategoryActive, deleteExpenseCategory,
 } from '@/lib/expenses-api'
+import { ensureSectionExpenses } from '@/lib/repositories/expenses.repo'
 import type { Expense, ExpenseCategory } from '@/lib/models/expense.types'
 import { localDateString } from '@/utils/helpers'
 
@@ -42,6 +43,8 @@ export default function ExpensesPanel({ lockedChildId, kids }: { lockedChildId?:
   const reload = useCallback(async () => {
     setLoading(true); setError(null)
     try {
+      // Materialize section monthly costs into per-month expense rows (idempotent).
+      await ensureSectionExpenses().catch(() => {})
       const filters = childFilter === 'all' ? {} : { childId: childFilter }
       const [exp, cats] = await Promise.all([getExpenses(filters), getAllExpenseCategories()])
       setExpenses(exp); setCategories(cats)
@@ -161,12 +164,18 @@ export default function ExpensesPanel({ lockedChildId, kids }: { lockedChildId?:
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, color: T.text, fontWeight: 600 }}>{e.title}</div>
                   <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
-                    {e.category?.name ?? '—'} · {e.date}{!lockedChildId ? ` · ${kidName(e.child_id)}` : ''}{e.is_recurring ? ' · ♻️' : ''}
+                    {e.category?.name ?? '—'} · {e.date}{!lockedChildId ? ` · ${kidName(e.child_id)}` : ''}{e.section_id ? ' · ♻️ секция' : e.is_recurring ? ' · ♻️' : ''}
                   </div>
                 </div>
                 <span style={{ fontFamily: T.fMono, fontSize: 14, fontWeight: 700, color: T.text }}>{fmt(Number(e.amount))}</span>
-                <button onClick={() => openEdit(e)} style={iconBtn}><Icon name="edit" size={14}/></button>
-                <button onClick={() => removeExpense(e.id)} style={iconBtn}><Icon name="trash" size={14}/></button>
+                {e.section_id ? (
+                  <span style={{ fontSize: 10, color: T.muted, whiteSpace: 'nowrap' }}>из расписания</span>
+                ) : (
+                  <>
+                    <button onClick={() => openEdit(e)} style={iconBtn}><Icon name="edit" size={14}/></button>
+                    <button onClick={() => removeExpense(e.id)} style={iconBtn}><Icon name="trash" size={14}/></button>
+                  </>
+                )}
               </Card>
             ))}
             {loading && <div style={{ color: T.muted, fontSize: 13, textAlign: 'center', padding: 12 }}>Загрузка…</div>}

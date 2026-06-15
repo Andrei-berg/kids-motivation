@@ -21,6 +21,10 @@ export interface Expense {
   note: string | null
   created_by: string
   created_at: string
+  // Set for rows auto-generated from a section's monthly cost (migration 04.4-06).
+  // section_id = source section; period = 'YYYY-MM' the row represents.
+  section_id?: string | null
+  period?: string | null
   category?: ExpenseCategory
 }
 

@@ -3,6 +3,7 @@
 // Sourced from lib/expenses-api.ts — this is the authoritative implementation.
 
 import { supabase } from '../supabase'
+import { localDateString } from '@/utils/helpers'
 import type {
   ExpenseCategory,
   Expense,
@@ -369,12 +370,113 @@ export async function updateSection(
 }
 
 export async function deleteSection(sectionId: string): Promise<void> {
+  // Remove auto-generated monthly expense rows for this section first.
+  await supabase.from('expenses').delete().eq('section_id', sectionId)
+
   const { error } = await supabase
     .from('sections')
     .delete()
     .eq('id', sectionId)
 
   if (error) throw error
+}
+
+// ----------------------------------------------------------------------------
+// Section monthly cost → expenses (migration 04.4-06)
+// ----------------------------------------------------------------------------
+
+const SECTION_CATEGORY_NAME = 'Секции'
+
+async function ensureSectionCategory(familyId: string): Promise<string> {
+  const { data: existing } = await supabase
+    .from('expense_categories')
+    .select('id')
+    .eq('name', SECTION_CATEGORY_NAME)
+    .limit(1)
+    .maybeSingle()
+  if (existing) return existing.id
+  const { data, error } = await supabase
+    .from('expense_categories')
+    .insert({ name: SECTION_CATEGORY_NAME, icon: '🏅', is_default: false, is_active: true, family_id: familyId })
+    .select('id')
+    .single()
+  if (error) throw error
+  return data.id
+}
+
+// inclusive list of 'YYYY-MM' from startYM to endYM
+function monthsBetween(startYM: string, endYM: string): string[] {
+  const out: string[] = []
+  let [y, m] = startYM.split('-').map(Number)
+  const [ey, em] = endYM.split('-').map(Number)
+  let guard = 0
+  while ((y < ey || (y === ey && m <= em)) && guard++ < 240) {
+    out.push(`${y}-${String(m).padStart(2, '0')}`)
+    m++; if (m > 12) { m = 1; y++ }
+  }
+  return out
+}
+
+/**
+ * Materialize each active section's monthly `cost` as one expense row per month
+ * (idempotent via the (section_id, period) unique index, migration 04.4-06).
+ * Lazy: call this when the expenses view loads. Backfills up to 12 months,
+ * floored at the section's start_date and capped at its end_date / the current
+ * month. Returns the number of rows created. Past months keep their historical
+ * amount; new months use the section's current cost.
+ */
+export async function ensureSectionExpenses(): Promise<number> {
+  const familyId = await getCurrentFamilyId()
+  if (!familyId) return 0
+
+  const { data: sections } = await supabase
+    .from('sections')
+    .select('id, name, cost, child_id, start_date, end_date')
+    .eq('is_active', true)
+    .gt('cost', 0)
+  if (!sections || sections.length === 0) return 0
+
+  const categoryId = await ensureSectionCategory(familyId)
+  const now = new Date()
+  const curYM = localDateString(now).slice(0, 7)
+  const floor = new Date(now.getFullYear(), now.getMonth() - 11, 1)
+  const floorYM = `${floor.getFullYear()}-${String(floor.getMonth() + 1).padStart(2, '0')}`
+  let created = 0
+
+  for (const s of sections) {
+    let startYM = floorYM
+    if (s.start_date && s.start_date.slice(0, 7) > startYM) startYM = s.start_date.slice(0, 7)
+    let endYM = curYM
+    if (s.end_date && s.end_date.slice(0, 7) < endYM) endYM = s.end_date.slice(0, 7)
+    if (startYM > endYM) continue
+
+    const periods = monthsBetween(startYM, endYM)
+    const { data: existing } = await supabase
+      .from('expenses')
+      .select('period')
+      .eq('section_id', s.id)
+    const have = new Set((existing ?? []).map((e) => e.period))
+
+    const rows = periods.filter((p) => !have.has(p)).map((p) => ({
+      child_id: s.child_id,
+      title: s.name,
+      amount: s.cost,
+      category_id: categoryId,
+      date: `${p}-01`,
+      is_recurring: true,
+      recurring_period: 'monthly',
+      created_by: 'section',
+      family_id: familyId,
+      section_id: s.id,
+      period: p,
+    }))
+    if (rows.length === 0) continue
+
+    const { error } = await supabase.from('expenses').insert(rows)
+    if (error && error.code !== '23505') throw error
+    created += rows.length
+  }
+  return created
 }
 
 // ============================================================================
