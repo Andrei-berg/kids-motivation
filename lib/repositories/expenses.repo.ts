@@ -13,6 +13,19 @@ import type {
   ActivityLog,
 } from '../models/expense.types'
 
+// Resolve the current user's family_id (RLS WITH CHECK on inserts requires it).
+async function getCurrentFamilyId(): Promise<string | null> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+  const { data } = await supabase
+    .from('family_members')
+    .select('family_id')
+    .eq('user_id', user.id)
+    .limit(1)
+    .maybeSingle()
+  return data?.family_id ?? null
+}
+
 // ============================================================================
 // EXPENSE CATEGORIES
 // ============================================================================
@@ -39,9 +52,10 @@ export async function getAllExpenseCategories(): Promise<ExpenseCategory[]> {
 }
 
 export async function addExpenseCategory(name: string, icon: string): Promise<ExpenseCategory> {
+  const familyId = await getCurrentFamilyId()
   const { data, error } = await supabase
     .from('expense_categories')
-    .insert({ name, icon, is_default: false, is_active: true })
+    .insert({ name, icon, is_default: false, is_active: true, family_id: familyId })
     .select()
     .single()
 
@@ -114,6 +128,12 @@ export async function addExpense(expense: {
   note?: string
   createdBy: string
 }): Promise<Expense> {
+  // family_id is required by the RLS WITH CHECK policy; derive it from the child.
+  const { data: childRow } = await supabase
+    .from('children')
+    .select('family_id')
+    .eq('id', expense.childId)
+    .maybeSingle()
   const { data, error } = await supabase
     .from('expenses')
     .insert({
@@ -125,7 +145,8 @@ export async function addExpense(expense: {
       is_recurring: expense.isRecurring || false,
       recurring_period: expense.recurringPeriod || null,
       note: expense.note || null,
-      created_by: expense.createdBy
+      created_by: expense.createdBy,
+      family_id: childRow?.family_id ?? null,
     })
     .select(`*, category:expense_categories(*)`)
     .single()
