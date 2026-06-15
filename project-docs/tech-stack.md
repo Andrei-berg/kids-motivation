@@ -72,15 +72,17 @@
 
 ## Environment Variables
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
-SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
-NEXT_PUBLIC_VAPID_PUBLIC_KEY=<vapid-public>
-VAPID_PRIVATE_KEY=<vapid-private>
-VAPID_SUBJECT=mailto:admin@example.com
-CRON_SECRET=<secret>   # optional, for production cron security
-```
+See **deployment.md** for the full list. Key points:
+- Client: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- Server (no `NEXT_PUBLIC_`): `SUPABASE_URL`, `SUPABASE_ANON_KEY` (cookie-session
+  client) + `SUPABASE_SERVICE_ROLE_KEY` (**required** — money layer) +
+  `CRON_SECRET` (**required in prod** — fail-closed cron/push).
+- Push: `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_MAILTO`.
+- Optional: `SUPABASE_DB_URL` (Postgres conn string) to apply migrations via `pg`.
+
+ESLint is configured (`.eslintrc.json` → `next/core-web-vitals`); `npm run lint`
+passes with only warnings. `pg` is installed on demand (`npm i pg --no-save`) for
+running migrations from the CLI.
 
 ## Browser Support
 

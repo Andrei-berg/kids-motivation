@@ -25,7 +25,8 @@ Children don't just receive rewards — they earn them. The app models adult lif
 | Categories & Tasks | Flexible: Study, Home, Sport, Routine, Behavior, Custom |
 | Daily Input | DailyModal: grades, room check, behavior, sport, sections |
 | Coins Engine | Earn/penalty rules, configurable per family |
-| Wallet & Shop | Child wallet, parent-created shop, P2P transfers |
+| Wallet & Shop | Child wallet, parent-created shop, P2P transfers (mutations server-side) |
+| Expenses | Parent tracks money spent on each child by category (per-child + family-wide) |
 | Streaks & Badges | Automatic achievement system |
 | Analytics | Child dashboard + parent overview |
 | Family Chat | Real-time (Supabase Realtime), reactions, stickers |
@@ -41,12 +42,17 @@ Children don't just receive rewards — they earn them. The app models adult lif
 - Year 1: 50,000 families
 - Year 3: 500,000+ families, international
 
-## Current Status (2026-03-08)
+## Current Status
 
-Milestone 1 (Foundation) complete. 4 phases done:
-- Phase 1.1: Multi-tenant DB schema with families, RLS, Supabase Auth
-- Phase 1.2: Onboarding flow (registration → family → children)
-- Phase 1.3: Flexible categories + schedule + push notifications
-- Phase 1.4: Dashboard refactor — all hardcoded adam/alim removed, activeMemberId (UUID) everywhere
+Milestones 1–4 delivered (foundation, core loop, communication, PWA polish):
+multi-tenant DB + Auth, onboarding, parent-center + kid screens, wallet/shop,
+streaks/badges, family chat, PWA, i18n, COPPA consent. See `.planning/STATE.md`
+for the authoritative phase status.
 
-**Next: Phase 2.1 — Coin Engine** (flexible, configurable reward system)
+**2026-06-15 — security + expenses pass:**
+- Closed pre-launch security blockers and a critical anonymous-access RLS hole
+  (30 tables); all wallet/money mutations moved server-side (service-role) with
+  money tables RLS-locked to SELECT for clients.
+- Functional fixes: UTC-date bug (UTC+3 helper), cron no-op, withdrawal
+  double-spend; ESLint configured.
+- New: parent **Expenses** UI (per-child tab + global screen, CRUD + categories).

@@ -2,6 +2,40 @@
 
 > All functions are in `lib/` — import from the legacy path (backward compat) or new path.
 
+> **Money mutations are server-side (2026-06-15).** The money tables are RLS
+> SELECT-only for clients, so the `lib/wallet-api.ts` *write* functions
+> (`updateWalletCoins`, `purchaseReward`, `exchangeCoins`, `addReward`,
+> `updateWalletSettings`, `awardCoinsFor*`, `createP2PTransfer`, …) **no longer
+> work from the browser** — they remain for server/internal use. Clients call the
+> HTTP routes below (directly or via `lib/wallet-client.ts`). Read functions
+> (`getWallet`, `getTransactions`, `getRewards`, …) still work via RLS SELECT.
+
+## HTTP API routes (server-side, service-role + auth guard)
+
+```
+POST /api/wallet/award      { childId, date }                 # recompute+credit a day's awards (idempotent)
+POST /api/wallet/purchase   { childId, rewardId }
+POST /api/wallet/exchange   { childId, coinsAmount }          # amount must be > 0
+POST /api/wallet/withdraw   { childId, amount }               # amount must be > 0
+POST /api/wallet/p2p        { from_child_id, to_child_id, amount, transfer_type, ... }
+POST   /api/wallet/rewards  (reward)        # parent: create
+PATCH  /api/wallet/rewards  { rewardId, updates }   # parent: update
+DELETE /api/wallet/rewards  { rewardId }            # parent: delete
+PATCH  /api/wallet/settings (wallet_settings patch)  # parent
+POST /api/set-child-pin     { childId, pin }         # parent only
+DELETE /api/delete-account                            # parent only (cascade)
+GET  /api/cron/missed-tasks                           # CRON_SECRET bearer
+POST /api/push/send         { memberId, title, body, url? }   # CRON_SECRET bearer
+```
+
+Guards live in `lib/supabase/admin.ts`: `requireParent`, `requireFamilyMember`,
+`assertChildInFamily`. Client helpers in `lib/wallet-client.ts`:
+`addRewardApi`, `updateRewardApi`, `deleteRewardApi`, `updateWalletSettingsApi`.
+
+### Dates
+`utils/helpers.localDateString(date?)` returns the calendar date in the family
+timezone (UTC+3). Use it for "today" instead of `toISOString().split('T')[0]`.
+
 ## lib/api.ts (children, days, grades, goals, weeks)
 
 ### Children
@@ -176,15 +210,27 @@ saveHomeExercise(childId, date, exerciseTypeId, quantity, note?): Promise<HomeEx
 ## lib/expenses-api.ts
 
 ```ts
-getExpenseCategories(): Promise<ExpenseCategory[]>
+// Categories
+getExpenseCategories(): Promise<ExpenseCategory[]>            // active only
+getAllExpenseCategories(): Promise<ExpenseCategory[]>
+addExpenseCategory(name, icon): Promise<ExpenseCategory>      // sets family_id
+toggleCategoryActive(categoryId, isActive): Promise<void>
+deleteExpenseCategory(categoryId): Promise<void>
+// Expenses (addExpense/addExpenseCategory set family_id for RLS)
 addExpense(expense): Promise<Expense>
-getExpenses(filters?): Promise<Expense[]>
+updateExpense(expenseId, updates): Promise<void>
+deleteExpense(expenseId): Promise<void>
+getExpenses(filters?: { childId?, categoryId?, startDate?, endDate? }): Promise<Expense[]>
 getExpenseStats(filters?): Promise<ExpenseStats>
-getSections(childId?): Promise<Section[]>
+// Sections (sports clubs) — section_visits stores coach_rating
+getSections(childId?, date?): Promise<Section[]>
+getSectionsForDate(childId, date): Promise<(Section & { visit? })[]>  // respects schedule_days / start/end date
 addSection(section): Promise<Section>
-getSectionVisits(sectionId, startDate?, endDate?): Promise<SectionVisit[]>
-markSectionVisit(sectionId, date, attended, progressNote?, trainerFeedback?): Promise<SectionVisit>
+markSectionVisit(sectionId, date, attended, progressNote?, trainerFeedback?, coachRating?): Promise<SectionVisit>
 ```
+
+> Parent expenses UI: `components/parent-center/screens/ExpensesPanel.tsx`
+> (per-child tab in ChildProfile + global "Расходы" screen) — CRUD + category management.
 
 ## lib/badges.ts
 

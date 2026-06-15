@@ -143,14 +143,25 @@
 | REQ-ANL-004 | KPIs: best week, average grade, total coins | P1 | M2 |
 | REQ-ANL-005 | Parent dashboard: all children at a glance | P1 | M2 |
 
+## EXP — Expenses (parent)
+
+| ID | Requirement | Priority | Status |
+|---|---|---|---|
+| REQ-EXP-001 | Parent records money spent on a child (title, amount, category, date, note) | P2 | ✅ 2026-06-15 |
+| REQ-EXP-002 | Expense categories: create / rename / hide / delete (emoji + name) | P2 | ✅ |
+| REQ-EXP-003 | Per-child view (ChildProfile tab) + family-wide screen with child filter | P2 | ✅ |
+| REQ-EXP-004 | Total + by-category breakdown | P2 | ✅ |
+
 ## SECURITY — Security
 
 | ID | Requirement | Priority | Milestone |
 |---|---|---|---|
-| REQ-SEC-001 | RLS on all Supabase tables | P1 | M1 |
+| REQ-SEC-001 | RLS on all Supabase tables (authenticated-only; anon has no table access) | P1 | M1 ✅ hardened 2026-06-15 |
+| REQ-SEC-002 | Server-side enforcement of money mutations (no client writes) | P1 | ✅ 2026-06-15 |
 | REQ-SEC-003 | COPPA compliance (children under 13) | P1 | M4 |
 | REQ-SEC-004 | GDPR compliance (data deletion) | P2 | M4 |
 | REQ-SEC-005 | No public child profiles | P1 | M1 |
+| REQ-SEC-006 | Cron/push endpoints fail-closed without CRON_SECRET | P2 | ✅ 2026-06-15 |
 
 ## Statistics
 

@@ -30,3 +30,14 @@
 - Parent enters all data, child is read-only
 - Shop purchases require parent approval
 - Real rewards + virtual rewards in shop
+
+## Updates (post-MVP)
+- Auth: parents use email/password; children use a family code + 4-digit PIN
+  (synthetic Supabase Auth user), not personal Google accounts.
+- Children now **fill their own day** (`KidDayFillForm`) — no longer strictly
+  read-only. Behaviour coins remain a parent-only award.
+- All coin/money mutations run **server-side** (service-role); the money tables
+  are RLS SELECT-only for clients. Coin awards are recomputed from saved data and
+  are idempotent. See `project-docs/security-model.md`.
+- Expenses are a parent feature: per-child tab in ChildProfile + a global
+  "Расходы" screen (CRUD + categories).

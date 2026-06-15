@@ -5,8 +5,16 @@
 ## Current State
 
 - `npx tsc --noEmit` — type checking (primary verification tool)
-- `npm run lint` — ESLint
+- `npm run lint` — ESLint (configured 2026-06-15; passes with warnings only)
 - `npm run build` — production build (catches runtime errors)
+- `npm test` — vitest (a small suite exists)
+- **Live DB verification scripts** (`node --env-file=.env.local scripts/<x>.mjs`,
+  use the service-role key, create isolated throwaway families, self-clean):
+  - `verify-wallet-rls.mjs` — money tables: child can read, cannot write; anon denied
+  - `verify-award-idempotency.mjs` — `(child_id, source_type, source_id)` uniqueness
+  - `verify-award-reads.mjs` — award route source reads resolve against live schema
+  - Pattern also used for ad-hoc HTTP smoke tests (sign in with a cookie jar via
+    `@supabase/ssr`, hit `/api/wallet/*` against `npm run dev`).
 - Manual UAT via browser / GSD `/gsd:verify-work`
 
 ## Target Strategy

@@ -118,11 +118,14 @@ All data is scoped to `family_id`. RLS policies ensure cross-family isolation.
 ### `wallet_transactions`
 - `id UUID PRIMARY KEY`
 - `child_id TEXT`
+- `family_id UUID`
 - `transaction_type TEXT`
 - `coins_change INT`
 - `money_change NUMERIC`
 - `description TEXT`
 - `icon TEXT`
+- `related_id TEXT`, `related_type TEXT` — link to a reward/exchange/withdrawal/p2p record
+- `source_type TEXT`, `source_id TEXT` — idempotency key for coin awards (migration `04.4-02`); partial UNIQUE index on `(child_id, source_type, source_id)` prevents double-awarding a grade/room/sport/etc.
 - `balance_after_coins INT`
 - `balance_after_money NUMERIC`
 - `created_at TIMESTAMPTZ`
@@ -202,15 +205,31 @@ All data is scoped to `family_id`. RLS policies ensure cross-family isolation.
 
 ## RLS Pattern
 
-```sql
--- Helper function (SECURITY DEFINER, no recursion)
-CREATE FUNCTION get_my_family_ids()
-RETURNS SETOF UUID
-LANGUAGE sql STABLE SECURITY DEFINER AS $$
-  SELECT family_id FROM family_members WHERE user_id = auth.uid()
-$$;
+Policies target the **`authenticated`** role only; the `anon` role has no table
+access (pre-login lookups use SECURITY DEFINER RPCs). See migrations
+`04.4-04`/`04.4-05` (2026-06-15) which removed the old `*_anon_all` /
+`public USING true` policies from 30 tables.
 
--- Applied to all new tables
-CREATE POLICY "family_isolation" ON table_name
-  FOR ALL USING (family_id IN (SELECT get_my_family_ids()));
+```sql
+-- Standard family isolation (tables with family_id)
+CREATE POLICY "<t>_family_isolation" ON <t>
+  FOR ALL TO authenticated
+  USING (family_id IN (SELECT family_id FROM family_members WHERE user_id = (SELECT auth.uid())))
+  WITH CHECK (family_id IN (SELECT family_id FROM family_members WHERE user_id = (SELECT auth.uid())));
+
+-- Tables without family_id (child_id TEXT) — scope via children
+CREATE POLICY "<t>_family_isolation" ON <t>
+  FOR ALL TO authenticated
+  USING (child_id IN (SELECT id FROM children WHERE family_id IN (
+    SELECT family_id FROM family_members WHERE user_id = (SELECT auth.uid()))));
+-- NOTE: some legacy tables store family_id as TEXT while family_members.family_id
+-- is UUID — compare as ::text in those policies.
 ```
+
+### Money tables — SELECT-only for clients (migration `04.4-03`)
+`wallet`, `wallet_transactions`, `wallet_settings`, `rewards`,
+`reward_purchases`, `coin_exchanges`, `cash_withdrawals`, `p2p_transfers`,
+`p2p_debts` grant **SELECT only** to `authenticated`. Writes are denied to
+clients and performed by the service-role server layer (see api-spec.md /
+security-model.md). `addExpense` / `addExpenseCategory` set `family_id` so their
+inserts satisfy the family-isolation WITH CHECK.

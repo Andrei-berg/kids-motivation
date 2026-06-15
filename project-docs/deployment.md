@@ -19,21 +19,33 @@ npm run dev                         # http://localhost:3000
 ## Required Environment Variables
 
 ```env
-# Supabase (required)
+# Supabase — client (browser)
 NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
+# Supabase — server (cookie-session client reads these WITHOUT NEXT_PUBLIC_)
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_ANON_KEY=<anon-key>
+# REQUIRED — server-side money routes/actions throw without it
 SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+# REQUIRED in prod — cron/push fail closed (500) without it; Vercel Cron auto-sends it as a bearer
+CRON_SECRET=<random-secret>
 
-# Push Notifications (required for push)
+# Push Notifications
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=<vapid-public>
 VAPID_PRIVATE_KEY=<vapid-private>
-VAPID_SUBJECT=mailto:admin@example.com
+VAPID_MAILTO=mailto:admin@example.com
 
-# Cron (optional, for production security)
-CRON_SECRET=<random-secret>
+# Optional — Postgres connection string (Session pooler) for applying migrations via pg
+SUPABASE_DB_URL=postgresql://postgres.<ref>:<password>@<host>.pooler.supabase.com:5432/postgres
 ```
 
-`.env.local` is git-ignored. Set same vars in Vercel project settings.
+`.env.local` is git-ignored. Set the same vars (except `SUPABASE_DB_URL`) in
+Vercel project settings.
+
+> ⚠️ **Deploy gotcha:** `SUPABASE_SERVICE_ROLE_KEY` and `CRON_SECRET` must be set
+> in Vercel. Without the service-role key the entire wallet/money layer fails;
+> without `CRON_SECRET` the cron + push routes return 500 (they fail closed).
+> The server client uses the non-`NEXT_PUBLIC_` `SUPABASE_URL`/`SUPABASE_ANON_KEY`.
 
 ## Vercel Deployment
 
@@ -43,15 +55,27 @@ CRON_SECRET=<random-secret>
 
 ## Database Migrations
 
-Run in Supabase SQL Editor (project dashboard):
-1. `supabase/schema-v3.sql` — current full schema
-2. `supabase/rls.sql` — RLS policies
-3. `supabase/seed-migration.sql` — seed data (development only)
+Apply SQL in `supabase/migrations/` — either in the Supabase SQL Editor, or via
+`pg` if `SUPABASE_DB_URL` is set (DDL cannot go through the REST/anon API):
 
-Additional migration files in repo root:
-- `supabase-schema-v2.sql` — legacy schema
-- `supabase-migration-flexible.sql` — subjects/schedule
-- `supabase-step3-expenses.sql` — expenses/sections
+```bash
+npm i pg --no-save
+node --env-file=.env.local -e 'import("pg").then(async({default:pg})=>{const fs=await import("fs");const c=new pg.Client({connectionString:process.env.SUPABASE_DB_URL});await c.connect();await c.query(fs.readFileSync("supabase/migrations/FILE.sql","utf8"));console.log("applied");await c.end()})'
+```
+
+Baseline: `supabase/schema-v3.sql` → `supabase/migrations/rls.sql` → seed.
+
+Security migrations (2026-06-15 — already applied to prod):
+- `04.4-02-wallet-tx-idempotency.sql` — `source_type`/`source_id` + unique index
+- `04.4-03-wallet-rls-readonly.sql` — money tables → SELECT-only for clients
+- `04.4-04-drop-anon-policies.sql` — drop 23 `*_anon_all` policies
+- `04.4-05-close-public-true-policies.sql` — replace 7 `public USING true` policies with family-isolation
+
+Verification scripts (run against live DB with the service-role key):
+`scripts/verify-wallet-rls.mjs`, `verify-award-idempotency.mjs`, `verify-award-reads.mjs`.
+
+Legacy migration files in repo root (`supabase-schema-v2.sql`,
+`supabase-migration-flexible.sql`, `supabase-step3-expenses.sql`) are historical.
 
 ## Build Commands
 

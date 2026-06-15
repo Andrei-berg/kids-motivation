@@ -1,8 +1,13 @@
-# 🚀 Clean MAX v4 - Silicon Valley Edition
+# 🚀 Kids Motivation
 
-Система мотивации детей для Адама и Алима с фишками от лучших IT компаний.
+Семейная система мотивации детей: дети зарабатывают монеты за учёбу, спорт,
+порядок и активности и тратят их на награды.
 
-**ПОЛНАЯ ВЕРСИЯ** со всеми фишками: спорт, геймификация, цели 2.0, массовый ввод!
+> ⚠️ **Архитектура обновлена до мультисемейной (любая семья регистрируется).**
+> Этот README местами описывает старую одно-семейную версию (Адам/Алим). Актуальная
+> документация — в **`CLAUDE.md`** и **`project-docs/`** (overview, architecture,
+> security-model, api-spec, data-model, deployment, …). Деньги/кошелёк мутируются
+> только на сервере (service-role); таблицы денег RLS-залочены на чтение для клиента.
 
 ## ✨ Фишки Silicon Valley
 
@@ -264,10 +269,17 @@ kids-motivation-v2/
 
 ## 🔐 Безопасность
 
-- PIN код для родительского доступа
-- RLS (Row Level Security) в Supabase
-- Environment variables для ключей
-- HTTPS через Vercel
+- **Auth:** Supabase Auth. Родитель — email/пароль; ребёнок — код семьи + 4-значный
+  PIN (синтетический Supabase-юзер, bcrypt+соль). `middleware.ts` защищает
+  `/parent/*` (только родитель) и `/kid/*` (только ребёнок) через `getUser()`.
+- **RLS:** family-isolation для роли `authenticated`; у `anon` нет доступа к
+  таблицам (pre-login — через SECURITY DEFINER RPC). Денежные таблицы — SELECT-only
+  для клиента, запись только через server-роуты (service-role).
+- **Деньги на сервере:** `app/api/wallet/*` + server-actions, guards в
+  `lib/supabase/admin.ts`. Начисления идемпотентны.
+- **Cron/push:** `CRON_SECRET` (fail-closed). **Env-секреты:** `SUPABASE_SERVICE_ROLE_KEY`
+  и `CRON_SECRET` обязательны в Vercel. Подробности — `project-docs/security-model.md`.
+- HTTPS через Vercel.
 
 ## 📊 Расчёты
 

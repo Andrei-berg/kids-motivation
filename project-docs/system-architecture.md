@@ -95,10 +95,37 @@ lib/
 ├── hooks/                     # React hooks
 ├── supabase/                  # Supabase client factories
 │   ├── client.ts              # Browser client (@supabase/ssr)
-│   └── server.ts              # Server client (async cookies)
-├── store.ts                   # Zustand global store
+│   ├── server.ts              # Server client — cookie session, RLS-bound (uses SUPABASE_URL / SUPABASE_ANON_KEY, no NEXT_PUBLIC_ prefix)
+│   ├── middleware.ts          # Cookie-sync client for middleware
+│   └── admin.ts               # Service-role client (bypasses RLS) + requireParent / requireFamilyMember / assertChildInFamily guards — server-only
+├── cron-auth.ts               # assertCronAuth() — fail-closed CRON_SECRET check
+├── wallet-client.ts           # Client fetch wrappers for parent money write routes
+├── store.ts                   # Zustand global store (familyId, activeMemberId, language)
 └── supabase.ts                # Legacy browser client (backward compat)
 ```
+
+## Server-side write layer (money / privileged ops)
+
+Money tables are RLS **SELECT-only** for clients; all mutations run server-side
+with the service-role client behind an auth guard (see security-model.md).
+
+```
+app/api/
+├── wallet/
+│   ├── _lib.ts                # shared: loadWallet, insertTx, creditAwards (idempotent), processPurchase, authorizeChildAction
+│   ├── award/route.ts         # recompute a day's coin awards from saved rows (idempotent per source)
+│   ├── purchase/route.ts      # buy reward
+│   ├── exchange|withdraw|p2p/route.ts
+│   ├── rewards/route.ts       # parent reward CRUD (POST/PATCH/DELETE)
+│   └── settings/route.ts      # parent wallet_settings update (PATCH)
+├── cron/{reminders,missed-tasks}/route.ts   # service-role; assertCronAuth
+├── push/send/route.ts         # assertCronAuth
+├── set-child-pin/route.ts     # parent-guarded PIN setup (service-role admin user)
+└── delete-account/route.ts    # parent-guarded cascade (service-role)
+```
+
+Server actions (`'use server'`) also use the service-role admin client:
+`app/parent/shop/actions.ts`, `app/kid/shop/actions.ts`, `app/actions/send-medal.ts`.
 
 ## Backward-Compat Wrappers
 Old import paths still work — files re-export from new locations:
@@ -116,10 +143,13 @@ Old import paths still work — files re-export from new locations:
 ## Authentication Flow
 
 ```typescript
-// middleware.ts
-// Unauthenticated → /login
-// Authenticated without family → /onboarding/welcome
-// Authenticated with family → /dashboard
+// middleware.ts (getUser() re-validates JWT)
+// Unauthenticated + non-public path → /
+// Authenticated without family membership → /onboarding
+// Authenticated at '/' → role-based: parent → /parent-center (mobile) or
+//   /parent/dashboard (desktop); child → /kid/day
+// Guards: /parent/* parent-only; /kid/* child-only (parent ?preview=true allowed)
+// Children sign in at /kid/login (family code + PIN → synthetic Supabase Auth user)
 ```
 
 ## Real-time Chat (Supabase Realtime)

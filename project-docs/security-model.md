@@ -1,8 +1,27 @@
 # Security Model
 
+> **2026-06-15 hardening pass.** Closed the pre-launch security blockers and a
+> critical anonymous-access hole. Highlights (details inline below):
+> - All wallet/money mutations moved server-side (service-role); money tables are
+>   RLS **SELECT-only** for clients (migration `04.4-03`).
+> - Removed `*_anon_all` and `public USING true` RLS policies on **30 tables**
+>   (migrations `04.4-04`, `04.4-05`) — the public anon key could previously
+>   read/write every family's data without logging in.
+> - `set-child-pin` now requires an authenticated parent; the unused unsalted
+>   SHA-256 `child_pin_hash` was removed (PIN auth is Supabase Auth bcrypt).
+> - `/parent/*` is no longer public in middleware; `?preview=true` no longer
+>   bypasses auth on `/kid/*`.
+> - `CRON_SECRET` is verified unconditionally (fail-closed) with a timing-safe
+>   compare.
+
 ## Row Level Security (RLS)
 
 Every table has RLS enabled. The core pattern uses a helper function to avoid recursive policies.
+
+**Roles:** policies target the `authenticated` role only. The `anon` role has **no
+table access** — unauthenticated pre-login lookups (kid login profile picker) go
+through `SECURITY DEFINER` RPCs (`lookup_family_by_invite_code`,
+`get_family_children`) that bypass RLS and return a minimal projection.
 
 ### Helper Functions (SECURITY DEFINER)
 
@@ -62,15 +81,35 @@ CREATE TRIGGER on_auth_user_created
 
 ## Route Protection
 
-```typescript
-// middleware.ts pattern
-// 1. updateSession() refreshes auth token
-// 2. if no user → redirect to /login
-// 3. if user but no family → redirect to /onboarding/welcome
-// 4. otherwise → allow through
-```
+`middleware.ts` (uses `getUser()` to re-validate the JWT):
+1. `updateSession()` refreshes the auth token / cookies.
+2. No user + non-public path → redirect to `/`.
+3. User but no family membership → redirect to `/onboarding`.
+4. Role-based landing redirect at `/` (parent → `/parent-center` or
+   `/parent/dashboard`; child → `/kid/day`).
+5. **Route guards:** `/parent/*` is parent-only; `/kid/*` is child-only — except
+   a parent may inspect `/kid/*` with `?preview=true`. Preview is **not** a bypass
+   for unauthenticated visitors (the no-user check above still redirects them).
 
-Exempted paths: `/login`, `/register`, `/auth/callback`, `/onboarding/**`
+Public paths: `/` (login/register), `/auth/**`, `/onboarding/**`.
+(`/parent` was previously mis-classified as public — fixed 2026-06-15.)
+
+## Money / wallet mutations (server-side)
+
+Coins and money are the integrity-critical surface. **Clients cannot write the
+money tables** (`wallet`, `wallet_transactions`, `wallet_settings`, `rewards`,
+`reward_purchases`, `coin_exchanges`, `cash_withdrawals`, `p2p_transfers`,
+`p2p_debts`) — RLS grants `authenticated` SELECT only. All mutations run
+server-side with the **service-role** client (bypasses RLS) behind an auth guard:
+
+- **API routes** `app/api/wallet/*` (`award`, `purchase`, `exchange`, `withdraw`,
+  `p2p`, `rewards`, `settings`). `lib/supabase/admin.ts` provides the service-role
+  client + `requireParent` / `requireFamilyMember` / `assertChildInFamily` guards.
+- **Server actions**: `app/parent/shop/actions.ts` (approve/reject + refund),
+  `app/kid/shop/actions.ts` (purchase), `app/actions/send-medal.ts`.
+- Coin awards are recomputed from saved DB rows in `/api/wallet/award` and are
+  idempotent per `(child_id, source_type, source_id)` — the client never sends
+  amounts. Behaviour coins are credited only when a parent triggers the award.
 
 ## Sensitive Operations
 
@@ -78,17 +117,32 @@ Exempted paths: `/login`, `/register`, `/auth/callback`, `/onboarding/**`
 |---|---|
 | Family creation | Authenticated user only |
 | Adding child to family | Must be parent in that family |
-| Viewing family data | RLS (family_id check) |
-| Wallet operations | Legacy: no RLS (child_id TEXT); Phase 2.1 will add |
+| Viewing family data | RLS (family_id check, `authenticated` only) |
+| Wallet / coin mutations | Server-side service-role + auth guard; client RLS = SELECT only |
+| Set child PIN (`/api/set-child-pin`) | Authenticated parent + child must be in their family |
+| Cron / push (`/api/cron/*`, `/api/push/send`) | `CRON_SECRET` bearer, fail-closed + timing-safe |
+| Account deletion (`/api/delete-account`) | Authenticated parent; cascade via service-role |
 | Push subscriptions | member_id must be authenticated user |
-| Seed default categories | SECURITY DEFINER + ON CONFLICT DO NOTHING |
+
+## Authentication of children (PIN)
+
+Children log in with a family code + 4-digit PIN. The PIN is the password of a
+synthetic Supabase Auth user (`child_<id>@internal.familycoins.app`), stored by
+Supabase Auth as a **salted bcrypt hash**. We do **not** store a PIN hash in our
+tables (the old unsalted SHA-256 `child_pin_hash` was removed 2026-06-15).
 
 ## Known Gaps (to fix in future phases)
 
-1. **Legacy tables** (`days`, `subject_grades`, `wallet`, etc.) use `child_id TEXT` — no RLS, rely on app-level access control
-2. **Parent PIN** (REQ-SEC-002) — implemented in settings UI, not enforced server-side
-3. **COPPA** (REQ-SEC-003) — planned for M4
-4. **GDPR data deletion** (REQ-SEC-004) — planned for M4
+1. **Parent PIN** (REQ-SEC-002) — implemented in settings UI, not enforced server-side.
+2. **Login rate-limiting** — a 4-digit kid PIN has 10⁴ space; brute-force throttling/lockout not yet added.
+3. **COPPA** (REQ-SEC-003) — parental consent gate added in Phase 4.4.
+4. **GDPR data deletion** (REQ-SEC-004) — `/api/delete-account` cascades; verify coverage of newer tables.
+
+### Resolved 2026-06-15
+- Legacy tables (`days`, `subject_grades`, `wallet`, expenses, etc.) now have
+  family-scoped RLS for `authenticated`; the anonymous full-access policies were removed.
+- Wallet mutations moved server-side; money tables RLS-locked to SELECT.
+- `set-child-pin` / `/parent/*` / `CRON_SECRET` / PIN-hash issues fixed.
 
 ## VAPID Keys (Push Notifications)
 

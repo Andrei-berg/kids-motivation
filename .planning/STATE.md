@@ -13,7 +13,28 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-05-18 — executed 04.5-04 (Kid Achievements 4-column badge grid + Kid Shop 3-column reward grid on desktop; completes phase 04.5-desktop).
+> Обновляется после каждой фазы. Последнее обновление: 2026-06-15 — out-of-band security + expenses pass (см. ниже).
+
+---
+
+## Out-of-band work — 2026-06-13…15 (pre-launch hardening, on `main`)
+
+Не GSD-фаза; прямые правки в `main`. Все изменения задеплоены/применены к проду.
+
+- **Security-блокеры закрыты:** `set-child-pin` auth; `/parent/*` middleware-guard
+  (+ закрыта `?preview=true` лазейка); `CRON_SECRET` fail-closed; убран мёртвый
+  SHA-256 PIN-хэш; **денежные мутации → server-side (service-role)**, money-таблицы
+  RLS SELECT-only (миграция `04.4-03`).
+- **Критическая дыра:** удалены `*_anon_all` / `public USING true` RLS-политики с
+  **30 таблиц** (миграции `04.4-04`, `04.4-05`) — публичный anon-ключ давал
+  read/write данных всех семей. Закрыто и проверено.
+- **Функц-фиксы:** UTC-дата → `localDateString()` (UTC+3); cron на service-role;
+  withdrawal double-spend guard; reminders-cron отключён в vercel.json.
+- **Инфра:** ESLint сконфигурирован (`npm run lint` зелёный).
+- **Фича:** parent **Expenses** UI (вкладка у ребёнка + экран в parent-center,
+  CRUD + категории).
+- Verify-скрипты: `scripts/verify-wallet-rls.mjs`, `verify-award-idempotency.mjs`,
+  `verify-award-reads.mjs`.
 
 ---
 
@@ -22,7 +43,8 @@ progress:
 ```
 Milestone v4.0 PWA Polish — In Progress
 Phase 4.5 (desktop): COMPLETE — all 4 plans executed
-Last activity: 2026-05-18 — executed 04.5-04 (Kid Achievements + Kid Shop desktop grid layouts)
+Last activity: 2026-06-15 — out-of-band security + expenses pass (see above)
+Prior GSD activity: 2026-05-18 — executed 04.5-04 (Kid Achievements + Kid Shop desktop grids)
 ```
 
 Progress: [████████░░] 80% (4/5 phases complete)
