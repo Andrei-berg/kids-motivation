@@ -4,13 +4,14 @@ import { useEffect, useState, useCallback } from 'react'
 import { useAppStore } from '@/lib/store'
 import { api, getChildren } from '@/lib/api'
 import type { Child } from '@/lib/api'
-import { normalizeDate, getWeekRange } from '@/utils/helpers'
+import { localDateString } from '@/utils/helpers'
 import { getWallet } from '@/lib/repositories/wallet.repo'
 import { KidDayFillForm } from '@/components/kid/KidDayFillForm'
 import { getVacationPeriods } from '@/lib/vacation-api'
+import { getDayType } from '@/lib/day-type'
 import type { Wallet } from '@/lib/models/wallet.types'
 import { T } from '@/components/kid/design/tokens'
-import { Avatar, Coin, AnimatedNum, StreakFlame, Confetti } from '@/components/kid/design/atoms'
+import { Avatar, Coin, AnimatedNum, StreakFlame, Confetti, XPBar } from '@/components/kid/design/atoms'
 import { useT, useLanguage } from '@/lib/i18n'
 
 function todayLabel(language: string): string {
@@ -59,7 +60,7 @@ export default function KidDayPage() {
   const [confetti, setConfetti] = useState(0)
   const isDesktop = useDesktop()
 
-  const today = normalizeDate(new Date())
+  const today = localDateString()
 
   const loadData = useCallback(async () => {
     if (!activeMemberId) { setLoading(false); return }
@@ -90,14 +91,18 @@ export default function KidDayPage() {
       setWallet(walletData)
       setStreaks((streaksData ?? []).filter((s: any) => s.current_count > 0))
 
-      // Determine day type
+      // Determine day type. Vacation periods are keyed by family_id (NOT child_id)
+      // and may target one child via child_filter — use the shared getDayType helper
+      // so the kid screen agrees with day-type.ts everywhere else.
       try {
-        const vacations = await getVacationPeriods(resolvedId)
-        const isVacation = (vacations ?? []).some((v: any) => v.start_date <= today && v.end_date >= today)
-        if (isVacation) { setDayType('vacation'); return }
-      } catch {}
-      const dow = new Date(today).getDay()
-      setDayType(dow === 0 || dow === 6 ? 'weekend' : 'school')
+        const vacations = await getVacationPeriods((childData as any).family_id)
+        const info = getDayType(today, false, vacations ?? [], resolvedId)
+        // getDayType can also return 'sick'; the day form only handles these three.
+        setDayType(info.type === 'sick' ? 'school' : info.type)
+      } catch {
+        const dow = new Date(today + 'T12:00:00').getDay()
+        setDayType(dow === 0 || dow === 6 ? 'weekend' : 'school')
+      }
     } catch (err) {
       console.error('KidDayPage error', err)
     } finally {
@@ -116,6 +121,8 @@ export default function KidDayPage() {
 
   const coins = wallet?.coins ?? 0
   const level = child?.level ?? 1
+  const xp = child?.xp ?? 0
+  const xpInLevel = xp % 1000 // XP accumulated toward the next level (1000 per level)
   const streakDays = streaks.reduce((max, s) => Math.max(max, s.current_count), 0)
   const fillMode = (child as any)?.kid_fill_mode ?? 3
 
@@ -196,18 +203,21 @@ export default function KidDayPage() {
             </div>
           </div>
 
-          {/* Level card */}
+          {/* Level + XP card */}
           <div style={{
             background: '#fff', borderRadius: 20, padding: '16px 20px',
             border: '1.5px solid rgba(0,0,0,0.07)',
-            display: 'flex', alignItems: 'center', gap: 14,
+            display: 'flex', flexDirection: 'column', gap: 12,
             boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
           }}>
-            <div style={{ fontSize: 32 }}>⭐</div>
-            <div>
-              <div style={{ fontFamily: T.fNum, fontSize: 30, fontWeight: 800, color: T.ink, lineHeight: 1 }}>{level}</div>
-              <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 700, marginTop: 2 }}>Level</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ fontSize: 32 }}>⭐</div>
+              <div>
+                <div style={{ fontFamily: T.fNum, fontSize: 30, fontWeight: 800, color: T.ink, lineHeight: 1 }}>{level}</div>
+                <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 700, marginTop: 2 }}>Level</div>
+              </div>
             </div>
+            <XPBar xp={xpInLevel} max={1000} level={level} compact/>
           </div>
 
           {/* Day-complete celebration (desktop only, when not in form mode) */}
@@ -233,17 +243,22 @@ export default function KidDayPage() {
         </div>
       ) : (
         /* Mobile: existing inline header */
-        <div style={{ padding: '12px 16px 0', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Avatar size={38} skin="#F5C9A1" hair="#2B1810" shirt={T.coral}/>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: T.fDisp, fontSize: 15, fontWeight: 900, color: T.ink }}>
-              {t('kidDayPage.greeting', { name: child?.name ?? '...' })}
+        <div style={{ padding: '12px 16px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Avatar size={38} skin="#F5C9A1" hair="#2B1810" shirt={T.coral}/>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: T.fDisp, fontSize: 15, fontWeight: 900, color: T.ink }}>
+                {t('kidDayPage.greeting', { name: child?.name ?? '...' })}
+              </div>
+              <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 600 }}>
+                {t('kidDayPage.levelDay', { level, date: todayLabel(language) })}
+              </div>
             </div>
-            <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 600 }}>
-              {t('kidDayPage.levelDay', { level, date: todayLabel(language) })}
-            </div>
+            <StreakFlame days={streakDays}/>
           </div>
-          <StreakFlame days={streakDays}/>
+          <div style={{ marginTop: 10 }}>
+            <XPBar xp={xpInLevel} max={1000} level={level} compact/>
+          </div>
         </div>
       )}
 
