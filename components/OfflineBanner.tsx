@@ -1,25 +1,10 @@
 'use client'
-import { useState, useEffect } from 'react'
 import { useT } from '@/lib/i18n'
+import { useConnectivity } from '@/lib/use-connectivity'
 
 export function OfflineBanner() {
-  const [isOffline, setIsOffline] = useState(false)
+  const { isOffline } = useConnectivity()
   const t = useT()
-
-  useEffect(() => {
-    // Initialize from current state
-    setIsOffline(!navigator.onLine)
-
-    const handleOffline = () => setIsOffline(true)
-    const handleOnline = () => setIsOffline(false)
-
-    window.addEventListener('offline', handleOffline)
-    window.addEventListener('online', handleOnline)
-    return () => {
-      window.removeEventListener('offline', handleOffline)
-      window.removeEventListener('online', handleOnline)
-    }
-  }, [])
 
   if (!isOffline) return null
 

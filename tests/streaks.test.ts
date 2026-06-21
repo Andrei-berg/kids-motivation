@@ -25,13 +25,14 @@ function makeGrades(dates: string[]) {
   return dates.map(date => ({ date }))
 }
 
-function makeSports(count: number, today: string) {
-  const sports = []
-  let current = today
+// Sport activity is now represented as a Set of sport-active dates (home exercises
+// OR training attendance), matching calculateSportStreak's signature.
+function makeSports(count: number, today: string): Set<string> {
+  const sports = new Set<string>()
   for (let i = 0; i < count; i++) {
-    const d = new Date(current)
+    const d = new Date(today)
     d.setDate(d.getDate() - i)
-    sports.push({ date: d.toISOString().slice(0, 10), running: true, exercises: false, outdoor_games: false, stretching: false })
+    sports.add(d.toISOString().slice(0, 10))
   }
   return sports
 }
@@ -106,7 +107,7 @@ describe('calculateStudyStreak', () => {
 
 describe('calculateSportStreak', () => {
   it('returns 0 when no sports', () => {
-    const result = calculateSportStreak([], '2026-04-01')
+    const result = calculateSportStreak(new Set<string>(), '2026-04-01')
     expect(result.current).toBe(0)
   })
 
@@ -118,21 +119,16 @@ describe('calculateSportStreak', () => {
     expect(result.best).toBe(4)
   })
 
-  it('any single activity flag counts as sport day', () => {
+  it('a single sport-active day counts', () => {
     const today = '2026-04-01'
-    const sports = [
-      { date: '2026-04-01', running: false, exercises: false, outdoor_games: false, stretching: true },
-    ]
+    const sports = new Set<string>(['2026-04-01'])
     const result = calculateSportStreak(sports, today)
     expect(result.current).toBe(1)
   })
 
-  it('day with no activity flags does not count', () => {
+  it('day not in the set does not count', () => {
     const today = '2026-04-01'
-    const sports = [
-      { date: '2026-04-01', running: false, exercises: false, outdoor_games: false, stretching: false },
-      { date: '2026-03-31', running: true, exercises: false, outdoor_games: false, stretching: false },
-    ]
+    const sports = new Set<string>(['2026-03-31']) // yesterday only
     const result = calculateSportStreak(sports, today)
     expect(result.current).toBe(0)
     expect(result.best).toBe(1)

@@ -14,7 +14,7 @@ function useDesktop() {
   return is
 }
 import { useAppStore } from '@/lib/store'
-import { getChildBadges, getAvailableBadges } from '@/lib/services/badges.service'
+import { getChildBadges, getAvailableBadges, getSportActiveDayCount } from '@/lib/services/badges.service'
 import { api } from '@/lib/api'
 import type { Child } from '@/lib/api'
 import { supabase } from '@/lib/supabase'
@@ -25,13 +25,15 @@ import { useT } from '@/lib/i18n'
 // ─── Badge progress computation ───────────────────────────────────────────────
 async function computeBadgeProgress(childId: string, streaks: any[]) {
   const progress: Record<string, { current: number; target: number }> = {}
-  const [{ count: roomDays }, { count: sportDays }, { count: grade5Days }] = await Promise.all([
+  const [{ count: roomDays }, sportDays, { count: grade5Days }] = await Promise.all([
     supabase.from('days').select('*', { count: 'exact', head: true }).eq('child_id', childId).eq('room_ok', true),
-    supabase.from('home_sports').select('*', { count: 'exact', head: true }).eq('child_id', childId),
+    // Sport-active days in the trailing 30-day window — home exercises OR training
+    // attendance, the same source the «Спортсмен» badge uses.
+    getSportActiveDayCount(childId),
     supabase.from('subject_grades').select('*', { count: 'exact', head: true }).eq('child_id', childId).eq('grade', 5),
   ])
   progress['clean_master'] = { current: roomDays ?? 0, target: 30 }
-  progress['sportsman'] = { current: sportDays ?? 0, target: 14 }
+  progress['sportsman'] = { current: sportDays, target: 14 }
   progress['week_excellent'] = { current: grade5Days ?? 0, target: 7 }
   const bestStreak = streaks.reduce((max, s) => Math.max(max, s.best_count), 0)
   progress['streak_30'] = { current: bestStreak, target: 30 }

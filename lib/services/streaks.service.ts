@@ -4,6 +4,7 @@
 
 import { supabase } from '../supabase'
 import { normalizeDate, addDays } from '@/utils/helpers'
+import { getSportActiveDays } from './badges.service'
 
 export interface StreakEvent {
   type: 'room' | 'study' | 'sport' | 'strong_week'
@@ -38,16 +39,13 @@ export async function updateStreaks(childId: string, date: string): Promise<Stre
     .gte('date', startDate)
     .lte('date', today)
 
-  const { data: sports } = await supabase
-    .from('home_sports')
-    .select('date, running, exercises, outdoor_games, stretching')
-    .eq('child_id', childId)
-    .gte('date', startDate)
-    .lte('date', today)
+  // Sport-active days come from the current data model (home exercises + training
+  // attendance), not the legacy home_sports table which is no longer written to.
+  const sportDays = await getSportActiveDays(childId, startDate, today)
 
   const roomStreak = calculateRoomStreak(days, today)
   const studyStreak = calculateStudyStreak(grades || [], today)
-  const sportStreak = calculateSportStreak(sports || [], today)
+  const sportStreak = calculateSportStreak(sportDays, today)
   const behaviorStreak = calculateBehaviorStreak(days, today)
 
   const { data: child } = await supabase
@@ -123,15 +121,14 @@ export function calculateStudyStreak(grades: any[], today: string) {
   return { current, best }
 }
 
-export function calculateSportStreak(sports: any[], today: string) {
+export function calculateSportStreak(sportDays: Set<string>, today: string) {
   let current = 0
   let best = 0
   let streak = 0
 
   let checkDate = today
   for (let i = 0; i < 30; i++) {
-    const sport = sports.find(s => s.date === checkDate)
-    const hasSport = sport && (sport.running || sport.exercises || sport.outdoor_games || sport.stretching)
+    const hasSport = sportDays.has(checkDate)
 
     if (hasSport) {
       streak++

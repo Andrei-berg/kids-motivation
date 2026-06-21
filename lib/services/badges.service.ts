@@ -3,7 +3,7 @@
 // Sourced from lib/badges.ts — this is the authoritative implementation.
 
 import { supabase } from '../supabase'
-import { getWeekRange, addDays } from '@/utils/helpers'
+import { getWeekRange, addDays, localDateString } from '@/utils/helpers'
 
 interface Badge {
   key: string
@@ -37,7 +37,7 @@ const BADGES: Badge[] = [
   {
     key: 'sportsman',
     title: 'Спортсмен',
-    description: 'Спорт 14 дней подряд',
+    description: '14 дней спорта за месяц',
     titleKey: 'badges.sportsman_title',
     descKey: 'badges.sportsman_desc',
     icon: '💪',
@@ -208,33 +208,82 @@ async function checkCleanMaster(childId: string, date: string): Promise<boolean>
   return false
 }
 
-async function checkSportsman(childId: string, date: string): Promise<boolean> {
-  const startDate = addDays(date, -13)
+// Number of sport-active days required for the «Спортсмен» badge, and the rolling
+// window they must fall within. Sport doesn't happen every single day (rest days,
+// sections scheduled only some weekdays), so this rewards consistency over a month
+// rather than an unrealistic unbroken streak.
+const SPORTSMAN_DAYS = 14
+const SPORTSMAN_WINDOW = 30
 
-  const { data: sports } = await supabase
-    .from('home_sports')
-    .select('*')
+/**
+ * Set of dates (YYYY-MM-DD) in [startDate, endDate] on which the child did any
+ * sport. A day counts if EITHER source has activity:
+ *   - a home exercise logged with quantity > 0 (`home_exercises`), OR
+ *   - an attended training session (`section_visits.attended`).
+ *
+ * Replaces the legacy `home_sports` table, which the current kid form no longer
+ * writes to. This is the single source of truth for sport-day counting — used by
+ * both the badge check and the achievements progress bar.
+ */
+export async function getSportActiveDays(
+  childId: string,
+  startDate: string,
+  endDate: string
+): Promise<Set<string>> {
+  // section_visits references section_id (not child_id) — resolve the child's sections first.
+  const { data: childSections } = await supabase
+    .from('sections')
+    .select('id')
     .eq('child_id', childId)
-    .gte('date', startDate)
-    .lte('date', date)
-    .order('date')
+  const sectionIds = (childSections ?? []).map(s => s.id)
 
-  if (!sports || sports.length < 14) return false
-
-  const allSport = sports.every(s => s.running || s.exercises || s.outdoor_games || s.stretching)
-
-  if (allSport) {
-    const { data: existing } = await supabase
-      .from('badges')
-      .select('*')
+  const [{ data: exercises }, { data: visits }] = await Promise.all([
+    supabase
+      .from('home_exercises')
+      .select('date')
       .eq('child_id', childId)
-      .eq('badge_key', 'sportsman')
-      .maybeSingle()
+      .gt('quantity', 0)
+      .gte('date', startDate)
+      .lte('date', endDate),
+    sectionIds.length > 0
+      ? supabase
+          .from('section_visits')
+          .select('date')
+          .in('section_id', sectionIds)
+          .eq('attended', true)
+          .gte('date', startDate)
+          .lte('date', endDate)
+      : Promise.resolve({ data: [] as { date: string }[] }),
+  ])
 
-    return !existing
-  }
+  const days = new Set<string>()
+  ;(exercises ?? []).forEach(e => days.add(e.date))
+  ;(visits ?? []).forEach(v => days.add(v.date))
+  return days
+}
 
-  return false
+/** Count of sport-active days in the trailing SPORTSMAN_WINDOW ending today — used for the progress bar. */
+export async function getSportActiveDayCount(childId: string): Promise<number> {
+  const end = localDateString()
+  const start = addDays(end, -(SPORTSMAN_WINDOW - 1))
+  const days = await getSportActiveDays(childId, start, end)
+  return days.size
+}
+
+async function checkSportsman(childId: string, date: string): Promise<boolean> {
+  const startDate = addDays(date, -(SPORTSMAN_WINDOW - 1))
+  const activeDays = await getSportActiveDays(childId, startDate, date)
+
+  if (activeDays.size < SPORTSMAN_DAYS) return false
+
+  const { data: existing } = await supabase
+    .from('badges')
+    .select('id')
+    .eq('child_id', childId)
+    .eq('badge_key', 'sportsman')
+    .maybeSingle()
+
+  return !existing
 }
 
 async function checkStudyLover(childId: string, date: string): Promise<boolean> {
