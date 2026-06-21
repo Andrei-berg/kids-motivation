@@ -127,7 +127,17 @@
     "categoryBehavior": "Поведение",
     "earnedAt": "✓ Получен {{date}}",
     "progress": "{{pct}}% — продолжай!",
-    "closeButton": "Закрыть"
+    "closeButton": "Закрыть",
+    "almostTitle": "БЛИЖЕ ВСЕГО",
+    "almostCheer": "Поднажми — ты почти у цели! 💪",
+    "remainGeneric": "Осталось {{n}}",
+    "remainSport": "Ещё {{n}} дн. спорта",
+    "remainRoom": "Ещё {{n}} дн. чистой комнаты",
+    "remainStudy": "Ещё {{n}} дн. с оценками",
+    "remainFives": "Ещё {{n}} пятёрок",
+    "remainGradeDays": "Ещё {{n}} дн. с оценками",
+    "remainCoins": "Ещё {{n}} 🪙 накопить",
+    "remainStreak": "Ещё {{n}} дн. серии"
   },
   "kidWallet": {
     "title": "Кошелёк",

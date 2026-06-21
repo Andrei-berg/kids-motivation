@@ -127,7 +127,17 @@
     "categoryBehavior": "Behavior",
     "earnedAt": "Earned {{date}}",
     "progress": "{{pct}}% — keep going!",
-    "closeButton": "Close"
+    "closeButton": "Close",
+    "almostTitle": "ALMOST THERE",
+    "almostCheer": "Push on — you're almost there! 💪",
+    "remainGeneric": "{{n}} to go",
+    "remainSport": "{{n}} more sport days",
+    "remainRoom": "{{n}} more clean-room days",
+    "remainStudy": "{{n}} more days with grades",
+    "remainFives": "{{n}} more fives",
+    "remainGradeDays": "{{n}} more grade days",
+    "remainCoins": "Save {{n}} more 🪙",
+    "remainStreak": "{{n}} more streak days"
   },
   "kidWallet": {
     "title": "Wallet",

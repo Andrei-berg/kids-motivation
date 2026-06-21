@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
 
 function useDesktop() {
@@ -14,31 +14,12 @@ function useDesktop() {
   return is
 }
 import { useAppStore } from '@/lib/store'
-import { getChildBadges, getAvailableBadges, getSportActiveDayCount } from '@/lib/services/badges.service'
+import { getChildBadges, getAvailableBadges, getBadgeProgress } from '@/lib/services/badges.service'
 import { api } from '@/lib/api'
 import type { Child } from '@/lib/api'
-import { supabase } from '@/lib/supabase'
 import { T } from '@/components/kid/design/tokens'
-import { XPBar, SectionHeader } from '@/components/kid/design/atoms'
+import { XPBar, SectionHeader, ProgressRing } from '@/components/kid/design/atoms'
 import { useT } from '@/lib/i18n'
-
-// ─── Badge progress computation ───────────────────────────────────────────────
-async function computeBadgeProgress(childId: string, streaks: any[]) {
-  const progress: Record<string, { current: number; target: number }> = {}
-  const [{ count: roomDays }, sportDays, { count: grade5Days }] = await Promise.all([
-    supabase.from('days').select('*', { count: 'exact', head: true }).eq('child_id', childId).eq('room_ok', true),
-    // Sport-active days in the trailing 30-day window — home exercises OR training
-    // attendance, the same source the «Спортсмен» badge uses.
-    getSportActiveDayCount(childId),
-    supabase.from('subject_grades').select('*', { count: 'exact', head: true }).eq('child_id', childId).eq('grade', 5),
-  ])
-  progress['clean_master'] = { current: roomDays ?? 0, target: 30 }
-  progress['sportsman'] = { current: sportDays, target: 14 }
-  progress['week_excellent'] = { current: grade5Days ?? 0, target: 7 }
-  const bestStreak = streaks.reduce((max, s) => Math.max(max, s.best_count), 0)
-  progress['streak_30'] = { current: bestStreak, target: 30 }
-  return progress
-}
 
 // ─── Rarity config (labels are computed inside component via useT) ────────────
 const RARITY_STATIC = [
@@ -96,7 +77,7 @@ export default function AchievementsPage() {
         setChild(childData)
         setEarnedBadges(earned)
         setStreaks(streaksData ?? [])
-        const prog = await computeBadgeProgress(activeMemberId, streaksData ?? [])
+        const prog = await getBadgeProgress(activeMemberId)
         setBadgeProgress(prog)
       } catch (err) {
         console.error('Achievements error:', err)
@@ -106,6 +87,24 @@ export default function AchievementsPage() {
     }
     load()
   }, [activeMemberId])
+
+  // The single unearned badge the child is closest to (highest progress under 100%).
+  // Drives the "Ближе всего" spotlight. Computed before any early return so the hook
+  // order stays stable. Binary badges have no progress entry, so they never qualify.
+  const closest = useMemo(() => {
+    const all = getAvailableBadges()
+    const earned = new Set(earnedBadges.map(b => b.badge_key))
+    let best: { badge: ReturnType<typeof getAvailableBadges>[number]; cur: number; target: number; ratio: number } | null = null
+    for (const badge of all) {
+      if (earned.has(badge.key)) continue
+      const p = badgeProgress[badge.key]
+      if (!p || p.target <= 0) continue
+      const ratio = Math.min(1, p.current / p.target)
+      if (ratio <= 0 || ratio >= 1) continue
+      if (!best || ratio > best.ratio) best = { badge, cur: p.current, target: p.target, ratio }
+    }
+    return best
+  }, [earnedBadges, badgeProgress])
 
   if (loading) return <LoadingSkeleton/>
 
@@ -122,6 +121,17 @@ export default function AchievementsPage() {
   const earnedKeys = new Set(earnedBadges.map(b => b.badge_key))
   const level = child?.level ?? 1
   const xpInLevel = (child?.xp ?? 0) % 1000
+
+  // Per-badge "remaining" copy for the coach card — concrete and in kid voice.
+  const REMAIN_KEY: Record<string, string> = {
+    sportsman: 'achievements.remainSport',
+    clean_master: 'achievements.remainRoom',
+    study_lover: 'achievements.remainStudy',
+    week_excellent: 'achievements.remainFives',
+    full_week_grades: 'achievements.remainGradeDays',
+    coin_saver: 'achievements.remainCoins',
+    streak_30: 'achievements.remainStreak',
+  }
 
   const cats = [
     { n: t('achievements.categoryStudy'),    icon: '📚', type: 'study',       col: T.plum  },
@@ -166,6 +176,46 @@ export default function AchievementsPage() {
           </div>
         </div>
       </div>
+
+      {/* ═══ "Almost there" coach card (signature) ════════════════════════════ */}
+      {closest && (
+        <div style={{ padding: '16px 16px 0' }}>
+          <div
+            onClick={() => setFocused({ ...closest.badge, earned: undefined, isEarned: false, progress01: closest.ratio, r: getRarity(closest.badge.xp ?? 0) })}
+            style={{
+              borderRadius: 24, padding: 16, position: 'relative', overflow: 'hidden', cursor: 'pointer',
+              background: `linear-gradient(135deg, ${T.sun} 0%, #FFB35C 45%, ${T.coral} 100%)`,
+              boxShadow: `0 10px 26px ${T.coral}38`,
+            }}>
+            <div style={{ position: 'absolute', top: -24, right: -24, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.16)' }}/>
+            <div style={{ fontFamily: T.fBody, fontSize: 11, color: 'rgba(255,255,255,0.9)', fontWeight: 800, letterSpacing: 1.4, position: 'relative' }}>
+              ★ {t('achievements.almostTitle')}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 12, position: 'relative' }}>
+              <ProgressRing pct={closest.ratio * 100} size={84} stroke={9} color="#fff" bg="rgba(0,0,0,0.18)">
+                <div style={{ fontSize: 34 }}>{closest.badge.icon}</div>
+              </ProgressRing>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: T.fDisp, fontSize: 18, fontWeight: 900, color: '#fff', lineHeight: 1.1 }}>
+                  {t(closest.badge.titleKey)}
+                </div>
+                <div style={{ fontFamily: T.fBody, fontSize: 13, color: '#fff', fontWeight: 700, marginTop: 4 }}>
+                  {t(REMAIN_KEY[closest.badge.key] ?? 'achievements.remainGeneric', { n: closest.target - closest.cur })}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                  <div style={{ flex: 1, height: 8, background: 'rgba(0,0,0,0.18)', borderRadius: 999, overflow: 'hidden' }}>
+                    <div style={{ width: `${closest.ratio * 100}%`, height: '100%', background: '#fff', borderRadius: 999, transition: 'width 0.9s cubic-bezier(.2,.9,.3,1.2)' }}/>
+                  </div>
+                  <span style={{ fontFamily: T.fNum, fontSize: 12, fontWeight: 800, color: '#fff', whiteSpace: 'nowrap' }}>+{closest.badge.xp} XP</span>
+                </div>
+              </div>
+            </div>
+            <div style={{ fontFamily: T.fDisp, fontSize: 13, fontWeight: 800, color: '#fff', marginTop: 12, position: 'relative', textAlign: 'center', opacity: 0.95 }}>
+              {t('achievements.almostCheer')}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ═══ Category streaks ═════════════════════════════════════════════════ */}
       <div style={{ padding: '20px 16px 0' }}>

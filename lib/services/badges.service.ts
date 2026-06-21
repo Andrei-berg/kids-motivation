@@ -119,12 +119,44 @@ export async function checkAndAwardBadges(childId: string, date: string) {
   if (await checkFirstPurchase(childId)) badges.push('first_purchase')
   if (await checkStreak30(childId)) badges.push('streak_30')
   if (await checkFullWeekGrades(childId, date)) badges.push('full_week_grades')
+  if (await checkPerfectWeekAuto(childId, date)) badges.push('perfect_week')
 
   for (const key of badges) {
     await awardBadge(childId, key)
   }
 
   return badges
+}
+
+/**
+ * Auto-evaluated «Идеальная неделя»: the current week has at least one grade and
+ * none of them is a penalty grade (1 or 2). Penalty grades are the negative-coin
+ * events in the wallet model, so "no штрафов" = no 1s/2s. Requiring grades to exist
+ * keeps an empty week (e.g. summer) from awarding it for free.
+ *
+ * Wires up perfect_week, which previously had a checker (checkPerfectWeek) that was
+ * never called — making the badge impossible to earn.
+ */
+async function checkPerfectWeekAuto(childId: string, date: string): Promise<boolean> {
+  const week = getWeekRange(date)
+  const { data: grades } = await supabase
+    .from('subject_grades')
+    .select('grade')
+    .eq('child_id', childId)
+    .gte('date', week.start)
+    .lte('date', week.end)
+
+  if (!grades || grades.length === 0) return false
+  if (grades.some(g => g.grade != null && g.grade <= 2)) return false
+
+  const { data: existing } = await supabase
+    .from('badges')
+    .select('id')
+    .eq('child_id', childId)
+    .eq('badge_key', 'perfect_week')
+    .maybeSingle()
+
+  return !existing
 }
 
 export async function checkGoalBadge(childId: string, goalId: string) {
@@ -268,6 +300,55 @@ export async function getSportActiveDayCount(childId: string): Promise<number> {
   const start = addDays(end, -(SPORTSMAN_WINDOW - 1))
   const days = await getSportActiveDays(childId, start, end)
   return days.size
+}
+
+export interface BadgeProgress { current: number; target: number }
+
+/**
+ * Progress (current / target) toward each count-based badge — the data behind the
+ * grid bars and the "Ближе всего" coach card. One round-trip per metric.
+ *
+ * Binary / event badges (first_purchase, goal_achiever, perfect_week) are omitted on
+ * purpose: "almost there" has no meaning for a one-shot goal, so they never become the
+ * spotlighted badge. Same shape is reusable server-side for a future nudge.
+ */
+export async function getBadgeProgress(childId: string): Promise<Record<string, BadgeProgress>> {
+  const today = localDateString()
+  const week = getWeekRange(today)
+  const last14 = addDays(today, -13)
+
+  const [
+    { data: streaks },
+    sportDays,
+    { count: grade5Week },
+    { data: gradeDays14 },
+    { data: gradeDaysWeek },
+    { data: wallet },
+  ] = await Promise.all([
+    supabase.from('streaks').select('streak_type, current_count, best_count').eq('child_id', childId),
+    getSportActiveDayCount(childId),
+    supabase.from('subject_grades').select('*', { count: 'exact', head: true })
+      .eq('child_id', childId).eq('grade', 5).gte('date', week.start).lte('date', week.end),
+    supabase.from('subject_grades').select('date').eq('child_id', childId).gte('date', last14).lte('date', today),
+    supabase.from('subject_grades').select('date').eq('child_id', childId).gte('date', week.start).lte('date', week.end),
+    supabase.from('wallet').select('total_earned_coins, total_spent_coins').eq('child_id', childId).maybeSingle(),
+  ])
+
+  const roomStreak = (streaks ?? []).find(s => s.streak_type === 'room')?.current_count ?? 0
+  const bestStreak = (streaks ?? []).reduce((m, s) => Math.max(m, s.best_count ?? 0), 0)
+  const uniqueGradeDays14 = new Set((gradeDays14 ?? []).map(g => g.date)).size
+  const uniqueGradeDaysWeek = new Set((gradeDaysWeek ?? []).map(g => g.date)).size
+  const netSaved = wallet ? Math.max(0, (wallet.total_earned_coins ?? 0) - (wallet.total_spent_coins ?? 0)) : 0
+
+  return {
+    clean_master:     { current: roomStreak,           target: 30 },
+    sportsman:        { current: sportDays,            target: SPORTSMAN_DAYS },
+    study_lover:      { current: uniqueGradeDays14,    target: 14 },
+    week_excellent:   { current: grade5Week ?? 0,      target: 5 },
+    full_week_grades: { current: uniqueGradeDaysWeek,  target: 5 },
+    coin_saver:       { current: netSaved,             target: 500 },
+    streak_30:        { current: bestStreak,           target: 30 },
+  }
 }
 
 async function checkSportsman(childId: string, date: string): Promise<boolean> {
