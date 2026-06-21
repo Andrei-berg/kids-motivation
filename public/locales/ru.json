@@ -137,7 +137,10 @@
     "remainFives": "Ещё {{n}} пятёрок",
     "remainGradeDays": "Ещё {{n}} дн. с оценками",
     "remainCoins": "Ещё {{n}} 🪙 накопить",
-    "remainStreak": "Ещё {{n}} дн. серии"
+    "remainStreak": "Ещё {{n}} дн. серии",
+    "nudgeHeading": "Почти получилось! 🏆",
+    "nudgeGo": "Открыть значки",
+    "nudgeLater": "Позже"
   },
   "kidWallet": {
     "title": "Кошелёк",

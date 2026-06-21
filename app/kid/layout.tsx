@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import KidNav from '@/components/kid/KidNav'
 import KidInitializer from '@/components/kid/KidInitializer'
 import CelebrationOverlay from '@/components/kid/CelebrationOverlay'
+import BadgeNudge from '@/components/kid/BadgeNudge'
 import ParentPreviewBanner from '@/components/kid/ParentPreviewBanner'
 import KidChatFAB from '@/components/kid/KidChatFAB'
 
@@ -29,6 +30,7 @@ export default async function KidLayout({ children }: { children: React.ReactNod
         <ParentPreviewBanner />
         <KidNav />
         <CelebrationOverlay />
+        <BadgeNudge />
         <KidChatFAB />
         <main className="pb-24 lg:pb-0 lg:pl-16">
           {children}
@@ -46,6 +48,7 @@ export default async function KidLayout({ children }: { children: React.ReactNod
       <KidInitializer memberId={resolvedChildId} />
       <KidNav />
       <CelebrationOverlay />
+      <BadgeNudge />
       <KidChatFAB />
       <main className="pb-24 lg:pb-0 lg:pl-16">
         {children}

@@ -351,6 +351,39 @@ export async function getBadgeProgress(childId: string): Promise<Record<string, 
   }
 }
 
+export interface ClosestBadge {
+  key: string
+  icon: string
+  titleKey: string
+  xp: number
+  current: number
+  target: number
+  ratio: number
+}
+
+/**
+ * The single unearned badge the child is closest to (highest progress under 100%).
+ * One source of truth for the "Ближе всего" spotlight and the Sunday-evening nudge.
+ * Returns null if nothing is in progress or everything is earned.
+ */
+export async function getClosestBadge(childId: string): Promise<ClosestBadge | null> {
+  const [progress, earned] = await Promise.all([getBadgeProgress(childId), getChildBadges(childId)])
+  const earnedKeys = new Set(earned.map((b: any) => b.badge_key))
+
+  let best: ClosestBadge | null = null
+  for (const badge of BADGES) {
+    if (earnedKeys.has(badge.key)) continue
+    const p = progress[badge.key]
+    if (!p || p.target <= 0) continue
+    const ratio = Math.min(1, p.current / p.target)
+    if (ratio <= 0 || ratio >= 1) continue
+    if (!best || ratio > best.ratio) {
+      best = { key: badge.key, icon: badge.icon, titleKey: badge.titleKey, xp: badge.xp, current: p.current, target: p.target, ratio }
+    }
+  }
+  return best
+}
+
 async function checkSportsman(childId: string, date: string): Promise<boolean> {
   const startDate = addDays(date, -(SPORTSMAN_WINDOW - 1))
   const activeDays = await getSportActiveDays(childId, startDate, date)

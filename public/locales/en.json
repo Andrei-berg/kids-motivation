@@ -137,7 +137,10 @@
     "remainFives": "{{n}} more fives",
     "remainGradeDays": "{{n}} more grade days",
     "remainCoins": "Save {{n}} more 🪙",
-    "remainStreak": "{{n}} more streak days"
+    "remainStreak": "{{n}} more streak days",
+    "nudgeHeading": "Almost there! 🏆",
+    "nudgeGo": "Open badges",
+    "nudgeLater": "Later"
   },
   "kidWallet": {
     "title": "Wallet",
