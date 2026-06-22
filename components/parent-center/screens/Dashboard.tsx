@@ -40,10 +40,16 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: 'easeOut' as const } },
 }
 
+type ReadingCheck = { id: string; child_id: string; date: string; book_title: string; pages_read: number; minutes_read: number }
+
 type Props = {
   children: ParentChild[]
   activity: ActivityEntry[]
   pending: RewardPurchase[]
+  readingChecks?: ReadingCheck[]
+  onApproveReading?: (r: ReadingCheck) => void
+  onRejectReading?: (r: ReadingCheck) => void
+  childName?: (id: string) => string
   onAction: (child: ParentChild, action: ActionType) => void
   onApprove: (p: RewardPurchase) => void
   onDecline: (p: RewardPurchase) => void
@@ -152,7 +158,7 @@ function ActivityRow({ a, allChildren }: { a: ActivityEntry; allChildren: Parent
   )
 }
 
-export default function Dashboard({ children, activity, pending, onAction, onApprove, onDecline, onOpenChild, onFillDay }: Props) {
+export default function Dashboard({ children, activity, pending, readingChecks = [], onApproveReading, onRejectReading, childName, onAction, onApprove, onDecline, onOpenChild, onFillDay }: Props) {
   const filledCount = children.filter(c => c.todayPct > 50).length
   const t = useT()
   const { language } = useLanguage()
@@ -185,6 +191,29 @@ export default function Dashboard({ children, activity, pending, onAction, onApp
         </div>
         <Btn variant="solid" size="sm" onClick={onFillDay}>{t('parentCenter.dashboard.fillDay')}</Btn>
       </Card>
+
+      {readingChecks.length > 0 && (
+        <div>
+          <SectionH title={t('parentCenter.dashboard.readingChecks')} sub={t('parentCenter.dashboard.readingChecksSub')}/>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {readingChecks.map(r => (
+              <Card key={r.id} pad={14} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ fontSize: 26 }}>📖</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {r.book_title || t('parentCenter.dashboard.aBook')}
+                  </div>
+                  <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
+                    {childName?.(r.child_id) ?? r.child_id} · {r.pages_read || 0} стр · {r.minutes_read || 0} мин
+                  </div>
+                </div>
+                <Btn variant="ghost" size="sm" onClick={() => onRejectReading?.(r)}>{t('parentCenter.dashboard.rejectRead')}</Btn>
+                <Btn variant="solid" size="sm" onClick={() => onApproveReading?.(r)}>{t('parentCenter.dashboard.approveRead')}</Btn>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div>
         <SectionH title={t('parentCenter.dashboard.children')} sub={t('parentCenter.dashboard.tapToOpen')}/>

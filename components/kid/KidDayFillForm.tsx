@@ -131,6 +131,9 @@ export function KidDayFillForm({
   const [checkedActivities, setCheckedActivities] = useState<Set<string>>(new Set())
   const [activities, setActivities] = useState<ExtraActivity[]>([])
   const [settings, setSettings] = useState<WalletSettings | null>(null)
+  // When on (default), a finished-book bonus waits for parent confirmation instead
+  // of crediting on save. Fetched per child.
+  const [requireReadingCheck, setRequireReadingCheck] = useState(true)
   const [saving, setSaving] = useState(false)
   const [noteChild, setNoteChild] = useState<string>(existingDay?.note_child ?? '')
   // Grades (mode 3 only)
@@ -199,6 +202,14 @@ export function KidDayFillForm({
         }
       })
       setSectionNotes(notes)
+
+      // Whether this child's reading needs parent confirmation
+      const { data: childPrefs } = await supabase
+        .from('children')
+        .select('require_reading_check')
+        .eq('id', childId)
+        .maybeSingle()
+      setRequireReadingCheck((childPrefs as any)?.require_reading_check ?? true)
 
       // Pre-fill reading log
       const existingReading = await getReadingLog(childId, date)
@@ -294,12 +305,13 @@ export function KidDayFillForm({
         else if (r === 1) total += settings.coins_per_coach_1
       })
     }
-    // Book finished bonus
-    if (readingActive && reading.bookFinished) {
+    // Book finished bonus — only counted in the preview when it credits on save.
+    // If parent verification is required, it stays pending, so don't promise coins.
+    if (readingActive && reading.bookFinished && !requireReadingCheck) {
       total += (settings as any)?.coins_per_book ?? 20
     }
     return total
-  }, [roomItems, checkedActivities, activities, settings, kidGrades, sections, sectionNotes, reading, readingActive])
+  }, [roomItems, checkedActivities, activities, settings, kidGrades, sections, sectionNotes, reading, readingActive, requireReadingCheck])
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   function toggleRoomItem(key: keyof RoomItems) {
@@ -871,6 +883,11 @@ export function KidDayFillForm({
               }}>
                 🏆 {reading.bookFinished ? t('kidFillForm.finishedBtnDone') : t('kidFillForm.finishedBtn')}
               </button>
+              {reading.bookFinished && requireReadingCheck && (
+                <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.sunDeep, fontWeight: 700, textAlign: 'center' }}>
+                  🕓 {t('kidFillForm.readingPending')}
+                </div>
+              )}
             </div>
           )}
         </div>

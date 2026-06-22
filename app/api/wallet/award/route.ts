@@ -169,14 +169,26 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 5. Book finished (keyed per reading_log row).
+    // 5. Book finished (keyed per reading_log row). The book bonus is a self-
+    //    reported claim. When require_reading_check is on for the child, it is
+    //    credited only after a parent confirms it (verified=true) — or when a
+    //    parent triggers the award directly (parents are the verifiers). A child's
+    //    own day-fill leaves it pending.
+    const { data: childRow } = await admin
+      .from('children')
+      .select('require_reading_check')
+      .eq('id', childId)
+      .maybeSingle()
+    const requireReadingCheck = childRow?.require_reading_check ?? true
     const { data: reading } = await admin
       .from('reading_log')
-      .select('id, book_title, book_finished')
+      .select('id, book_title, book_finished, verified')
       .eq('child_id', childId)
       .eq('date', date)
       .maybeSingle()
-    if (reading?.book_finished && settings.coins_per_book > 0) {
+    const readingApproved =
+      !requireReadingCheck || reading?.verified === true || member.role !== 'child'
+    if (reading?.book_finished && readingApproved && settings.coins_per_book > 0) {
       intents.push({
         coins: settings.coins_per_book,
         description: `Книга: ${reading.book_title}`,

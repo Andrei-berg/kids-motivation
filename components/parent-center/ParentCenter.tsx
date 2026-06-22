@@ -20,6 +20,8 @@ import type { RewardPurchase } from '@/lib/models/wallet.types'
 import { getChildren, getDay } from '@/lib/repositories/children.repo'
 import { getWallet, getPendingPurchases, getTransactions } from '@/lib/repositories/wallet.repo'
 import { approvePurchaseAction, rejectPurchaseAction } from '@/app/parent/shop/actions'
+import { getPendingReadingChecks, type PendingReadingCheck } from '@/lib/vacation-api'
+import { approveReadingAction, rejectReadingAction } from '@/app/parent/reading/actions'
 import { getStreaks } from '@/lib/repositories/children.repo'
 import { getWeekScore } from '@/lib/services/coins.service'
 import { getWeekRange, localDateString } from '@/utils/helpers'
@@ -79,6 +81,7 @@ export default function ParentCenter() {
 
   const [children, setChildren] = useState<ParentChild[]>([])
   const [pending, setPending] = useState<RewardPurchase[]>([])
+  const [readingChecks, setReadingChecks] = useState<PendingReadingCheck[]>([])
   const [activity, setActivity] = useState<ActivityEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [dailyModal, setDailyModal] = useState<{ open: boolean; childId: string }>({ open: false, childId: '' })
@@ -103,9 +106,10 @@ export default function ParentCenter() {
         const weekStart = getWeekRange(new Date()).start
 
         const rawChildren = await getChildren()
-        const [pendingData, txData] = await Promise.all([
+        const [pendingData, txData, readingData] = await Promise.all([
           getPendingPurchases().catch(() => [] as RewardPurchase[]),
           getTransactions(undefined, 30).catch(() => []),
+          getPendingReadingChecks(rawChildren.map(c => c.id)).catch(() => [] as PendingReadingCheck[]),
         ])
 
         const parentChildren = await Promise.all(
@@ -172,6 +176,7 @@ export default function ParentCenter() {
 
         setChildren(parentChildren)
         setPending(pendingData)
+        setReadingChecks(readingData)
         setActivity(acts)
       } catch (e) {
         console.error('[ParentCenter] load error', e)
@@ -220,6 +225,26 @@ export default function ParentCenter() {
     }
   }
 
+  const childName = (id: string) => children.find(c => c.id === id)?.name ?? id
+  const handleApproveReading = async (r: PendingReadingCheck) => {
+    try {
+      const { creditedCoins } = await approveReadingAction(r.child_id, r.date)
+      setReadingChecks(prev => prev.filter(x => x.id !== r.id))
+      notify(`${childName(r.child_id)}: «${r.book_title}» ✓ +${creditedCoins}🪙`)
+    } catch (e: any) {
+      notify(`Failed: ${e?.message ?? 'unknown error'}`, 'danger')
+    }
+  }
+  const handleRejectReading = async (r: PendingReadingCheck) => {
+    try {
+      await rejectReadingAction(r.child_id, r.date)
+      setReadingChecks(prev => prev.filter(x => x.id !== r.id))
+      notify(`${childName(r.child_id)}: «${r.book_title}» отклонено`, 'warn')
+    } catch (e: any) {
+      notify(`Failed: ${e?.message ?? 'unknown error'}`, 'danger')
+    }
+  }
+
   const onOpenChild = (id: string) => { setOpenChild(id); setRoute('child') }
   const backFromChild = () => { setOpenChild(null); setRoute('children') }
 
@@ -261,6 +286,8 @@ export default function ParentCenter() {
     switch (route) {
       case 'dashboard':
         return <Dashboard children={children} activity={activity} pending={pending}
+          readingChecks={readingChecks} onApproveReading={handleApproveReading} onRejectReading={handleRejectReading}
+          childName={childName}
           onAction={openAction} onApprove={handleApprove} onDecline={handleDecline} onOpenChild={onOpenChild}
           onFillDay={openFillDay}/>
       case 'children':

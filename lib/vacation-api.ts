@@ -93,6 +93,39 @@ export async function saveReadingLog(log: Omit<ReadingLog, 'id'>): Promise<void>
   if (error) throw error
 }
 
+export interface PendingReadingCheck {
+  id: string
+  child_id: string
+  date: string
+  book_title: string
+  pages_read: number
+  minutes_read: number
+}
+
+/**
+ * Finished-book claims awaiting parent confirmation: book_finished with no verdict
+ * yet (verified IS NULL). Pass the family's child ids that have require_reading_check
+ * on — a trusted child (check off) auto-credits, so its rows aren't "pending".
+ */
+export async function getPendingReadingChecks(childIds: string[]): Promise<PendingReadingCheck[]> {
+  if (childIds.length === 0) return []
+  // A trusted child (require_reading_check off) auto-credits, so exclude them.
+  const { data: kids } = await supabase
+    .from('children')
+    .select('id, require_reading_check')
+    .in('id', childIds)
+  const checkIds = (kids ?? []).filter((k: any) => k.require_reading_check !== false).map((k: any) => k.id)
+  if (checkIds.length === 0) return []
+  const { data } = await supabase
+    .from('reading_log')
+    .select('id, child_id, date, book_title, pages_read, minutes_read')
+    .in('child_id', checkIds)
+    .eq('book_finished', true)
+    .is('verified', null)
+    .order('date', { ascending: false })
+  return data || []
+}
+
 // ─── Extra Lessons ────────────────────────────────────────────────────────────
 
 export async function getExtraLessons(childId: string, date: string): Promise<ExtraLesson[]> {

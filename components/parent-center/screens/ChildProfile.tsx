@@ -5,6 +5,7 @@ import { T } from '../tokens'
 import { Card, Btn, Pill, Avatar, Sparkline, Bar, Coin, Tabs, Icon } from '../ui'
 import type { ParentChild, ActionType } from '../types'
 import ExpensesPanel from './ExpensesPanel'
+import { ReadingCheckToggle } from '../ReadingCheckToggle'
 
 type Props = {
   child: ParentChild
@@ -96,6 +97,7 @@ export default function ChildProfile({ child, onBack, onAction }: Props) {
       <div style={{ padding: 16 }}>
         {tab === 'overview' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <ReadingCheckToggle childId={child.id}/>
             <Card pad={14}>
               <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
                 Last 7 days · coins earned

@@ -979,6 +979,7 @@
     "bookmarkLabel": "Bookmark",
     "finishedBtn": "Finished the book?",
     "finishedBtnDone": "Finished the book! +50🪙",
+    "readingPending": "A parent will check — tell them what the book is about",
     "trustNote": "We trust you ✨ Parents will verify the entry.",
     "dayLocked": "🔒 Day is closed for editing",
     "saveBtn": "✨ Save day · +{{coins}} coins",
@@ -1318,6 +1319,10 @@
     "deleteError": "Deletion failed. Please try again."
   },
   "parentCenter": {
+    "readingCheck": {
+      "title": "Verify reading",
+      "sub": "Book bonus is credited after you confirm"
+    },
     "settings": {
       "title": "Settings",
       "subtitle": "Configure the motivation system",
@@ -1385,6 +1390,11 @@
       "fillRemaining": "Fill the remaining evaluations to close the day",
       "allSet": "All set for today",
       "children": "Children",
+      "readingChecks": "Reading to verify",
+      "readingChecksSub": "Ask your child to retell the book",
+      "aBook": "A book",
+      "approveRead": "Approve",
+      "rejectRead": "Reject",
       "tapToOpen": "Tap a card to open full profile",
       "lastWeekCoins": "Last 7 days · coins",
       "today": "Today",
