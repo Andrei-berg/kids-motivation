@@ -7,6 +7,7 @@ import type { Child } from '@/lib/api'
 import { localDateString } from '@/utils/helpers'
 import { getWallet } from '@/lib/repositories/wallet.repo'
 import { KidDayFillForm } from '@/components/kid/KidDayFillForm'
+import { KidChallenges } from '@/components/kid/KidChallenges'
 import { getVacationPeriods } from '@/lib/vacation-api'
 import { getDayType } from '@/lib/day-type'
 import type { Wallet } from '@/lib/models/wallet.types'
@@ -264,6 +265,7 @@ export default function KidDayPage() {
 
       {/* ── RIGHT (desktop) or full-width (mobile): form / summary ── */}
       <div style={isDesktop ? { padding: '32px 32px', overflowY: 'auto' } : { position: 'relative' }}>
+        {activeMemberId && <KidChallenges childId={activeMemberId}/>}
         {showForm ? (
           <>
             {editMode && todayDay && (

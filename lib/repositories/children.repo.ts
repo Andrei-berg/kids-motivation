@@ -338,6 +338,7 @@ export async function completeGoalsIfReached(childId: string, coins: number) {
     .eq('child_id', childId)
     .eq('archived', false)
     .eq('completed', false)
+    .neq('kind', 'parent') // parent challenges complete via the parent's «выполнено», not coins
 
   const reached = (goals ?? []).filter(g => coins >= (g.target ?? 0))
   for (const g of reached) {
@@ -348,6 +349,84 @@ export async function completeGoalsIfReached(childId: string, coins: number) {
     await logGoalAction(g.id, childId, 'completed', g.target, `Цель достигнута: ${g.title}`)
   }
   return reached
+}
+
+// ─── Parent-set goals (challenges with a deadline + reward) ───────────────────
+
+export interface ParentGoal {
+  id: string
+  child_id: string
+  title: string
+  emoji: string | null
+  deadline: string | null
+  reward_type: 'coins' | 'prize' | null
+  reward_coins: number | null
+  reward_text: string | null
+  completed: boolean
+  completed_at: string | null
+  created_at: string
+}
+
+export async function createParentGoal(params: {
+  childId: string
+  title: string
+  emoji?: string
+  deadline?: string | null
+  rewardType: 'coins' | 'prize'
+  rewardCoins?: number | null
+  rewardText?: string | null
+}): Promise<ParentGoal> {
+  const { data, error } = await supabase
+    .from('goals')
+    .insert({
+      child_id: params.childId,
+      kind: 'parent',
+      title: params.title,
+      emoji: params.emoji ?? '🎯',
+      target: 0,
+      current: 0,
+      active: false,
+      archived: false,
+      completed: false,
+      deadline: params.deadline || null,
+      reward_type: params.rewardType,
+      reward_coins: params.rewardType === 'coins' ? (params.rewardCoins ?? 0) : null,
+      reward_text: params.rewardType === 'prize' ? (params.rewardText ?? null) : null,
+    })
+    .select()
+    .single()
+  if (error) throw error
+  await logGoalAction(data.id, params.childId, 'created', 0, `Цель от родителя: ${params.title}`)
+  return data as ParentGoal
+}
+
+/** Parent challenges for a child (newest first), incl. completed (for the manager view). */
+export async function getParentGoals(childId: string): Promise<ParentGoal[]> {
+  const { data } = await supabase
+    .from('goals')
+    .select('*')
+    .eq('child_id', childId)
+    .eq('kind', 'parent')
+    .eq('archived', false)
+    .order('created_at', { ascending: false })
+  return (data ?? []) as ParentGoal[]
+}
+
+/** Active (not completed) parent challenges — the kid-facing view. */
+export async function getActiveParentGoals(childId: string): Promise<ParentGoal[]> {
+  const { data } = await supabase
+    .from('goals')
+    .select('*')
+    .eq('child_id', childId)
+    .eq('kind', 'parent')
+    .eq('archived', false)
+    .eq('completed', false)
+    .order('deadline', { ascending: true })
+  return (data ?? []) as ParentGoal[]
+}
+
+export async function archiveParentGoal(goalId: string): Promise<void> {
+  await supabase.from('goals').update({ archived: true }).eq('id', goalId)
 }
 
 export async function setActiveGoal(childId: string, goalId: string) {

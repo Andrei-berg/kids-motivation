@@ -398,6 +398,31 @@
     "hooray": "Ура!",
     "changeGoal": "Сменить цель"
   },
+  "parentGoals": {
+    "newGoal": "Новая цель",
+    "titlePlaceholder": "Что нужно сделать? (напр. читать 7 дней)",
+    "deadline": "Срок:",
+    "reward_coins": "Монеты",
+    "reward_prize": "Приз",
+    "coinsPlaceholder": "Сколько монет?",
+    "prizePlaceholder": "Какой приз? (напр. поход в кино)",
+    "coinsHint": "Ориентир: ~25 монет за день · неделя 150–300 · месяц 500–1000",
+    "cancel": "Отмена",
+    "create": "Создать",
+    "markDone": "Выполнено",
+    "done": "выполнено ✓",
+    "overdue": "срок прошёл",
+    "daysLeft": "осталось {n} дн.",
+    "delete": "Удалить",
+    "empty": "Целей пока нет. Поставьте ребёнку задачу с наградой."
+  },
+  "kidChallenges": {
+    "heading": "Задание от родителей",
+    "reward": "Награда: {{reward}}",
+    "overdue": "срок прошёл",
+    "lastDay": "последний день!",
+    "daysLeft": "осталось {{n}} дн."
+  },
   "shopModal": {
     "title": "🏪 Магазин наград",
     "coinsLabel": "💰 Монеты:",

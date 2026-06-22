@@ -6,6 +6,7 @@ import { Card, Btn, Pill, Avatar, Sparkline, Bar, Coin, Tabs, Icon } from '../ui
 import type { ParentChild, ActionType } from '../types'
 import ExpensesPanel from './ExpensesPanel'
 import { ReadingCheckToggle } from '../ReadingCheckToggle'
+import ParentGoals from '../ParentGoals'
 
 type Props = {
   child: ParentChild
@@ -180,17 +181,7 @@ export default function ChildProfile({ child, onBack, onAction }: Props) {
         )}
 
         {tab === 'goals' && (
-          <Card pad={14} style={{ background: `linear-gradient(135deg, ${T.cyanSoft}, ${T.card})` }}>
-            <div style={{ fontSize: 18, textAlign: 'center', marginBottom: 8 }}>🎯</div>
-            <div style={{ textAlign: 'center', fontSize: 15, fontWeight: 600, color: T.text }}>{child.goal.title}</div>
-            <div style={{ fontFamily: T.fMono, textAlign: 'center', fontSize: 24, fontWeight: 700, color: T.cyan, margin: '8px 0' }}>
-              {child.goal.saved}<span style={{ color: T.muted, fontSize: 14 }}> / {child.goal.target} 🪙</span>
-            </div>
-            <Bar pct={(child.goal.saved / child.goal.target) * 100} color={T.cyan} h={8}/>
-            <div style={{ fontSize: 11, color: T.muted, textAlign: 'center', marginTop: 6, fontFamily: T.fMono }}>
-              {child.goal.target - child.goal.saved} coins to go
-            </div>
-          </Card>
+          <ParentGoals childId={child.id}/>
         )}
       </div>
     </div>
