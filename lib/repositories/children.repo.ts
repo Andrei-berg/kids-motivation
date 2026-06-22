@@ -289,15 +289,20 @@ export async function createGoal(params: {
   childId: string
   title: string
   target: number
+  emoji?: string
 }) {
+  // A new goal becomes the single active one.
+  await supabase.from('goals').update({ active: false }).eq('child_id', params.childId)
+
   const { data, error } = await supabase
     .from('goals')
     .insert({
       child_id: params.childId,
       title: params.title,
       target: params.target,
+      emoji: params.emoji ?? '🎯',
       current: 0,
-      active: false,
+      active: true,
       archived: false
     })
     .select()
@@ -308,6 +313,41 @@ export async function createGoal(params: {
   await logGoalAction(data.id, params.childId, 'created', 0, `Создана цель: ${params.title}`)
 
   return data
+}
+
+/** Number of goals this child has completed (reached). Drives the goal badges. */
+export async function getCompletedGoalCount(childId: string): Promise<number> {
+  const { count } = await supabase
+    .from('goals')
+    .select('*', { count: 'exact', head: true })
+    .eq('child_id', childId)
+    .eq('completed', true)
+  return count ?? 0
+}
+
+/**
+ * Marks any active, not-yet-completed goal as completed once the child's savings
+ * (current wallet coins) reach its target. Returns the goals newly completed by
+ * this call so the UI can celebrate. Goals don't move money — completion only
+ * latches the milestone and unlocks the goal badges.
+ */
+export async function completeGoalsIfReached(childId: string, coins: number) {
+  const { data: goals } = await supabase
+    .from('goals')
+    .select('*')
+    .eq('child_id', childId)
+    .eq('archived', false)
+    .eq('completed', false)
+
+  const reached = (goals ?? []).filter(g => coins >= (g.target ?? 0))
+  for (const g of reached) {
+    await supabase
+      .from('goals')
+      .update({ completed: true, completed_at: new Date().toISOString(), current: g.target })
+      .eq('id', g.id)
+    await logGoalAction(g.id, childId, 'completed', g.target, `Цель достигнута: ${g.title}`)
+  }
+  return reached
 }
 
 export async function setActiveGoal(childId: string, goalId: string) {

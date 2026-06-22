@@ -10,6 +10,7 @@ import { normalizeDate, getWeekRange } from '@/utils/helpers'
 import type { Wallet, WalletTransaction } from '@/lib/models/wallet.types'
 import { T } from '@/components/kid/design/tokens'
 import { Coin, CoinPill, AnimatedNum, SectionHeader, KMButton } from '@/components/kid/design/atoms'
+import GoalsPanel from '@/components/kid/GoalsPanel'
 import { useT } from '@/lib/i18n'
 
 function useDesktop() {
@@ -54,7 +55,6 @@ export default function KidWalletPage() {
   const [wallet, setWallet] = useState<Wallet | null>(null)
   const [transactions, setTransactions] = useState<WalletTransaction[]>([])
   const [weekScore, setWeekScore] = useState<number>(0)
-  const [goals, setGoals] = useState<any[]>([])
   const isDesktop = useDesktop()
 
   const loadData = useCallback(async () => {
@@ -63,16 +63,14 @@ export default function KidWalletPage() {
     try {
       const today = normalizeDate(new Date())
       const weekStart = getWeekRange(today).start
-      const [walletData, txData, weekData, goalsData] = await Promise.all([
+      const [walletData, txData, weekData] = await Promise.all([
         getWallet(activeMemberId),
         getTransactions(activeMemberId, 20),
         api.getWeekScore(activeMemberId, weekStart),
-        api.getGoals(activeMemberId),
       ])
       setWallet(walletData)
       setTransactions(txData)
       setWeekScore(weekData?.total ?? 0)
-      setGoals(goalsData?.all ?? [])
     } catch (err) {
       console.error('KidWalletPage error', err)
     } finally {
@@ -212,79 +210,11 @@ export default function KidWalletPage() {
 
         {/* RIGHT: goals — sticky on desktop */}
         <div style={isDesktop ? { position: 'sticky', top: 24 } : {}}>
-          {/* ═══ Goals ════════════════════════════════════════════════════════════ */}
-          {goals.length > 0 && (
-            <div style={{ padding: isDesktop ? '0' : '22px 16px 0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
-                <h3 style={{ margin: 0, fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>{t('kidWallet.savingsGoals')}</h3>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {goals.map((g: any) => <GoalCard key={g.id} g={g} coins={coins}/>)}
-              </div>
-            </div>
-          )}
+          {activeMemberId && <GoalsPanel childId={activeMemberId} coins={coins} />}
         </div>
       </div>
 
       {!isDesktop && <div style={{ height: 110 }}/>}
-    </div>
-  )
-}
-
-// ─── Goal card ────────────────────────────────────────────────────────────────
-function GoalCard({ g, coins }: { g: any; coins: number }) {
-  const t = useT()
-  const target = g.target_coins ?? g.target ?? 0
-  const current = g.saved_coins ?? g.current ?? 0
-  const pct = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0
-  const color = T.plum
-
-  return (
-    <div style={{
-      background: '#fff', borderRadius: 22, padding: 16,
-      border: `1.5px solid ${T.line}`, boxShadow: '0 4px 14px rgba(0,0,0,0.04)',
-      position: 'relative', overflow: 'hidden',
-    }}>
-      <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: color, opacity: 0.06 }}/>
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', position: 'relative' }}>
-        <div style={{
-          width: 56, height: 56, borderRadius: 16,
-          background: color + '18', border: `1.5px solid ${color}30`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, flexShrink: 0,
-        }}>🎯</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 900, color: T.ink, lineHeight: 1.2 }}>{g.name ?? g.title ?? t('goals.title')}</div>
-          {g.deadline && (
-            <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 600, marginTop: 2 }}>{t('kidWallet.goalDeadline', { date: g.deadline })}</div>
-          )}
-        </div>
-        <div style={{
-          padding: '4px 10px', borderRadius: 999, background: color, color: '#fff',
-          fontFamily: T.fNum, fontSize: 13, fontWeight: 800, boxShadow: `0 3px 10px ${color}55`,
-        }}>{pct}%</div>
-      </div>
-      <div style={{ marginTop: 14 }}>
-        <div style={{ height: 10, background: T.lineSoft, borderRadius: 999, overflow: 'hidden', boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.06)' }}>
-          <div style={{
-            width: `${pct}%`, height: '100%',
-            background: `linear-gradient(90deg, ${color}, ${color}dd)`,
-            borderRadius: 999,
-          }}>
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(255,255,255,0.4), transparent 60%)', borderRadius: 999 }}/>
-          </div>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 7 }}>
-          <span style={{ fontFamily: T.fNum, fontSize: 13, fontWeight: 800, color: T.ink }}>
-            {current.toLocaleString('ru-RU')}
-            <span style={{ color: T.ink3, fontWeight: 600 }}> / {target.toLocaleString('ru-RU')}</span>
-          </span>
-          {target > current && (
-            <span style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 700 }}>
-              {t('kidWallet.remaining', { amount: (target - current).toLocaleString('ru-RU') })}
-            </span>
-          )}
-        </div>
-      </div>
     </div>
   )
 }

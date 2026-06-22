@@ -4,6 +4,7 @@
 
 import { supabase } from '../supabase'
 import { getWeekRange, addDays, localDateString } from '@/utils/helpers'
+import { getCompletedGoalCount } from '@/lib/repositories/children.repo'
 
 interface Badge {
   key: string
@@ -51,6 +52,24 @@ const BADGES: Badge[] = [
     descKey: 'badges.goal_achiever_desc',
     icon: '🎯',
     xp: 1000
+  },
+  {
+    key: 'goals_3',
+    title: 'Три мечты',
+    description: 'Достиг 3 целей',
+    titleKey: 'badges.goals_3_title',
+    descKey: 'badges.goals_3_desc',
+    icon: '🏅',
+    xp: 500
+  },
+  {
+    key: 'goals_5',
+    title: 'Коллекционер мечт',
+    description: 'Достиг 5 целей',
+    titleKey: 'badges.goals_5_title',
+    descKey: 'badges.goals_5_desc',
+    icon: '🏆',
+    xp: 800
   },
   {
     key: 'perfect_week',
@@ -157,6 +176,21 @@ async function checkPerfectWeekAuto(childId: string, date: string): Promise<bool
     .maybeSingle()
 
   return !existing
+}
+
+/**
+ * Awards the goal-count badges from how many goals the child has completed:
+ * goal_achiever (≥1), goals_3 (≥3), goals_5 (≥5). Idempotent — awardBadge dedups.
+ * Called after a goal is completed on the wallet screen.
+ */
+export async function checkGoalBadges(childId: string) {
+  const n = await getCompletedGoalCount(childId)
+  const earned: string[] = []
+  if (n >= 1) earned.push('goal_achiever')
+  if (n >= 3) earned.push('goals_3')
+  if (n >= 5) earned.push('goals_5')
+  for (const key of earned) await awardBadge(childId, key)
+  return earned
 }
 
 export async function checkGoalBadge(childId: string, goalId: string) {
@@ -324,6 +358,7 @@ export async function getBadgeProgress(childId: string): Promise<Record<string, 
     { data: gradeDays14 },
     { data: gradeDaysWeek },
     { data: wallet },
+    completedGoals,
   ] = await Promise.all([
     supabase.from('streaks').select('streak_type, current_count, best_count').eq('child_id', childId),
     getSportActiveDayCount(childId),
@@ -332,6 +367,7 @@ export async function getBadgeProgress(childId: string): Promise<Record<string, 
     supabase.from('subject_grades').select('date').eq('child_id', childId).gte('date', last14).lte('date', today),
     supabase.from('subject_grades').select('date').eq('child_id', childId).gte('date', week.start).lte('date', week.end),
     supabase.from('wallet').select('total_earned_coins, total_spent_coins').eq('child_id', childId).maybeSingle(),
+    getCompletedGoalCount(childId),
   ])
 
   const roomStreak = (streaks ?? []).find(s => s.streak_type === 'room')?.current_count ?? 0
@@ -348,6 +384,8 @@ export async function getBadgeProgress(childId: string): Promise<Record<string, 
     full_week_grades: { current: uniqueGradeDaysWeek,  target: 5 },
     coin_saver:       { current: netSaved,             target: 500 },
     streak_30:        { current: bestStreak,           target: 30 },
+    goals_3:          { current: completedGoals,       target: 3 },
+    goals_5:          { current: completedGoals,       target: 5 },
   }
 }
 

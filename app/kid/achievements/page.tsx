@@ -131,6 +131,8 @@ export default function AchievementsPage() {
     full_week_grades: 'achievements.remainGradeDays',
     coin_saver: 'achievements.remainCoins',
     streak_30: 'achievements.remainStreak',
+    goals_3: 'achievements.remainGoals',
+    goals_5: 'achievements.remainGoals',
   }
 
   const cats = [

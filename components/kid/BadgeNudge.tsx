@@ -27,6 +27,8 @@ const REMAIN_KEY: Record<string, string> = {
   full_week_grades: 'achievements.remainGradeDays',
   coin_saver: 'achievements.remainCoins',
   streak_30: 'achievements.remainStreak',
+  goals_3: 'achievements.remainGoals',
+  goals_5: 'achievements.remainGoals',
 }
 
 export default function BadgeNudge() {
@@ -37,6 +39,10 @@ export default function BadgeNudge() {
 
   useEffect(() => {
     if (!activeMemberId) return
+
+    // Not in parent-preview — the nudge is for the kid, and its CTA leaves the
+    // preview context. The preview sets a `kid_preview` cookie.
+    if (document.cookie.includes('kid_preview=')) return
 
     const now = new Date()
     // Sunday evening only.
@@ -50,6 +56,9 @@ export default function BadgeNudge() {
     getClosestBadge(activeMemberId)
       .then(closest => {
         if (cancelled || !closest || closest.ratio < MIN_RATIO) return
+        // Don't stack on top of the badge-earned celebration overlay — let it have
+        // the moment; the nudge will appear on the next open (still within the day).
+        if (document.querySelector('.kid-celebration-overlay')) return
         localStorage.setItem(shownKey, '1')
         setBadge(closest)
       })
