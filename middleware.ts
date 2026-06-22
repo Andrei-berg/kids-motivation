@@ -7,9 +7,13 @@ function isMobileUA(request: NextRequest) {
 }
 
 export async function middleware(request: NextRequest) {
-  const { supabaseResponse, user, supabase } = await updateSession(request)
-
   const pathname = request.nextUrl.pathname
+
+  // Public reachability probe (lib/use-connectivity.ts) — must return its 200 JSON
+  // straight from the network, not get caught by the auth-redirect logic below.
+  if (pathname === '/api/health') return NextResponse.next()
+
+  const { supabaseResponse, user, supabase } = await updateSession(request)
 
   // Classify the path
   const isPublicPath =
