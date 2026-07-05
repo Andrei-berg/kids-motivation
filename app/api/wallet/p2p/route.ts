@@ -5,7 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient, requireFamilyMember, assertChildInFamily } from '@/lib/supabase/admin'
-import { errorResponse, authorizeChildAction, loadWallet, insertTx, loadSettings } from '../_lib'
+import { errorResponse, authorizeChildAction, loadWallet, insertTx, loadSettings, applyWalletDelta } from '../_lib'
+import { AuthError } from '@/lib/supabase/admin'
 
 const TRANSFER_TYPES = ['gift', 'payment', 'loan', 'deal']
 
@@ -86,13 +87,15 @@ export async function POST(req: NextRequest) {
       .single()
     if (transferErr) throw transferErr
 
-    // Debit sender.
-    const fromNewCoins = fromWallet.coins - amount
-    const { error: fromErr } = await admin
-      .from('wallet')
-      .update({ coins: fromNewCoins, total_spent_coins: fromWallet.total_spent_coins + amount })
-      .eq('child_id', fromChildId)
-    if (fromErr) throw fromErr
+    // Debit sender atomically with a 0 floor (can't send into the red).
+    let fromNewCoins: number
+    try {
+      const res = await applyWalletDelta(admin, fromChildId, { coins: -amount, spentCoins: amount, minCoins: 0 })
+      fromNewCoins = res.coins
+    } catch (e) {
+      if (e instanceof AuthError && e.status === 400) throw new AuthError('Insufficient coins', 400)
+      throw e
+    }
     await insertTx(admin, fromChildId, {
       family_id: fromWallet.family_id,
       transaction_type: 'spend_coins',
@@ -106,13 +109,8 @@ export async function POST(req: NextRequest) {
       balance_after_money: Number(fromWallet.money),
     })
 
-    // Credit recipient.
-    const toNewCoins = toWallet.coins + amount
-    const { error: toErr } = await admin
-      .from('wallet')
-      .update({ coins: toNewCoins, total_earned_coins: toWallet.total_earned_coins + amount })
-      .eq('child_id', toChildId)
-    if (toErr) throw toErr
+    // Credit recipient atomically (no floor).
+    const { coins: toNewCoins } = await applyWalletDelta(admin, toChildId, { coins: amount, earnedCoins: amount })
     await insertTx(admin, toChildId, {
       family_id: toWallet.family_id,
       transaction_type: 'earn_coins',
