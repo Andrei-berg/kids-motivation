@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const SUPABASE_ORIGIN = 'https://eitfkatezsmeqhiqioaj.supabase.co'
+// Upstream Supabase origin. Prefer an env var so staging/other projects can be
+// pointed elsewhere; fall back to the production ref for backward compatibility.
+const SUPABASE_ORIGIN =
+  process.env.SUPABASE_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  'https://eitfkatezsmeqhiqioaj.supabase.co'
 
 export const dynamic = 'force-dynamic'
 
