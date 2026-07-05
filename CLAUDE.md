@@ -47,10 +47,21 @@ Adam & Alim — some legacy top-level pages from that era still exist; see Routi
 ### Auth & roles
 
 - Supabase Auth. **Parents** sign in with email/password (`/` is the login/register page).
-  **Children** sign in with a family code + 4-digit PIN at `/kid/login`, which calls
-  `supabase.auth.signInWithPassword` against a synthetic user `child_<childId>@internal.familycoins.app`
-  (password = PIN, stored as a salted bcrypt hash by Supabase Auth). PINs are set by
-  `/api/set-child-pin` (parent-guarded, service-role). No PIN hash is stored in our tables.
+  A child may sign in **either** with a real account (e.g. Google) **or** with a family
+  code + 4–6 digit PIN at `/kid/login` — one method per child. Both resolve to a
+  `family_members` row via `user_id`.
+- **Child PIN login (password-less model).** Each PIN child has a synthetic auth user
+  `child_<childId>@internal.familycoins.app` whose password is a **long random secret**
+  (never the PIN), so the public token endpoint has nothing to brute-force — do NOT
+  reintroduce `signInWithPassword` with the PIN. The PIN is stored as a **bcrypt hash**
+  in `child_pin_credentials` (RLS deny-all, service-role only) and verified by
+  `verify_child_pin()`, which enforces an **authoritative per-child lockout** (5 fails /
+  15 min → 15 min lock). Flow: `/kid/login` → `getFamilyPinProfiles` picker (returns
+  `child_id`) → POST `/api/kid/login` → verify PIN + lockout → mint a session with
+  `generateLink`+`verifyOtp` (sets auth cookies). PINs are set by `/api/set-child-pin`
+  (parent-guarded, service-role): stores the hash via `set_child_pin_hash`, randomizes
+  the synthetic password, links `user_id` + `pin_set`. `/api/kid/login` is exempt from
+  the middleware auth redirect (the caller is pre-auth by definition).
 - `family_members` links an auth user to a family with a `role` (`parent` | `child` | `extended`)
   and, for children, a `child_id` → `children.id`.
 - `middleware.ts` is the gatekeeper: redirects unauthenticated users to `/`, does role-based

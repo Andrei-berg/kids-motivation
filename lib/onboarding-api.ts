@@ -50,6 +50,9 @@ export interface ChildProfile {
   memberId: string
   displayName: string
   avatarUrl: string | null
+  // The children.id (TEXT). Populated by getFamilyPinProfiles (kid PIN login),
+  // null for the onboarding claim picker (getFamilyChildren) which doesn't need it.
+  childId: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -294,6 +297,30 @@ export async function getFamilyChildren(familyId: string): Promise<ChildProfile[
     memberId: row.id,
     displayName: row.display_name || 'Ребёнок',
     avatarUrl: row.avatar_url,
+    childId: null, // onboarding claim picker doesn't need child_id
+  }))
+}
+
+// ---------------------------------------------------------------------------
+// getFamilyPinProfiles
+// ---------------------------------------------------------------------------
+// Pre-auth picker for the /kid/login PIN flow. Unlike getFamilyChildren, this
+// returns PIN-enabled profiles (linked or not) AND the child_id, so the login
+// page can build the synthetic email without an (RLS-blocked) family_members read.
+
+export async function getFamilyPinProfiles(familyId: string): Promise<ChildProfile[]> {
+  const supabase = createClient()
+
+  const { data, error } = await supabase
+    .rpc('get_family_pin_profiles', { p_family_id: familyId })
+
+  if (error) throw new Error(error.message)
+
+  return (data || []).map((row: { member_id: string; child_id: string; display_name: string | null; avatar_url: string | null }) => ({
+    memberId: row.member_id,
+    childId: row.child_id,
+    displayName: row.display_name || 'Ребёнок',
+    avatarUrl: row.avatar_url,
   }))
 }
 
@@ -525,16 +552,22 @@ export async function completeOnboarding(
 // salted bcrypt hash by Supabase Auth). The PIN is not persisted anywhere else.
 // Safe to call from client components.
 
-export async function setChildPin(memberId: string, childId: string, pin: string): Promise<void> {
+export type SetPinResult = { ok: true } | { ok: false; code: 'ALREADY_LINKED'; error: string }
+
+export async function setChildPin(childId: string, pin: string, force = false): Promise<SetPinResult> {
   const res = await fetch('/api/set-child-pin', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ memberId, childId, pin }),
+    body: JSON.stringify({ childId, pin, force }),
   })
-  if (!res.ok) {
-    const { error } = await res.json().catch(() => ({ error: 'Unknown error' }))
-    throw new Error(error || 'Failed to set PIN')
+  const body = await res.json().catch(() => ({ error: 'Unknown error' }))
+  // 409: profile is linked to a real (e.g. Google) account. The caller can retry
+  // with force:true to switch this child's login to PIN.
+  if (res.status === 409 && body?.code === 'ALREADY_LINKED') {
+    return { ok: false, code: 'ALREADY_LINKED', error: body.error }
   }
+  if (!res.ok) throw new Error(body?.error || 'Failed to set PIN')
+  return { ok: true }
 }
 
 // ---------------------------------------------------------------------------

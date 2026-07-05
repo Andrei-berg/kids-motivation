@@ -5,6 +5,7 @@ import { T } from '../tokens'
 import { Card, Btn, Pill, Icon, Tabs } from '../ui'
 import type { ParentChild, Route } from '../types'
 import { getWalletSettings } from '@/lib/wallet-api'
+import { setChildPin } from '@/lib/onboarding-api'
 import { updateWalletSettingsApi } from '@/lib/wallet-client'
 import type { WalletSettings } from '@/lib/wallet-api'
 import { useLanguage, SUPPORTED_LANGUAGES, useT } from '@/lib/i18n'
@@ -223,6 +224,62 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
   )
 }
 
+// ───── Child login PIN card ─────
+function PinCard({ child, notify }: { child: ParentChild; notify: (msg: string, tone?: string) => void }) {
+  const t = useT()
+  const [pin, setPin] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  async function save(force = false) {
+    if (pin.length < 4 || pin.length > 6) { notify(t('parentCenter.settings.child.pinTooShort'), 'error'); return }
+    setSaving(true)
+    try {
+      const res = await setChildPin(child.id, pin, force)
+      if (!res.ok && res.code === 'ALREADY_LINKED') {
+        // Profile is linked to a real account (e.g. Google). Confirm the switch.
+        if (window.confirm(t('parentCenter.settings.child.pinSwitchConfirm', { name: child.name }))) {
+          await save(true)
+        }
+        return
+      }
+      setPin('')
+      notify(t('parentCenter.settings.child.pinSaved', { name: child.name }))
+    } catch (e) {
+      notify(e instanceof Error ? e.message : 'Error', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Card pad={16}>
+      <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+        {t('parentCenter.settings.child.childPin')}
+      </div>
+      <div style={{ padding: 12, background: T.indigoSoft, borderRadius: T.r, border: `1px solid rgba(108,92,231,0.2)`, fontSize: 13, color: T.textDim, lineHeight: 1.5, marginBottom: 10 }}>
+        {t('parentCenter.settings.child.pinHint', { name: child.name })}
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          value={pin}
+          onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder={t('parentCenter.settings.child.pinPlaceholder')}
+          style={{
+            flex: 1, height: 40, padding: '0 14px', borderRadius: T.r,
+            background: T.bg1, border: `1px solid ${T.cardBorder}`, color: T.text,
+            fontFamily: T.fBody, fontSize: 16, letterSpacing: '0.3em', textAlign: 'center',
+          }}
+        />
+        <Btn variant="primary" size="md" onClick={() => save(false)} disabled={saving || pin.length !== 4}>
+          {saving ? t('common.loading') : t('parentCenter.settings.child.pinSaveBtn')}
+        </Btn>
+      </div>
+    </Card>
+  )
+}
+
 // ───── Children tab ─────
 function ChildrenTab({ allChildren, notify }: { allChildren: ParentChild[]; notify: (msg: string, tone?: string) => void }) {
   const [who, setWho] = useState(allChildren[0]?.id ?? '')
@@ -291,17 +348,7 @@ function ChildrenTab({ allChildren, notify }: { allChildren: ParentChild[]; noti
         </div>
       </Card>
 
-      <Card pad={16}>
-        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-          {t('parentCenter.settings.child.childPin')}
-        </div>
-        <div style={{ padding: 12, background: T.indigoSoft, borderRadius: T.r, border: `1px solid rgba(108,92,231,0.2)`, fontSize: 13, color: T.textDim, lineHeight: 1.5, marginBottom: 10 }}>
-          {t('settings.pinInfo')}
-        </div>
-        <Btn variant="outline" size="md" icon="settings" full onClick={() => window.open('/parent/settings', '_blank')}>
-          {t('settings.managePins')}
-        </Btn>
-      </Card>
+      {child && <PinCard child={child} notify={notify}/>}
     </div>
   )
 }
