@@ -11,9 +11,10 @@
 - ✅ **v2.0 Role-Based UI** — Phases 2.1–2.6 (shipped 2026-04-13)
 - ✅ **v3.0 Communication** — Phases 3.1–3.3 (shipped 2026-04-26)
 - 📋 **v4.0 PWA Polish** — Phases 4.1–4.5 (planned)
-- 📋 **v5.0 Monetization** — Phases 5.1–5.3 (planned)
-- 📋 **v6.0 Social** — Phases 6.1–6.3 (planned)
-- 📋 **v7.0 Native Apps** — Phases 7.1–7.3 (planned)
+- 📋 **v5.0 Flexibility & Design** — Phases 5.1–5.11 (planned 2026-07-05)
+- 📋 **v6.0 Monetization** — Phases 6.1–6.3 (planned)
+- 📋 **v7.0 Social** — Phases 7.1–7.3 (planned)
+- 📋 **v8.0 Native Apps** — Phases 8.1–8.3 (planned)
 
 ---
 
@@ -160,23 +161,141 @@ Plans:
 
 ---
 
-### v5.0 — Monetization
+### v5.0 — Flexibility & Design Unification
 
-- [ ] **Phase 5.1: freemium-limits** — Free plan limits (2 children, 3 categories, 5 shop items), paywall
-- [ ] **Phase 5.2: stripe-subscription** — Stripe Checkout, 30-day trial, webhook activation, cancel flow
-- [ ] **Phase 5.3: referral-program** — Unique referral link, +1 month premium per successful referral
+> Principle: **nothing gets restyled while it is hardcoded.** Every phase removes a hardcode
+> and replaces it with family-configurable data; design work follows flexibility.
+> Design contract (13 mockups, palette, type, day-constructor):
+> https://claude.ai/code/artifact/ab9621cc-2f84-42ff-a873-d07f8b841715
 
-### v6.0 — Social
+## Phases (v5.0)
 
-- [ ] **Phase 6.1: family-friendship** — Friend families via invite code, parent approval, privacy guard
-- [ ] **Phase 6.2: challenges** — Joint 7-day challenges with friend families, daily leaderboard
-- [ ] **Phase 6.3: templates-library** — Share/import shop items and category templates
+- [ ] **Phase 5.1: launch-prep** — Key/DB-password rotation, Sentry + product analytics, money-API integration tests, FamilyCoins naming
+- [ ] **Phase 5.2: room-tasks** — Configurable room checklist: `room_tasks`/`room_checks` tables, dual-write off the 5 hardcoded columns, settings editor
+- [ ] **Phase 5.3: design-tokens** — Unified `lib/design/tokens.ts` (paper/ink themes; Bitter/Golos Text/JetBrains Mono) re-exported through legacy `T` objects + shared atoms (LedgerRow, Amount, StatusChip, stamp animation)
+- [ ] **Phase 5.4: streak-settings** — Streak thresholds/bonuses move from award-route constants into `wallet_settings` + rules UI
+- [ ] **Phase 5.5: year-calendar** — School year (dates, quarters/trimesters), regional vacation presets with manual override, configurable weekend days, sick-day pauses streaks
+- [ ] **Phase 5.6: day-blocks** — Day assembly engine: day type × schedule × block rules; per-child `day_blocks` config; block-list renderer replaces hardcoded form sections; award computes from blocks; per-family feature flag
+- [ ] **Phase 5.7: kid-redesign** — Kid screens on unified tokens, nav 6→5 (leaderboard becomes a tab inside awards), motion discipline (single signature gesture)
+- [ ] **Phase 5.8: parent-redesign** — Parent Center on unified tokens + Day Constructor UI + Year Calendar screen + Weekly Summary card
+- [ ] **Phase 5.9: rules-presets** — Rule presets (Classic / No-penalties / Bonuses-only), `grade_scale` per family, configurable behavior tags
+- [ ] **Phase 5.10: automation** — Scheduled allowance, auto-approve under trust limit, schedule-driven smart reminders
+- [ ] **Phase 5.11: legacy-cleanup** — Redirect + delete legacy pages, purge globals.css, FamilyCoins app icon/splash/manifest
 
-### v7.0 — Native Apps
+## Phase Details (v5.0)
 
-- [ ] **Phase 7.1: expo-react-native** — Expo monorepo, shared packages/core, iOS simulator
-- [ ] **Phase 7.2: app-store** — TestFlight, App Store listing, Apple review, live
-- [ ] **Phase 7.3: google-play** — Internal → closed testing, Play Store listing, live
+### Phase 5.1: launch-prep
+**Goal**: The project is safe to iterate on fast — leaked credentials rotated, errors observable, money logic covered by tests
+**Depends on**: Nothing (first v5.0 phase)
+**Success Criteria** (what must be TRUE):
+  1. Supabase service-role key and DB password rotated; old credentials invalid; app works on prod with the new ones
+  2. Sentry captures a deliberately thrown test error from prod; product analytics records a test event
+  3. Integration tests cover `/api/wallet/award` (idempotency per source, all source types), purchase, exchange — green locally
+  4. App name is FamilyCoins in manifest, metadata, and README
+
+### Phase 5.2: room-tasks
+**Goal**: A family can rename, add, remove and reorder room checklist items — nothing about the checklist lives in code or fixed columns
+**Depends on**: Phase 5.1
+**Success Criteria** (what must be TRUE):
+  1. `room_tasks` (per-family: name, icon, order, active) and `room_checks` (per child+date) exist; existing and new families get the default 5 tasks seeded
+  2. Kid day form renders the checklist from `room_tasks`; checks write to `room_checks` AND legacy columns (dual-write)
+  3. `/api/wallet/award` computes room coins from `room_checks` with fallback to legacy columns; verify scripts pass
+  4. Parent edits the task list in Settings; a renamed task appears on the kid screen immediately
+
+### Phase 5.3: design-tokens
+**Goal**: One source of design truth — both existing UIs recolor by token substitution without touching component structure
+**Depends on**: Nothing (parallel-safe with 5.2)
+**Success Criteria** (what must be TRUE):
+  1. `lib/design/tokens.ts` exports base palette + `paper` (kid) and `ink` (parent) themes; old `kid/design/tokens.ts` and `parent-center/tokens.ts` re-export from it with unchanged keys
+  2. Bitter, Golos Text, JetBrains Mono load via `next/font` (Cyrillic subsets included)
+  3. Shared atoms exist and are adopted on at least kid wallet + parent dashboard: LedgerRow (dot leaders), Amount (mono+gold), StatusChip, stamp/count-up animation
+  4. Screens not yet migrated (incl. legacy pages) render without visual breakage
+
+### Phase 5.4: streak-settings
+**Goal**: Streak thresholds and bonuses are family settings, not code constants
+**Depends on**: Phase 5.1
+**Success Criteria** (what must be TRUE):
+  1. `wallet_settings` gains streak fields (days + bonus per streak type) with defaults equal to current constants
+  2. `/api/wallet/award` reads them from settings; behavior unchanged for families that never touched them
+  3. Parent edits streak rules in Settings → the next award uses the new values
+
+### Phase 5.5: year-calendar
+**Goal**: Day types come from a configurable calendar: school year dates, regional vacation presets, custom periods, family weekend days
+**Depends on**: Phase 5.4
+**Success Criteria** (what must be TRUE):
+  1. Parent sets school-year start/end and quarters/trimesters mode
+  2. Choosing a region fills vacations from a bundled JSON directory; every period is manually editable and the manual value wins
+  3. Weekend days are configurable per family (default sat+sun); a sick day pauses school blocks without burning streaks
+  4. `getDayType` resolves entirely from this data; the kid day screen reflects vacation/weekend automatically
+
+### Phase 5.6: day-blocks
+**Goal**: The child's day is assembled from data — day type × schedule × block rules — not from hardcoded form sections
+**Depends on**: Phases 5.2, 5.5
+**Success Criteria** (what must be TRUE):
+  1. `day_blocks` config per child: type, enabled, day types, who fills, coin price, multipliers, schedule link, order
+  2. Kid day form renders the assembled block list; on a vacation day school blocks disappear and schedule-driven blocks (section training, extra lesson) appear only on their scheduled days
+  3. `/api/wallet/award` computes coins from the assembled blocks, keeping idempotency per `(child_id, source_type, source_id)`; verify scripts pass
+  4. Rollout behind a per-family feature flag: own family → beta families → all
+
+### Phase 5.7: kid-redesign
+**Goal**: Kid UI fully on the unified system — warm paper theme, ledger rows, consolidated navigation
+**Depends on**: Phases 5.3, 5.6
+**Success Criteria** (what must be TRUE):
+  1. All kid screens use unified tokens/atoms; no Nunito/coral remnants
+  2. Navigation has 5 items; leaderboard lives as a tab inside Awards
+  3. Coin credit uses the signature stamp+count-up gesture; confetti fires only for streak bonuses and level-ups
+
+### Phase 5.8: parent-redesign
+**Goal**: Parent Center fully on the unified system, including the new configuration screens
+**Depends on**: Phases 5.3, 5.6
+**Success Criteria** (what must be TRUE):
+  1. Parent Center screens use the unified ink theme; no Sora/cyan/neon-green remnants
+  2. Day Constructor screen manages `day_blocks` per child (toggle, who fills, price, day types)
+  3. Year Calendar screen manages 5.5 data; Analytics shows the Weekly Summary card (static text for now)
+
+### Phase 5.9: rules-presets
+**Goal**: Families pick a rule philosophy in one tap and international grading is possible
+**Depends on**: Phase 5.6
+**Success Criteria** (what must be TRUE):
+  1. Presets Classic / No-penalties / Bonuses-only apply predefined `wallet_settings` values; offered during onboarding and in Settings
+  2. `grade_scale` per family (5-point / 12-point / A–F) drives grade input and award mapping
+  3. Behavior is a configurable tag set with per-tag prices instead of a single binary flag
+
+### Phase 5.10: automation
+**Goal**: The routine runs itself — allowance, small approvals and reminders need no parent action
+**Depends on**: Phase 5.5
+**Success Criteria** (what must be TRUE):
+  1. Scheduled allowance credits coins per family schedule via cron (idempotent per period)
+  2. Purchases under a per-child trust limit auto-approve; the parent sees them in the journal
+  3. Reminders derive from the schedule (upcoming section training, day not filled by evening, streak about to expire)
+
+### Phase 5.11: legacy-cleanup
+**Goal**: One UI remains; the brand is consistent everywhere
+**Depends on**: Phases 5.7, 5.8
+**Success Criteria** (what must be TRUE):
+  1. Legacy routes (`/dashboard`, `/wallet`, `/analytics`, `/wallboard`, `/expenses`, `/settings`, `/streaks`, `/records`, `/audit`, `/coach-rating`) redirect to kid/parent-center equivalents; their page code is deleted
+  2. `globals.css` shrinks to reset + genuinely shared utilities (no legacy page classes)
+  3. App icon, splash and manifest carry FamilyCoins branding
+
+---
+
+### v6.0 — Monetization
+
+- [ ] **Phase 6.1: freemium-limits** — Free plan limits (2 children, 3 categories, 5 shop items), paywall
+- [ ] **Phase 6.2: stripe-subscription** — Stripe Checkout, 30-day trial, webhook activation, cancel flow
+- [ ] **Phase 6.3: referral-program** — Unique referral link, +1 month premium per successful referral
+
+### v7.0 — Social
+
+- [ ] **Phase 7.1: family-friendship** — Friend families via invite code, parent approval, privacy guard
+- [ ] **Phase 7.2: challenges** — Joint 7-day challenges with friend families, daily leaderboard
+- [ ] **Phase 7.3: templates-library** — Share/import shop items and category templates
+
+### v8.0 — Native Apps
+
+- [ ] **Phase 8.1: expo-react-native** — Expo monorepo, shared packages/core, iOS simulator
+- [ ] **Phase 8.2: app-store** — TestFlight, App Store listing, Apple review, live
+- [ ] **Phase 8.3: google-play** — Internal → closed testing, Play Store listing, live
 
 ---
 
@@ -203,10 +322,11 @@ Plans:
 | 4.3 localization | 4/6 | In Progress|  | - |
 | 4.4 security-compliance | 5/5 | Complete   | 2026-05-17 | - |
 | 4.5 desktop | 2/4 | In Progress|  | - |
-| 5.1–5.3 | v5.0 | 0/? | Planned | - |
-| 6.1–6.3 | v6.0 | 0/? | Planned | - |
-| 7.1–7.3 | v7.0 | 0/? | Planned | - |
+| 5.1–5.11 | v5.0 Flexibility & Design | 0/? | Planned | - |
+| 6.1–6.3 | v6.0 Monetization | 0/? | Planned | - |
+| 7.1–7.3 | v7.0 Social | 0/? | Planned | - |
+| 8.1–8.3 | v8.0 Native Apps | 0/? | Planned | - |
 
 ---
 
-*Created: 2026-03-01. Updated: 2026-05-18 — Phase 4.5 planned: 3 plans covering ParentCenter desktop shell, parent screen 2-column layouts, and Kid Screen desktop layouts.*
+*Created: 2026-03-01. Updated: 2026-07-05 — Inserted milestone v5.0 Flexibility & Design Unification (11 phases, de-hardcoding first, design contract artifact); Monetization/Social/Native shifted to v6.0/v7.0/v8.0.*

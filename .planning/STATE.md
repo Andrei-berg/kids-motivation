@@ -90,13 +90,22 @@ See: .planning/PROJECT.md (updated 2026-04-26)
 - i18n: Chose custom React context + Zustand over next-intl — zero deps, dotted-key lookup, {{var}} interpolation, browser-detect default. See 04.3-01-SUMMARY.md.
 - COPPA requires parental consent gate for children under 13; data deletion must cascade across all tables
 
+### Roadmap Evolution
+
+- 2026-07-05: Milestone **v5.0 Flexibility & Design Unification** inserted (11 phases 5.1–5.11);
+  Monetization/Social/Native shifted to v6.0/v7.0/v8.0. Principle: de-hardcoding first, design second
+  («ничего не перекрашиваем, пока оно зашито»). Design contract:
+  https://claude.ai/code/artifact/ab9621cc-2f84-42ff-a873-d07f8b841715
+  Next up: `/gsd:plan-phase 5.1` (launch-prep).
+- Note: v4.0 phases 4.3 (localization, 4/6) and 4.5 (desktop, 2/4) remain open; they do not block v5.0.
+
 ### Pending Todos
 
 None.
 
 ### Blockers/Concerns
 
-None.
+- Leaked prod service-role key + DB password must be rotated in Phase 5.1 before any other v5.0 work ships.
 
 ---
 
