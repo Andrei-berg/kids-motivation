@@ -11,6 +11,8 @@ import { getExtraActivities, getActivityLogs, saveActivityLogs, getSectionsForDa
 import { getActiveSubjects, getExerciseTypes, saveHomeExercise, getHomeExercises } from '@/lib/repositories/schedule.repo'
 import { getSubjectGradesForDate, saveSubjectGrade } from '@/lib/repositories/grades.repo'
 import { getWalletSettings } from '@/lib/repositories/wallet.repo'
+import { getRoomTasks, getRoomChecks, saveRoomChecks } from '@/lib/repositories/room.repo'
+import type { RoomTask, RoomLegacyKey } from '@/lib/models/room.types'
 import { updateStreaks } from '@/lib/streaks'
 import { checkAndAwardBadges } from '@/lib/badges'
 import { compressImage, uploadPhoto, getSignedPhotoUrl } from '@/lib/photo-upload'
@@ -36,26 +38,6 @@ export interface KidDayFillFormProps {
   existingDay: DayData | null   // pre-filled if parent already saved
   onSaved: (coinsEarned: number) => void // callback after successful save
 }
-
-interface RoomItems {
-  bed: boolean
-  floor: boolean
-  desk: boolean
-  closet: boolean
-  trash: boolean
-}
-
-// ============================================================================
-// ROOM ITEM LABELS
-// ============================================================================
-
-const ROOM_ITEM_LABELS: { key: keyof RoomItems; emoji: string; labelKey: string }[] = [
-  { key: 'bed',    emoji: '🛏️', labelKey: 'kidFillForm.roomBed' },
-  { key: 'floor',  emoji: '🧹', labelKey: 'kidFillForm.roomFloor' },
-  { key: 'desk',   emoji: '🪑', labelKey: 'kidFillForm.roomDesk' },
-  { key: 'closet', emoji: '🚪', labelKey: 'kidFillForm.roomCloset' },
-  { key: 'trash',  emoji: '🗑️', labelKey: 'kidFillForm.roomTrash' },
-]
 
 // ============================================================================
 // MOOD OPTIONS
@@ -117,13 +99,11 @@ export function KidDayFillForm({
   const [sections, setSections] = useState<Array<Section & { visit?: SectionVisit }>>([])
   const [sectionNotes, setSectionNotes] = useState<Record<string, { progress: string; coachRating: number | null }>>({})
 
-  const [roomItems, setRoomItems] = useState<RoomItems>({
-    bed: isChildFilled ? (existingDay?.room_bed ?? false) : false,
-    floor: isChildFilled ? (existingDay?.room_floor ?? false) : false,
-    desk: isChildFilled ? (existingDay?.room_desk ?? false) : false,
-    closet: isChildFilled ? (existingDay?.room_closet ?? false) : false,
-    trash: isChildFilled ? (existingDay?.room_trash ?? false) : false,
-  })
+  // Room checklist — rendered from the family's room_tasks (active, ordered);
+  // roomChecked is keyed by task id. Pre-filled from room_checks when the day
+  // was already child-filled (mirrors the old existingDay?.room_* pre-fill).
+  const [roomTasks, setRoomTasks] = useState<RoomTask[]>([])
+  const [roomChecked, setRoomChecked] = useState<Record<string, boolean>>({})
 
   const [mood, setMood] = useState<string | null>(existingDay?.mood ?? null)
   const [proofFile, setProofFile] = useState<File | null>(null)
@@ -204,13 +184,30 @@ export function KidDayFillForm({
       })
       setSectionNotes(notes)
 
-      // Whether this child's reading needs parent confirmation
+      // Whether this child's reading needs parent confirmation + family_id
+      // (needed to load the family's room checklist).
       const { data: childPrefs } = await supabase
         .from('children')
-        .select('require_reading_check')
+        .select('require_reading_check, family_id')
         .eq('id', childId)
         .maybeSingle()
       setRequireReadingCheck((childPrefs as any)?.require_reading_check ?? true)
+
+      // Load the family's active room checklist (data-driven, replaces the
+      // hardcoded 5-item array) and pre-fill from room_checks when this day
+      // was already child-filled.
+      const familyId = (childPrefs as any)?.family_id as string | undefined
+      if (familyId) {
+        const tasks = await getRoomTasks(familyId)
+        setRoomTasks(tasks)
+        const initialChecked: Record<string, boolean> = {}
+        tasks.forEach(task => { initialChecked[task.id] = false })
+        if (isChildFilled) {
+          const checks = await getRoomChecks(childId, date)
+          checks.forEach(c => { initialChecked[c.task_id] = c.done })
+        }
+        setRoomChecked(initialChecked)
+      }
 
       // Pre-fill reading log
       const existingReading = await getReadingLog(childId, date)
@@ -268,8 +265,11 @@ export function KidDayFillForm({
   // ── Live coin calculation (no state — pure compute) ──────────────────────
   const coinsPreview = useMemo(() => {
     let total = 0
-    const roomCount = Object.values(roomItems).filter(Boolean).length
-    if (roomCount >= 3) {
+    // Preview only — the server (/api/wallet/award) recomputes from room_checks
+    // with the same threshold rule: max(1, ceil(0.6 * activeTaskCount)).
+    const roomDoneCount = Object.values(roomChecked).filter(Boolean).length
+    const roomTaskCount = roomTasks.length
+    if (roomTaskCount > 0 && roomDoneCount >= Math.max(1, Math.ceil(0.6 * roomTaskCount))) {
       total += settings?.coins_per_room_task ?? 3
     }
     checkedActivities.forEach(id => {
@@ -312,12 +312,12 @@ export function KidDayFillForm({
       total += (settings as any)?.coins_per_book ?? 20
     }
     return total
-  }, [roomItems, checkedActivities, activities, settings, kidGrades, sections, sectionNotes, reading, readingActive, requireReadingCheck])
+  }, [roomTasks, roomChecked, checkedActivities, activities, settings, kidGrades, sections, sectionNotes, reading, readingActive, requireReadingCheck])
 
   // ── Handlers ─────────────────────────────────────────────────────────────
-  function toggleRoomItem(key: keyof RoomItems) {
+  function toggleRoomTask(taskId: string) {
     if (isLocked) return
-    setRoomItems(prev => ({ ...prev, [key]: !prev[key] }))
+    setRoomChecked(prev => ({ ...prev, [taskId]: !prev[taskId] }))
   }
 
   function handleProofCapture(e: React.ChangeEvent<HTMLInputElement>) {
@@ -387,8 +387,17 @@ export function KidDayFillForm({
     setSaving(true)
 
     try {
-      const roomCount = Object.values(roomItems).filter(Boolean).length
-      const roomOk = roomCount >= 3
+      // Dual-write (CONTEXT decision 3): every rendered task gets a room_checks
+      // row; tasks with a legacy_key ALSO drive the matching days.room_* column
+      // so the room_score trigger/room_ok/analytics/wallboard keep working.
+      // Any legacy-mapped task not currently rendered (e.g. deactivated) writes
+      // false rather than leaving the column untouched.
+      const legacyDone: Record<RoomLegacyKey, boolean> = {
+        bed: false, floor: false, desk: false, closet: false, trash: false,
+      }
+      roomTasks.forEach(task => {
+        if (task.legacy_key) legacyDone[task.legacy_key] = roomChecked[task.id] ?? false
+      })
 
       // Build saveDay params based on fillMode
       const dayParams: Parameters<typeof saveDay>[0] = {
@@ -399,11 +408,11 @@ export function KidDayFillForm({
         noteChild: noteChild.trim() || undefined,
       }
 
-      dayParams.roomBed = roomItems.bed
-      dayParams.roomFloor = roomItems.floor
-      dayParams.roomDesk = roomItems.desk
-      dayParams.roomCloset = roomItems.closet
-      dayParams.roomTrash = roomItems.trash
+      dayParams.roomBed = legacyDone.bed
+      dayParams.roomFloor = legacyDone.floor
+      dayParams.roomDesk = legacyDone.desk
+      dayParams.roomCloset = legacyDone.closet
+      dayParams.roomTrash = legacyDone.trash
 
       // Upload room proof photo if captured
       let roomProofSignedUrl: string | undefined
@@ -426,6 +435,14 @@ export function KidDayFillForm({
       }
 
       await saveDay({ ...dayParams, roomProofUrl: roomProofSignedUrl })
+
+      // Dual-write (a): room_checks — one row per rendered task, done/not-done.
+      if (roomTasks.length > 0) {
+        await saveRoomChecks(childId, date, roomTasks.map(task => ({
+          taskId: task.id,
+          done: roomChecked[task.id] ?? false,
+        })))
+      }
 
       // Coin awards (room, activities, grades, sport, book, streak) are no
       // longer credited from the client. After all of today's rows are saved,
@@ -561,12 +578,12 @@ export function KidDayFillForm({
       </div>
 
       {/* ─── Room ─── */}
-      <FillSection title={t('kidFillForm.roomSection')} icon="🏠" sub={`${Object.values(roomItems).filter(Boolean).length}/${ROOM_ITEM_LABELS.length}`}>
+      <FillSection title={t('kidFillForm.roomSection')} icon="🏠" sub={`${Object.values(roomChecked).filter(Boolean).length}/${roomTasks.length}`}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            {ROOM_ITEM_LABELS.map(({ key, emoji, labelKey }) => {
-              const on = roomItems[key]
+            {roomTasks.map(task => {
+              const on = roomChecked[task.id] ?? false
               return (
-                <button key={key} onClick={() => { toggleRoomItem(key); if (!on) triggerConfetti() }} disabled={isLocked} style={{
+                <button key={task.id} onClick={() => { toggleRoomTask(task.id); if (!on) triggerConfetti() }} disabled={isLocked} style={{
                   height: 48, padding: '0 14px', borderRadius: 24,
                   background: on ? T.tealSoft : '#fff',
                   border: on ? `2px solid ${T.teal}` : `1.5px solid ${T.line}`,
@@ -575,8 +592,8 @@ export function KidDayFillForm({
                   boxShadow: on ? `0 4px 12px ${T.teal}30` : '0 2px 6px rgba(0,0,0,0.03)',
                   transition: 'all 0.2s',
                 }}>
-                  <span style={{ fontSize: 18 }}>{emoji}</span>
-                  <span style={{ flex: 1, textAlign: 'left' }}>{t(labelKey)}</span>
+                  <span style={{ fontSize: 18 }}>{task.icon ?? '🏠'}</span>
+                  <span style={{ flex: 1, textAlign: 'left' }}>{task.name}</span>
                   {on && <span style={{ width: 22, height: 22, borderRadius: 11, background: T.teal, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6l3 3 5-6" stroke="#fff" strokeWidth="2.4" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   </span>}
