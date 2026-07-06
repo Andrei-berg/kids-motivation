@@ -115,6 +115,14 @@ None.
 ### Blockers/Concerns
 
 - Leaked prod service-role key + DB password must be rotated in Phase 5.1 before any other v5.0 work ships.
+- **DEFECT (found by plan-checker 2026-07-06): withdrawal approval is unimplemented.**
+  `app/api/wallet/withdraw/route.ts` creates requests and its comment references
+  `/api/wallet/withdraw/approve` — that route does not exist anywhere; the only candidate
+  (`approveWithdrawal`/`rejectWithdrawal` in `lib/repositories/wallet.repo.ts`) is dead code
+  on the anon client and would fail under 04.4-03 RLS. Pending withdrawals also do not
+  reserve funds. Needs a dedicated plan (service-role endpoint mirroring
+  `app/parent/shop/actions.ts` + threat model) — candidate for a 5.1 gap-closure plan or
+  early 5.2. The 05.1-06 test plan documents the gap instead of testing the phantom route.
 
 ---
 
