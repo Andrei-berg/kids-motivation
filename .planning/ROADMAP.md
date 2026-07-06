@@ -171,7 +171,7 @@ Plans:
 ## Phases (v5.0)
 
 - [x] **Phase 5.1: launch-prep** — Key/DB-password rotation, Sentry + product analytics, money-API integration tests, FamilyCoins naming (completed 2026-07-06)
-- [ ] **Phase 5.2: room-tasks** — Configurable room checklist: `room_tasks`/`room_checks` tables, dual-write off the 5 hardcoded columns, settings editor
+- [x] **Phase 5.2: room-tasks** — Configurable room checklist: `room_tasks`/`room_checks` tables, dual-write off the 5 hardcoded columns, settings editor (code-complete 2026-07-06; SC4 checkpoint:human-verify pending operator approval)
 - [ ] **Phase 5.3: design-tokens** — Unified `lib/design/tokens.ts` (paper/ink themes; Bitter/Golos Text/JetBrains Mono) re-exported through legacy `T` objects + shared atoms (LedgerRow, Amount, StatusChip, stamp animation)
 - [ ] **Phase 5.4: streak-settings** — Streak thresholds/bonuses move from award-route constants into `wallet_settings` + rules UI
 - [ ] **Phase 5.5: year-calendar** — School year (dates, quarters/trimesters), regional vacation presets with manual override, configurable weekend days, sick-day pauses streaks
@@ -216,7 +216,7 @@ Plans:
 - [x] 05.2-03-PLAN.md — Award from room_checks with legacy room_ok fallback + parity/threshold/fallback integration tests
 - [x] 05.2-04-PLAN.md — KidDayFillForm: render checklist from room_tasks + dual-write room_checks/legacy columns
 - [x] 05.2-05-PLAN.md — DailyModal: render checklist from room_tasks + dual-write (sick-day grace preserved)
-- [ ] 05.2-06-PLAN.md — RoomTasksManager settings editor (add/rename/toggle/reorder/delete; legacy locked) + Settings wiring
+- [x] 05.2-06-PLAN.md — RoomTasksManager settings editor (add/rename/toggle/reorder/delete; legacy locked) + Settings wiring
 
 ### Phase 5.3: design-tokens
 **Goal**: One source of design truth — both existing UIs recolor by token substitution without touching component structure
