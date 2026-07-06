@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-stopped_at: Completed 05.2-01-PLAN.md — room_tasks/room_checks migration applied to live DB, RLS + seed + backfill + legacy-delete guard verified
-last_updated: "2026-07-06T13:47:51.536Z"
+stopped_at: Completed 05.2-02-PLAN.md — room.repo.ts data layer + new-family room-task seed wiring
+last_updated: "2026-07-06T13:53:43.538Z"
 last_activity: 2026-07-06
 progress:
   total_phases: 16
   completed_phases: 5
   total_plans: 34
-  completed_plans: 28
+  completed_plans: 29
   percent: 31
 ---
 
@@ -57,7 +57,7 @@ Last activity: 2026-07-06
 Prior GSD activity: 2026-07-06 — executed 05.2-01 (room_tasks/room_checks migration)
 ```
 
-Progress: [████████░░] 82%
+Progress: [█████████░] 85%
 
 ---
 
@@ -131,8 +131,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-07-06T13:47:51.517Z
-Stopped at: Completed 05.2-01-PLAN.md — room_tasks/room_checks migration applied to live DB, RLS + seed + backfill + legacy-delete guard verified
+Last session: 2026-07-06T13:53:43.519Z
+Stopped at: Completed 05.2-02-PLAN.md — room.repo.ts data layer + new-family room-task seed wiring
 Resume file: None
 
 ---
@@ -173,6 +173,7 @@ Resume file: None
 - [Phase 05.1-05]: days.room_ok is DB-trigger-derived (room_score_trigger/update_room_score) from room_bed/room_floor/room_desk/room_closet/room_trash, not settable directly by insert — test seeds must set 3 of 5 checklist booleans instead
 - [Phase 05.1-06]: purchase.test.ts mocks both requireFamilyMember and requireParent (two distinct auth boundaries in the purchase request/approve/reject flow); exchange-withdraw.test.ts mocks a single parent membership since exchange/withdraw only need requireFamilyMember
 - [Phase 05.2-01]: room_tasks delete guard uses pg_trigger_depth() <= 1 (not = 0) — the trigger's own invocation is already depth 1, so = 0 would have blocked family/child FK-cascade deletion (incl. COPPA cascades) whenever a legacy room task existed
+- [Phase 05.2-02]: room.repo.ts mirrors children.repo.ts idiom (browser supabase singleton + children family_id lookup) rather than categories.repo.ts's createClient(); createFamily seeds default room tasks via non-fatal seed_default_room_tasks RPC
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 
