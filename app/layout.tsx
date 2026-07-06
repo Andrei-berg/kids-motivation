@@ -4,6 +4,7 @@ import { PushInit } from '@/components/PushInit'
 import { InstallPrompt } from '@/components/InstallPrompt'
 import { OfflineBanner } from '@/components/OfflineBanner'
 import { PageTransition } from '@/components/PageTransition'
+import { AnalyticsProvider } from '@/components/AnalyticsProvider'
 import { LanguageProvider } from '@/lib/i18n'
 
 export const metadata: Metadata = {
@@ -33,6 +34,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <LanguageProvider>
+          <AnalyticsProvider />
           <OfflineBanner />
           <PushInit />
           <InstallPrompt />
