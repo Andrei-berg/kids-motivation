@@ -25,6 +25,7 @@ import {
   readingCoinHint,
 } from '@/lib/day-type'
 import { PhotoLightbox } from '@/components/chat/PhotoLightbox'
+import { track } from '@/lib/analytics'
 
 // ─── Local Types ──────────────────────────────────────────────────────────────
 
@@ -465,6 +466,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
           body: JSON.stringify({ childId, date }),
         })
         if (!res.ok) console.warn('[DailyModal] award failed:', res.status)
+        else track('day_saved', { role: 'parent' })
       } catch (e) {
         console.warn('[DailyModal] award request failed:', e)
       }

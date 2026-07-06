@@ -20,6 +20,7 @@ import { T } from '@/components/kid/design/tokens'
 import { Confetti, AnimatedNum } from '@/components/kid/design/atoms'
 import { useT, useLanguage } from '@/lib/i18n'
 import { localDateString } from '@/utils/helpers'
+import { track } from '@/lib/analytics'
 
 const GRADE_COINS: Record<number, number> = { 5: 5, 4: 3, 3: -3, 2: -5, 1: -10 }
 
@@ -506,6 +507,7 @@ export function KidDayFillForm({
           body: JSON.stringify({ childId, date }),
         })
         if (!res.ok) console.warn('[KidDayFillForm] award failed:', res.status)
+        else track('day_saved', { role: 'kid' })
       } catch (e) {
         console.warn('[KidDayFillForm] award request failed:', e)
       }
