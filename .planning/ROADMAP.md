@@ -170,7 +170,7 @@ Plans:
 
 ## Phases (v5.0)
 
-- [ ] **Phase 5.1: launch-prep** — Key/DB-password rotation, Sentry + product analytics, money-API integration tests, FamilyCoins naming
+- [x] **Phase 5.1: launch-prep** — Key/DB-password rotation, Sentry + product analytics, money-API integration tests, FamilyCoins naming (completed 2026-07-06)
 - [ ] **Phase 5.2: room-tasks** — Configurable room checklist: `room_tasks`/`room_checks` tables, dual-write off the 5 hardcoded columns, settings editor
 - [ ] **Phase 5.3: design-tokens** — Unified `lib/design/tokens.ts` (paper/ink themes; Bitter/Golos Text/JetBrains Mono) re-exported through legacy `T` objects + shared atoms (LedgerRow, Amount, StatusChip, stamp animation)
 - [ ] **Phase 5.4: streak-settings** — Streak thresholds/bonuses move from award-route constants into `wallet_settings` + rules UI
@@ -192,14 +192,14 @@ Plans:
   2. Sentry captures a deliberately thrown test error from prod; product analytics records a test event
   3. Integration tests cover `/api/wallet/award` (idempotency per source, all source types), purchase, exchange — green locally
   4. App name is FamilyCoins in manifest, metadata, and README
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans complete
 Plans:
 - [x] 05.1-01-PLAN.md — Rotate leaked service-role key + DB password (manual dashboard steps) and verify prod on new credentials
 - [x] 05.1-02-PLAN.md — FamilyCoins naming in layout metadata, manifest, README
 - [x] 05.1-03-PLAN.md — Sentry (@sentry/nextjs) client/server/edge init, DSN-guarded no-op, ?boom=1 prod error trigger
 - [x] 05.1-04-PLAN.md — PostHog EU analytics: wrapper + provider + pageviews + day_saved event in both day-fill flows
 - [x] 05.1-05-PLAN.md — Money-test harness (vitest @/ alias, isolated test-family fixture) + award idempotency/all-source-types integration tests
-- [ ] 05.1-06-PLAN.md — Purchase request/approve/reject, exchange math, withdrawal double-spend integration tests
+- [x] 05.1-06-PLAN.md — Purchase request/approve/reject, exchange math, withdrawal double-spend integration tests
 
 ### Phase 5.2: room-tasks
 **Goal**: A family can rename, add, remove and reorder room checklist items — nothing about the checklist lives in code or fixed columns

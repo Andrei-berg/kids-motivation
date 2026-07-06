@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-stopped_at: Completed 05.1-05-PLAN.md — money-test harness + award integration tests (all 7 source types, idempotency, 23505 backstop, child-role gating), green against live DB (LP-SC3 award half)
-last_updated: "2026-07-06T06:53:52.940Z"
+stopped_at: Completed 05.1-06-PLAN.md — purchase/exchange/withdraw integration tests, completing the SC3 money-test suite (18 tests total) green against live DB
+last_updated: "2026-07-06T07:03:32.332Z"
 last_activity: 2026-07-06
 progress:
   total_phases: 16
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 28
-  completed_plans: 26
-  percent: 25
+  completed_plans: 27
+  percent: 31
 ---
 
 # STATE.md — Текущее состояние проекта
@@ -51,12 +51,12 @@ progress:
 ```
 Milestone v4.0 PWA Polish — In Progress
 Phase 4.5 (desktop): COMPLETE — all 4 plans executed
-Phase 05.1 (launch-prep): 05.1-05 COMPLETE — money-test harness + award integration tests: isolated __test__ family fixture, /api/wallet/award covered for idempotency, all 7 source types, 23505 backstop, child-role behavior gating — green against the live (rotated) DB; npm test stays green without env keys (LP-SC3 award half)
+Phase 05.1 (launch-prep): 05.1-06 COMPLETE — purchase request/approve/reject, exchange rate/bonus math, and withdrawal request path covered against the live DB; the full SC3 money suite (award + purchase + exchange + withdraw, 18 tests) is green together via `npm run test:integration`; npm test stays green without env keys (LP-SC3 fully met)
 Last activity: 2026-07-06
-Prior GSD activity: 2026-07-06 — executed 05.1-05 (money-test harness + award integration tests)
+Prior GSD activity: 2026-07-06 — executed 05.1-06 (purchase/exchange/withdraw integration tests)
 ```
 
-Progress: [█████████░] 93%
+Progress: [██████████] 96%
 
 ---
 
@@ -122,14 +122,16 @@ None.
   on the anon client and would fail under 04.4-03 RLS. Pending withdrawals also do not
   reserve funds. Needs a dedicated plan (service-role endpoint mirroring
   `app/parent/shop/actions.ts` + threat model) — candidate for a 5.1 gap-closure plan or
-  early 5.2. The 05.1-06 test plan documents the gap instead of testing the phantom route.
+  early 5.2. `tests/integration/exchange-withdraw.test.ts` Test 6 ("KNOWN GAP") now
+  test-documents this current behavior (a second pending withdrawal succeeds against
+  an already-committed balance) instead of testing the phantom route — still open.
 
 ---
 
 ## Session Continuity
 
-Last session: 2026-07-06T06:53:38.929Z
-Stopped at: Completed 05.1-05-PLAN.md — money-test harness + award integration tests (all 7 source types, idempotency, 23505 backstop, child-role gating), green against live DB (LP-SC3 award half)
+Last session: 2026-07-06T07:02:58.028Z
+Stopped at: Completed 05.1-06-PLAN.md — purchase/exchange/withdraw integration tests, completing the SC3 money-test suite (18 tests total) green against live DB
 Resume file: None
 
 ---
@@ -168,6 +170,7 @@ Resume file: None
 - [Phase 05.1-04]: capture_pageview: false at init + manual trackPageview() from AnalyticsProvider on route change — App Router client navigations don't trigger PostHog's own history-based autocapture
 - [Phase 05.1]: Integration tests invoke Next.js route handlers directly (import POST from route.ts + new NextRequest), mocking only requireFamilyMember via a partial vi.mock of lib/supabase/admin — createAdminClient/assertChildInFamily/wallet_apply run for real against the live DB
 - [Phase 05.1-05]: days.room_ok is DB-trigger-derived (room_score_trigger/update_room_score) from room_bed/room_floor/room_desk/room_closet/room_trash, not settable directly by insert — test seeds must set 3 of 5 checklist booleans instead
+- [Phase 05.1-06]: purchase.test.ts mocks both requireFamilyMember and requireParent (two distinct auth boundaries in the purchase request/approve/reject flow); exchange-withdraw.test.ts mocks a single parent membership since exchange/withdraw only need requireFamilyMember
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 
