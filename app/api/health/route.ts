@@ -9,7 +9,16 @@ import { NextResponse } from 'next/server'
 // Never statically optimized or cached — always hits the server.
 export const dynamic = 'force-dynamic'
 
-export function GET() {
+export function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+
+  // Deliberate, on-demand error trigger for Sentry verification. Not caught here on
+  // purpose — it must propagate so the server Sentry instrumentation captures it and
+  // Next.js returns a 500. No state mutation, no amplification (T-051-08, accepted).
+  if (searchParams.get('boom') === '1') {
+    throw new Error('Sentry test error: /api/health?boom=1')
+  }
+
   return NextResponse.json(
     { ok: true, ts: Date.now() },
     { headers: { 'Cache-Control': 'no-store, max-age=0' } }
