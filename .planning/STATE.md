@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-stopped_at: Completed 05.1-06-PLAN.md — purchase/exchange/withdraw integration tests, completing the SC3 money-test suite (18 tests total) green against live DB
-last_updated: "2026-07-06T07:03:32.332Z"
+stopped_at: Completed 05.2-01-PLAN.md — room_tasks/room_checks migration applied to live DB, RLS + seed + backfill + legacy-delete guard verified
+last_updated: "2026-07-06T13:47:51.536Z"
 last_activity: 2026-07-06
 progress:
   total_phases: 16
   completed_phases: 5
-  total_plans: 28
-  completed_plans: 27
+  total_plans: 34
+  completed_plans: 28
   percent: 31
 ---
 
@@ -51,12 +51,13 @@ progress:
 ```
 Milestone v4.0 PWA Polish — In Progress
 Phase 4.5 (desktop): COMPLETE — all 4 plans executed
-Phase 05.1 (launch-prep): 05.1-06 COMPLETE — purchase request/approve/reject, exchange rate/bonus math, and withdrawal request path covered against the live DB; the full SC3 money suite (award + purchase + exchange + withdraw, 18 tests) is green together via `npm run test:integration`; npm test stays green without env keys (LP-SC3 fully met)
+Phase 05.1 (launch-prep): COMPLETE — full SC3 money suite (award + purchase + exchange + withdraw, 18 tests) green against live DB
+Phase 05.2 (room-tasks): 05.2-01 COMPLETE — room_tasks/room_checks tables + RLS + seed_default_room_tasks() + existing-family backfill (11 families, 5 tasks each) + legacy-delete guard applied to live DB and verified (scripts/verify-room-tasks.mjs green); next: 05.2-02 (room.repo.ts + new-family seed wiring)
 Last activity: 2026-07-06
-Prior GSD activity: 2026-07-06 — executed 05.1-06 (purchase/exchange/withdraw integration tests)
+Prior GSD activity: 2026-07-06 — executed 05.2-01 (room_tasks/room_checks migration)
 ```
 
-Progress: [██████████] 96%
+Progress: [████████░░] 82%
 
 ---
 
@@ -65,7 +66,7 @@ Progress: [██████████] 96%
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Any family can register and use the app — children earn coins for real effort, spend them on real rewards
-**Current focus:** Phase 05.1 — launch-prep
+**Current focus:** Phase 05.2 — room-tasks
 
 ---
 
@@ -130,8 +131,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-07-06T07:02:58.028Z
-Stopped at: Completed 05.1-06-PLAN.md — purchase/exchange/withdraw integration tests, completing the SC3 money-test suite (18 tests total) green against live DB
+Last session: 2026-07-06T13:47:51.517Z
+Stopped at: Completed 05.2-01-PLAN.md — room_tasks/room_checks migration applied to live DB, RLS + seed + backfill + legacy-delete guard verified
 Resume file: None
 
 ---
@@ -171,6 +172,7 @@ Resume file: None
 - [Phase 05.1]: Integration tests invoke Next.js route handlers directly (import POST from route.ts + new NextRequest), mocking only requireFamilyMember via a partial vi.mock of lib/supabase/admin — createAdminClient/assertChildInFamily/wallet_apply run for real against the live DB
 - [Phase 05.1-05]: days.room_ok is DB-trigger-derived (room_score_trigger/update_room_score) from room_bed/room_floor/room_desk/room_closet/room_trash, not settable directly by insert — test seeds must set 3 of 5 checklist booleans instead
 - [Phase 05.1-06]: purchase.test.ts mocks both requireFamilyMember and requireParent (two distinct auth boundaries in the purchase request/approve/reject flow); exchange-withdraw.test.ts mocks a single parent membership since exchange/withdraw only need requireFamilyMember
+- [Phase 05.2-01]: room_tasks delete guard uses pg_trigger_depth() <= 1 (not = 0) — the trigger's own invocation is already depth 1, so = 0 would have blocked family/child FK-cascade deletion (incl. COPPA cascades) whenever a legacy room task existed
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 

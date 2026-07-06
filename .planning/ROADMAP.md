@@ -211,7 +211,7 @@ Plans:
   4. Parent edits the task list in Settings; a renamed task appears on the kid screen immediately
 **Plans**: 6 plans
 Plans:
-- [ ] 05.2-01-PLAN.md — Migration: room_tasks/room_checks tables + RLS + seed_default_room_tasks() + existing-family backfill + legacy-delete guard [BLOCKING]
+- [x] 05.2-01-PLAN.md — Migration: room_tasks/room_checks tables + RLS + seed_default_room_tasks() + existing-family backfill + legacy-delete guard [BLOCKING]
 - [ ] 05.2-02-PLAN.md — room.repo.ts (reads + parent CRUD) + types + new-family seed wiring in createFamily
 - [ ] 05.2-03-PLAN.md — Award from room_checks with legacy room_ok fallback + parity/threshold/fallback integration tests
 - [ ] 05.2-04-PLAN.md — KidDayFillForm: render checklist from room_tasks + dual-write room_checks/legacy columns
