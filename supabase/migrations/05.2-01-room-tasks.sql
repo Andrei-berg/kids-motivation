@@ -195,12 +195,19 @@ SELECT public.seed_default_room_tasks(id) FROM public.families;
 -- the stable legacy_key mapping. Custom tasks (legacy_key NULL) delete freely.
 -- ============================================================================
 
+-- Only blocks a DIRECT delete on room_tasks. Inside the currently-executing
+-- BEFORE DELETE trigger, pg_trigger_depth() is already 1 for a direct delete
+-- statement; a cascade delete originating from a parent FK (e.g. deleting the
+-- whole family/child for COPPA account deletion) nests this trigger one level
+-- deeper inside the FK's internal RI cascade trigger (depth >= 2) and must be
+-- allowed through, or family/child deletion would be permanently blocked
+-- whenever a legacy task exists.
 CREATE OR REPLACE FUNCTION public.room_tasks_block_legacy_delete_fn()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  IF OLD.legacy_key IS NOT NULL THEN
+  IF OLD.legacy_key IS NOT NULL AND pg_trigger_depth() <= 1 THEN
     RAISE EXCEPTION 'legacy room task cannot be deleted; deactivate instead';
   END IF;
   RETURN OLD;
