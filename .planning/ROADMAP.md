@@ -192,6 +192,14 @@ Plans:
   2. Sentry captures a deliberately thrown test error from prod; product analytics records a test event
   3. Integration tests cover `/api/wallet/award` (idempotency per source, all source types), purchase, exchange — green locally
   4. App name is FamilyCoins in manifest, metadata, and README
+**Plans:** 6 plans
+Plans:
+- [ ] 05.1-01-PLAN.md — Rotate leaked service-role key + DB password (manual dashboard steps) and verify prod on new credentials
+- [ ] 05.1-02-PLAN.md — FamilyCoins naming in layout metadata, manifest, README
+- [ ] 05.1-03-PLAN.md — Sentry (@sentry/nextjs) client/server/edge init, DSN-guarded no-op, ?boom=1 prod error trigger
+- [ ] 05.1-04-PLAN.md — PostHog EU analytics: wrapper + provider + pageviews + day_saved event in both day-fill flows
+- [ ] 05.1-05-PLAN.md — Money-test harness (vitest @/ alias, isolated test-family fixture) + award idempotency/all-source-types integration tests
+- [ ] 05.1-06-PLAN.md — Purchase request/approve/reject, exchange math, withdrawal double-spend integration tests
 
 ### Phase 5.2: room-tasks
 **Goal**: A family can rename, add, remove and reorder room checklist items — nothing about the checklist lives in code or fixed columns
