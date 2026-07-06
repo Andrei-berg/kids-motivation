@@ -209,6 +209,14 @@ Plans:
   2. Kid day form renders the checklist from `room_tasks`; checks write to `room_checks` AND legacy columns (dual-write)
   3. `/api/wallet/award` computes room coins from `room_checks` with fallback to legacy columns; verify scripts pass
   4. Parent edits the task list in Settings; a renamed task appears on the kid screen immediately
+**Plans**: 6 plans
+Plans:
+- [ ] 05.2-01-PLAN.md — Migration: room_tasks/room_checks tables + RLS + seed_default_room_tasks() + existing-family backfill + legacy-delete guard [BLOCKING]
+- [ ] 05.2-02-PLAN.md — room.repo.ts (reads + parent CRUD) + types + new-family seed wiring in createFamily
+- [ ] 05.2-03-PLAN.md — Award from room_checks with legacy room_ok fallback + parity/threshold/fallback integration tests
+- [ ] 05.2-04-PLAN.md — KidDayFillForm: render checklist from room_tasks + dual-write room_checks/legacy columns
+- [ ] 05.2-05-PLAN.md — DailyModal: render checklist from room_tasks + dual-write (sick-day grace preserved)
+- [ ] 05.2-06-PLAN.md — RoomTasksManager settings editor (add/rename/toggle/reorder/delete; legacy locked) + Settings wiring
 
 ### Phase 5.3: design-tokens
 **Goal**: One source of design truth — both existing UIs recolor by token substitution without touching component structure
