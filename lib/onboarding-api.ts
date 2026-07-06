@@ -187,6 +187,18 @@ export async function createFamily(
     console.warn('seedDefaultCategories failed (non-fatal):', seedError)
   }
 
+  // Step 5b: seed the 5 default room checklist tasks (Кровать/Пол/Стол/Шкаф/Мусор)
+  try {
+    const { error: roomSeedError } = await supabase.rpc('seed_default_room_tasks', {
+      p_family_id: familyRow.id,
+    })
+    if (roomSeedError) throw roomSeedError
+  } catch (seedError) {
+    // Non-critical: family creation must still succeed if room-task seeding
+    // hiccups — the migration's idempotent seed function can be re-invoked later.
+    console.warn('seedDefaultRoomTasks failed (non-fatal):', seedError)
+  }
+
   return {
     familyId: familyRow.id,
     inviteCode: familyRow.invite_code,
