@@ -11,6 +11,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.63.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.39.0",
     "canvas-confetti": "^1.9.4",
