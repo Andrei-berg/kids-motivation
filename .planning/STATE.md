@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-stopped_at: "Completed 05.2-06-PLAN.md — RoomTasksManager settings editor + Schedule sub-tab wiring; checkpoint:human-verify (SC4) pending operator; all 05.2 plans code-complete"
-last_updated: "2026-07-06T18:27:05.890Z"
+stopped_at: "Completed 05.3-01-PLAN.md — lib/design/tokens.ts + key-preserving kid/parent re-exports + next/font brand fonts wired in app/layout.tsx"
+last_updated: "2026-07-06T19:08:00.719Z"
 last_activity: 2026-07-06
 progress:
   total_phases: 16
   completed_phases: 6
-  total_plans: 34
-  completed_plans: 33
+  total_plans: 37
+  completed_plans: 34
   percent: 38
 ---
 
@@ -53,11 +53,12 @@ Milestone v4.0 PWA Polish — In Progress
 Phase 4.5 (desktop): COMPLETE — all 4 plans executed
 Phase 05.1 (launch-prep): COMPLETE — full SC3 money suite (award + purchase + exchange + withdraw, 18 tests) green against live DB
 Phase 05.2 (room-tasks): 05.2-06 COMPLETE (code) — RoomTasksManager settings editor (add/rename/toggle/reorder/delete, legacy tasks locked from deletion) mounted as Parent Center → Settings → Schedule → Room; settings.tabs.room + roomTasksManager.* i18n added to en/ru. All 6 plans (01-06) code-complete; SC1-SC3 verified in earlier plans; SC4 (rename visible on kid screen) queued as a checkpoint:human-verify for the operator at phase end — phase 05.2 not yet marked closed pending that approval.
+Phase 05.3 (design-tokens): 05.3-01 COMPLETE — lib/design/tokens.ts (base + paper/ink themes) created; components/kid/design/tokens.ts (26 keys) + components/parent-center/tokens.ts (30 keys + CHILD_ACCENTS) recolored as key-preserving re-exports, zero consumer edits; Bitter/Golos Text/JetBrains Mono wired via next/font in app/layout.tsx with cyrillic subsets. tsc/lint/test/build all green. 05.3-02 (shared atoms) and 05.3-03 (pilot adoption) remain.
 Last activity: 2026-07-06
-Prior GSD activity: 2026-07-06 — executed 05.2-01 (migration), 05.2-02 (room.repo.ts + seed wiring), 05.2-03 (award), 05.2-04 (kid form dual-write), 05.2-05 (DailyModal dual-write)
+Prior GSD activity: 2026-07-06 — executed 05.3-01 (lib/design/tokens.ts + kid/parent token re-exports + next/font wiring)
 ```
 
-Progress: [██████████] 97%
+Progress: [█████████░] 92%
 
 ---
 
@@ -131,8 +132,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-07-06T18:26:30.962Z
-Stopped at: Completed 05.2-05-PLAN.md — DailyModal renders room_tasks + dual-write; checkpoint:human-verify pending operator
+Last session: 2026-07-06T19:07:19.053Z
+Stopped at: Completed 05.3-01-PLAN.md
 Resume file: None
 
 ---
@@ -181,6 +182,8 @@ Resume file: None
 - [Phase 05.2-05]: DailyModal room checklist family_id resolved from the children table (the child's family, matching threat T-052-16) with the Zustand store familyId as fallback
 - [Phase 05.2-05]: DailyModal roomCoins preview stays hardcoded 3 (modal never loaded wallet_settings); threshold preview uses max(1, ceil(0.6*N)); server award remains authoritative
 - [Phase 05.2]: RoomTasksManager resolves familyId via useAppStore() (SectionsManager pattern), not useFamilyMembers()
+- [Phase 05.3-01]: Token re-export pattern - lib/design/tokens.ts single source; kid/parent T objects re-export unchanged keys from base/paper/ink
+- [Phase 05.3-01]: CHILD_ACCENTS re-derived to 5 non-neon non-gold hexes (#8B7BF5, #3FBF92, #E88AA6, #5FB3E0, #C58BE0)
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 
