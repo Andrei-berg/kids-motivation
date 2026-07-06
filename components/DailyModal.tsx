@@ -26,6 +26,9 @@ import {
 } from '@/lib/day-type'
 import { PhotoLightbox } from '@/components/chat/PhotoLightbox'
 import { track } from '@/lib/analytics'
+import { supabase } from '@/lib/supabase'
+import { getRoomTasks, getRoomChecks, saveRoomChecks } from '@/lib/repositories/room.repo'
+import type { RoomTask, RoomLegacyKey } from '@/lib/models/room.types'
 
 // ─── Local Types ──────────────────────────────────────────────────────────────
 
@@ -109,12 +112,10 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   const [showSchedulePanel, setShowSchedulePanel] = useState(false)
   const [scheduleGrades, setScheduleGrades] = useState<{ [key: string]: number }>({})
 
-  // КОМНАТА
-  const [roomBed, setRoomBed] = useState(false)
-  const [roomFloor, setRoomFloor] = useState(false)
-  const [roomDesk, setRoomDesk] = useState(false)
-  const [roomCloset, setRoomCloset] = useState(false)
-  const [roomTrash, setRoomTrash] = useState(false)
+  // КОМНАТА — data-driven checklist from room_tasks (active, sort_order asc);
+  // roomChecked is keyed by task id.
+  const [roomTasks, setRoomTasks] = useState<RoomTask[]>([])
+  const [roomChecked, setRoomChecked] = useState<Record<string, boolean>>({})
   const [roomProofUrl, setRoomProofUrl] = useState<string | null>(null)
   const [lightboxProofUrl, setLightboxProofUrl] = useState<string | null>(null)
 
@@ -199,14 +200,17 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
       // Load existing day data
       let isSickLocal = false
+      const legacyRoom: Record<RoomLegacyKey, boolean> = {
+        bed: false, floor: false, desk: false, closet: false, trash: false,
+      }
       try {
         const dayData = await api.getDay(childId, date)
         if (dayData) {
-          setRoomBed(dayData.room_bed)
-          setRoomFloor(dayData.room_floor)
-          setRoomDesk(dayData.room_desk)
-          setRoomCloset(dayData.room_closet)
-          setRoomTrash(dayData.room_trash)
+          legacyRoom.bed = dayData.room_bed ?? false
+          legacyRoom.floor = dayData.room_floor ?? false
+          legacyRoom.desk = dayData.room_desk ?? false
+          legacyRoom.closet = dayData.room_closet ?? false
+          legacyRoom.trash = dayData.room_trash ?? false
           setRoomProofUrl(dayData.room_proof_url ?? null)
           setGoodBehavior(dayData.good_behavior)
           setDiaryNotDone(dayData.diary_not_done)
@@ -216,6 +220,34 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
           setHomeHelp(dayData.home_help ?? false)
           setHomeHelpNote(dayData.home_help_note || '')
           setHomeworkDone(dayData.homework_done ?? false)
+        }
+      } catch {}
+
+      // Room checklist — active room_tasks for the child's family (replaces the
+      // hardcoded 5-item array). Pre-fill from room_checks; when no room_checks
+      // rows exist (legacy-only saved day), fall back to the days.room_*
+      // booleans mapped via each task's legacy_key.
+      try {
+        const { data: childRow } = await supabase
+          .from('children')
+          .select('family_id')
+          .eq('id', childId)
+          .maybeSingle()
+        const roomFamilyId = (childRow?.family_id as string | undefined) ?? familyId ?? undefined
+        if (roomFamilyId) {
+          const tasks = await getRoomTasks(roomFamilyId)
+          setRoomTasks(tasks)
+          const initialChecked: Record<string, boolean> = {}
+          const checks = await getRoomChecks(childId, date)
+          if (checks.length > 0) {
+            tasks.forEach(task => { initialChecked[task.id] = false })
+            checks.forEach(c => { initialChecked[c.task_id] = c.done })
+          } else {
+            tasks.forEach(task => {
+              initialChecked[task.id] = task.legacy_key ? legacyRoom[task.legacy_key] : false
+            })
+          }
+          setRoomChecked(initialChecked)
         }
       } catch {}
 
@@ -310,7 +342,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
     setShowQuickAdd(false)
     setQuickAddSubject('')
     setQuickAddGrade(5)
-    setRoomBed(false); setRoomFloor(false); setRoomDesk(false); setRoomCloset(false); setRoomTrash(false)
+    setRoomTasks([]); setRoomChecked({})
     setGoodBehavior(true); setDiaryNotDone(false); setDayNote('')
     setExercises([]); setSportNote('')
     setSections([]); setSectionNotes({})
@@ -401,8 +433,26 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
       const dayType = dayTypeInfo.type
       const isSickDay = dayType === 'sick'
 
+      // Dual-write (CONTEXT decision 3): every rendered task gets a room_checks
+      // row; tasks with a legacy_key ALSO drive the matching days.room_* column
+      // so the room_score trigger/room_ok/analytics/wallboard keep working.
+      // All 5 legacy keys are set explicitly (default false) — a legacy-mapped
+      // task not currently rendered (e.g. deactivated) writes false rather than
+      // letting saveDay's fallback-merge resurrect a stale prior value.
+      const legacyDone: Record<RoomLegacyKey, boolean> = {
+        bed: false, floor: false, desk: false, closet: false, trash: false,
+      }
+      roomTasks.forEach(task => {
+        if (task.legacy_key) legacyDone[task.legacy_key] = roomChecked[task.id] ?? false
+      })
+
       const saveDay = api.saveDay({
-        childId, date, roomBed, roomFloor, roomDesk, roomCloset, roomTrash,
+        childId, date,
+        roomBed: legacyDone.bed,
+        roomFloor: legacyDone.floor,
+        roomDesk: legacyDone.desk,
+        roomCloset: legacyDone.closet,
+        roomTrash: legacyDone.trash,
         // On sick days, don't penalize room/behavior
         goodBehavior: isSickDay ? true : goodBehavior,
         diaryNotDone,
@@ -447,7 +497,15 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
           })))
         : Promise.resolve()
 
-      await Promise.all([saveDay, saveGrades, saveExercises, saveSections, saveReading, saveActivities])
+      // Dual-write (a): room_checks — one row per rendered task, done/not-done.
+      const saveRoom = roomTasks.length > 0
+        ? saveRoomChecks(childId, date, roomTasks.map(task => ({
+            taskId: task.id,
+            done: roomChecked[task.id] ?? false,
+          })))
+        : Promise.resolve()
+
+      await Promise.all([saveDay, saveGrades, saveExercises, saveSections, saveReading, saveActivities, saveRoom])
 
       const streakEvents = await updateStreaks(childId, date)
       // Fire-and-forget: don't block save completion on push delivery
@@ -496,8 +554,11 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
     .reduce((sum, a) => sum + a.coins, 0)
   const helpCoins = calcHomeHelpCoins(homeHelp)
   const homeworkCoins = homeworkDone ? 5 : 0
-  const roomScore = [roomBed, roomFloor, roomDesk, roomCloset, roomTrash].filter(Boolean).length
-  const roomOk = roomScore >= 3
+  // Preview only — the server (/api/wallet/award) recomputes from room_checks
+  // with the same threshold rule: max(1, ceil(0.6 * activeTaskCount)) → 3/5 for defaults.
+  const roomScore = Object.values(roomChecked).filter(Boolean).length
+  const roomTaskCount = roomTasks.length
+  const roomOk = roomTaskCount > 0 && roomScore >= Math.max(1, Math.ceil(0.6 * roomTaskCount))
   const roomCoins = roomOk ? 3 : 0
   const behaviorCoins = (dayTypeInfo.type === 'sick' || goodBehavior) ? 5 : 0
 
@@ -1000,7 +1061,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                 <span className="scroll-section-icon">🏠</span>
                 <span className="scroll-section-title">{t('dailyModal.room')}</span>
                 <span className={`scroll-section-badge ${dayType === 'sick' ? 'ok' : roomOk ? 'ok' : 'warn'}`}>
-                  {dayType === 'sick' ? '🤒' : `${roomScore}/5`}
+                  {dayType === 'sick' ? '🤒' : `${roomScore}/${roomTaskCount}`}
                 </span>
               </div>
               {dayType === 'sick' ? (
@@ -1009,17 +1070,15 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                 </div>
               ) : (
                 <div className="premium-checklist">
-                  {[
-                    { key: 'bed', label: t('dailyModal.roomBed'), icon: '🛏️', value: roomBed, setter: setRoomBed },
-                    { key: 'floor', label: t('dailyModal.roomFloor'), icon: '🧹', value: roomFloor, setter: setRoomFloor },
-                    { key: 'desk', label: t('dailyModal.roomDesk'), icon: '🪑', value: roomDesk, setter: setRoomDesk },
-                    { key: 'closet', label: t('dailyModal.roomCloset'), icon: '👕', value: roomCloset, setter: setRoomCloset },
-                    { key: 'trash', label: t('dailyModal.roomTrash'), icon: '🗑️', value: roomTrash, setter: setRoomTrash }
-                  ].map(item => (
-                    <label key={item.key} className="premium-checkbox">
-                      <input type="checkbox" checked={item.value} onChange={(e) => item.setter(e.target.checked)} />
-                      <span className="premium-checkbox-icon">{item.icon}</span>
-                      <span className="premium-checkbox-label">{item.label}</span>
+                  {roomTasks.map(task => (
+                    <label key={task.id} className="premium-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={roomChecked[task.id] ?? false}
+                        onChange={(e) => setRoomChecked(prev => ({ ...prev, [task.id]: e.target.checked }))}
+                      />
+                      <span className="premium-checkbox-icon">{task.icon ?? '🏠'}</span>
+                      <span className="premium-checkbox-label">{task.name}</span>
                       <span className="premium-checkbox-check">✓</span>
                     </label>
                   ))}
