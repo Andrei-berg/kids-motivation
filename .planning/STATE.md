@@ -3,12 +3,15 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-last_updated: "2026-05-18T11:49:55.055Z"
+stopped_at: Completed 04.5-04-PLAN.md — Kid Achievements 4-column badge grid + Kid Shop 3-column reward grid on desktop (DSK-03 complete)
+last_updated: "2026-07-06T06:18:56.259Z"
+last_activity: 2026-07-06
 progress:
-  total_phases: 35
-  completed_phases: 18
-  total_plans: 80
-  completed_plans: 78
+  total_phases: 16
+  completed_phases: 4
+  total_plans: 28
+  completed_plans: 22
+  percent: 25
 ---
 
 # STATE.md — Текущее состояние проекта
@@ -25,15 +28,19 @@ progress:
   (+ закрыта `?preview=true` лазейка); `CRON_SECRET` fail-closed; убран мёртвый
   SHA-256 PIN-хэш; **денежные мутации → server-side (service-role)**, money-таблицы
   RLS SELECT-only (миграция `04.4-03`).
+
 - **Критическая дыра:** удалены `*_anon_all` / `public USING true` RLS-политики с
   **30 таблиц** (миграции `04.4-04`, `04.4-05`) — публичный anon-ключ давал
   read/write данных всех семей. Закрыто и проверено.
+
 - **Функц-фиксы:** UTC-дата → `localDateString()` (UTC+3); cron на service-role;
   withdrawal double-spend guard; reminders-cron отключён в vercel.json.
+
 - **Инфра:** ESLint сконфигурирован (`npm run lint` зелёный).
 - **Фича:** parent **Expenses** UI (вкладка у ребёнка + экран в parent-center,
   CRUD + категории). Стоимость секций (`sections.cost`) материализуется в expenses
   по месяцам (миграция `04.4-06`, idempotent, read-only ♻️).
+
 - Verify-скрипты: `scripts/verify-wallet-rls.mjs`, `verify-award-idempotency.mjs`,
   `verify-award-reads.mjs`.
 
@@ -44,11 +51,12 @@ progress:
 ```
 Milestone v4.0 PWA Polish — In Progress
 Phase 4.5 (desktop): COMPLETE — all 4 plans executed
-Last activity: 2026-06-15 — out-of-band security + expenses pass (see above)
-Prior GSD activity: 2026-05-18 — executed 04.5-04 (Kid Achievements + Kid Shop desktop grids)
+Phase 05.1 (launch-prep): 05.1-02 COMPLETE — FamilyCoins branding in manifest/metadata/README (LP-SC4)
+Last activity: 2026-07-06
+Prior GSD activity: 2026-07-06 — executed 05.1-02 (FamilyCoins naming consistency)
 ```
 
-Progress: [████████░░] 80% (4/5 phases complete)
+Progress: [████████░░] 79%
 
 ---
 
@@ -57,7 +65,7 @@ Progress: [████████░░] 80% (4/5 phases complete)
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Any family can register and use the app — children earn coins for real effort, spend them on real rewards
-**Current focus:** Milestone v4.0 — PWA Polish → installable, offline-capable, localized, COPPA/GDPR compliant, desktop-ready
+**Current focus:** Phase 05.1 — launch-prep
 
 ---
 
@@ -97,6 +105,7 @@ See: .planning/PROJECT.md (updated 2026-04-26)
   («ничего не перекрашиваем, пока оно зашито»). Design contract:
   https://claude.ai/code/artifact/ab9621cc-2f84-42ff-a873-d07f8b841715
   Next up: `/gsd:plan-phase 5.1` (launch-prep).
+
 - Note: v4.0 phases 4.3 (localization, 4/6) and 4.5 (desktop, 2/4) remain open; they do not block v5.0.
 
 ### Pending Todos
@@ -111,8 +120,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-05-18T11:48:00Z
-Stopped at: Completed 04.5-04-PLAN.md — Kid Achievements 4-column badge grid + Kid Shop 3-column reward grid on desktop (DSK-03 complete)
+Last session: 2026-07-06T06:17:08.576Z
+Stopped at: Completed 05.1-02-PLAN.md — FamilyCoins branding in manifest/metadata/README (LP-SC4)
 Resume file: None
 
 ---
@@ -120,6 +129,7 @@ Resume file: None
 ## Decisions
 
 ### Phase 4.1 — Plan 01 (2026-04-26)
+
 - Used Next.js Metadata API `appleWebApp` field for Apple meta tags (not manual `<head>` tags) — idiomatic with App Router
 - InstallPrompt uses inline styles for reliability — renders before Tailwind CSS hydration
 - iOS install detection: `/iPad|iPhone|iPod/.test(navigator.userAgent)` + non-standalone check — covers all iOS Safari variants
@@ -144,31 +154,37 @@ Resume file: None
 - [Phase 04.5-desktop]: useDesktop hook uses window.innerWidth >= 1024 with resize listener — same pattern as plan 01/02 (no Tailwind breakpoint needed, purely inline styles)
 - [Phase 04.5-desktop]: Kid Day left panel: position: sticky, height: 100vh so stats remain visible while scrolling the form
 - [Phase 04.5-desktop]: Kid Wallet: goals in right sticky 340px column, transactions in left fill column — desktop only
+- [Phase 05.1]: app/manifest.ts already had FamilyCoins name/short_name from a prior phase — confirmed only, no edit committed
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
+
 - Three-strategy fetch handler: passthrough for /api/ and supabase.co, cache-first for /_next/static/, network-first for pages
 - addAll in install handler wrapped in catch() — pre-caching failures don't abort SW install
 - OfflineBanner uses inline styles (consistent with InstallPrompt) — renders before Tailwind hydration
 - Never cache API routes or Supabase requests in service worker
 
 ### Phase 4.1 — Plan 03 (2026-04-26)
+
 - notifyParent only fires for pending-status purchases — auto-approved purchases skip push to avoid noise
 - Push failure in requestPurchase is non-blocking — caught in try/catch, purchase flow always succeeds
 - pushsubscriptionchange logs warning only — full auto-resubscription requires VAPID key unavailable in SW context
 - requestPurchase must be a 'use server' file so notifyParent runs server-side (not in browser context)
 
 ### Phase 04.2 — Plan 04 (2026-05-16)
+
 - useCountUp hook uses rAF with cubic ease-out (same pattern as AnimatedNum in kid/design/atoms.tsx) — no framer-motion for count-up, simpler and no extra dependency
 - ease: 'easeOut' as const required to satisfy Framer Motion's Easing type in strict TypeScript — plain string literal rejected
 - Activity feed capped at 8 items, badge grid at 12, wallet transactions at 10 — all animations complete under 500ms total
 
 ### Phase 04.4 — Plan 01 (2026-05-17)
+
 - insertAuditEvent is non-blocking (catches errors, logs, never throws) — audit failures must not disrupt the parent action being audited
 - action_type enforced by both SQL CHECK constraint and TypeScript union type — double safety
 - consent_given uses three-state Boolean (NULL=not asked, TRUE=given, FALSE=withdrawn) to distinguish not-asked from denied
 - Used import { supabase } from '@/lib/supabase' singleton (consistent with all existing repos) instead of createClient() from plan template
 
 ### Phase 04.5 — Plan 04 (2026-05-18)
+
 - Achievements badge grid mobile fallback kept as repeat(3, 1fr) — existing mobile layout used 3 columns, not 2; preserves mobile experience byte-for-byte
 - Shop both real-rewards and virtual-items grids updated together — consistent 3-column desktop layout across both tabs
 - Balance strip in Shop left unchanged — already spans full container width, no inner maxWidth to remove
