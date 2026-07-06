@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-stopped_at: "Completed 05.2-04-PLAN.md — KidDayFillForm renders room_tasks + dual-write; checkpoint:human-verify pending operator"
-last_updated: "2026-07-06T14:11:30.283Z"
+stopped_at: "Completed 05.2-05-PLAN.md — DailyModal renders room_tasks + dual-write; checkpoint:human-verify pending operator"
+last_updated: "2026-07-06T18:20:05.856Z"
 last_activity: 2026-07-06
 progress:
   total_phases: 16
   completed_phases: 5
   total_plans: 34
-  completed_plans: 31
+  completed_plans: 32
   percent: 31
 ---
 
@@ -52,12 +52,12 @@ progress:
 Milestone v4.0 PWA Polish — In Progress
 Phase 4.5 (desktop): COMPLETE — all 4 plans executed
 Phase 05.1 (launch-prep): COMPLETE — full SC3 money suite (award + purchase + exchange + withdraw, 18 tests) green against live DB
-Phase 05.2 (room-tasks): 05.2-04 COMPLETE — KidDayFillForm Room section renders from room_tasks (active, ordered) instead of the hardcoded array; handleSubmit dual-writes room_checks + legacy days.room_* columns for legacy-keyed tasks; coinsPreview matches the server threshold (max(1, ceil(0.6·N))); ends with a checkpoint:human-verify (queued for operator at phase end); next: 05.2-05 (Settings editor)
+Phase 05.2 (room-tasks): 05.2-05 COMPLETE — DailyModal (parent day editor) Room section renders from room_tasks (active, ordered) instead of the hardcoded 5 useState booleans; handleSave dual-writes room_checks + legacy days.room_* columns for legacy-keyed tasks; roomOk preview matches the server threshold (max(1, ceil(0.6·N))); sick-day grace branch preserved; ends with a checkpoint:human-verify (queued for operator at phase end); next: 05.2-06
 Last activity: 2026-07-06
-Prior GSD activity: 2026-07-06 — executed 05.2-01 (migration), 05.2-02 (room.repo.ts + seed wiring)
+Prior GSD activity: 2026-07-06 — executed 05.2-01 (migration), 05.2-02 (room.repo.ts + seed wiring), 05.2-03 (award), 05.2-04 (kid form dual-write)
 ```
 
-Progress: [█████████░] 91%
+Progress: [█████████░] 94%
 
 ---
 
@@ -131,8 +131,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-07-06T14:11:02.917Z
-Stopped at: Completed 05.2-04-PLAN.md — KidDayFillForm renders room_tasks + dual-write; checkpoint:human-verify pending operator
+Last session: 2026-07-06T18:19:59.601Z
+Stopped at: Completed 05.2-05-PLAN.md — DailyModal renders room_tasks + dual-write; checkpoint:human-verify pending operator
 Resume file: None
 
 ---
@@ -178,6 +178,8 @@ Resume file: None
 - [Phase 05.2-03]: Integration teardown for guard-protected room_tasks: delete room_checks directly, remove legacy room_tasks via the families FK ON DELETE CASCADE inside destroyTestFamily (direct deletes blocked by the 05.2-01 legacy-delete guard even for service role)
 - [Phase 05.2-04]: KidDayFillForm dual-write always sets all 5 legacy RoomLegacyKeys explicitly (default false) rather than leaving unmapped/inactive tasks undefined — saveDay's params ?? roomData? fallback-merge would otherwise resurrect a stale prior value for a task no longer rendered
 - [Phase 05.2-04]: KidDayFillForm dual-write always sets all 5 legacy RoomLegacyKeys explicitly (default false) rather than leaving unmapped/inactive tasks undefined
+- [Phase 05.2-05]: DailyModal room checklist family_id resolved from the children table (the child's family, matching threat T-052-16) with the Zustand store familyId as fallback
+- [Phase 05.2-05]: DailyModal roomCoins preview stays hardcoded 3 (modal never loaded wallet_settings); threshold preview uses max(1, ceil(0.6*N)); server award remains authoritative
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 
