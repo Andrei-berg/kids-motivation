@@ -16,6 +16,7 @@ import PeriodsManager from '@/components/settings/PeriodsManager'
 import SectionsManager from '@/components/settings/SectionsManager'
 import SubjectsManager from '@/components/settings/SubjectsManager'
 import ActivitiesManager from '@/components/settings/ActivitiesManager'
+import RoomTasksManager from '@/components/settings/RoomTasksManager'
 
 // ───── Language card ─────
 function LanguageCard() {
@@ -362,6 +363,7 @@ function ScheduleTab({ allChildren }: { allChildren: ParentChild[] }) {
     { id: 'sections',   icon: '🏃', label: t('parentCenter.settings.more.sections') },
     { id: 'vacations',  icon: '🌴', label: t('parentCenter.settings.more.vacations') },
     { id: 'activities', icon: '🎯', label: t('settings.tabs.activities') },
+    { id: 'room',       icon: '🏠', label: t('settings.tabs.room') },
   ] as const
   type SubTab = typeof SUB_TABS[number]['id']
   const [sub, setSub] = useState<SubTab>('subjects')
@@ -391,6 +393,7 @@ function ScheduleTab({ allChildren }: { allChildren: ParentChild[] }) {
       {sub === 'sections'   && <SectionsManager/>}
       {sub === 'vacations'  && <PeriodsManager/>}
       {sub === 'activities' && <ActivitiesManager/>}
+      {sub === 'room'       && <RoomTasksManager/>}
     </div>
   )
 }

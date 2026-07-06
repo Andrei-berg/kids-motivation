@@ -13,6 +13,10 @@
     "back": "Back",
     "next": "Next",
     "done": "Done",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "enable": "Enable",
+    "disable": "Disable",
     "coins": "coins",
     "days": "days",
     "points": "points",
@@ -699,6 +703,14 @@
       "cancel": "Cancel",
       "deleteConfirm": "Delete this activity?"
     },
+    "roomTasksManager": {
+      "title": "Room checklist",
+      "subtitle": "Add, rename, toggle and reorder the daily room checklist",
+      "namePlaceholder": "New task name",
+      "empty": "No tasks yet",
+      "systemTask": "system task",
+      "deleteConfirm": "Delete this task?"
+    },
     "streakSettings": {
       "title": "Streaks & Bonuses",
       "milestones": "Streak Bonuses",
@@ -786,7 +798,8 @@
     "tabs": {
       "children": "Children",
       "schedule": "Schedule",
-      "activities": "Activities"
+      "activities": "Activities",
+      "room": "Room"
     },
     "auditBtn": "Audit log",
     "walletsBtn": "Wallets",
