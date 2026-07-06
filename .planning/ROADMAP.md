@@ -226,6 +226,11 @@ Plans:
   2. Bitter, Golos Text, JetBrains Mono load via `next/font` (Cyrillic subsets included)
   3. Shared atoms exist and are adopted on at least kid wallet + parent dashboard: LedgerRow (dot leaders), Amount (mono+gold), StatusChip, stamp/count-up animation
   4. Screens not yet migrated (incl. legacy pages) render without visual breakage
+**Plans**: 3 plans
+Plans:
+- [ ] 05.3-01-PLAN.md — Unified lib/design/tokens.ts (base + paper/ink) + key-preserving T re-exports + next/font (Bitter/Golos Text/JetBrains Mono, Cyrillic)
+- [ ] 05.3-02-PLAN.md — Shared atoms: LedgerRow, Amount, StatusChip, useCountUp + Stamp (theme-aware, reduced-motion safe)
+- [ ] 05.3-03-PLAN.md — Pilot LedgerRow on kid wallet history + parent dashboard activity; full build + consolidated visual checkpoint
 
 ### Phase 5.4: streak-settings
 **Goal**: Streak thresholds and bonuses are family settings, not code constants
