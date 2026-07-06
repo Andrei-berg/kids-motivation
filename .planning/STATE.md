@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-stopped_at: Completed 05.1-03-PLAN.md — Sentry error monitoring (client/server/edge, DSN-guarded), ?boom=1 health trigger (LP-SC2 Sentry half)
-last_updated: "2026-07-06T06:33:53.976Z"
+stopped_at: Completed 05.1-04-PLAN.md — PostHog product analytics (EU cloud), day_saved event wired in both day-fill flows (LP-SC2 analytics half — LP-SC2 now code-complete)
+last_updated: "2026-07-06T06:42:18.095Z"
 last_activity: 2026-07-06
 progress:
   total_phases: 16
   completed_phases: 4
   total_plans: 28
-  completed_plans: 24
+  completed_plans: 25
   percent: 25
 ---
 
@@ -51,12 +51,12 @@ progress:
 ```
 Milestone v4.0 PWA Polish — In Progress
 Phase 4.5 (desktop): COMPLETE — all 4 plans executed
-Phase 05.1 (launch-prep): 05.1-03 COMPLETE — Sentry client/server/edge init, DSN-guarded, ?boom=1 health trigger (LP-SC2 Sentry half; PostHog half pending in 05.1-04)
+Phase 05.1 (launch-prep): 05.1-04 COMPLETE — PostHog product analytics (EU cloud), day_saved event wired in both day-fill flows (LP-SC2 analytics half; LP-SC2 now code-complete — both halves await operator env vars + manual prod confirmation)
 Last activity: 2026-07-06
-Prior GSD activity: 2026-07-06 — executed 05.1-03 (Sentry error monitoring)
+Prior GSD activity: 2026-07-06 — executed 05.1-04 (PostHog product analytics)
 ```
 
-Progress: [█████████░] 86%
+Progress: [█████████░] 89%
 
 ---
 
@@ -128,7 +128,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-07-06T06:33:53.959Z
+Last session: 2026-07-06T06:41:23.894Z
 Stopped at: Completed 05.1-03-PLAN.md — Sentry error monitoring (client/server/edge, DSN-guarded), ?boom=1 health trigger (LP-SC2 Sentry half)
 Resume file: None
 
@@ -165,6 +165,7 @@ Resume file: None
 - [Phase 05.1]: app/manifest.ts already had FamilyCoins name/short_name from a prior phase — confirmed only, no edit committed
 - [Phase 05.1-03]: experimental.instrumentationHook enabled in next.config.js — required on Next.js 14.2.35 for instrumentation.ts to load at all
 - [Phase 05.1-03]: Sentry.init guarded on DSN env presence in all three runtime configs (client/server/edge) — no-ops cleanly with no env vars
+- [Phase 05.1-04]: capture_pageview: false at init + manual trackPageview() from AnalyticsProvider on route change — App Router client navigations don't trigger PostHog's own history-based autocapture
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 
