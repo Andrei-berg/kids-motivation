@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-stopped_at: Completed 05.2-02-PLAN.md — room.repo.ts data layer + new-family room-task seed wiring
-last_updated: "2026-07-06T13:53:43.538Z"
+stopped_at: Completed 05.2-03-PLAN.md — award computes room coins from room_checks with legacy fallback + live-DB integration tests
+last_updated: "2026-07-06T14:03:44.184Z"
 last_activity: 2026-07-06
 progress:
   total_phases: 16
   completed_phases: 5
   total_plans: 34
-  completed_plans: 29
+  completed_plans: 30
   percent: 31
 ---
 
@@ -52,12 +52,12 @@ progress:
 Milestone v4.0 PWA Polish — In Progress
 Phase 4.5 (desktop): COMPLETE — all 4 plans executed
 Phase 05.1 (launch-prep): COMPLETE — full SC3 money suite (award + purchase + exchange + withdraw, 18 tests) green against live DB
-Phase 05.2 (room-tasks): 05.2-01 COMPLETE — room_tasks/room_checks tables + RLS + seed_default_room_tasks() + existing-family backfill (11 families, 5 tasks each) + legacy-delete guard applied to live DB and verified (scripts/verify-room-tasks.mjs green); next: 05.2-02 (room.repo.ts + new-family seed wiring)
+Phase 05.2 (room-tasks): 05.2-03 COMPLETE — /api/wallet/award room coins computed from room_checks over active room_tasks (threshold max(1, ceil(0.6·N)), 5→3 legacy parity) with fallback to day.room_ok when no checks exist; 4 new live-DB tests (room-award.test.ts), full 22-test money suite green; next: 05.2-04
 Last activity: 2026-07-06
-Prior GSD activity: 2026-07-06 — executed 05.2-01 (room_tasks/room_checks migration)
+Prior GSD activity: 2026-07-06 — executed 05.2-01 (migration), 05.2-02 (room.repo.ts + seed wiring)
 ```
 
-Progress: [█████████░] 85%
+Progress: [█████████░] 88%
 
 ---
 
@@ -131,8 +131,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-07-06T13:53:43.519Z
-Stopped at: Completed 05.2-02-PLAN.md — room.repo.ts data layer + new-family room-task seed wiring
+Last session: 2026-07-06T14:03:44.166Z
+Stopped at: Completed 05.2-03-PLAN.md — award computes room coins from room_checks with legacy fallback + live-DB integration tests
 Resume file: None
 
 ---
@@ -174,6 +174,8 @@ Resume file: None
 - [Phase 05.1-06]: purchase.test.ts mocks both requireFamilyMember and requireParent (two distinct auth boundaries in the purchase request/approve/reject flow); exchange-withdraw.test.ts mocks a single parent membership since exchange/withdraw only need requireFamilyMember
 - [Phase 05.2-01]: room_tasks delete guard uses pg_trigger_depth() <= 1 (not = 0) — the trigger's own invocation is already depth 1, so = 0 would have blocked family/child FK-cascade deletion (incl. COPPA cascades) whenever a legacy room task existed
 - [Phase 05.2-02]: room.repo.ts mirrors children.repo.ts idiom (browser supabase singleton + children family_id lookup) rather than categories.repo.ts's createClient(); createFamily seeds default room tasks via non-fatal seed_default_room_tasks RPC
+- [Phase 05.2-03]: Room award threshold = max(1, ceil(0.6 * activeTaskCount)) — 5 active tasks → 3, byte-exact parity with the legacy room_ok (>=3-of-5) rule; award falls back to day.room_ok when zero room_checks rows exist for (child, date)
+- [Phase 05.2-03]: Integration teardown for guard-protected room_tasks: delete room_checks directly, remove legacy room_tasks via the families FK ON DELETE CASCADE inside destroyTestFamily (direct deletes blocked by the 05.2-01 legacy-delete guard even for service role)
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 

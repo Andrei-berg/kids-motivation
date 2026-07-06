@@ -213,7 +213,7 @@ Plans:
 Plans:
 - [x] 05.2-01-PLAN.md — Migration: room_tasks/room_checks tables + RLS + seed_default_room_tasks() + existing-family backfill + legacy-delete guard [BLOCKING]
 - [x] 05.2-02-PLAN.md — room.repo.ts (reads + parent CRUD) + types + new-family seed wiring in createFamily
-- [ ] 05.2-03-PLAN.md — Award from room_checks with legacy room_ok fallback + parity/threshold/fallback integration tests
+- [x] 05.2-03-PLAN.md — Award from room_checks with legacy room_ok fallback + parity/threshold/fallback integration tests
 - [ ] 05.2-04-PLAN.md — KidDayFillForm: render checklist from room_tasks + dual-write room_checks/legacy columns
 - [ ] 05.2-05-PLAN.md — DailyModal: render checklist from room_tasks + dual-write (sick-day grace preserved)
 - [ ] 05.2-06-PLAN.md — RoomTasksManager settings editor (add/rename/toggle/reorder/delete; legacy locked) + Settings wiring
