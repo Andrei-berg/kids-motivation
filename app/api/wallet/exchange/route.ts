@@ -4,7 +4,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient, requireFamilyMember } from '@/lib/supabase/admin'
-import { errorResponse, authorizeChildAction, loadWallet, insertTx, loadSettings } from '../_lib'
+import { errorResponse, authorizeChildAction, loadWallet, insertTx, loadSettings, applyWalletDelta } from '../_lib'
+import { AuthError } from '@/lib/supabase/admin'
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,19 +32,23 @@ export async function POST(req: NextRequest) {
     const rate = settings.base_exchange_rate * (1 + bonus / 100)
     const moneyAmount = coins * rate
 
-    const newCoins = wallet.coins - coins
-    const newMoney = Number(wallet.money) + moneyAmount
-
-    const { error: updErr } = await admin
-      .from('wallet')
-      .update({
-        coins: newCoins,
-        money: newMoney,
-        total_exchanged_coins: wallet.total_exchanged_coins + coins,
-        total_earned_money: Number(wallet.total_earned_money) + moneyAmount,
+    // Atomic debit-coins / credit-money with a 0 coin floor so concurrency can't
+    // exchange more coins than the child holds. Returned balances are authoritative.
+    let newCoins: number, newMoney: number
+    try {
+      const res = await applyWalletDelta(admin, childId, {
+        coins: -coins,
+        money: moneyAmount,
+        exchangedCoins: coins,
+        earnedMoney: moneyAmount,
+        minCoins: 0,
       })
-      .eq('child_id', childId)
-    if (updErr) throw updErr
+      newCoins = res.coins
+      newMoney = res.money
+    } catch (e) {
+      if (e instanceof AuthError && e.status === 400) throw new AuthError('Insufficient coins', 400)
+      throw e
+    }
 
     const { data: exchange, error: insErr } = await admin
       .from('coin_exchanges')

@@ -13,6 +13,18 @@ export async function middleware(request: NextRequest) {
   // straight from the network, not get caught by the auth-redirect logic below.
   if (pathname === '/api/health') return NextResponse.next()
 
+  // Transparent Supabase proxy (app/api/supabase/[...path]) — a raw API passthrough.
+  // Callers authenticate to Supabase with their own bearer token in the request
+  // headers; there is no cookie session to sync here. Without this bypass the
+  // cookie-based auth redirect below turns every unauthenticated Supabase call
+  // (including login itself) into a 307 → /, which breaks sign-in entirely.
+  if (pathname.startsWith('/api/supabase/')) return NextResponse.next()
+
+  // Child PIN login endpoint — the caller is unauthenticated by definition (they
+  // are logging in). It sets the session cookies itself on success. Without this
+  // bypass the redirect below would turn it into a 307 → /.
+  if (pathname === '/api/kid/login') return NextResponse.next()
+
   const { supabaseResponse, user, supabase } = await updateSession(request)
 
   // Classify the path

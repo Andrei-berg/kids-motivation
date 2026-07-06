@@ -4,11 +4,12 @@ import { PushInit } from '@/components/PushInit'
 import { InstallPrompt } from '@/components/InstallPrompt'
 import { OfflineBanner } from '@/components/OfflineBanner'
 import { PageTransition } from '@/components/PageTransition'
+import { AnalyticsProvider } from '@/components/AnalyticsProvider'
 import { LanguageProvider } from '@/lib/i18n'
 
 export const metadata: Metadata = {
-  title: 'FamilyCoins — Kids Motivation',
-  description: 'Family motivation system for children',
+  title: 'FamilyCoins',
+  description: 'FamilyCoins — a family motivation app where kids earn coins for real effort and spend them on real rewards.',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
@@ -33,6 +34,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <LanguageProvider>
+          <AnalyticsProvider />
           <OfflineBanner />
           <PushInit />
           <InstallPrompt />

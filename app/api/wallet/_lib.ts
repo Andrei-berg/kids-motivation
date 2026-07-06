@@ -93,6 +93,54 @@ export async function loadWallet(admin: Admin, childId: string): Promise<WalletR
   return data as WalletRow
 }
 
+/**
+ * Atomic wallet balance mutation via the wallet_apply() DB function. Replaces the
+ * read-modify-write (read wallet → compute in JS → write absolute value) that
+ * caused lost-update races between concurrent money operations. The delta is
+ * applied under a row lock and the returned balances are authoritative.
+ *
+ * `minCoins`/`minMoney` are opt-in floors: pass 0 on spend paths so an overspend
+ * is impossible even under concurrency; leave undefined on penalty/award/p2p-credit
+ * paths where negative balances / debt are legitimate. A breached floor (or a
+ * missing wallet) throws AuthError(400).
+ */
+export async function applyWalletDelta(
+  admin: Admin,
+  childId: string,
+  deltas: {
+    coins?: number
+    money?: number
+    earnedCoins?: number
+    spentCoins?: number
+    exchangedCoins?: number
+    earnedMoney?: number
+    spentMoney?: number
+    minCoins?: number
+    minMoney?: number
+  },
+): Promise<{ coins: number; money: number }> {
+  const { data, error } = await admin.rpc('wallet_apply', {
+    p_child_id: childId,
+    p_coins_delta: deltas.coins ?? 0,
+    p_money_delta: deltas.money ?? 0,
+    p_earned_coins: deltas.earnedCoins ?? 0,
+    p_spent_coins: deltas.spentCoins ?? 0,
+    p_exchanged_coins: deltas.exchangedCoins ?? 0,
+    p_earned_money: deltas.earnedMoney ?? 0,
+    p_spent_money: deltas.spentMoney ?? 0,
+    p_min_coins: deltas.minCoins ?? null,
+    p_min_money: deltas.minMoney ?? null,
+  })
+  if (error) {
+    // P0001 = INSUFFICIENT_FUNDS (floor breached or wallet missing).
+    if (error.code === 'P0001') throw new AuthError('Insufficient funds', 400)
+    throw error
+  }
+  const row = Array.isArray(data) ? data[0] : data
+  if (!row) throw new Error('wallet_apply returned no row')
+  return { coins: row.coins, money: Number(row.money) }
+}
+
 /** Insert a wallet_transactions row via the service client. */
 export async function insertTx(
   admin: Admin,
@@ -128,17 +176,19 @@ export async function processPurchase(
   const wallet = await loadWallet(admin, childId)
   const isCoins = reward.reward_type === 'coins'
   const priceCoins = isCoins ? reward.price_coins || 0 : 0
-  if (isCoins && wallet.coins < priceCoins) throw new AuthError('Insufficient coins', 400)
 
   const autoApprove = reward.auto_approve === true
-  const newCoins = wallet.coins - priceCoins
-
+  // Debit atomically with a 0 floor so a concurrent op can't let the child
+  // overspend into the red. newCoins is the authoritative post-balance.
+  let newCoins = wallet.coins
   if (priceCoins > 0) {
-    const { error } = await admin
-      .from('wallet')
-      .update({ coins: newCoins, total_spent_coins: wallet.total_spent_coins + priceCoins })
-      .eq('child_id', childId)
-    if (error) throw error
+    try {
+      const res = await applyWalletDelta(admin, childId, { coins: -priceCoins, spentCoins: priceCoins, minCoins: 0 })
+      newCoins = res.coins
+    } catch (e) {
+      if (e instanceof AuthError && e.status === 400) throw new AuthError('Insufficient coins', 400)
+      throw e
+    }
   }
 
   const { data: created, error: insErr } = await admin
@@ -213,22 +263,18 @@ export async function creditAwards(
 
   const { data: wallet, error: walletErr } = await admin
     .from('wallet')
-    .select('*')
+    .select('child_id, family_id')
     .eq('child_id', childId)
     .maybeSingle()
   if (walletErr || !wallet) throw new Error('Wallet not found')
-  const w = wallet as WalletRow
 
-  let runningCoins = w.coins
-  let totalEarned = w.total_earned_coins
-  let totalSpent = w.total_spent_coins
   let net = 0
   const applied: AwardIntent[] = []
 
   for (const intent of intents) {
     if (intent.coins === 0) continue
 
-    // Skip if this source was already awarded.
+    // Skip if this source was already awarded (idempotency pre-check).
     const { data: existing } = await admin
       .from('wallet_transactions')
       .select('id')
@@ -238,49 +284,42 @@ export async function creditAwards(
       .maybeSingle()
     if (existing) continue
 
-    runningCoins += intent.coins
-    if (intent.coins > 0) totalEarned += intent.coins
-    else totalSpent += Math.abs(intent.coins)
-    net += intent.coins
+    // Apply this intent's delta atomically first (no floor — penalties may go
+    // negative), then record the transaction with the authoritative post-balance.
+    const bal = await applyWalletDelta(admin, childId, {
+      coins: intent.coins,
+      earnedCoins: intent.coins > 0 ? intent.coins : 0,
+      spentCoins: intent.coins < 0 ? Math.abs(intent.coins) : 0,
+    })
 
     const { error: insErr } = await admin.from('wallet_transactions').insert({
       child_id: childId,
-      family_id: w.family_id,
+      family_id: (wallet as { family_id?: string | null }).family_id ?? null,
       transaction_type: intent.coins > 0 ? 'earn_coins' : 'spend_coins',
       coins_change: intent.coins,
       money_change: 0,
       description: intent.description,
       icon: intent.icon,
-      balance_after_coins: runningCoins,
-      balance_after_money: w.money,
+      balance_after_coins: bal.coins,
+      balance_after_money: bal.money,
       source_type: intent.sourceType,
       source_id: intent.sourceId,
     })
-    // Unique-index violation (race): another request awarded it first. Roll back
-    // this intent's contribution and continue.
+    // Unique-index violation (race): another request awarded this source between
+    // our pre-check and insert. Reverse the delta we just applied and continue.
     if (insErr) {
       if (insErr.code === '23505') {
-        runningCoins -= intent.coins
-        if (intent.coins > 0) totalEarned -= intent.coins
-        else totalSpent -= Math.abs(intent.coins)
-        net -= intent.coins
+        await applyWalletDelta(admin, childId, {
+          coins: -intent.coins,
+          earnedCoins: intent.coins < 0 ? Math.abs(intent.coins) : 0,
+          spentCoins: intent.coins > 0 ? intent.coins : 0,
+        })
         continue
       }
       throw insErr
     }
+    net += intent.coins
     applied.push(intent)
-  }
-
-  if (net !== 0) {
-    const { error: updErr } = await admin
-      .from('wallet')
-      .update({
-        coins: runningCoins,
-        total_earned_coins: totalEarned,
-        total_spent_coins: totalSpent,
-      })
-      .eq('child_id', childId)
-    if (updErr) throw updErr
   }
 
   return { creditedCoins: net, applied }

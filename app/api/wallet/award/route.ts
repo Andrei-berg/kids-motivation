@@ -67,7 +67,37 @@ export async function POST(req: NextRequest) {
       .eq('date', date)
       .maybeSingle()
     if (day) {
-      if (day.room_ok && settings.coins_per_room_task !== 0) {
+      // Room completeness: prefer the flexible per-family room_checks
+      // checklist over the legacy day.room_ok boolean. Threshold =
+      // max(1, ceil(0.6 * activeTaskCount)) — for the default 5 active tasks
+      // this is exactly 3, matching the pre-existing room_ok (>=3-of-5,
+      // DB-trigger-derived) rule byte-for-byte. Falls back to day.room_ok
+      // when the child has zero room_checks rows for this date (family/day
+      // not yet dual-writing, or a legacy day) so existing behavior is
+      // unchanged until a family actually uses the checklist.
+      const { data: activeRoomTasks } = await admin
+        .from('room_tasks')
+        .select('id')
+        .eq('family_id', member.familyId)
+        .eq('is_active', true)
+      const { data: roomChecks } = await admin
+        .from('room_checks')
+        .select('task_id, done')
+        .eq('child_id', childId)
+        .eq('date', date)
+
+      let roomComplete: boolean
+      if (!roomChecks || roomChecks.length === 0) {
+        roomComplete = day.room_ok
+      } else {
+        const activeTaskIds = new Set((activeRoomTasks ?? []).map((t) => t.id))
+        const activeCount = activeTaskIds.size
+        const doneCount = roomChecks.filter((c) => c.done && activeTaskIds.has(c.task_id)).length
+        const threshold = Math.max(1, Math.ceil(0.6 * activeCount))
+        roomComplete = activeCount > 0 && doneCount >= threshold
+      }
+
+      if (roomComplete && settings.coins_per_room_task !== 0) {
         intents.push({
           coins: settings.coins_per_room_task,
           description: 'Убрана комната',

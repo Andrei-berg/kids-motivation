@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { lookupFamilyByCode, getFamilyChildren } from '@/lib/onboarding-api'
+import { lookupFamilyByCode, getFamilyPinProfiles } from '@/lib/onboarding-api'
 import { useAppStore } from '@/lib/store'
 import type { ChildProfile } from '@/lib/onboarding-api'
 import { useT } from '@/lib/i18n'
@@ -36,7 +35,7 @@ export default function KidLogin() {
         setError(t('kidLogin.codeNotFound'))
         return
       }
-      const children = await getFamilyChildren(result.familyId)
+      const children = await getFamilyPinProfiles(result.familyId)
       setFamilyIdLocal(result.familyId)
       setProfiles(children)
       setStep(1)
@@ -48,35 +47,40 @@ export default function KidLogin() {
   }
 
   async function signInWithPin() {
-    if (!selectedProfile || pin.length !== 4) return
+    if (!selectedProfile || pin.length < 4) return
+    // child_id comes straight from the (SECURITY DEFINER) picker RPC.
+    if (!selectedProfile.childId) {
+      setError(t('kidLogin.profileNotFound'))
+      return
+    }
     setLoading(true)
     setError(null)
     try {
-      const supabase = createClient()
-      const { data: memberRow } = await supabase
-        .from('family_members')
-        .select('child_id')
-        .eq('id', selectedProfile.memberId)
-        .maybeSingle()
-
-      if (!memberRow?.child_id) {
-        setError(t('kidLogin.profileNotFound'))
-        return
-      }
-
-      const syntheticEmail = `child_${memberRow.child_id}@internal.familycoins.app`
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email: syntheticEmail,
-        password: pin,
+      // Login goes through our server route: it verifies the PIN against a bcrypt
+      // hash with an authoritative lockout, then mints the session (the synthetic
+      // account has no usable password, so the public endpoint can't be brute-forced).
+      const res = await fetch('/api/kid/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ familyId, childId: selectedProfile.childId, pin }),
       })
 
-      if (authError) {
+      if (res.status === 429) {
+        const { retryAfter } = await res.json().catch(() => ({ retryAfter: 900 }))
+        const mins = Math.max(1, Math.ceil((retryAfter ?? 900) / 60))
+        setError(t('kidLogin.lockedRetry', { mins }))
+        return
+      }
+      if (!res.ok) {
         setError(t('kidLogin.wrongPinRetry'))
         return
       }
 
       setFamilyId(familyId)
-      setActiveMemberId(memberRow.child_id)
+      setActiveMemberId(selectedProfile.childId)
+      // Session cookies were set by the route; refresh so the browser client and
+      // middleware pick them up before landing on the guarded /kid/day.
+      router.refresh()
       router.push('/kid/day')
     } catch {
       setError(t('kidLogin.loginError'))
@@ -418,8 +422,8 @@ export default function KidLogin() {
               inputMode="numeric"
               placeholder="••••"
               value={pin}
-              onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-              maxLength={4}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              maxLength={6}
               autoComplete="off"
               style={{
                 width: '100%',
@@ -454,19 +458,19 @@ export default function KidLogin() {
             <button
               type="button"
               onClick={signInWithPin}
-              disabled={loading || pin.length !== 4}
+              disabled={loading || pin.length < 4}
               style={{
                 width: '100%',
                 padding: '0.875rem',
                 borderRadius: '0.625rem',
                 border: 'none',
-                background: pin.length !== 4
+                background: pin.length < 4
                   ? '#d1d5db'
                   : `linear-gradient(135deg, ${AMBER}, ${AMBER_DARK})`,
                 color: '#ffffff',
                 fontSize: '1rem',
                 fontWeight: 700,
-                cursor: pin.length !== 4 ? 'not-allowed' : 'pointer',
+                cursor: pin.length < 4 ? 'not-allowed' : 'pointer',
                 transition: 'opacity 0.2s',
                 fontFamily: 'inherit',
               }}
