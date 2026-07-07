@@ -172,7 +172,7 @@ Plans:
 
 - [x] **Phase 5.1: launch-prep** — Key/DB-password rotation, Sentry + product analytics, money-API integration tests, FamilyCoins naming (completed 2026-07-06)
 - [x] **Phase 5.2: room-tasks** — Configurable room checklist: `room_tasks`/`room_checks` tables, dual-write off the 5 hardcoded columns, settings editor (code-complete 2026-07-06; SC4 checkpoint:human-verify pending operator approval)
-- [ ] **Phase 5.3: design-tokens** — Unified `lib/design/tokens.ts` (paper/ink themes; Bitter/Golos Text/JetBrains Mono) re-exported through legacy `T` objects + shared atoms (LedgerRow, Amount, StatusChip, stamp animation)
+- [x] **Phase 5.3: design-tokens** — Unified `lib/design/tokens.ts` (paper/ink themes; Bitter/Golos Text/JetBrains Mono) re-exported through legacy `T` objects + shared atoms (LedgerRow, Amount, StatusChip, stamp animation) (completed 2026-07-07)
 - [ ] **Phase 5.4: streak-settings** — Streak thresholds/bonuses move from award-route constants into `wallet_settings` + rules UI
 - [ ] **Phase 5.5: year-calendar** — School year (dates, quarters/trimesters), regional vacation presets with manual override, configurable weekend days, sick-day pauses streaks
 - [ ] **Phase 5.6: day-blocks** — Day assembly engine: day type × schedule × block rules; per-child `day_blocks` config; block-list renderer replaces hardcoded form sections; award computes from blocks; per-family feature flag
@@ -230,7 +230,7 @@ Plans:
 Plans:
 - [x] 05.3-01-PLAN.md — Unified lib/design/tokens.ts (base + paper/ink) + key-preserving T re-exports + next/font (Bitter/Golos Text/JetBrains Mono, Cyrillic)
 - [x] 05.3-02-PLAN.md — Shared atoms: LedgerRow, Amount, StatusChip, useCountUp + Stamp (theme-aware, reduced-motion safe)
-- [ ] 05.3-03-PLAN.md — Pilot LedgerRow on kid wallet history + parent dashboard activity; full build + consolidated visual checkpoint
+- [x] 05.3-03-PLAN.md — Pilot LedgerRow on kid wallet history + parent dashboard activity; full build + consolidated visual checkpoint
 
 ### Phase 5.4: streak-settings
 **Goal**: Streak thresholds and bonuses are family settings, not code constants
