@@ -229,7 +229,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 6. Streak bonus (keyed by date — at most once per day).
-    const streakBonus = await computeStreakBonus(admin, childId)
+    const streakBonus = await computeStreakBonus(admin, childId, settings)
     if (streakBonus > 0) {
       intents.push({
         coins: streakBonus,
@@ -248,26 +248,44 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Server port of lib/services/streaks.service.ts getStreakBonuses().
+// Clamp a stored streak threshold ("days") to a sane, always-positive integer
+// so a 0/negative/garbage value can never make the bonus fire unconditionally.
+function clampStreakDays(value: number): number {
+  return Math.max(1, Math.floor(value))
+}
+
+// Clamp a stored streak bonus to [0, 100000] (floored) so a negative value
+// can never produce a negative award and an absurd value can never produce
+// an unbounded one. Mirrors the write-side clamp in settings/route.ts — this
+// is the authoritative bound in case a row bypassed that clamp (legacy or
+// directly-written row).
+function clampStreakBonus(value: number): number {
+  return Math.min(100000, Math.max(0, Math.floor(value)))
+}
+
+// Server port of lib/services/streaks.service.ts getStreakBonuses(). Reads
+// thresholds/bonuses from the already-loaded per-family wallet_settings
+// (streak_room_days/bonus, streak_study_days/bonus, streak_sport_days/bonus)
+// instead of the legacy `settings` key/value table.
 async function computeStreakBonus(
   admin: ReturnType<typeof createAdminClient>,
   childId: string,
+  settings: Record<string, number>,
 ): Promise<number> {
   const { data: streaks } = await admin.from('streaks').select('*').eq('child_id', childId)
   if (!streaks || streaks.length === 0) return 0
 
-  const { data: settingsRows } = await admin.from('settings').select('*')
-  const map: Record<string, number> = {}
-  for (const s of settingsRows ?? []) {
-    const n = Number(s.value)
-    if (!Number.isNaN(n)) map[s.key] = n
-  }
-
   let bonus = 0
   for (const s of streaks) {
-    if (s.streak_type === 'room' && s.current_count >= 7) bonus += map.roomStreak7 || 100
-    if (s.streak_type === 'study' && s.current_count >= 14) bonus += map.studyStreak14 || 100
-    if (s.streak_type === 'sport' && s.current_count >= 7) bonus += map.sportStreak7 || 100
+    if (s.streak_type === 'room' && s.current_count >= clampStreakDays(settings.streak_room_days)) {
+      bonus += clampStreakBonus(settings.streak_room_bonus)
+    }
+    if (s.streak_type === 'study' && s.current_count >= clampStreakDays(settings.streak_study_days)) {
+      bonus += clampStreakBonus(settings.streak_study_bonus)
+    }
+    if (s.streak_type === 'sport' && s.current_count >= clampStreakDays(settings.streak_sport_days)) {
+      bonus += clampStreakBonus(settings.streak_sport_bonus)
+    }
   }
   return bonus
 }
