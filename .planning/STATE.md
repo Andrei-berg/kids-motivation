@@ -4,7 +4,7 @@ milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
 stopped_at: Completed 05.3-03-PLAN.md — LedgerRow/Amount piloted on kid wallet + parent dashboard; consolidated visual checkpoint pending operator sign-off
-last_updated: "2026-07-07T04:42:38.060Z"
+last_updated: "2026-07-07T09:59:01.190Z"
 last_activity: 2026-07-07
 progress:
   total_phases: 16
@@ -67,7 +67,7 @@ Progress: [██████████] 97%
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Any family can register and use the app — children earn coins for real effort, spend them on real rewards
-**Current focus:** Phase 05.2 — room-tasks
+**Current focus:** Phase 05.4 — streak-settings
 
 ---
 
