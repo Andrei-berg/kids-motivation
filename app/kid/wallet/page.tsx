@@ -10,6 +10,7 @@ import { normalizeDate, getWeekRange } from '@/utils/helpers'
 import type { Wallet, WalletTransaction } from '@/lib/models/wallet.types'
 import { T } from '@/components/kid/design/tokens'
 import { Coin, CoinPill, AnimatedNum, SectionHeader, KMButton } from '@/components/kid/design/atoms'
+import { LedgerRow } from '@/components/design/atoms'
 import GoalsPanel from '@/components/kid/GoalsPanel'
 import { useT } from '@/lib/i18n'
 
@@ -236,11 +237,7 @@ function TxnRow({ x, isLast }: { x: WalletTransaction; isLast: boolean }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17,
       }}>{isIn ? '💰' : '🛍️'}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: T.fDisp, fontSize: 14, fontWeight: 700, color: T.ink, lineHeight: 1.2 }}>{label}</div>
-        <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, marginTop: 1 }}>{time}</div>
-      </div>
-      <div style={{ fontFamily: T.fNum, fontSize: 15, fontWeight: 800, color: isIn ? T.teal : T.coral }}>
-        {isIn ? '+' : ''}{x.coins_change}
+        <LedgerRow theme="paper" name={label} sub={time} amount={x.coins_change} tone={isIn ? 'earn' : 'spend'}/>
       </div>
     </div>
   )

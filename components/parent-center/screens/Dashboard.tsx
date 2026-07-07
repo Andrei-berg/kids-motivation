@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { T } from '../tokens'
-import { Card, Btn, Pill, Avatar, Sparkline, Ring, Coin, SectionH, Icon } from '../ui'
+import { Card, Btn, Pill, Avatar, Sparkline, Ring, SectionH, Icon } from '../ui'
+import { LedgerRow } from '@/components/design/atoms'
 import type { ParentChild, ActivityEntry, ActionType } from '../types'
 import type { RewardPurchase } from '@/lib/models/wallet.types'
 import { useT, useLanguage } from '@/lib/i18n'
@@ -131,29 +132,14 @@ function ChildCard({ child, onAction }: { child: ParentChild; onAction: Props['o
 
 function ActivityRow({ a, allChildren }: { a: ActivityEntry; allChildren: ParentChild[] }) {
   const child = allChildren.find(c => c.id === a.who)
-  const t = useT()
   if (!child) return null
-  const toneMap: Record<string, 'success' | 'danger' | 'indigo'> = {
-    earn_coins: 'success', penalty: 'danger', bonus: 'indigo',
-  }
-  const labelMap: Record<string, string> = {
-    earn_coins: t('parentCenter.dashboard.earn'),
-    penalty: t('parentCenter.dashboard.penaltyLabel'),
-    bonus: t('parentCenter.dashboard.bonusLabel'),
-  }
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderBottom: `1px solid ${T.cardBorder}` }}>
       <Avatar child={child} size={32} ring={false}/>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 13, color: T.text, fontWeight: 500 }}>{a.text}</span>
-          <Pill tone={toneMap[a.type]} style={{ height: 18, fontSize: 9 }}>{labelMap[a.type]}</Pill>
-        </div>
-        <div style={{ fontSize: 11, color: T.muted, marginTop: 2, fontFamily: T.fMono }}>
-          {child.name} · {a.time}
-        </div>
+        <LedgerRow theme="ink" name={a.text} sub={`${child.name} · ${a.time}`} amount={a.amt}
+          tone={a.type === 'penalty' ? 'penalty' : 'earn'}/>
       </div>
-      <Coin v={a.amt}/>
     </div>
   )
 }

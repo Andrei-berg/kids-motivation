@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-stopped_at: "Completed 05.2-06-PLAN.md — RoomTasksManager settings editor + Schedule sub-tab wiring; checkpoint:human-verify (SC4) pending operator; all 05.2 plans code-complete"
-last_updated: "2026-07-06T18:27:05.890Z"
-last_activity: 2026-07-06
+stopped_at: Completed 05.3-03-PLAN.md — LedgerRow/Amount piloted on kid wallet history + parent dashboard activity; full build green; consolidated visual checkpoint pending operator sign-off
+last_updated: "2026-07-07T04:05:00.000Z"
+last_activity: 2026-07-07
 progress:
   total_phases: 16
-  completed_phases: 6
-  total_plans: 34
-  completed_plans: 33
-  percent: 38
+  completed_phases: 7
+  total_plans: 37
+  completed_plans: 36
+  percent: 44
 ---
 
 # STATE.md — Текущее состояние проекта
@@ -53,8 +53,9 @@ Milestone v4.0 PWA Polish — In Progress
 Phase 4.5 (desktop): COMPLETE — all 4 plans executed
 Phase 05.1 (launch-prep): COMPLETE — full SC3 money suite (award + purchase + exchange + withdraw, 18 tests) green against live DB
 Phase 05.2 (room-tasks): 05.2-06 COMPLETE (code) — RoomTasksManager settings editor (add/rename/toggle/reorder/delete, legacy tasks locked from deletion) mounted as Parent Center → Settings → Schedule → Room; settings.tabs.room + roomTasksManager.* i18n added to en/ru. All 6 plans (01-06) code-complete; SC1-SC3 verified in earlier plans; SC4 (rename visible on kid screen) queued as a checkpoint:human-verify for the operator at phase end — phase 05.2 not yet marked closed pending that approval.
-Last activity: 2026-07-06
-Prior GSD activity: 2026-07-06 — executed 05.2-01 (migration), 05.2-02 (room.repo.ts + seed wiring), 05.2-03 (award), 05.2-04 (kid form dual-write), 05.2-05 (DailyModal dual-write)
+Phase 05.3 (design-tokens): 05.3-03 CODE-COMPLETE — app/kid/wallet/page.tsx TxnRow and components/parent-center/screens/Dashboard.tsx ActivityRow both adopted the shared LedgerRow/Amount atoms (paper + ink themes respectively); credits/earn_coins/bonus render gold, debits/penalty render neutral/danger. Full build green (tsc/lint/test/next build, 55/55 pages). Surgical diffs confirmed via git diff per file. Consolidated checkpoint:human-verify (recolor + fonts + both pilots + unmigrated/legacy screens + gold-only-on-money rule) is queued for operator sign-off — phase 05.3 not yet marked closed pending that approval. 05.3-01 (tokens+fonts) and 05.3-02 (atoms module) done earlier.
+Last activity: 2026-07-07
+Prior GSD activity: 2026-07-07 — executed 05.3-02 (shared atoms module in components/design/atoms.tsx)
 ```
 
 Progress: [██████████] 97%
@@ -131,8 +132,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-07-06T18:26:30.962Z
-Stopped at: Completed 05.2-05-PLAN.md — DailyModal renders room_tasks + dual-write; checkpoint:human-verify pending operator
+Last session: 2026-07-07T04:05:00.000Z
+Stopped at: Completed 05.3-03-PLAN.md — LedgerRow/Amount piloted on kid wallet + parent dashboard; consolidated visual checkpoint pending operator sign-off
 Resume file: None
 
 ---
@@ -181,6 +182,13 @@ Resume file: None
 - [Phase 05.2-05]: DailyModal room checklist family_id resolved from the children table (the child's family, matching threat T-052-16) with the Zustand store familyId as fallback
 - [Phase 05.2-05]: DailyModal roomCoins preview stays hardcoded 3 (modal never loaded wallet_settings); threshold preview uses max(1, ceil(0.6*N)); server award remains authoritative
 - [Phase 05.2]: RoomTasksManager resolves familyId via useAppStore() (SectionsManager pattern), not useFamilyMembers()
+- [Phase 05.3-01]: Token re-export pattern - lib/design/tokens.ts single source; kid/parent T objects re-export unchanged keys from base/paper/ink
+- [Phase 05.3-01]: CHILD_ACCENTS re-derived to 5 non-neon non-gold hexes (#8B7BF5, #3FBF92, #E88AA6, #5FB3E0, #C58BE0)
+- [Phase 05.3-02]: Text-safe paper tone variants darkened past plan suggestions (#1D7355/#A05111/#B33846) so all pairs incl. 14%-alpha chip surfaces are >=4.5:1
+- [Phase 05.3-02]: LedgerRow pending tone uses resolved mutedText (paper.ink2 / ink.muted) — paper.ink3 fails AA at 3.59:1 on the paper bg
+- [Phase 05.3-02]: Stamp reduced-motion double-guarded: keyframes inside a no-preference media query (hydration-safe) plus a post-mount JS check dropping the animation property
+- [Phase 05.3-03]: LedgerRow has no `signed` prop (05.3-02 as-built interface) — credit amounts show no explicit '+' prefix; coins_change already carries its own sign so no information is lost
+- [Phase 05.3-03]: Parent dashboard ActivityRow dropped the redundant tone Pill + separate Coin amount in favor of a single LedgerRow (plan explicitly permitted this simplification)
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 
