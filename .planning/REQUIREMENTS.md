@@ -58,6 +58,31 @@ Explicitly excluded from v4.0.
 | B2B teacher/coach accounts | Post-product-market-fit |
 | Freemium limits + Stripe | v5.0 |
 
+## v5.0 Requirements (success-criteria traceability)
+
+v5.0 phases (5.1–5.11) trace to their ROADMAP **Success Criteria**, not to new
+user-facing REQ-IDs. Plan frontmatter `requirements:` fields carry SC-IDs; this
+table registers them so traceability checks don't flag them as uncovered.
+When planning a new v5.0 phase, add its SC-IDs here.
+
+| SC-ID | Phase | Criterion (short) | Status |
+|-------|-------|-------------------|--------|
+| LP-SC1 | 5.1 launch-prep | Secrets rotated | Complete |
+| LP-SC2 | 5.1 launch-prep | Sentry + PostHog wired | Complete |
+| LP-SC3 | 5.1 launch-prep | Money-route integration tests | Complete |
+| LP-SC4 | 5.1 launch-prep | FamilyCoins naming | Complete |
+| RT-SC1 | 5.2 room-tasks | room_tasks/room_checks tables + seed | Complete |
+| RT-SC2 | 5.2 room-tasks | Kid/parent forms render dynamic checklist | Complete |
+| RT-SC3 | 5.2 room-tasks | Award computes from room_checks | Complete |
+| RT-SC4 | 5.2 room-tasks | Settings editor (add/rename/toggle/reorder/delete) | Complete |
+| DT-SC1 | 5.3 design-tokens | Unified token source lib/design/tokens.ts | Complete |
+| DT-SC2 | 5.3 design-tokens | Fonts: Bitter / Golos Text / JetBrains Mono | Complete |
+| DT-SC3 | 5.3 design-tokens | Shared atoms (LedgerRow/Amount/StatusChip) | Complete |
+| DT-SC4 | 5.3 design-tokens | Pilots on kid wallet + parent dashboard | Complete |
+| 05.4-SC1 | 5.4 streak-settings | wallet_settings streak fields + defaults | Complete |
+| 05.4-SC2 | 5.4 streak-settings | Award reads streak settings, parity kept | Complete |
+| 05.4-SC3 | 5.4 streak-settings | Parent edits streak rules end-to-end | Complete |
+
 ## Traceability
 
 Updated during roadmap creation.
@@ -83,4 +108,4 @@ Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-04-26*
-*Last updated: 2026-04-26 — PWA-03 marked complete (04.1-02: offline caching + OfflineBanner)*
+*Last updated: 2026-07-07 — v5.0 SC-ID traceability section added (kills the \u00abuncovered REQ-ID\u00bb gap-analysis noise for phases 5.1\u20135.4; future v5 phases register SC-IDs here at plan time)*
