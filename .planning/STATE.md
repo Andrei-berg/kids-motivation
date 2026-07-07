@@ -116,17 +116,30 @@ None.
 
 ### Blockers/Concerns
 
-- Leaked prod service-role key + DB password must be rotated in Phase 5.1 before any other v5.0 work ships.
-- **DEFECT (found by plan-checker 2026-07-06): withdrawal approval is unimplemented.**
-  `app/api/wallet/withdraw/route.ts` creates requests and its comment references
-  `/api/wallet/withdraw/approve` — that route does not exist anywhere; the only candidate
-  (`approveWithdrawal`/`rejectWithdrawal` in `lib/repositories/wallet.repo.ts`) is dead code
-  on the anon client and would fail under 04.4-03 RLS. Pending withdrawals also do not
-  reserve funds. Needs a dedicated plan (service-role endpoint mirroring
-  `app/parent/shop/actions.ts` + threat model) — candidate for a 5.1 gap-closure plan or
-  early 5.2. `tests/integration/exchange-withdraw.test.ts` Test 6 ("KNOWN GAP") now
-  test-documents this current behavior (a second pending withdrawal succeeds against
-  an already-committed balance) instead of testing the phantom route — still open.
+- ~~Leaked prod key rotation~~ — done in Phase 5.1 (rotation verified on prod 2026-07-05).
+- ~~Withdrawal approval unimplemented~~ — **RESOLVED 2026-07-07** (out-of-band on `main`):
+  `/api/wallet/withdraw/approve` implemented (parent-guarded, service-role, atomic
+  `wallet_apply` debit with 0-floor, conditional pending→terminal flip as the
+  double-processing guard, compensating reopen on failed debit); the request route now
+  reserves pending funds (new request must fit `money − sum(pending)`); dead client-side
+  `requestWithdrawal`/`approveWithdrawal`/`rejectWithdrawal` removed from
+  `wallet.repo.ts`/`wallet-api.ts`; `WithdrawModal` switched to `/api/wallet/withdraw`;
+  10/10 integration tests green (`exchange-withdraw.test.ts` incl. reserve, approve,
+  409-double-approve, reject, compensation).
+- **DEFECT (code review 05.4, CR-01, pre-existing): streak bonus mintable via arbitrary
+  client dates.** `/api/wallet/award` keys the streak-bonus award on the raw
+  client-supplied `date` string (regex-only validation) and pays from client-writable
+  `streaks.current_count` — a child can loop distinct date strings and mint bonus×N.
+  Predates 05.4 (present since the original server-side award, commit `c873a8d`).
+  Fix direction (see `05.4-REVIEW.md` CR-01): pay only when `date === localDateString()`
+  + real-calendar validation; longer term key on the milestone and move `updateStreaks`
+  server-side. Candidate for an early 5.5 gap plan.
+- **Discovered 2026-07-07: `parent_audit_events` was never created in prod** — every
+  `insertAuditEvent` (shop_approve/reject etc.) has been silently failing since 04.4.
+  Fixed same day: applied `04.4-01-audit-consent.sql` + `05.4-04-withdraw-audit-actions.sql`
+  (adds withdraw_approve/withdraw_reject action types). Note: `insertAuditEvent` still
+  writes via the anon browser client — works only where an authenticated parent session
+  exists; server-role audit writes are a follow-up.
 
 ---
 
