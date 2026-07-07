@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
-status: unknown
-stopped_at: Completed 05.3-03-PLAN.md — LedgerRow/Amount piloted on kid wallet + parent dashboard; consolidated visual checkpoint pending operator sign-off
-last_updated: "2026-07-07T09:59:01.190Z"
+status: ready_to_plan
+stopped_at: Phase 05.4 complete (3/3) — ready to discuss Phase 05.5
+last_updated: 2026-07-07T11:04:03.686Z
 last_activity: 2026-07-07
 progress:
   total_phases: 16
   completed_phases: 7
   total_plans: 40
-  completed_plans: 36
+  completed_plans: 96
   percent: 44
 ---
 
@@ -67,7 +67,7 @@ Progress: [██████████] 97%
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Any family can register and use the app — children earn coins for real effort, spend them on real rewards
-**Current focus:** Phase 05.4 — streak-settings
+**Current focus:** Phase 05.5 — year calendar
 
 ---
 
