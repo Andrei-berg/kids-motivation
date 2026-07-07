@@ -56,6 +56,12 @@ const SETTINGS_DEFAULTS = {
   p2p_max_per_day: 200,
   p2p_max_per_month: 500,
   p2p_max_debt: 200,
+  streak_room_days: 7,
+  streak_room_bonus: 100,
+  streak_study_days: 14,
+  streak_study_bonus: 100,
+  streak_sport_days: 7,
+  streak_sport_bonus: 100,
 } as Record<string, number>
 
 export type WalletSettingsRow = Record<string, number> & { id: string; family_id: string }
