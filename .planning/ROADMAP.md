@@ -239,6 +239,11 @@ Plans:
   1. `wallet_settings` gains streak fields (days + bonus per streak type) with defaults equal to current constants
   2. `/api/wallet/award` reads them from settings; behavior unchanged for families that never touched them
   3. Parent edits streak rules in Settings → the next award uses the new values
+**Plans**: 3 plans
+Plans:
+- [ ] 05.4-01-PLAN.md — Migration: wallet_settings streak columns (days+bonus per type) + type/defaults + [BLOCKING] live-DB apply
+- [ ] 05.4-02-PLAN.md — Award route reads streak settings (drop legacy `settings` table) + clamp + integration tests
+- [ ] 05.4-03-PLAN.md — Streaks card in Parent Center Settings + en/ru i18n + end-to-end human-verify
 
 ### Phase 5.5: year-calendar
 **Goal**: Day types come from a configurable calendar: school year dates, regional vacation presets, custom periods, family weekend days
