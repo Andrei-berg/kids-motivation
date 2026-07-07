@@ -116,6 +116,12 @@ export interface WalletSettings {
   p2p_max_per_day: number
   p2p_max_per_month: number
   p2p_max_debt: number
+  streak_room_days: number
+  streak_room_bonus: number
+  streak_study_days: number
+  streak_study_bonus: number
+  streak_sport_days: number
+  streak_sport_bonus: number
   updated_at: string
 }
 
