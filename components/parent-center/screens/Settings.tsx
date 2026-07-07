@@ -193,6 +193,17 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
         <RuleRow icon="⭐" label={t('settings.coinRules.goodBehavior')} value={settings.coins_per_good_behavior} rkey="coins_per_good_behavior"/>
         <RuleRow icon="🏃" label={t('settings.coinRules.exercise')} value={settings.coins_per_exercise} rkey="coins_per_exercise"/>
       </Card>
+      <Card pad={16}>
+        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+          {t('parentCenter.settings.coinsRules.streaks')}
+        </div>
+        <RuleRow icon="📅" label={t('settings.coinRules.streakRoomDays')} value={settings.streak_room_days} rkey="streak_room_days"/>
+        <RuleRow icon="🔥" label={t('settings.coinRules.streakRoomBonus')} value={settings.streak_room_bonus} rkey="streak_room_bonus"/>
+        <RuleRow icon="📅" label={t('settings.coinRules.streakStudyDays')} value={settings.streak_study_days} rkey="streak_study_days"/>
+        <RuleRow icon="🔥" label={t('settings.coinRules.streakStudyBonus')} value={settings.streak_study_bonus} rkey="streak_study_bonus"/>
+        <RuleRow icon="📅" label={t('settings.coinRules.streakSportDays')} value={settings.streak_sport_days} rkey="streak_sport_days"/>
+        <RuleRow icon="🔥" label={t('settings.coinRules.streakSportBonus')} value={settings.streak_sport_bonus} rkey="streak_sport_bonus"/>
+      </Card>
       <Card pad={16} style={{ background: `linear-gradient(135deg, ${T.cyanSoft}, ${T.card})` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
           <Pill tone="cyan">{t('parentCenter.settings.coinsRules.trainer')}</Pill>

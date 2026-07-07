@@ -742,7 +742,13 @@
       "monthlyLimit": "Monthly Coin Limit",
       "enableLimit": "Enable limit",
       "maxCoinsPerTask": "Max coins per task per month",
-      "gradesExcluded": "Grades are not subject to the limit — only tasks."
+      "gradesExcluded": "Grades are not subject to the limit — only tasks.",
+      "streakRoomDays": "Room streak — days to bonus",
+      "streakRoomBonus": "Room streak — bonus",
+      "streakStudyDays": "Study streak — days to bonus",
+      "streakStudyBonus": "Study streak — bonus",
+      "streakSportDays": "Sport streak — days to bonus",
+      "streakSportBonus": "Sport streak — bonus"
     },
     "notificationSettings": {
       "title": "Notifications",
@@ -1399,7 +1405,8 @@
         "saveFailed": "Failed to save",
         "saving": "Saving...",
         "saveBtn": "Save rules",
-        "trainer": "TRAINER"
+        "trainer": "TRAINER",
+        "streaks": "Streaks & Bonuses"
       },
       "child": {
         "independenceMode": "Independence Mode",

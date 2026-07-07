@@ -710,7 +710,13 @@
       "monthlyLimit": "Ежемесячный лимит монет",
       "enableLimit": "Включить лимит",
       "maxCoinsPerTask": "Максимум монет за задачу в месяц",
-      "gradesExcluded": "Оценки не подпадают под лимит — только задачи."
+      "gradesExcluded": "Оценки не подпадают под лимит — только задачи.",
+      "streakRoomDays": "Серия комнаты — дней до бонуса",
+      "streakRoomBonus": "Серия комнаты — бонус",
+      "streakStudyDays": "Учебная серия — дней до бонуса",
+      "streakStudyBonus": "Учебная серия — бонус",
+      "streakSportDays": "Спортивная серия — дней до бонуса",
+      "streakSportBonus": "Спортивная серия — бонус"
     },
     "notificationSettings": {
       "title": "Уведомления",
@@ -1367,7 +1373,8 @@
         "saveFailed": "Ошибка сохранения",
         "saving": "Сохранение...",
         "saveBtn": "Сохранить правила",
-        "trainer": "ТРЕНЕР"
+        "trainer": "ТРЕНЕР",
+        "streaks": "Серии и бонусы"
       },
       "child": {
         "independenceMode": "Режим самостоятельности",
