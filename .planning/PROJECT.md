@@ -318,4 +318,4 @@ Two fully separate experiences — Parent Center (dark, control-focused) and Kid
 
 ---
 
-*Документ создан: 2026-03-01. Обновлён: 2026-04-26 после v3.0 milestone.*
+*Документ создан: 2026-03-01. Обновлён: 2026-07-07 — Phase 5.4 (streak-settings) complete: streak thresholds/bonuses are per-family wallet_settings, not code constants.*
