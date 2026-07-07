@@ -173,7 +173,7 @@ Plans:
 - [x] **Phase 5.1: launch-prep** — Key/DB-password rotation, Sentry + product analytics, money-API integration tests, FamilyCoins naming (completed 2026-07-06)
 - [x] **Phase 5.2: room-tasks** — Configurable room checklist: `room_tasks`/`room_checks` tables, dual-write off the 5 hardcoded columns, settings editor (code-complete 2026-07-06; SC4 checkpoint:human-verify pending operator approval)
 - [x] **Phase 5.3: design-tokens** — Unified `lib/design/tokens.ts` (paper/ink themes; Bitter/Golos Text/JetBrains Mono) re-exported through legacy `T` objects + shared atoms (LedgerRow, Amount, StatusChip, stamp animation) (completed 2026-07-07)
-- [ ] **Phase 5.4: streak-settings** — Streak thresholds/bonuses move from award-route constants into `wallet_settings` + rules UI
+- [x] **Phase 5.4: streak-settings** — Streak thresholds/bonuses move from award-route constants into `wallet_settings` + rules UI (completed 2026-07-07)
 - [ ] **Phase 5.5: year-calendar** — School year (dates, quarters/trimesters), regional vacation presets with manual override, configurable weekend days, sick-day pauses streaks
 - [ ] **Phase 5.6: day-blocks** — Day assembly engine: day type × schedule × block rules; per-child `day_blocks` config; block-list renderer replaces hardcoded form sections; award computes from blocks; per-family feature flag
 - [ ] **Phase 5.7: kid-redesign** — Kid screens on unified tokens, nav 6→5 (leaderboard becomes a tab inside awards), motion discipline (single signature gesture)
@@ -243,7 +243,7 @@ Plans:
 Plans:
 - [x] 05.4-01-PLAN.md — Migration: wallet_settings streak columns (days+bonus per type) + type/defaults + [BLOCKING] live-DB apply
 - [x] 05.4-02-PLAN.md — Award route reads streak settings (drop legacy `settings` table) + clamp + integration tests
-- [ ] 05.4-03-PLAN.md — Streaks card in Parent Center Settings + en/ru i18n + end-to-end human-verify
+- [x] 05.4-03-PLAN.md — Streaks card in Parent Center Settings + en/ru i18n + end-to-end human-verify
 
 ### Phase 5.5: year-calendar
 **Goal**: Day types come from a configurable calendar: school year dates, regional vacation presets, custom periods, family weekend days
