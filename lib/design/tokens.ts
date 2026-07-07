@@ -34,6 +34,19 @@ export const paper = {
   success: '#2E9E77',
   warning: '#E07A2E',
   danger: '#D95563',
+  // Text-safe tone variants (mirrors goldText): darkened for WCAG AA ≥4.5:1 as
+  // small-text foregrounds on paper grounds — including the 14%-alpha soft-chip
+  // surfaces StatusChip uses. Computed 2026-07-07 (WCAG 2.x relative luminance):
+  //   successText #1D7355 → 5.78 on #FFFFFF, 5.24 on #FAF3E9, 4.96/4.54 on 14% chips
+  //   warningText #A05111 → 5.71 on #FFFFFF, 5.18 on #FAF3E9, 4.95/4.54 on 14% chips
+  //   dangerText  #B33846 → 5.88 on #FFFFFF, 5.34 on #FAF3E9, 4.95/4.54 on 14% chips
+  // (raw success/warning/danger above fail AA on white: 3.35/3.00/3.87 — keep them
+  //  for fills/borders only, never small text.) The ink theme's success/warning/
+  // danger are already on-dark-legible (≥6.4:1 on all ink grounds) and serve as
+  // its text-safe set.
+  successText: '#1D7355',
+  warningText: '#A05111',
+  dangerText: '#B33846',
 } as const
 
 // ink — the parent (dark) theme ground colors.
