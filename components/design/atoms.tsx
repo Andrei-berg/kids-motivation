@@ -139,3 +139,150 @@ export function StatusChip({ tone, children, theme = 'paper', style }: StatusChi
     </span>
   )
 }
+
+// ─── LedgerRow ───────────────────────────────────────────────────────────────
+// The brand signature: name · dotted leader · mono amount. Tones:
+//   earn    → gold money Amount (the sole gold path)
+//   spend   → neutral Amount in theme text
+//   penalty → Amount in the theme's text-safe danger variant
+//   pending → muted Amount with a "≈" prefix
+
+interface LedgerRowProps {
+  name: string
+  amount: number
+  tone?: 'earn' | 'spend' | 'penalty' | 'pending'
+  theme?: AtomTheme
+  /** Optional small muted second line under `name`. */
+  sub?: string
+  style?: React.CSSProperties
+}
+
+export function LedgerRow({ name, amount, tone = 'earn', theme = 'paper', sub, style }: LedgerRowProps) {
+  const c = resolve(theme)
+  const tones = {
+    earn: { money: true, color: undefined as string | undefined, approx: false },
+    spend: { money: false, color: c.text, approx: false },
+    penalty: { money: false, color: c.dangerText, approx: false },
+    pending: { money: false, color: c.mutedText, approx: true },
+  } as const
+  const t = tones[tone]
+  return (
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0, ...style }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{
+          fontFamily: base.fontBody, fontSize: 14, fontWeight: 600, color: c.text,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>
+          {name}
+        </div>
+        {sub && (
+          <div style={{ fontFamily: base.fontBody, fontSize: 11.5, color: c.muted, marginTop: 2 }}>
+            {sub}
+          </div>
+        )}
+      </div>
+      {/* Dotted leader — the empty flex item's baseline is its bottom edge,
+          so the dots sit right on the text baseline. */}
+      <span aria-hidden style={{
+        flex: 1, minWidth: 12,
+        borderBottom: `1px dotted ${c.leader}`,
+        transform: 'translateY(-2px)',
+      }}/>
+      <span style={{ whiteSpace: 'nowrap' }}>
+        {t.approx && (
+          <span style={{ fontFamily: base.fontMono, fontSize: 13, fontWeight: 700, color: c.mutedText, marginRight: 3 }}>
+            ≈
+          </span>
+        )}
+        <Amount value={amount} theme={theme} money={t.money} color={t.color}/>
+      </span>
+    </div>
+  )
+}
+
+// ─── Reduced motion ──────────────────────────────────────────────────────────
+
+function reducedMotion(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+// ─── useCountUp ──────────────────────────────────────────────────────────────
+// rAF cubic ease-out count-up (mirrors the kid AnimatedNum math). Counts from
+// 0 on first mount, then animates between value changes. Under
+// prefers-reduced-motion it skips the animation and returns the target.
+
+export function useCountUp(target: number, duration = 700): number {
+  const [n, setN] = useState(() => (reducedMotion() ? target : 0))
+  const prev = useRef(reducedMotion() ? target : 0)
+  useEffect(() => {
+    if (reducedMotion()) {
+      prev.current = target
+      setN(target)
+      return
+    }
+    const from = prev.current
+    const to = target
+    if (from === to) return
+    const t0 = performance.now()
+    let raf: number
+    const tick = () => {
+      const t = Math.min(1, (performance.now() - t0) / duration)
+      const e = 1 - Math.pow(1 - t, 3)
+      setN(Math.round(from + (to - from) * e))
+      if (t < 1) raf = requestAnimationFrame(tick)
+      else prev.current = to
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [target, duration])
+  return n
+}
+
+// ─── Stamp ───────────────────────────────────────────────────────────────────
+// ~450ms entrance (translateY(8px) + scale(0.96) → settle) on mount and
+// whenever `trigger` changes (key remount replays the CSS animation).
+// Keyframes are self-contained: injected once via a guarded <style> tag and
+// wrapped in a no-preference media query, so under prefers-reduced-motion the
+// keyframes never exist and the wrapper renders children with no
+// transform/animation. A JS check additionally drops the animation property.
+
+const STAMP_STYLE_ID = 'fc-stamp-kf'
+
+function ensureStampKeyframes() {
+  if (typeof document === 'undefined') return
+  if (document.getElementById(STAMP_STYLE_ID)) return
+  const el = document.createElement('style')
+  el.id = STAMP_STYLE_ID
+  el.textContent =
+    '@media (prefers-reduced-motion: no-preference){' +
+    '@keyframes fcStamp{from{opacity:0;transform:translateY(8px) scale(0.96)}to{opacity:1;transform:none}}' +
+    '}'
+  document.head.appendChild(el)
+}
+
+interface StampProps {
+  children: React.ReactNode
+  /** Replay the entrance when this value changes. */
+  trigger?: number | string
+  style?: React.CSSProperties
+}
+
+export function Stamp({ children, trigger, style }: StampProps) {
+  const [reduced, setReduced] = useState(false)
+  useEffect(() => {
+    ensureStampKeyframes()
+    setReduced(reducedMotion())
+  }, [])
+  return (
+    <div
+      key={trigger ?? 0}
+      style={{
+        ...(reduced ? {} : { animation: 'fcStamp 450ms cubic-bezier(.2,.9,.3,1) both' }),
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  )
+}
