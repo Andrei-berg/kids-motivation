@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react'
 import { useT } from '@/lib/i18n'
 import {
   getWallet,
-  requestWithdrawal,
   getWithdrawals,
   Wallet,
   CashWithdrawal
 } from '@/lib/wallet-api'
+import { requestWithdrawalApi } from '@/lib/wallet-client'
 
 interface WithdrawModalProps {
   isOpen: boolean
@@ -69,7 +69,7 @@ export default function WithdrawModal({ isOpen, onClose, childId, onSuccess }: W
       setLoading(true)
       setError('')
 
-      await requestWithdrawal(childId, withdrawAmount)
+      await requestWithdrawalApi(childId, withdrawAmount)
 
       alert(t('withdrawModal.success'))
 

@@ -20,7 +20,18 @@ export async function POST(req: NextRequest) {
     await authorizeChildAction(admin, member, childId)
 
     const wallet = await loadWallet(admin, childId)
-    if (Number(wallet.money) < amt) {
+
+    // Pending withdrawals reserve funds: a new request must fit into the
+    // balance minus everything already awaiting approval, otherwise two
+    // pending requests could both be approved against the same money.
+    const { data: pendingRows, error: pendErr } = await admin
+      .from('cash_withdrawals')
+      .select('amount')
+      .eq('child_id', childId)
+      .eq('status', 'pending')
+    if (pendErr) throw pendErr
+    const reserved = (pendingRows ?? []).reduce((sum, r) => sum + Number(r.amount), 0)
+    if (Number(wallet.money) < amt + reserved) {
       return NextResponse.json({ error: 'Insufficient money' }, { status: 400 })
     }
 
@@ -29,7 +40,7 @@ export async function POST(req: NextRequest) {
       .insert([{
         child_id: childId,
         amount: amt,
-        balance_after_money: Number(wallet.money) - amt,
+        balance_after_money: Number(wallet.money) - reserved - amt,
       }])
       .select()
       .single()

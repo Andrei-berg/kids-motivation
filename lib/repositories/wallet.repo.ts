@@ -842,109 +842,11 @@ export async function getExchanges(childId?: string): Promise<CoinExchange[]> {
 // CASH WITHDRAWALS
 // ============================================================================
 
-export async function requestWithdrawal(
-  childId: string,
-  amount: number
-): Promise<CashWithdrawal> {
-  const wallet = await getWallet(childId)
-  if (!wallet) throw new Error('Wallet not found')
-
-  if (Number(wallet.money) < amount) throw new Error('Insufficient money')
-
-  const withdrawal = {
-    child_id: childId,
-    amount,
-    balance_after_money: Number(wallet.money) - amount
-  }
-
-  const { data, error } = await supabase
-    .from('cash_withdrawals')
-    .insert([withdrawal])
-    .select()
-    .single()
-
-  if (error) throw error
-  return data
-}
-
-export async function approveWithdrawal(
-  withdrawalId: string,
-  note?: string
-): Promise<CashWithdrawal> {
-  const { data: withdrawal, error: fetchError } = await supabase
-    .from('cash_withdrawals')
-    .select('*')
-    .eq('id', withdrawalId)
-    .single()
-
-  if (fetchError || !withdrawal) throw new Error('Withdrawal not found')
-  // Guard against double-processing: a withdrawal already in a terminal state
-  // must not deduct money again.
-  if (['approved', 'rejected', 'paid', 'completed'].includes(withdrawal.status)) {
-    throw new Error('Withdrawal already processed')
-  }
-
-  const wallet = await getWallet(withdrawal.child_id)
-  if (!wallet) throw new Error('Wallet not found')
-
-  const newMoney = Number(wallet.money) - withdrawal.amount
-  if (newMoney < 0) throw new Error('Insufficient money')
-
-  await supabase
-    .from('wallet')
-    .update({ money: newMoney, total_spent_money: Number(wallet.total_spent_money) + withdrawal.amount })
-    .eq('child_id', withdrawal.child_id)
-
-  const { data, error } = await supabase
-    .from('cash_withdrawals')
-    .update({
-      status: 'approved',
-      processed_by: 'parent',
-      processed_at: new Date().toISOString(),
-      note,
-      balance_after_money: newMoney
-    })
-    .eq('id', withdrawalId)
-    .select()
-    .single()
-
-  if (error) throw error
-
-  await createTransaction(withdrawal.child_id, {
-    transaction_type: 'withdraw',
-    coins_change: 0,
-    money_change: -withdrawal.amount,
-    description: `Выведено наличными: ${withdrawal.amount}₽`,
-    icon: '💵',
-    related_id: withdrawalId,
-    related_type: 'withdrawal',
-    balance_after_coins: wallet.coins,
-    balance_after_money: newMoney,
-    family_id: wallet.family_id,
-  })
-
-  return data
-}
-
-export async function rejectWithdrawal(
-  withdrawalId: string,
-  note?: string
-): Promise<CashWithdrawal> {
-  const { data, error } = await supabase
-    .from('cash_withdrawals')
-    .update({
-      status: 'rejected',
-      processed_by: 'parent',
-      processed_at: new Date().toISOString(),
-      note
-    })
-    .eq('id', withdrawalId)
-    .select()
-    .single()
-
-  if (error) throw error
-  return data
-}
+// Withdrawal mutations live server-side: /api/wallet/withdraw (request, reserves
+// pending funds) and /api/wallet/withdraw/approve (parent decision, atomic debit).
+// Client wrappers: lib/wallet-client.ts. The old client-side requestWithdrawal/
+// approveWithdrawal/rejectWithdrawal were removed — money tables are RLS
+// SELECT-only for clients (04.4-03), so they could never write anyway.
 
 export async function getWithdrawals(childId?: string, status?: string): Promise<CashWithdrawal[]> {
   let query = supabase

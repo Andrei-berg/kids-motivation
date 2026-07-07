@@ -34,3 +34,26 @@ export async function updateWalletSettingsApi(updates: object) {
   const { settings } = await post('/api/wallet/settings', updates, 'PATCH')
   return settings
 }
+
+export async function requestWithdrawalApi(childId: string, amount: number) {
+  const { withdrawal } = await post('/api/wallet/withdraw', { childId, amount })
+  return withdrawal
+}
+
+export async function approveWithdrawalApi(withdrawalId: string, note?: string) {
+  const { withdrawal } = await post('/api/wallet/withdraw/approve', {
+    withdrawalId,
+    action: 'approve',
+    note,
+  })
+  return withdrawal
+}
+
+export async function rejectWithdrawalApi(withdrawalId: string, note?: string) {
+  const { withdrawal } = await post('/api/wallet/withdraw/approve', {
+    withdrawalId,
+    action: 'reject',
+    note,
+  })
+  return withdrawal
+}

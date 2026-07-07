@@ -11,19 +11,12 @@
 // tests/integration/family-fixture.ts. describe.skipIf keeps `npm test`
 // green without integration env keys.
 //
-// KNOWN GAP (2026-07-06): there is no server-side withdrawal-approval
-// endpoint. app/api/wallet/withdraw/route.ts's header comment references
-// /api/wallet/withdraw/approve, but that route does not exist anywhere in
-// app/ (verified 2026-07-06) — the only candidate, approveWithdrawal/
-// rejectWithdrawal in lib/repositories/wallet.repo.ts, is dead code on the
-// anon client and would fail under the 04.4-03 money-table RLS lock. As a
-// result, pending withdrawals do NOT reserve funds: the request route only
-// checks the child's CURRENT balance, so nothing stops a second (or third)
-// withdrawal request from being created against a balance already "spoken
-// for" by an earlier pending request. Test 6 below documents this current
-// behavior rather than testing a non-existent double-approve guard. Building
-// the approval endpoint (with its own auth guard + threat model) is deferred
-// to a dedicated plan — see STATE.md Blockers.
+// Withdrawal lifecycle (closed the 2026-07-06 KNOWN GAP on 2026-07-07):
+// requests reserve funds (a new request must fit into money minus the sum of
+// already-pending requests) and /api/wallet/withdraw/approve is the only place
+// money moves — approve debits atomically via wallet_apply with a 0 floor and
+// compensates (reopens the request) if the debit fails; reject closes the
+// request without touching the wallet.
 
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest'
 import { NextRequest } from 'next/server'
@@ -35,24 +28,39 @@ import {
   type TestFamily,
 } from './family-fixture'
 
-// requireFamilyMember is the only thing this suite mocks — set once in
-// beforeAll to the test family's parent membership. Everything else in
-// '@/lib/supabase/admin' (createAdminClient, assertChildInFamily, AuthError)
-// is the real implementation, running against the live DB.
+// requireFamilyMember/requireParent are the only things this suite mocks —
+// set once in beforeAll to the test family's parent membership. Everything
+// else in '@/lib/supabase/admin' (createAdminClient, assertChildInFamily,
+// AuthError) is the real implementation, running against the live DB.
 const mockRequireFamilyMember = vi.fn()
+const mockRequireParent = vi.fn()
 
 vi.mock('@/lib/supabase/admin', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/supabase/admin')>()
   return {
     ...actual,
     requireFamilyMember: () => mockRequireFamilyMember(),
+    requireParent: () => mockRequireParent(),
   }
 })
 
+// Push and audit are real side-effect channels (real device pushes, real
+// audit-log rows) — mocked to no-ops so this suite never fires either. The
+// audit mock also keeps `npm test` importable without integration env
+// (audit.repo pulls in the browser supabase client, which throws without env).
+vi.mock('@/app/actions/push-notifications', () => ({
+  notifyChild: vi.fn().mockResolvedValue(undefined),
+}))
+
+vi.mock('@/lib/repositories/audit.repo', () => ({
+  insertAuditEvent: vi.fn().mockResolvedValue(undefined),
+}))
+
 // vi.mock calls are hoisted above imports by vitest, so these static imports
-// resolve against the mocked '@/lib/supabase/admin'.
+// resolve against the mocked '@/lib/supabase/admin' / push / audit modules.
 import { POST as exchangePOST } from '@/app/api/wallet/exchange/route'
 import { POST as withdrawPOST } from '@/app/api/wallet/withdraw/route'
+import { POST as approvePOST } from '@/app/api/wallet/withdraw/approve/route'
 
 function postExchange(childId: string, coinsAmount: unknown) {
   const req = new NextRequest('http://localhost/api/wallet/exchange', {
@@ -70,6 +78,14 @@ function postWithdraw(childId: string, amount: unknown) {
   return withdrawPOST(req)
 }
 
+function postDecision(withdrawalId: string, action: string, note?: string) {
+  const req = new NextRequest('http://localhost/api/wallet/withdraw/approve', {
+    method: 'POST',
+    body: JSON.stringify({ withdrawalId, action, note }),
+  })
+  return approvePOST(req)
+}
+
 describe.skipIf(!hasIntegrationEnv)('Exchange + withdrawal — integration', () => {
   let family: TestFamily
   const db = hasIntegrationEnv ? serviceClient() : null!
@@ -77,12 +93,14 @@ describe.skipIf(!hasIntegrationEnv)('Exchange + withdrawal — integration', () 
   beforeAll(async () => {
     family = await createTestFamily()
 
-    mockRequireFamilyMember.mockResolvedValue({
+    const parentMembership = {
       userId: 'test-user-parent',
       familyId: family.familyId,
       role: 'parent',
       childId: null,
-    })
+    }
+    mockRequireFamilyMember.mockResolvedValue(parentMembership)
+    mockRequireParent.mockResolvedValue(parentMembership)
 
     // Fixture wallet starts at coins:0/money:0 — seed the exchange-math
     // starting balance. No wallet_settings row exists for this family, so
@@ -206,16 +224,18 @@ describe.skipIf(!hasIntegrationEnv)('Exchange + withdrawal — integration', () 
     expect(withdrawals?.length).toBe(1) // still just the Test 4 row
   })
 
-  it('KNOWN GAP: a second withdraw request succeeds against an unchanged balance — pending withdrawals do not reserve funds', async () => {
-    // Money is still 550 and the Test-4 pending withdrawal of 200 is still
-    // open. The route checks only the CURRENT wallet balance, not balance
-    // minus already-pending withdrawals, so a second request for 400 (which
-    // together with the first pending 200 would overdraw the 550 balance if
-    // both were ever approved) is accepted anyway.
+  it('pending withdrawals reserve funds: a second request that would overdraw the balance together with the pending one is rejected', async () => {
+    // Money is 550 and the Test-4 pending withdrawal of 200 is still open.
+    // Available = 550 - 200 = 350, so a second request for 400 must be refused
+    // even though the raw balance covers it.
     const res = await postWithdraw(family.childId, 400)
-    expect(res.status).toBe(200)
+    expect(res.status).toBe(400)
     const body = await res.json()
-    expect(body.ok).toBe(true)
+    expect(body.error).toBe('Insufficient money')
+
+    // A request that fits into the available remainder is accepted.
+    const okRes = await postWithdraw(family.childId, 300)
+    expect(okRes.status).toBe(200)
 
     const { data: withdrawals, error } = await db
       .from('cash_withdrawals')
@@ -230,8 +250,103 @@ describe.skipIf(!hasIntegrationEnv)('Exchange + withdrawal — integration', () 
       .select('money')
       .eq('child_id', family.childId)
       .single()
-    // Still 550 — no deduction happened for either pending request.
+    // Still 550 — requests reserve, they never debit.
     expect(Number(wallet?.money)).toBe(550)
+  })
+
+  it('approve debits the wallet once: money moves, a withdraw transaction is recorded, and a second approve is a 409', async () => {
+    const { data: pending } = await db
+      .from('cash_withdrawals')
+      .select('id, amount')
+      .eq('child_id', family.childId)
+      .eq('status', 'pending')
+      .order('amount', { ascending: true })
+    const w200 = pending?.find((w) => Number(w.amount) === 200)
+    expect(w200).toBeDefined()
+
+    const res = await postDecision(w200!.id, 'approve')
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.ok).toBe(true)
+    expect(body.withdrawal.status).toBe('approved')
+    expect(Number(body.withdrawal.balance_after_money)).toBe(350)
+
+    const { data: wallet } = await db
+      .from('wallet')
+      .select('money, total_spent_money')
+      .eq('child_id', family.childId)
+      .single()
+    expect(Number(wallet?.money)).toBe(350)
+    expect(Number(wallet?.total_spent_money)).toBe(200)
+
+    const { data: txs } = await db
+      .from('wallet_transactions')
+      .select('money_change, related_id')
+      .eq('child_id', family.childId)
+      .eq('transaction_type', 'withdraw')
+    expect(txs?.length).toBe(1)
+    expect(Number(txs?.[0].money_change)).toBe(-200)
+    expect(txs?.[0].related_id).toBe(w200!.id)
+
+    // Double-approve guard: the conditional pending → terminal flip refuses.
+    const again = await postDecision(w200!.id, 'approve')
+    expect(again.status).toBe(409)
+  })
+
+  it('reject closes the request without touching the wallet', async () => {
+    const { data: pending } = await db
+      .from('cash_withdrawals')
+      .select('id, amount')
+      .eq('child_id', family.childId)
+      .eq('status', 'pending')
+    expect(pending?.length).toBe(1) // the 300 from the reservation test
+
+    const res = await postDecision(pending![0].id, 'reject', 'not this week')
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.withdrawal.status).toBe('rejected')
+    expect(body.withdrawal.note).toBe('not this week')
+
+    const { data: wallet } = await db
+      .from('wallet')
+      .select('money')
+      .eq('child_id', family.childId)
+      .single()
+    expect(Number(wallet?.money)).toBe(350) // unchanged since the approve test
+  })
+
+  it('approve compensates when the debit fails: withdrawal reopens as pending and no money moves', async () => {
+    // Create a request that fits the current balance (350), then drain the
+    // wallet behind its back so the approval-time atomic debit must fail.
+    const reqRes = await postWithdraw(family.childId, 350)
+    expect(reqRes.status).toBe(200)
+    const { withdrawal } = await reqRes.json()
+
+    const { error: drainErr } = await db
+      .from('wallet')
+      .update({ money: 100 })
+      .eq('child_id', family.childId)
+    expect(drainErr).toBeNull()
+
+    const res = await postDecision(withdrawal.id, 'approve')
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toBe('Insufficient money')
+
+    const { data: reopened } = await db
+      .from('cash_withdrawals')
+      .select('status, processed_by')
+      .eq('id', withdrawal.id)
+      .single()
+    expect(reopened?.status).toBe('pending')
+    expect(reopened?.processed_by).toBeNull()
+
+    const { data: wallet } = await db
+      .from('wallet')
+      .select('money')
+      .eq('child_id', family.childId)
+      .single()
+    expect(Number(wallet?.money)).toBe(100)
   })
 
   it('teardown removes all coin_exchanges/cash_withdrawals for the test child', async () => {
