@@ -118,6 +118,10 @@ export async function destroyTestFamily(familyId: string, childId: string): Prom
   await db.from('cash_withdrawals').delete().eq('child_id', childId)
   await db.from('reward_purchases').delete().eq('child_id', childId)
   await db.from('rewards').delete().eq('family_id', familyId)
+  // Safety net: wallet_settings has no ON DELETE CASCADE from families, so a
+  // failing assertion mid-test (e.g. the settings-driven streak test) can
+  // never orphan a wallet_settings row for a torn-down test family.
+  await db.from('wallet_settings').delete().eq('family_id', familyId)
   await db.from('days').delete().eq('child_id', childId)
   await db.from('subject_grades').delete().eq('child_id', childId)
   await db.from('sections').delete().eq('child_id', childId)
