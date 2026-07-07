@@ -49,11 +49,15 @@ const EXPECTED = {
   coach5: 10,
   activity: 7, // set on the test's extra_activities row, not a settings default
   book: 20,
-  streakMin: 100, // global settings has no roomStreak7 override → default 100
+  // Default parity (SC2): the test family has no wallet_settings row, so
+  // loadSettings() falls back to SETTINGS_DEFAULTS — room streak >=7 days
+  // yields exactly the default streak_room_bonus (100), no override.
+  streakRoomDefault: 100,
 }
 
 const TEST_DATE = '2020-01-15'
 const CHILD_ROLE_DATE = '2020-02-20'
+const STUDY_STREAK_DATE = '2020-03-10'
 
 function postAward(childId: string, date: string) {
   const req = new NextRequest('http://localhost/api/wallet/award', {
@@ -174,7 +178,10 @@ describe.skipIf(!hasIntegrationEnv)('POST /api/wallet/award — integration', ()
     expect(bySource.get('sport')).toBe(EXPECTED.coach5)
     expect(bySource.get('activity')).toBe(EXPECTED.activity)
     expect(bySource.get('book')).toBe(EXPECTED.book)
-    expect(bySource.get('streak')).toBeGreaterThanOrEqual(EXPECTED.streakMin)
+    // Default parity (SC2): no wallet_settings row for this family → the
+    // room streak (current_count=7, seeded above) yields exactly the default
+    // streak_room_bonus (100) — not a floor, an exact value.
+    expect(bySource.get('streak')).toBe(EXPECTED.streakRoomDefault)
 
     // Exactly one row per source_type — no duplicates from this single POST.
     expect(txs?.length).toBe(7)
@@ -239,6 +246,74 @@ describe.skipIf(!hasIntegrationEnv)('POST /api/wallet/award — integration', ()
     const second = await db.from('wallet_transactions').insert(dupeRow)
     expect(second.error).not.toBeNull()
     expect(second.error?.code).toBe('23505')
+  })
+
+  it('settings-driven (SC2/SC3): editing streak_study_days/bonus changes the streak award', async () => {
+    mockRequireFamilyMember.mockResolvedValue({
+      userId: 'test-user-parent',
+      familyId: family.familyId,
+      role: 'parent',
+      childId: null,
+    })
+
+    // Use the STUDY streak type — never seeded elsewhere in this file, so no
+    // UNIQUE(child_id, streak_type) collision with the permanent 'room' row
+    // seeded in the first test. A dedicated date keeps this award idempotency
+    // key (child_id, source_type='streak', source_id=date) independent of
+    // every other test's date.
+    //
+    // computeStreakBonus sums the bonus across ALL of the child's qualifying
+    // streaks for a given award call (not just the type under test) — the
+    // permanent 'room' streak (current_count=7) from the first test still
+    // exists on this shared child and would otherwise also fire (its default
+    // streak_room_days=7 threshold is met), adding +100 on top. Push
+    // streak_room_days out of reach (365, still within the settings-route's
+    // writable clamp ceiling) so this award isolates the study contribution
+    // to exactly 250.
+    const { error: settingsErr } = await db.from('wallet_settings').upsert({
+      id: family.familyId,
+      family_id: family.familyId,
+      streak_room_days: 365,
+      streak_study_days: 1,
+      streak_study_bonus: 250,
+    })
+    expect(settingsErr).toBeNull()
+
+    const { error: streakErr } = await db.from('streaks').insert({
+      child_id: family.childId,
+      streak_type: 'study',
+      current_count: 1,
+    })
+    expect(streakErr).toBeNull()
+
+    try {
+      const res = await postAward(family.childId, STUDY_STREAK_DATE)
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.ok).toBe(true)
+
+      const { data: streakTx, error: txErr } = await db
+        .from('wallet_transactions')
+        .select('coins_change')
+        .eq('child_id', family.childId)
+        .eq('source_type', 'streak')
+        .eq('source_id', STUDY_STREAK_DATE)
+        .maybeSingle()
+      expect(txErr).toBeNull()
+      expect(streakTx?.coins_change).toBe(250)
+    } finally {
+      // Inline cleanup — belt and suspenders alongside the family_id-scoped
+      // safety net added to destroyTestFamily() — so later tests in this
+      // file (and the shared family) keep the default (no-row) behavior
+      // even if an assertion above throws.
+      await db.from('wallet_transactions')
+        .delete()
+        .eq('child_id', family.childId)
+        .eq('source_type', 'streak')
+        .eq('source_id', STUDY_STREAK_DATE)
+      await db.from('streaks').delete().eq('child_id', family.childId).eq('streak_type', 'study')
+      await db.from('wallet_settings').delete().eq('family_id', family.familyId)
+    }
   })
 
   it('child-role gating: behavior is not credited when the caller is the child', async () => {
