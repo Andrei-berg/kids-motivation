@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: ready_to_plan
-stopped_at: Phase 05.4 complete (3/3) — ready to discuss Phase 05.5
-last_updated: 2026-07-07T11:04:03.686Z
+stopped_at: Phase 5.5 context gathered
+last_updated: "2026-07-07T15:59:14.940Z"
 last_activity: 2026-07-07
 progress:
   total_phases: 16
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 40
-  completed_plans: 96
-  percent: 44
+  completed_plans: 39
+  percent: 50
 ---
 
 # STATE.md — Текущее состояние проекта
@@ -126,14 +126,17 @@ None.
   `wallet.repo.ts`/`wallet-api.ts`; `WithdrawModal` switched to `/api/wallet/withdraw`;
   10/10 integration tests green (`exchange-withdraw.test.ts` incl. reserve, approve,
   409-double-approve, reject, compensation).
+
 - **DEFECT (code review 05.4, CR-01, pre-existing): streak bonus mintable via arbitrary
   client dates.** `/api/wallet/award` keys the streak-bonus award on the raw
   client-supplied `date` string (regex-only validation) and pays from client-writable
   `streaks.current_count` — a child can loop distinct date strings and mint bonus×N.
   Predates 05.4 (present since the original server-side award, commit `c873a8d`).
   Fix direction (see `05.4-REVIEW.md` CR-01): pay only when `date === localDateString()`
+
   + real-calendar validation; longer term key on the milestone and move `updateStreaks`
   server-side. Candidate for an early 5.5 gap plan.
+
 - **Discovered 2026-07-07: `parent_audit_events` was never created in prod** — every
   `insertAuditEvent` (shop_approve/reject etc.) has been silently failing since 04.4.
   Fixed same day: applied `04.4-01-audit-consent.sql` + `05.4-04-withdraw-audit-actions.sql`
@@ -145,9 +148,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-07-07T04:05:00.000Z
-Stopped at: Completed 05.3-03-PLAN.md — LedgerRow/Amount piloted on kid wallet + parent dashboard; consolidated visual checkpoint pending operator sign-off
-Resume file: None
+Last session: 2026-07-07T15:59:14.890Z
+Stopped at: Phase 5.5 context gathered
+Resume file: .planning/phases/05.5-year-calendar/05.5-CONTEXT.md
 
 ---
 
