@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-stopped_at: Completed 05.3-03-PLAN.md — LedgerRow/Amount piloted on kid wallet history + parent dashboard activity; full build green; consolidated visual checkpoint pending operator sign-off
-last_updated: "2026-07-07T04:05:00.000Z"
+stopped_at: Completed 05.3-03-PLAN.md — LedgerRow/Amount piloted on kid wallet + parent dashboard; consolidated visual checkpoint pending operator sign-off
+last_updated: "2026-07-07T04:42:38.060Z"
 last_activity: 2026-07-07
 progress:
   total_phases: 16
   completed_phases: 7
-  total_plans: 37
+  total_plans: 40
   completed_plans: 36
   percent: 44
 ---
