@@ -229,7 +229,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 05.3-01-PLAN.md — Unified lib/design/tokens.ts (base + paper/ink) + key-preserving T re-exports + next/font (Bitter/Golos Text/JetBrains Mono, Cyrillic)
-- [ ] 05.3-02-PLAN.md — Shared atoms: LedgerRow, Amount, StatusChip, useCountUp + Stamp (theme-aware, reduced-motion safe)
+- [x] 05.3-02-PLAN.md — Shared atoms: LedgerRow, Amount, StatusChip, useCountUp + Stamp (theme-aware, reduced-motion safe)
 - [ ] 05.3-03-PLAN.md — Pilot LedgerRow on kid wallet history + parent dashboard activity; full build + consolidated visual checkpoint
 
 ### Phase 5.4: streak-settings

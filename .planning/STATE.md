@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: unknown
-stopped_at: "Completed 05.3-01-PLAN.md — lib/design/tokens.ts + key-preserving kid/parent re-exports + next/font brand fonts wired in app/layout.tsx"
-last_updated: "2026-07-06T19:08:00.719Z"
+stopped_at: Completed 05.3-02-PLAN.md — shared atoms (LedgerRow/Amount/StatusChip/useCountUp/Stamp) in components/design/atoms.tsx + AA text-safe paper tone variants
+last_updated: "2026-07-07T03:55:06.722Z"
 last_activity: 2026-07-06
 progress:
   total_phases: 16
   completed_phases: 6
   total_plans: 37
-  completed_plans: 34
+  completed_plans: 35
   percent: 38
 ---
 
@@ -53,12 +53,12 @@ Milestone v4.0 PWA Polish — In Progress
 Phase 4.5 (desktop): COMPLETE — all 4 plans executed
 Phase 05.1 (launch-prep): COMPLETE — full SC3 money suite (award + purchase + exchange + withdraw, 18 tests) green against live DB
 Phase 05.2 (room-tasks): 05.2-06 COMPLETE (code) — RoomTasksManager settings editor (add/rename/toggle/reorder/delete, legacy tasks locked from deletion) mounted as Parent Center → Settings → Schedule → Room; settings.tabs.room + roomTasksManager.* i18n added to en/ru. All 6 plans (01-06) code-complete; SC1-SC3 verified in earlier plans; SC4 (rename visible on kid screen) queued as a checkpoint:human-verify for the operator at phase end — phase 05.2 not yet marked closed pending that approval.
-Phase 05.3 (design-tokens): 05.3-01 COMPLETE — lib/design/tokens.ts (base + paper/ink themes) created; components/kid/design/tokens.ts (26 keys) + components/parent-center/tokens.ts (30 keys + CHILD_ACCENTS) recolored as key-preserving re-exports, zero consumer edits; Bitter/Golos Text/JetBrains Mono wired via next/font in app/layout.tsx with cyrillic subsets. tsc/lint/test/build all green. 05.3-02 (shared atoms) and 05.3-03 (pilot adoption) remain.
-Last activity: 2026-07-06
+Phase 05.3 (design-tokens): 05.3-02 COMPLETE — shared brand atoms (LedgerRow dotted-leader signature, Amount mono/tabular/gold-for-money, StatusChip soft chips, useCountUp, Stamp) in components/design/atoms.tsx, all theme-aware ('paper'|'ink'); AA text-safe paper tone variants (successText #1D7355 / warningText #A05111 / dangerText #B33846, all pairs >=4.5:1 incl. 14%-alpha chip surfaces) added to lib/design/tokens.ts; reduced-motion honored in useCountUp + Stamp. tsc/lint/test green. 05.3-01 done earlier (tokens + re-exports + next/font). 05.3-03 (pilot adoption on kid wallet + parent dashboard) remains.
+Last activity: 2026-07-07
 Prior GSD activity: 2026-07-06 — executed 05.3-01 (lib/design/tokens.ts + kid/parent token re-exports + next/font wiring)
 ```
 
-Progress: [█████████░] 92%
+Progress: [██████████] 95%
 
 ---
 
@@ -132,8 +132,8 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-07-06T19:07:19.053Z
-Stopped at: Completed 05.3-01-PLAN.md
+Last session: 2026-07-07T03:55:06.703Z
+Stopped at: Completed 05.3-02-PLAN.md — shared atoms (LedgerRow/Amount/StatusChip/useCountUp/Stamp) in components/design/atoms.tsx + AA text-safe paper tone variants
 Resume file: None
 
 ---
@@ -184,6 +184,9 @@ Resume file: None
 - [Phase 05.2]: RoomTasksManager resolves familyId via useAppStore() (SectionsManager pattern), not useFamilyMembers()
 - [Phase 05.3-01]: Token re-export pattern - lib/design/tokens.ts single source; kid/parent T objects re-export unchanged keys from base/paper/ink
 - [Phase 05.3-01]: CHILD_ACCENTS re-derived to 5 non-neon non-gold hexes (#8B7BF5, #3FBF92, #E88AA6, #5FB3E0, #C58BE0)
+- [Phase 05.3-02]: Text-safe paper tone variants darkened past plan suggestions (#1D7355/#A05111/#B33846) so all pairs incl. 14%-alpha chip surfaces are >=4.5:1
+- [Phase 05.3-02]: LedgerRow pending tone uses resolved mutedText (paper.ink2 / ink.muted) — paper.ink3 fails AA at 3.59:1 on the paper bg
+- [Phase 05.3-02]: Stamp reduced-motion double-guarded: keyframes inside a no-preference media query (hydration-safe) plus a post-mount JS check dropping the animation property
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 
