@@ -24,4 +24,7 @@ export type VacationPreset = {
   periods: PresetPeriod[]
 }
 
-export const PRESETS: VacationPreset[] = [ruQuarters, ruMoscowTrimesters, kz, by]
+// JSON imports widen termMode to `string`; cast back to the TermMode union —
+// the literal values are authored and verified against the union at Task 1's
+// automated gate (ru-moscow-trimesters is 'trimesters', the rest 'quarters').
+export const PRESETS: VacationPreset[] = [ruQuarters, ruMoscowTrimesters, kz, by] as VacationPreset[]
