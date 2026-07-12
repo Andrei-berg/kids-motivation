@@ -82,6 +82,11 @@ When planning a new v5.0 phase, add its SC-IDs here.
 | 05.4-SC1 | 5.4 streak-settings | wallet_settings streak fields + defaults | Complete |
 | 05.4-SC2 | 5.4 streak-settings | Award reads streak settings, parity kept | Complete |
 | 05.4-SC3 | 5.4 streak-settings | Parent edits streak rules end-to-end | Complete |
+| 05.5-SC1 | 5.5 year-calendar | Parent sets school-year dates + quarters/trimesters mode | Planned |
+| 05.5-SC2 | 5.5 year-calendar | Region preset fills vacations (bundled JSON), manual wins | Planned |
+| 05.5-SC3 | 5.5 year-calendar | Configurable weekend days + sick day pauses streaks | Planned |
+| 05.5-SC4 | 5.5 year-calendar | getDayType fully data-driven; kid day screen reflects it | Planned |
+| 05.5-SC5 | 5.5 year-calendar | CR-01 fix: streak writes server-side + streaks SELECT-only lock | Planned |
 
 ## Traceability
 
