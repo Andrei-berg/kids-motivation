@@ -294,17 +294,18 @@ const SPORTSMAN_WINDOW = 30
 export async function getSportActiveDays(
   childId: string,
   startDate: string,
-  endDate: string
+  endDate: string,
+  client: typeof supabase = supabase
 ): Promise<Set<string>> {
   // section_visits references section_id (not child_id) — resolve the child's sections first.
-  const { data: childSections } = await supabase
+  const { data: childSections } = await client
     .from('sections')
     .select('id')
     .eq('child_id', childId)
   const sectionIds = (childSections ?? []).map(s => s.id)
 
   const [{ data: exercises }, { data: visits }] = await Promise.all([
-    supabase
+    client
       .from('home_exercises')
       .select('date')
       .eq('child_id', childId)
@@ -312,7 +313,7 @@ export async function getSportActiveDays(
       .gte('date', startDate)
       .lte('date', endDate),
     sectionIds.length > 0
-      ? supabase
+      ? client
           .from('section_visits')
           .select('date')
           .in('section_id', sectionIds)
