@@ -4,7 +4,7 @@ milestone: v4.0
 milestone_name: — PWA Polish
 status: ready_to_plan
 stopped_at: Phase 5.5 context gathered
-last_updated: "2026-07-12T19:11:38.465Z"
+last_updated: "2026-07-12T19:15:11.808Z"
 last_activity: 2026-07-12
 progress:
   total_phases: 16
@@ -67,7 +67,7 @@ Progress: [██████████] 97%
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Any family can register and use the app — children earn coins for real effort, spend them on real rewards
-**Current focus:** Phase 05.5 — year calendar
+**Current focus:** Phase 05.5 — year-calendar
 
 ---
 

@@ -254,9 +254,9 @@ Plans:
   3. Weekend days are configurable per family (default sat+sun); a sick day pauses school blocks without burning streaks
   4. `getDayType` resolves entirely from this data; the kid day screen reflects vacation/weekend automatically
 
-**Plans:** 7 plans
+**Plans:** 1/7 plans executed
 Plans:
-- [ ] 05.5-01-PLAN.md — Calendar schema (family_calendar, vacation_periods.preset_id, streaks RLS lock) + calendar types/repo + data-driven getDayType
+- [x] 05.5-01-PLAN.md — Calendar schema (family_calendar, vacation_periods.preset_id, streaks RLS lock) + calendar types/repo + data-driven getDayType
 - [ ] 05.5-02-PLAN.md — CR-01 fix (EARLY): server-side updateStreaks + day-type transparency + server-validated bonus date + drop browser streak writes
 - [ ] 05.5-03-PLAN.md — Bundled RU/KZ/BY vacation preset directory + applyPreset (replace/add-missing) + vacation_periods.preset_id field
 - [ ] 05.5-04-PLAN.md — Parent Center calendar settings card (school year, term mode, weekend days, region) + i18n
