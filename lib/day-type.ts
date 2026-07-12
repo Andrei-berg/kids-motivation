@@ -3,6 +3,7 @@
 // and provides coin calculation helpers for non-school activities.
 
 import { VacationPeriod } from './vacation-api'
+import type { FamilyCalendar } from './models/calendar.types'
 
 export type DayType = 'school' | 'weekend' | 'vacation' | 'sick'
 
@@ -15,14 +16,21 @@ export interface DayTypeInfo {
 
 /**
  * Returns the day type for a given date string (YYYY-MM-DD).
- * Priority: sick > vacation period > weekend > school day.
+ * Priority: sick > explicit vacation period > out-of-year-bounds (vacation) >
+ * weekend > school day.
+ *
+ * `familyCalendar` is optional: when absent (or no family_calendar row exists
+ * for the family — D-08), weekend resolution falls back to the hardcoded
+ * Saturday/Sunday check and there is no school-year concept, matching the
+ * pre-5.5 behavior exactly.
  */
 export function getDayType(
   date: string,
   isSick: boolean,
   vacationPeriods: VacationPeriod[],
   childId?: string,
-  t?: (key: string) => string
+  t?: (key: string) => string,
+  familyCalendar?: FamilyCalendar | null
 ): DayTypeInfo {
   if (isSick) {
     return { type: 'sick', label: t ? t('dayType.sick') : 'Болеет', emoji: '🤒' }
@@ -42,10 +50,17 @@ export function getDayType(
     }
   }
 
+  // Dates outside the family's configured school year auto-resolve to
+  // vacation with no explicit period row required (D-07) — e.g. summer.
+  if (familyCalendar && (date < familyCalendar.year_start || date > familyCalendar.year_end)) {
+    return { type: 'vacation', label: t ? t('dayType.vacation') : 'Каникулы', emoji: '🏖️' }
+  }
+
   // Use noon to prevent DST timezone shifts from flipping the day
   const d = new Date(date + 'T12:00:00')
   const dow = d.getDay()
-  if (dow === 0 || dow === 6) {
+  const isWeekend = familyCalendar ? familyCalendar.weekend_days.includes(dow) : dow === 0 || dow === 6
+  if (isWeekend) {
     return { type: 'weekend', label: t ? t('dayType.weekend') : 'Выходной', emoji: '📅' }
   }
 

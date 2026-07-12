@@ -27,9 +27,11 @@ describe('getDayType', () => {
   })
 
   it('with a familyCalendar whose weekend_days = [5,6]: Friday resolves to weekend, Sunday resolves to school', () => {
+    // Both dates fall within the calendar's default year bounds (2026-09-01..2027-05-31)
+    // so the out-of-year-bounds check does not shadow the weekend_days check.
     const calendar = makeCalendar({ weekend_days: [5, 6] })
-    expect(getDayType('2026-04-03', false, [], undefined, undefined, calendar).type).toBe('weekend') // Friday
-    expect(getDayType('2026-04-05', false, [], undefined, undefined, calendar).type).toBe('school') // Sunday
+    expect(getDayType('2026-11-06', false, [], undefined, undefined, calendar).type).toBe('weekend') // Friday
+    expect(getDayType('2026-11-08', false, [], undefined, undefined, calendar).type).toBe('school') // Sunday
   })
 
   it('a date outside [year_start, year_end] resolves to vacation even on a weekday (D-07)', () => {
