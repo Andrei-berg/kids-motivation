@@ -17,6 +17,7 @@ import SectionsManager from '@/components/settings/SectionsManager'
 import SubjectsManager from '@/components/settings/SubjectsManager'
 import ActivitiesManager from '@/components/settings/ActivitiesManager'
 import RoomTasksManager from '@/components/settings/RoomTasksManager'
+import CalendarSettingsManager from '@/components/settings/CalendarSettingsManager'
 
 // ───── Language card ─────
 function LanguageCard() {
@@ -372,6 +373,7 @@ function ScheduleTab({ allChildren }: { allChildren: ParentChild[] }) {
   const SUB_TABS = [
     { id: 'subjects',   icon: '📚', label: t('parentCenter.settings.more.subjects') },
     { id: 'sections',   icon: '🏃', label: t('parentCenter.settings.more.sections') },
+    { id: 'calendar',   icon: '📅', label: t('settings.tabs.calendar') },
     { id: 'vacations',  icon: '🌴', label: t('parentCenter.settings.more.vacations') },
     { id: 'activities', icon: '🎯', label: t('settings.tabs.activities') },
     { id: 'room',       icon: '🏠', label: t('settings.tabs.room') },
@@ -402,6 +404,7 @@ function ScheduleTab({ allChildren }: { allChildren: ParentChild[] }) {
 
       {sub === 'subjects'   && <SubjectsManager children={scheduleChildren}/>}
       {sub === 'sections'   && <SectionsManager/>}
+      {sub === 'calendar'   && <CalendarSettingsManager/>}
       {sub === 'vacations'  && <PeriodsManager/>}
       {sub === 'activities' && <ActivitiesManager/>}
       {sub === 'room'       && <RoomTasksManager/>}

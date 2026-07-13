@@ -711,6 +711,35 @@
       "systemTask": "system task",
       "deleteConfirm": "Delete this task?"
     },
+    "calendarSettingsManager": {
+      "title": "School Year & Weekends",
+      "subtitle": "Set the school-year dates, term mode, weekend days, and region preset",
+      "yearStart": "Year start",
+      "yearEnd": "Year end",
+      "termMode": "Term mode",
+      "quarters": "Quarters",
+      "trimesters": "Trimesters",
+      "weekend": "Weekend days",
+      "days": {
+        "sun": "Sun",
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat"
+      },
+      "region": "Region preset",
+      "regionNone": "None",
+      "regionRuQuarters": "Russia — quarters",
+      "regionRuMoscowTrimesters": "Russia — Moscow trimesters",
+      "regionKz": "Kazakhstan",
+      "regionBy": "Belarus",
+      "save": "Save",
+      "saveSuccess": "Calendar settings saved",
+      "dateOrderError": "Year start must be before year end",
+      "datesRequiredError": "Set both year start and year end"
+    },
     "streakSettings": {
       "title": "Streaks & Bonuses",
       "milestones": "Streak Bonuses",
@@ -805,7 +834,8 @@
       "children": "Children",
       "schedule": "Schedule",
       "activities": "Activities",
-      "room": "Room"
+      "room": "Room",
+      "calendar": "Calendar"
     },
     "auditBtn": "Audit log",
     "walletsBtn": "Wallets",

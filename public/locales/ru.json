@@ -679,6 +679,35 @@
       "systemTask": "системная",
       "deleteConfirm": "Удалить эту задачу?"
     },
+    "calendarSettingsManager": {
+      "title": "Учебный год и выходные",
+      "subtitle": "Настройте даты учебного года, тип четвертей, выходные дни и региональный шаблон",
+      "yearStart": "Начало года",
+      "yearEnd": "Конец года",
+      "termMode": "Тип четвертей",
+      "quarters": "Четверти",
+      "trimesters": "Триместры",
+      "weekend": "Выходные дни",
+      "days": {
+        "sun": "Вс",
+        "mon": "Пн",
+        "tue": "Вт",
+        "wed": "Ср",
+        "thu": "Чт",
+        "fri": "Пт",
+        "sat": "Сб"
+      },
+      "region": "Региональный шаблон",
+      "regionNone": "Не выбрано",
+      "regionRuQuarters": "Россия — четверти",
+      "regionRuMoscowTrimesters": "Россия — Москва, триместры",
+      "regionKz": "Казахстан",
+      "regionBy": "Беларусь",
+      "save": "Сохранить",
+      "saveSuccess": "Настройки календаря сохранены",
+      "dateOrderError": "Начало года должно быть раньше конца",
+      "datesRequiredError": "Укажите обе даты — начало и конец года"
+    },
     "streakSettings": {
       "title": "Стрики и бонусы",
       "milestones": "Бонусы за стрики",
@@ -773,7 +802,8 @@
       "children": "Дети",
       "schedule": "Расписание",
       "activities": "Активности",
-      "room": "Комната"
+      "room": "Комната",
+      "calendar": "Календарь"
     },
     "auditBtn": "Журнал",
     "walletsBtn": "Кошельки",
