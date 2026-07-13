@@ -677,7 +677,15 @@
       "school": "School",
       "save": "Save",
       "cancel": "Cancel",
-      "deleteConfirm": "Delete this period?"
+      "deleteConfirm": "Delete this period?",
+      "presetBadge": "Preset",
+      "presetPicker": {
+        "title": "Region preset",
+        "hint": "Template schedule — actual dates may vary. Applying creates editable periods; you can adjust or delete any of them afterward.",
+        "apply": "Apply",
+        "confirmReplaceOrAdd": "Periods for this preset already exist. Press OK to replace them, or Cancel to only add the missing ones.",
+        "appliedCount": "{{count}} periods added"
+      }
     },
     "sectionsManager": {
       "title": "Sections",
