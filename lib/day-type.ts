@@ -52,7 +52,14 @@ export function getDayType(
 
   // Dates outside the family's configured school year auto-resolve to
   // vacation with no explicit period row required (D-07) — e.g. summer.
-  if (familyCalendar && (date < familyCalendar.year_start || date > familyCalendar.year_end)) {
+  // year_start/year_end may be NULL (row created by a preset-only upsert,
+  // WR-07): skip the bounds rule until both are configured.
+  if (
+    familyCalendar &&
+    familyCalendar.year_start &&
+    familyCalendar.year_end &&
+    (date < familyCalendar.year_start || date > familyCalendar.year_end)
+  ) {
     return { type: 'vacation', label: t ? t('dayType.vacation') : 'Каникулы', emoji: '🏖️' }
   }
 
