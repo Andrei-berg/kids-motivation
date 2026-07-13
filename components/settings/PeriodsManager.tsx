@@ -64,17 +64,23 @@ export default function PeriodsManager() {
     try {
       const supabase = createClient()
 
+      // WR-03: vacation_periods.child_filter must hold children.id — that is
+      // what getDayType matches against (updateStreaks/DailyModal/kid day page
+      // all pass children.id). Use family_members.child_id, NOT
+      // family_members.id, as the picker value.
       const { data: childRows } = await supabase
         .from('family_members')
-        .select('id, display_name')
+        .select('id, child_id, display_name')
         .eq('family_id', fid)
         .eq('role', 'child')
         .order('created_at')
 
-      setChildren((childRows || []).map(c => ({
-        id: c.id,
-        name: c.display_name || 'Child',
-      })))
+      setChildren((childRows || [])
+        .filter(c => c.child_id)
+        .map(c => ({
+          id: c.child_id as string,
+          name: c.display_name || 'Child',
+        })))
 
       const data = await getVacationPeriods(fid)
       setPeriods(data)
