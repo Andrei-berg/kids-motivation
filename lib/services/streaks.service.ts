@@ -88,11 +88,21 @@ export async function updateStreaks(admin: Admin, childId: string, date: string)
   const sportStreak = calculateSportStreak(sportDays, today, dayTypeOf)
   const behaviorStreak = calculateBehaviorStreak(days, today, dayTypeOf)
 
+  // CR-02: when the day being processed is itself transparent for a streak
+  // type, never emit a 'broken' event for that type — a transparent day must
+  // not reset a streak (D-09/D-10), and it must not fire a "streak broken"
+  // push either. Sick is transparent for room/sport/behavior; weekend/
+  // vacation/sick are transparent for study.
+  const todayType = dayTypeOf(today)
+  const sickTransparentToday = todayType === 'sick'
+  const studyTransparentToday =
+    todayType === 'weekend' || todayType === 'vacation' || todayType === 'sick'
+
   const [roomEvent, studyEvent, sportEvent, behaviorEvent] = await Promise.all([
-    updateStreak(admin, childId, 'room', roomStreak.current, roomStreak.best, familyId),
-    updateStreak(admin, childId, 'study', studyStreak.current, studyStreak.best, familyId),
-    updateStreak(admin, childId, 'sport', sportStreak.current, sportStreak.best, familyId),
-    updateStreak(admin, childId, 'strong_week', behaviorStreak.current, behaviorStreak.best, familyId),
+    updateStreak(admin, childId, 'room', roomStreak.current, roomStreak.best, familyId, sickTransparentToday),
+    updateStreak(admin, childId, 'study', studyStreak.current, studyStreak.best, familyId, studyTransparentToday),
+    updateStreak(admin, childId, 'sport', sportStreak.current, sportStreak.best, familyId, sickTransparentToday),
+    updateStreak(admin, childId, 'strong_week', behaviorStreak.current, behaviorStreak.best, familyId, sickTransparentToday),
   ])
 
   const events: StreakEvents = {
@@ -102,15 +112,24 @@ export async function updateStreaks(admin: Admin, childId: string, date: string)
   return events
 }
 
+// The four calculators below walk BACKWARDS from `today` and track the
+// today-anchored run with an `anchored` flag (CR-02/CR-03): `current` is the
+// full length of the run that (transparently) extends back from today —
+// transparent days neither close nor extend the run, so a transparent
+// "today" carries the streak through instead of zeroing it, and current can
+// legitimately reach the 7/14/30 thresholds used by computeStreakBonus,
+// milestones, and the streak_30 badge.
+
 export function calculateRoomStreak(days: any[], today: string, dayType?: DayTypeResolver) {
   let current = 0
   let best = 0
   let streak = 0
+  let anchored = true // still inside the run that extends back from today
 
   let checkDate = today
   for (let i = 0; i < 30; i++) {
     // Sick days are transparent for room/sport/behavior streaks (D-09): skip —
-    // neither increment nor reset.
+    // neither increment nor reset (does not close the anchored run).
     if (dayType && dayType(checkDate) === 'sick') {
       checkDate = addDays(checkDate, -1)
       continue
@@ -120,10 +139,10 @@ export function calculateRoomStreak(days: any[], today: string, dayType?: DayTyp
 
     if (day && day.room_ok) {
       streak++
-      if (checkDate === today) current = streak
+      if (anchored) current = streak
     } else {
       if (streak > best) best = streak
-      if (checkDate === today) current = 0
+      anchored = false
       streak = 0
     }
 
@@ -141,11 +160,13 @@ export function calculateStudyStreak(grades: any[], today: string, dayType?: Day
   let current = 0
   let best = 0
   let streak = 0
+  let anchored = true // still inside the run that extends back from today
 
   let checkDate = today
   for (let i = 0; i < 30; i++) {
     // Weekends, vacations, and sick days are transparent for the study streak
-    // (D-09/D-10): skip — neither increment nor reset.
+    // (D-09/D-10): skip — neither increment nor reset (does not close the
+    // anchored run).
     if (dayType) {
       const type = dayType(checkDate)
       if (type === 'weekend' || type === 'vacation' || type === 'sick') {
@@ -156,10 +177,10 @@ export function calculateStudyStreak(grades: any[], today: string, dayType?: Day
 
     if (daysWithGrades.has(checkDate)) {
       streak++
-      if (checkDate === today) current = streak
+      if (anchored) current = streak
     } else {
       if (streak > best) best = streak
-      if (checkDate === today) current = 0
+      anchored = false
       streak = 0
     }
 
@@ -175,11 +196,12 @@ export function calculateSportStreak(sportDays: Set<string>, today: string, dayT
   let current = 0
   let best = 0
   let streak = 0
+  let anchored = true // still inside the run that extends back from today
 
   let checkDate = today
   for (let i = 0; i < 30; i++) {
     // Sick days are transparent for room/sport/behavior streaks (D-09): skip —
-    // neither increment nor reset.
+    // neither increment nor reset (does not close the anchored run).
     if (dayType && dayType(checkDate) === 'sick') {
       checkDate = addDays(checkDate, -1)
       continue
@@ -189,10 +211,10 @@ export function calculateSportStreak(sportDays: Set<string>, today: string, dayT
 
     if (hasSport) {
       streak++
-      if (checkDate === today) current = streak
+      if (anchored) current = streak
     } else {
       if (streak > best) best = streak
-      if (checkDate === today) current = 0
+      anchored = false
       streak = 0
     }
 
@@ -208,11 +230,12 @@ export function calculateBehaviorStreak(days: any[], today: string, dayType?: Da
   let current = 0
   let best = 0
   let streak = 0
+  let anchored = true // still inside the run that extends back from today
 
   let checkDate = today
   for (let i = 0; i < 30; i++) {
     // Sick days are transparent for room/sport/behavior streaks (D-09): skip —
-    // neither increment nor reset.
+    // neither increment nor reset (does not close the anchored run).
     if (dayType && dayType(checkDate) === 'sick') {
       checkDate = addDays(checkDate, -1)
       continue
@@ -222,10 +245,10 @@ export function calculateBehaviorStreak(days: any[], today: string, dayType?: Da
 
     if (day && day.good_behavior) {
       streak++
-      if (checkDate === today) current = streak
+      if (anchored) current = streak
     } else {
       if (streak > best) best = streak
-      if (checkDate === today) current = 0
+      anchored = false
       streak = 0
     }
 
@@ -243,7 +266,8 @@ async function updateStreak(
   type: 'room' | 'study' | 'sport' | 'strong_week',
   current: number,
   best: number,
-  familyId?: string | null
+  familyId?: string | null,
+  todayTransparent = false
 ): Promise<StreakEvent | null> {
   const { data: existing } = await admin
     .from('streaks')
@@ -255,7 +279,10 @@ async function updateStreak(
   let event: StreakEvent | null = null
 
   if (existing) {
-    if (existing.current_count > 0 && current === 0) {
+    // CR-02: never emit 'broken' when today itself is transparent for this
+    // streak type — a transparent day must not reset a streak (D-09/D-10),
+    // so it must not announce a break either.
+    if (existing.current_count > 0 && current === 0 && !todayTransparent) {
       event = { type, event: 'broken', previousCount: existing.current_count, newCount: 0 }
     } else if (current > existing.best_count) {
       event = { type, event: 'record', previousCount: existing.best_count, newCount: current }
