@@ -14,6 +14,7 @@
 
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest'
 import { NextRequest } from 'next/server'
+import { localDateString } from '@/utils/helpers'
 import {
   hasIntegrationEnv,
   serviceClient,
@@ -36,6 +37,14 @@ vi.mock('@/lib/supabase/admin', async (importOriginal) => {
   }
 })
 
+// The award route now imports lib/services/streaks.service (05.5-02 D-12.2),
+// which transitively imports the anon browser singleton in lib/supabase.ts —
+// a module that THROWS at import time when NEXT_PUBLIC_SUPABASE_URL is absent.
+// Mock it so this suite still loads (and skipIf-skips) without integration env.
+// The server award path never touches the anon singleton (updateStreaks runs
+// entirely on the admin client), so the empty stub is inert when tests DO run.
+vi.mock('@/lib/supabase', () => ({ supabase: {} }))
+
 // vi.mock calls are hoisted above imports by vitest, so this static import
 // resolves against the mocked '@/lib/supabase/admin'.
 import { POST } from '@/app/api/wallet/award/route'
@@ -49,15 +58,10 @@ const EXPECTED = {
   coach5: 10,
   activity: 7, // set on the test's extra_activities row, not a settings default
   book: 20,
-  // Default parity (SC2): the test family has no wallet_settings row, so
-  // loadSettings() falls back to SETTINGS_DEFAULTS — room streak >=7 days
-  // yields exactly the default streak_room_bonus (100), no override.
-  streakRoomDefault: 100,
 }
 
 const TEST_DATE = '2020-01-15'
 const CHILD_ROLE_DATE = '2020-02-20'
-const STUDY_STREAK_DATE = '2020-03-10'
 
 function postAward(childId: string, date: string) {
   const req = new NextRequest('http://localhost/api/wallet/award', {
@@ -149,6 +153,11 @@ describe.skipIf(!hasIntegrationEnv)('POST /api/wallet/award — integration', ()
     })
     expect(readingErr).toBeNull()
 
+    // Seed a room streak that WOULD meet the default streak_room_days=7
+    // threshold. Since 05.5-02 (D-12.1/D-12.2) the route (a) recomputes streak
+    // counts server-side via updateStreaks before the bonus, and (b) pays the
+    // streak bonus ONLY when the awarded date equals the server's real today —
+    // so this past-date POST must NOT produce a 'streak' transaction.
     const { error: streakErr } = await db.from('streaks').insert({
       child_id: family.childId,
       streak_type: 'room',
@@ -160,6 +169,8 @@ describe.skipIf(!hasIntegrationEnv)('POST /api/wallet/award — integration', ()
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.ok).toBe(true)
+    // 05.5-02 D-12.2: the route folds updateStreaks in and returns its events.
+    expect(body.streakEvents).toBeDefined()
 
     const { data: txs, error: txErr } = await db
       .from('wallet_transactions')
@@ -178,13 +189,13 @@ describe.skipIf(!hasIntegrationEnv)('POST /api/wallet/award — integration', ()
     expect(bySource.get('sport')).toBe(EXPECTED.coach5)
     expect(bySource.get('activity')).toBe(EXPECTED.activity)
     expect(bySource.get('book')).toBe(EXPECTED.book)
-    // Default parity (SC2): no wallet_settings row for this family → the
-    // room streak (current_count=7, seeded above) yields exactly the default
-    // streak_room_bonus (100) — not a floor, an exact value.
-    expect(bySource.get('streak')).toBe(EXPECTED.streakRoomDefault)
+    // D-12.1 (05.5-02): the streak bonus is gated on date === server today —
+    // a past-date POST mints NO streak transaction, even with a qualifying
+    // streaks row (current_count=7 >= default streak_room_days=7) seeded above.
+    expect(bySource.get('streak')).toBeUndefined()
 
     // Exactly one row per source_type — no duplicates from this single POST.
-    expect(txs?.length).toBe(7)
+    expect(txs?.length).toBe(6)
   })
 
   it('idempotency: a second POST for the same child+date credits nothing more', async () => {
@@ -248,7 +259,7 @@ describe.skipIf(!hasIntegrationEnv)('POST /api/wallet/award — integration', ()
     expect(second.error?.code).toBe('23505')
   })
 
-  it('settings-driven (SC2/SC3): editing streak_study_days/bonus changes the streak award', async () => {
+  it('settings-driven (SC2/SC3): editing streak_room_days/bonus changes the streak award', async () => {
     mockRequireFamilyMember.mockResolvedValue({
       userId: 'test-user-parent',
       familyId: family.familyId,
@@ -256,38 +267,39 @@ describe.skipIf(!hasIntegrationEnv)('POST /api/wallet/award — integration', ()
       childId: null,
     })
 
-    // Use the STUDY streak type — never seeded elsewhere in this file, so no
-    // UNIQUE(child_id, streak_type) collision with the permanent 'room' row
-    // seeded in the first test. A dedicated date keeps this award idempotency
-    // key (child_id, source_type='streak', source_id=date) independent of
-    // every other test's date.
-    //
-    // computeStreakBonus sums the bonus across ALL of the child's qualifying
-    // streaks for a given award call (not just the type under test) — the
-    // permanent 'room' streak (current_count=7) from the first test still
-    // exists on this shared child and would otherwise also fire (its default
-    // streak_room_days=7 threshold is met), adding +100 on top. Push
-    // streak_room_days out of reach (365, still within the settings-route's
-    // writable clamp ceiling) so this award isolates the study contribution
-    // to exactly 250.
+    // Since 05.5-02, the streak bonus is payable ONLY for the server's real
+    // today (D-12.1), and the route RECOMPUTES streak counts from saved rows
+    // via updateStreaks before evaluating the bonus (D-12.2) — a directly
+    // seeded streaks row would just be overwritten. So this test uses the ROOM
+    // streak (counts all non-sick days — no weekend/vacation transparency, so
+    // it is deterministic whatever weekday the suite runs on), backed by a
+    // real days row for today: room_bed/floor/desk true → trigger-derived
+    // room_ok → recomputed room current_count = 1 >= streak_room_days = 1.
+    const today = localDateString()
+
     const { error: settingsErr } = await db.from('wallet_settings').upsert({
       id: family.familyId,
       family_id: family.familyId,
-      streak_room_days: 365,
-      streak_study_days: 1,
-      streak_study_bonus: 250,
+      streak_room_days: 1,
+      streak_room_bonus: 250,
     })
     expect(settingsErr).toBeNull()
 
-    const { error: streakErr } = await db.from('streaks').insert({
-      child_id: family.childId,
-      streak_type: 'study',
-      current_count: 1,
-    })
-    expect(streakErr).toBeNull()
+    const { data: todayDay, error: dayErr } = await db
+      .from('days')
+      .insert({
+        child_id: family.childId,
+        date: today,
+        room_bed: true,
+        room_floor: true,
+        room_desk: true,
+      })
+      .select('id')
+      .single()
+    expect(dayErr).toBeNull()
 
     try {
-      const res = await postAward(family.childId, STUDY_STREAK_DATE)
+      const res = await postAward(family.childId, today)
       expect(res.status).toBe(200)
       const body = await res.json()
       expect(body.ok).toBe(true)
@@ -297,7 +309,7 @@ describe.skipIf(!hasIntegrationEnv)('POST /api/wallet/award — integration', ()
         .select('coins_change')
         .eq('child_id', family.childId)
         .eq('source_type', 'streak')
-        .eq('source_id', STUDY_STREAK_DATE)
+        .eq('source_id', today)
         .maybeSingle()
       expect(txErr).toBeNull()
       expect(streakTx?.coins_change).toBe(250)
@@ -310,8 +322,15 @@ describe.skipIf(!hasIntegrationEnv)('POST /api/wallet/award — integration', ()
         .delete()
         .eq('child_id', family.childId)
         .eq('source_type', 'streak')
-        .eq('source_id', STUDY_STREAK_DATE)
-      await db.from('streaks').delete().eq('child_id', family.childId).eq('streak_type', 'study')
+        .eq('source_id', today)
+      if (todayDay?.id) {
+        await db.from('wallet_transactions')
+          .delete()
+          .eq('child_id', family.childId)
+          .eq('source_type', 'room')
+          .eq('source_id', todayDay.id)
+        await db.from('days').delete().eq('id', todayDay.id)
+      }
       await db.from('wallet_settings').delete().eq('family_id', family.familyId)
     }
   })

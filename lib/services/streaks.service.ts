@@ -1,10 +1,24 @@
 // lib/services/streaks.service.ts
 // Streak calculation business logic.
 // Sourced from lib/streaks.ts — this is the authoritative implementation.
+//
+// updateStreaks runs ONLY server-side with the service-role (admin) client —
+// see app/api/wallet/award/route.ts and app/actions/repair-achievements.ts.
+// This module never imports lib/supabase/admin at module scope so it stays
+// importable from client bundles (the caller creates the admin client and
+// passes it in); only the `Admin` type alias is imported.
 
 import { supabase } from '../supabase'
 import { normalizeDate, addDays } from '@/utils/helpers'
 import { getSportActiveDays } from './badges.service'
+import { getDayType, type DayType } from '@/lib/day-type'
+import type { VacationPeriod } from '@/lib/vacation-api'
+import type { FamilyCalendar } from '@/lib/models/calendar.types'
+
+type Admin = ReturnType<typeof import('@/lib/supabase/admin').createAdminClient>
+
+/** Resolves the DayType for a given date string. Built once per updateStreaks call. */
+type DayTypeResolver = (dateStr: string) => DayType
 
 export interface StreakEvent {
   type: 'room' | 'study' | 'sport' | 'strong_week'
@@ -18,11 +32,18 @@ export interface StreakEvents {
   records: StreakEvent[]
 }
 
-export async function updateStreaks(childId: string, date: string): Promise<StreakEvents> {
+export async function updateStreaks(admin: Admin, childId: string, date: string): Promise<StreakEvents> {
   const today = normalizeDate(date)
   const startDate = addDays(today, -30)
 
-  const { data: days } = await supabase
+  const { data: child } = await admin
+    .from('children')
+    .select('family_id')
+    .eq('id', childId)
+    .maybeSingle()
+  const familyId = child?.family_id ?? null
+
+  const { data: days } = await admin
     .from('days')
     .select('*')
     .eq('child_id', childId)
@@ -32,7 +53,7 @@ export async function updateStreaks(childId: string, date: string): Promise<Stre
 
   if (!days) return { broken: [], records: [] }
 
-  const { data: grades } = await supabase
+  const { data: grades } = await admin
     .from('subject_grades')
     .select('date')
     .eq('child_id', childId)
@@ -41,25 +62,37 @@ export async function updateStreaks(childId: string, date: string): Promise<Stre
 
   // Sport-active days come from the current data model (home exercises + training
   // attendance), not the legacy home_sports table which is no longer written to.
-  const sportDays = await getSportActiveDays(childId, startDate, today)
+  const sportDays = await getSportActiveDays(childId, startDate, today, admin)
 
-  const roomStreak = calculateRoomStreak(days, today)
-  const studyStreak = calculateStudyStreak(grades || [], today)
-  const sportStreak = calculateSportStreak(sportDays, today)
-  const behaviorStreak = calculateBehaviorStreak(days, today)
+  // Day-type context for transparency (D-09/D-10): a weekend/vacation/sick day
+  // must not increment or reset a streak. Load via admin so this works
+  // server-side regardless of RLS.
+  let familyCalendar: FamilyCalendar | null = null
+  let vacationPeriods: VacationPeriod[] = []
+  if (familyId) {
+    const [{ data: calendarRow }, { data: vacationRows }] = await Promise.all([
+      admin.from('family_calendar').select('*').eq('family_id', familyId).maybeSingle(),
+      admin.from('vacation_periods').select('*').eq('family_id', familyId),
+    ])
+    familyCalendar = (calendarRow as FamilyCalendar | null) ?? null
+    vacationPeriods = (vacationRows as VacationPeriod[] | null) ?? []
+  }
+  // Determine each walked day's is_sick from the loaded `days` rows.
+  const sickByDate = new Map<string, boolean>()
+  for (const d of days) sickByDate.set(d.date, !!d.is_sick)
+  const dayTypeOf: DayTypeResolver = (dateStr: string) =>
+    getDayType(dateStr, sickByDate.get(dateStr) ?? false, vacationPeriods, childId, undefined, familyCalendar).type
 
-  const { data: child } = await supabase
-    .from('children')
-    .select('family_id')
-    .eq('id', childId)
-    .maybeSingle()
-  const familyId = child?.family_id ?? null
+  const roomStreak = calculateRoomStreak(days, today, dayTypeOf)
+  const studyStreak = calculateStudyStreak(grades || [], today, dayTypeOf)
+  const sportStreak = calculateSportStreak(sportDays, today, dayTypeOf)
+  const behaviorStreak = calculateBehaviorStreak(days, today, dayTypeOf)
 
   const [roomEvent, studyEvent, sportEvent, behaviorEvent] = await Promise.all([
-    updateStreak(childId, 'room', roomStreak.current, roomStreak.best, familyId),
-    updateStreak(childId, 'study', studyStreak.current, studyStreak.best, familyId),
-    updateStreak(childId, 'sport', sportStreak.current, sportStreak.best, familyId),
-    updateStreak(childId, 'strong_week', behaviorStreak.current, behaviorStreak.best, familyId),
+    updateStreak(admin, childId, 'room', roomStreak.current, roomStreak.best, familyId),
+    updateStreak(admin, childId, 'study', studyStreak.current, studyStreak.best, familyId),
+    updateStreak(admin, childId, 'sport', sportStreak.current, sportStreak.best, familyId),
+    updateStreak(admin, childId, 'strong_week', behaviorStreak.current, behaviorStreak.best, familyId),
   ])
 
   const events: StreakEvents = {
@@ -69,13 +102,20 @@ export async function updateStreaks(childId: string, date: string): Promise<Stre
   return events
 }
 
-export function calculateRoomStreak(days: any[], today: string) {
+export function calculateRoomStreak(days: any[], today: string, dayType?: DayTypeResolver) {
   let current = 0
   let best = 0
   let streak = 0
 
   let checkDate = today
   for (let i = 0; i < 30; i++) {
+    // Sick days are transparent for room/sport/behavior streaks (D-09): skip —
+    // neither increment nor reset.
+    if (dayType && dayType(checkDate) === 'sick') {
+      checkDate = addDays(checkDate, -1)
+      continue
+    }
+
     const day = days.find(d => d.date === checkDate)
 
     if (day && day.room_ok) {
@@ -95,7 +135,7 @@ export function calculateRoomStreak(days: any[], today: string) {
   return { current, best }
 }
 
-export function calculateStudyStreak(grades: any[], today: string) {
+export function calculateStudyStreak(grades: any[], today: string, dayType?: DayTypeResolver) {
   const daysWithGrades = new Set(grades.map(g => g.date))
 
   let current = 0
@@ -104,6 +144,16 @@ export function calculateStudyStreak(grades: any[], today: string) {
 
   let checkDate = today
   for (let i = 0; i < 30; i++) {
+    // Weekends, vacations, and sick days are transparent for the study streak
+    // (D-09/D-10): skip — neither increment nor reset.
+    if (dayType) {
+      const type = dayType(checkDate)
+      if (type === 'weekend' || type === 'vacation' || type === 'sick') {
+        checkDate = addDays(checkDate, -1)
+        continue
+      }
+    }
+
     if (daysWithGrades.has(checkDate)) {
       streak++
       if (checkDate === today) current = streak
@@ -121,13 +171,20 @@ export function calculateStudyStreak(grades: any[], today: string) {
   return { current, best }
 }
 
-export function calculateSportStreak(sportDays: Set<string>, today: string) {
+export function calculateSportStreak(sportDays: Set<string>, today: string, dayType?: DayTypeResolver) {
   let current = 0
   let best = 0
   let streak = 0
 
   let checkDate = today
   for (let i = 0; i < 30; i++) {
+    // Sick days are transparent for room/sport/behavior streaks (D-09): skip —
+    // neither increment nor reset.
+    if (dayType && dayType(checkDate) === 'sick') {
+      checkDate = addDays(checkDate, -1)
+      continue
+    }
+
     const hasSport = sportDays.has(checkDate)
 
     if (hasSport) {
@@ -147,13 +204,20 @@ export function calculateSportStreak(sportDays: Set<string>, today: string) {
   return { current, best }
 }
 
-export function calculateBehaviorStreak(days: any[], today: string) {
+export function calculateBehaviorStreak(days: any[], today: string, dayType?: DayTypeResolver) {
   let current = 0
   let best = 0
   let streak = 0
 
   let checkDate = today
   for (let i = 0; i < 30; i++) {
+    // Sick days are transparent for room/sport/behavior streaks (D-09): skip —
+    // neither increment nor reset.
+    if (dayType && dayType(checkDate) === 'sick') {
+      checkDate = addDays(checkDate, -1)
+      continue
+    }
+
     const day = days.find(d => d.date === checkDate)
 
     if (day && day.good_behavior) {
@@ -174,13 +238,14 @@ export function calculateBehaviorStreak(days: any[], today: string) {
 }
 
 async function updateStreak(
+  admin: Admin,
   childId: string,
   type: 'room' | 'study' | 'sport' | 'strong_week',
   current: number,
   best: number,
   familyId?: string | null
 ): Promise<StreakEvent | null> {
-  const { data: existing } = await supabase
+  const { data: existing } = await admin
     .from('streaks')
     .select('*')
     .eq('child_id', childId)
@@ -196,7 +261,7 @@ async function updateStreak(
       event = { type, event: 'record', previousCount: existing.best_count, newCount: current }
     }
 
-    await supabase
+    await admin
       .from('streaks')
       .update({
         current_count: current,
@@ -212,7 +277,7 @@ async function updateStreak(
 
     // Use upsert so that stale rows with family_id=null get overwritten with correct family_id.
     // The DB trigger (supabase-migration-family-id-fix.sql) covers INSERT; upsert handles UPDATE path.
-    await supabase
+    await admin
       .from('streaks')
       .upsert({
         child_id: childId,
@@ -228,7 +293,7 @@ async function updateStreak(
   if (event?.event === 'record' && familyId && [7, 14, 30].includes(current)) {
     try {
       const typeLabel = type === 'room' ? 'Комната' : type === 'study' ? 'Учёба' : type === 'sport' ? 'Спорт' : 'Поведение'
-      const { data: childRow } = await supabase
+      const { data: childRow } = await admin
         .from('children')
         .select('name')
         .eq('id', childId)

@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { checkAndAwardBadges } from '@/lib/services/badges.service'
 import { updateStreaks } from '@/lib/services/streaks.service'
 import { localDateString } from '@/utils/helpers'
@@ -30,11 +31,12 @@ export async function repairAchievements(): Promise<RepairResult[]> {
 
   const today = localDateString()
   const results: RepairResult[] = []
+  const admin = createAdminClient()
 
   for (const child of children) {
     try {
       // Re-run streak update so counts are fresh before badge checks
-      await updateStreaks(child.id, today)
+      await updateStreaks(admin, child.id, today)
 
       const awarded = await checkAndAwardBadges(child.id, today)
 

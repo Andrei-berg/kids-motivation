@@ -40,6 +40,14 @@ vi.mock('@/lib/supabase/admin', async (importOriginal) => {
   }
 })
 
+// The award route now imports lib/services/streaks.service (05.5-02 D-12.2),
+// which transitively imports the anon browser singleton in lib/supabase.ts —
+// a module that THROWS at import time when NEXT_PUBLIC_SUPABASE_URL is absent.
+// Mock it so this suite still loads (and skipIf-skips) without integration env.
+// The server award path never touches the anon singleton (updateStreaks runs
+// entirely on the admin client), so the empty stub is inert when tests DO run.
+vi.mock('@/lib/supabase', () => ({ supabase: {} }))
+
 // vi.mock is hoisted above imports by vitest, so this static import resolves
 // against the mocked '@/lib/supabase/admin'.
 import { POST } from '@/app/api/wallet/award/route'

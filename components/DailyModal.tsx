@@ -5,7 +5,6 @@ import { useT } from '@/lib/i18n'
 import { api } from '@/lib/api'
 import { flexibleApi, Subject, ExerciseType } from '@/lib/flexible-api'
 import { getSectionsForDate, markSectionVisit, Section, SectionVisit, ExtraActivity, getActivitiesForDay, getActivityLogs, saveActivityLogs } from '@/lib/expenses-api'
-import { updateStreaks } from '@/lib/streaks'
 import { checkAndAwardBadges } from '@/lib/badges'
 import { getGradeColor } from '@/utils/helpers'
 import { triggerConfetti } from '@/utils/confetti'
@@ -507,24 +506,27 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
       await Promise.all([saveDay, saveGrades, saveExercises, saveSections, saveReading, saveActivities, saveRoom])
 
-      const streakEvents = await updateStreaks(childId, date)
-      // Fire-and-forget: don't block save completion on push delivery
-      import('@/app/actions/push-streaks').then(({ notifyStreakEvents }) => {
-        notifyStreakEvents(childId, '', streakEvents).catch(() => {})
-      })
-
       // Credit all coin awards server-side (idempotent). The server recomputes
       // amounts from the saved rows — grades, room, behavior, sport, activities,
       // book, streak bonus (REQ-COIN-002..008) — so no coins are granted from
-      // the client. Runs after updateStreaks so the streak bonus is current.
+      // the client. It also updates the streak counts server-side (admin
+      // client) and returns streakEvents — no browser streak write remains.
       try {
         const res = await fetch('/api/wallet/award', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ childId, date }),
         })
-        if (!res.ok) console.warn('[DailyModal] award failed:', res.status)
-        else track('day_saved', { role: 'parent' })
+        if (!res.ok) {
+          console.warn('[DailyModal] award failed:', res.status)
+        } else {
+          track('day_saved', { role: 'parent' })
+          const { streakEvents } = await res.json().catch(() => ({ streakEvents: undefined }))
+          // Fire-and-forget: don't block save completion on push delivery
+          import('@/app/actions/push-streaks').then(({ notifyStreakEvents }) => {
+            notifyStreakEvents(childId, '', streakEvents ?? { broken: [], records: [] }).catch(() => {})
+          })
+        }
       } catch (e) {
         console.warn('[DailyModal] award request failed:', e)
       }

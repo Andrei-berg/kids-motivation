@@ -14,6 +14,8 @@ import {
   assertChildInFamily,
 } from '@/lib/supabase/admin'
 import { errorResponse, loadSettings, creditAwards, type AwardIntent } from '../_lib'
+import { updateStreaks } from '@/lib/services/streaks.service'
+import { localDateString } from '@/utils/helpers'
 
 function gradeCoins(s: Record<string, number>, grade: number): number {
   switch (grade) {
@@ -56,6 +58,11 @@ export async function POST(req: NextRequest) {
     const admin = createAdminClient()
     await assertChildInFamily(admin, childId, member.familyId)
     const settings = await loadSettings(admin, member.familyId)
+
+    // Streak counts are recomputed server-side (admin client) inside this
+    // guarded route — the client no longer triggers this separately (D-12.2).
+    // The bonus below reflects these freshly computed counts.
+    const streakEvents = await updateStreaks(admin, childId, date)
 
     const intents: AwardIntent[] = []
 
@@ -228,21 +235,26 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // 6. Streak bonus (keyed by date — at most once per day).
-    const streakBonus = await computeStreakBonus(admin, childId, settings)
-    if (streakBonus > 0) {
-      intents.push({
-        coins: streakBonus,
-        description: 'Бонус за серию',
-        icon: '🔥',
-        sourceType: 'streak',
-        sourceId: date,
-      })
+    // 6. Streak bonus (keyed by date — at most once per day). Gated to the
+    // server's real "today" (D-12.1): a child cannot loop distinct past-date
+    // strings to mint the bonus multiple times. Every other intent above
+    // remains legitimately backfillable for past dates.
+    if (date === localDateString()) {
+      const streakBonus = await computeStreakBonus(admin, childId, settings)
+      if (streakBonus > 0) {
+        intents.push({
+          coins: streakBonus,
+          description: 'Бонус за серию',
+          icon: '🔥',
+          sourceType: 'streak',
+          sourceId: date,
+        })
+      }
     }
 
     const { creditedCoins, applied } = await creditAwards(admin, childId, intents)
 
-    return NextResponse.json({ ok: true, creditedCoins, awards: applied.length })
+    return NextResponse.json({ ok: true, creditedCoins, awards: applied.length, streakEvents })
   } catch (err) {
     return errorResponse(err)
   }

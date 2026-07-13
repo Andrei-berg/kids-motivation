@@ -7,7 +7,9 @@ import {
   calculateRoomStreak,
   calculateStudyStreak,
   calculateSportStreak,
+  calculateBehaviorStreak,
 } from '../lib/services/streaks.service'
+import type { DayType } from '../lib/day-type'
 
 // Helper: build a consecutive day list ending on `today`
 function makeDays(count: number, today: string, roomOk = true) {
@@ -132,5 +134,108 @@ describe('calculateSportStreak', () => {
     const result = calculateSportStreak(sports, today)
     expect(result.current).toBe(0)
     expect(result.best).toBe(1)
+  })
+})
+
+// Day-type transparency (D-09/D-10): a resolver that always returns 'school' must
+// keep every legacy assertion above unchanged (it never trips a skip branch).
+// A resolver returning 'weekend'/'vacation'/'sick' proves the transparency behavior:
+// those days are skipped entirely — neither incrementing nor resetting a streak.
+describe('day-type transparency', () => {
+  const allSchool = (): DayType => 'school'
+
+  it('a resolver that always returns school does not change calculateRoomStreak', () => {
+    const today = '2026-04-01'
+    const days = makeDays(5, today, true)
+    const result = calculateRoomStreak(days, today, allSchool)
+    expect(result.current).toBe(1)
+    expect(result.best).toBe(5)
+  })
+
+  it('a resolver that always returns school does not change calculateStudyStreak', () => {
+    const today = '2026-04-01'
+    const grades = makeGrades(['2026-04-01', '2026-03-31', '2026-03-30'])
+    const result = calculateStudyStreak(grades, today, allSchool)
+    expect(result.current).toBe(1)
+    expect(result.best).toBe(3)
+  })
+
+  it('study streak: a weekend gap is transparent — neither increments nor resets', () => {
+    // 2026-04-04 is a Saturday. Grades exist on Fri 04-03 and Mon 04-06 with the
+    // weekend (04-04, 04-05) skipped by the resolver — the streak must bridge the gap.
+    const today = '2026-04-06'
+    const grades = makeGrades(['2026-04-06', '2026-04-03'])
+    const dayType = (dateStr: string): DayType =>
+      dateStr === '2026-04-04' || dateStr === '2026-04-05' ? 'weekend' : 'school'
+    const result = calculateStudyStreak(grades, today, dayType)
+    expect(result.current).toBe(1)   // today has grades → active
+    expect(result.best).toBe(2)      // 04-06 + 04-03 bridged across the transparent weekend
+  })
+
+  it('study streak: a vacation gap is transparent — neither increments nor resets', () => {
+    const today = '2026-06-05'
+    const grades = makeGrades(['2026-06-05', '2026-05-25'])
+    const dayType = (dateStr: string): DayType =>
+      dateStr > '2026-05-25' && dateStr < '2026-06-05' ? 'vacation' : 'school'
+    const result = calculateStudyStreak(grades, today, dayType)
+    expect(result.current).toBe(1)
+    expect(result.best).toBe(2)
+  })
+
+  it('sick is transparent for the study streak', () => {
+    const today = '2026-04-02'
+    const grades = makeGrades(['2026-04-02', '2026-03-31'])
+    const dayType = (dateStr: string): DayType => (dateStr === '2026-04-01' ? 'sick' : 'school')
+    const result = calculateStudyStreak(grades, today, dayType)
+    expect(result.current).toBe(1)
+    expect(result.best).toBe(2)
+  })
+
+  it('sick is transparent for the room streak', () => {
+    const today = '2026-04-02'
+    const days = [
+      { date: '2026-04-02', room_ok: true },
+      { date: '2026-03-31', room_ok: true },
+    ]
+    const dayType = (dateStr: string): DayType => (dateStr === '2026-04-01' ? 'sick' : 'school')
+    const result = calculateRoomStreak(days, today, dayType)
+    expect(result.current).toBe(1)
+    expect(result.best).toBe(2)
+  })
+
+  it('sick is transparent for the sport streak', () => {
+    const today = '2026-04-02'
+    const sports = new Set<string>(['2026-04-02', '2026-03-31'])
+    const dayType = (dateStr: string): DayType => (dateStr === '2026-04-01' ? 'sick' : 'school')
+    const result = calculateSportStreak(sports, today, dayType)
+    expect(result.current).toBe(1)
+    expect(result.best).toBe(2)
+  })
+
+  it('sick is transparent for the behavior streak', () => {
+    const today = '2026-04-02'
+    const days = [
+      { date: '2026-04-02', good_behavior: true },
+      { date: '2026-03-31', good_behavior: true },
+    ]
+    const dayType = (dateStr: string): DayType => (dateStr === '2026-04-01' ? 'sick' : 'school')
+    const result = calculateBehaviorStreak(days, today, dayType)
+    expect(result.current).toBe(1)
+    expect(result.best).toBe(2)
+  })
+
+  it('a weekend does NOT skip the room/sport/behavior calculators (only sick does)', () => {
+    // Room/sport/behavior transparency is sick-only (D-09); weekend/vacation still
+    // count as a normal day for those calculators, unlike the study streak.
+    const today = '2026-04-02'
+    const days = [
+      { date: '2026-04-02', room_ok: true },
+      { date: '2026-04-01', room_ok: false }, // weekend, not room_ok → breaks the streak
+      { date: '2026-03-31', room_ok: true },
+    ]
+    const dayType = (dateStr: string): DayType => (dateStr === '2026-04-01' ? 'weekend' : 'school')
+    const result = calculateRoomStreak(days, today, dayType)
+    expect(result.current).toBe(1)
+    expect(result.best).toBe(1) // 04-01 breaks the run; only today (04-02) is a fresh run of 1
   })
 })

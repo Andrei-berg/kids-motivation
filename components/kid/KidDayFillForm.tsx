@@ -13,7 +13,6 @@ import { getSubjectGradesForDate, saveSubjectGrade } from '@/lib/repositories/gr
 import { getWalletSettings } from '@/lib/repositories/wallet.repo'
 import { getRoomTasks, getRoomChecks, saveRoomChecks } from '@/lib/repositories/room.repo'
 import type { RoomTask, RoomLegacyKey } from '@/lib/models/room.types'
-import { updateStreaks } from '@/lib/streaks'
 import { checkAndAwardBadges } from '@/lib/badges'
 import { compressImage, uploadPhoto, getSignedPhotoUrl } from '@/lib/photo-upload'
 import { supabase } from '@/lib/supabase'
@@ -507,24 +506,28 @@ export function KidDayFillForm({
       }
 
       triggerCoinFlyup(coinsPreview)
-      const streakEvents = await updateStreaks(childId, date)
-      // Fire-and-forget: don't block save completion on push delivery
-      import('@/app/actions/push-streaks').then(({ notifyStreakEvents }) => {
-        notifyStreakEvents(childId, '', streakEvents).catch(() => {})
-      })
 
       // Credit all of today's coin awards server-side (idempotent). The server
       // recomputes amounts from the saved rows — grades, room, behavior, sport,
       // activities, book, streak bonus — so the client never grants coins.
-      // Runs after updateStreaks so the streak bonus reflects the new state.
+      // It also updates the streak counts server-side (admin client) and
+      // returns streakEvents — the client no longer writes streaks directly.
       try {
         const res = await fetch('/api/wallet/award', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ childId, date }),
         })
-        if (!res.ok) console.warn('[KidDayFillForm] award failed:', res.status)
-        else track('day_saved', { role: 'kid' })
+        if (!res.ok) {
+          console.warn('[KidDayFillForm] award failed:', res.status)
+        } else {
+          track('day_saved', { role: 'kid' })
+          const { streakEvents } = await res.json().catch(() => ({ streakEvents: undefined }))
+          // Fire-and-forget: don't block save completion on push delivery
+          import('@/app/actions/push-streaks').then(({ notifyStreakEvents }) => {
+            notifyStreakEvents(childId, '', streakEvents ?? { broken: [], records: [] }).catch(() => {})
+          })
+        }
       } catch (e) {
         console.warn('[KidDayFillForm] award request failed:', e)
       }
