@@ -15,7 +15,7 @@ import {
 } from '@/lib/supabase/admin'
 import { errorResponse, loadSettings, creditAwards, type AwardIntent } from '../_lib'
 import { updateStreaks } from '@/lib/services/streaks.service'
-import { localDateString } from '@/utils/helpers'
+import { localDateString, addDays } from '@/utils/helpers'
 
 function gradeCoins(s: Record<string, number>, grade: number): number {
   switch (grade) {
@@ -236,10 +236,16 @@ export async function POST(req: NextRequest) {
     }
 
     // 6. Streak bonus (keyed by date — at most once per day). Gated to the
-    // server's real "today" (D-12.1): a child cannot loop distinct past-date
-    // strings to mint the bonus multiple times. Every other intent above
-    // remains legitimately backfillable for past dates.
-    if (date === localDateString()) {
+    // server's "today" ±1 day (D-12.1, WR-06): localDateString() here yields
+    // the SERVER's local date (UTC on Vercel), while clients compute "today"
+    // in their own timezone — for a UTC+3 family a save between 00:00 and
+    // 03:00 local sends a date one day ahead of the server's. The ±1-day
+    // tolerance keeps the gate tight (a child still cannot loop arbitrary
+    // past dates to mint bonuses — the (child_id,'streak',date) idempotency
+    // key caps each date in the window to a single credit) while covering
+    // every real-world timezone offset.
+    const serverToday = localDateString()
+    if (date === serverToday || date === addDays(serverToday, 1) || date === addDays(serverToday, -1)) {
       const streakBonus = await computeStreakBonus(admin, childId, settings)
       if (streakBonus > 0) {
         intents.push({
