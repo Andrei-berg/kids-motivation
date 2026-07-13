@@ -174,7 +174,7 @@ Plans:
 - [x] **Phase 5.2: room-tasks** — Configurable room checklist: `room_tasks`/`room_checks` tables, dual-write off the 5 hardcoded columns, settings editor (code-complete 2026-07-06; SC4 checkpoint:human-verify pending operator approval)
 - [x] **Phase 5.3: design-tokens** — Unified `lib/design/tokens.ts` (paper/ink themes; Bitter/Golos Text/JetBrains Mono) re-exported through legacy `T` objects + shared atoms (LedgerRow, Amount, StatusChip, stamp animation) (completed 2026-07-07)
 - [x] **Phase 5.4: streak-settings** — Streak thresholds/bonuses move from award-route constants into `wallet_settings` + rules UI (completed 2026-07-07)
-- [ ] **Phase 5.5: year-calendar** — School year (dates, quarters/trimesters), regional vacation presets with manual override, configurable weekend days, sick-day pauses streaks
+- [x] **Phase 5.5: year-calendar** — School year (dates, quarters/trimesters), regional vacation presets with manual override, configurable weekend days, sick-day pauses streaks (completed 2026-07-13)
 - [ ] **Phase 5.6: day-blocks** — Day assembly engine: day type × schedule × block rules; per-child `day_blocks` config; block-list renderer replaces hardcoded form sections; award computes from blocks; per-family feature flag
 - [ ] **Phase 5.7: kid-redesign** — Kid screens on unified tokens, nav 6→5 (leaderboard becomes a tab inside awards), motion discipline (single signature gesture)
 - [ ] **Phase 5.8: parent-redesign** — Parent Center on unified tokens + Day Constructor UI + Year Calendar screen + Weekly Summary card
@@ -254,7 +254,7 @@ Plans:
   3. Weekend days are configurable per family (default sat+sun); a sick day pauses school blocks without burning streaks
   4. `getDayType` resolves entirely from this data; the kid day screen reflects vacation/weekend automatically
 
-**Plans:** 6/7 plans executed
+**Plans:** 7/7 plans complete
 Plans:
 - [x] 05.5-01-PLAN.md — Calendar schema (family_calendar, vacation_periods.preset_id, streaks RLS lock) + calendar types/repo + data-driven getDayType
 - [x] 05.5-02-PLAN.md — CR-01 fix (EARLY): server-side updateStreaks + day-type transparency + server-validated bonus date + drop browser streak writes
@@ -262,7 +262,7 @@ Plans:
 - [x] 05.5-04-PLAN.md — Parent Center calendar settings card (school year, term mode, weekend days, region) + i18n
 - [x] 05.5-05-PLAN.md — PeriodsManager preset picker + replace/add-missing dialog + preset-row badge
 - [x] 05.5-06-PLAN.md — Kid day screen + both day forms load family_calendar into getDayType (SC4)
-- [ ] 05.5-07-PLAN.md — [BLOCKING] apply 3 migrations to live DB + verify streaks SELECT-only lock
+- [x] 05.5-07-PLAN.md — [BLOCKING] apply 3 migrations to live DB + verify streaks SELECT-only lock
 
 ### Phase 5.6: day-blocks
 **Goal**: The child's day is assembled from data — day type × schedule × block rules — not from hardcoded form sections
