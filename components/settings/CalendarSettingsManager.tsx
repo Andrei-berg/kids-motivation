@@ -82,11 +82,11 @@ export default function CalendarSettingsManager() {
     setSuccess(false)
     if (!familyId) return
     if (!yearStart || !yearEnd) {
-      setError(t('calendarSettingsManager.datesRequiredError'))
+      setError(t('settings.calendarSettingsManager.datesRequiredError'))
       return
     }
     if (yearStart > yearEnd) {
-      setError(t('calendarSettingsManager.dateOrderError'))
+      setError(t('settings.calendarSettingsManager.dateOrderError'))
       return
     }
     setSaving(true)
@@ -110,10 +110,10 @@ export default function CalendarSettingsManager() {
     <div>
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
-          📅 {t('calendarSettingsManager.title')}
+          📅 {t('settings.calendarSettingsManager.title')}
         </div>
         <div style={{ fontSize: 13, color: 'rgba(238,238,255,0.5)' }}>
-          {t('calendarSettingsManager.subtitle')}
+          {t('settings.calendarSettingsManager.subtitle')}
         </div>
       </div>
 
@@ -124,7 +124,7 @@ export default function CalendarSettingsManager() {
       )}
       {success && (
         <div style={{ padding: '10px 12px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 8, color: '#34d399', fontSize: 13, marginBottom: 12 }}>
-          {t('calendarSettingsManager.saveSuccess')}
+          {t('settings.calendarSettingsManager.saveSuccess')}
         </div>
       )}
 
@@ -139,7 +139,7 @@ export default function CalendarSettingsManager() {
           <div style={{ display: 'flex', gap: 10 }}>
             <div style={{ flex: 1 }}>
               <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(238,238,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
-                {t('calendarSettingsManager.yearStart')}
+                {t('settings.calendarSettingsManager.yearStart')}
               </label>
               <input
                 type="date"
@@ -151,7 +151,7 @@ export default function CalendarSettingsManager() {
             </div>
             <div style={{ flex: 1 }}>
               <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(238,238,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
-                {t('calendarSettingsManager.yearEnd')}
+                {t('settings.calendarSettingsManager.yearEnd')}
               </label>
               <input
                 type="date"
@@ -166,7 +166,7 @@ export default function CalendarSettingsManager() {
           {/* Term mode */}
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(238,238,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
-              {t('calendarSettingsManager.termMode')}
+              {t('settings.calendarSettingsManager.termMode')}
             </label>
             <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', borderRadius: 10, padding: 4, gap: 4, border: '1px solid rgba(255,255,255,0.08)' }}>
               {(['quarters', 'trimesters'] as TermMode[]).map(mode => (
@@ -179,7 +179,7 @@ export default function CalendarSettingsManager() {
                     color: termMode === mode ? '#fff' : 'rgba(238,238,255,0.5)',
                   }}
                 >
-                  {t(`calendarSettingsManager.${mode}`)}
+                  {t(`settings.calendarSettingsManager.${mode}`)}
                 </button>
               ))}
             </div>
@@ -188,7 +188,7 @@ export default function CalendarSettingsManager() {
           {/* Weekend days */}
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(238,238,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
-              {t('calendarSettingsManager.weekend')}
+              {t('settings.calendarSettingsManager.weekend')}
             </label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {WEEKDAY_ORDER.map((day, idx) => {
@@ -204,7 +204,7 @@ export default function CalendarSettingsManager() {
                       color: active ? '#fff' : 'rgba(238,238,255,0.5)',
                     }}
                   >
-                    {t(`calendarSettingsManager.days.${WEEKDAY_I18N_KEYS[idx]}`)}
+                    {t(`settings.calendarSettingsManager.days.${WEEKDAY_I18N_KEYS[idx]}`)}
                   </button>
                 )
               })}
@@ -214,7 +214,7 @@ export default function CalendarSettingsManager() {
           {/* Region preset */}
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(238,238,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
-              {t('calendarSettingsManager.region')}
+              {t('settings.calendarSettingsManager.region')}
             </label>
             <select
               className="premium-select"
@@ -224,7 +224,7 @@ export default function CalendarSettingsManager() {
             >
               {REGION_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>
-                  {t(`calendarSettingsManager.${opt.labelKey}`)}
+                  {t(`settings.calendarSettingsManager.${opt.labelKey}`)}
                 </option>
               ))}
             </select>
@@ -239,7 +239,7 @@ export default function CalendarSettingsManager() {
               background: 'rgba(99,102,241,0.8)', color: '#fff',
             }}
           >
-            {saving ? '…' : t('calendarSettingsManager.save')}
+            {saving ? '…' : t('settings.calendarSettingsManager.save')}
           </button>
         </div>
       )}
