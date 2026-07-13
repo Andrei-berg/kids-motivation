@@ -195,7 +195,9 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
       setSubjects(subjectsData)
       setExerciseTypes(exerciseTypesData)
 
-      const d = new Date(date)
+      // Noon anchor (WR-08): new Date('YYYY-MM-DD') parses as UTC midnight,
+      // shifting .getDay() back a day for UTC-negative users.
+      const d = new Date(date + 'T12:00:00')
       const dayOfWeek = d.getDay()
       const actualDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek
 
