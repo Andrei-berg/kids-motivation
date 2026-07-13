@@ -4,19 +4,13 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAppStore } from '@/lib/store'
 import { getVacationPeriods, createVacationPeriod, updateVacationPeriod, deleteVacationPeriod, VacationPeriod } from '@/lib/vacation-api'
+import { listPresets, applyPreset, type ApplyPresetMode } from '@/lib/vacation-presets'
+import { upsertFamilyCalendar } from '@/lib/repositories/calendar.repo'
 import { useT } from '@/lib/i18n'
 
 
 
 const EMOJIS = ['🌸', '🌴', '❄️', '🍂', '🎄', '☀️', '🌊', '⛷️']
-
-// Default school year periods (RU academic calendar 2025–2026)
-const PRESETS = [
-  { name: 'Autumn break',  emoji: '🍂', start: '2025-10-27', end: '2025-11-02' },
-  { name: 'Winter break',  emoji: '❄️', start: '2025-12-29', end: '2026-01-09' },
-  { name: 'Spring break',  emoji: '🌸', start: '2026-03-23', end: '2026-03-29' },
-  { name: 'Summer break',  emoji: '☀️', start: '2026-06-01', end: '2026-08-31' },
-]
 
 interface ChildOption {
   id: string
@@ -39,6 +33,11 @@ export default function PeriodsManager() {
   const [endDate, setEndDate] = useState('')
   const [emoji, setEmoji] = useState('🌸')
   const [childFilter, setChildFilter] = useState('all')
+
+  const presets = listPresets()
+  const [selectedPresetId, setSelectedPresetId] = useState(() => presets[0]?.id ?? '')
+  const [applyingPreset, setApplyingPreset] = useState(false)
+  const [applyStatus, setApplyStatus] = useState('')
 
   useEffect(() => {
     async function init() {
@@ -137,6 +136,32 @@ export default function PeriodsManager() {
     setPeriods(periods.filter(p => p.id !== id))
   }
 
+  async function handleApplyPreset() {
+    if (!familyId || !selectedPresetId) return
+    const hasExisting = periods.some(p => p.preset_id === selectedPresetId)
+    let mode: ApplyPresetMode = 'add-missing'
+    if (hasExisting) {
+      // D-04: reuse the confirm() convention (see handleDelete) instead of a new modal —
+      // OK maps to Replace-preset-periods, Cancel maps to Add-missing-only.
+      mode = confirm(t('settings.periodsManager.presetPicker.confirmReplaceOrAdd')) ? 'replace' : 'add-missing'
+    }
+    try {
+      setApplyingPreset(true)
+      setApplyStatus('')
+      const inserted = await applyPreset(familyId, selectedPresetId, mode)
+      // WARNING-1 resolution: keep family_calendar.region_preset in sync with the
+      // applied preset so Settings→Calendar's region select (Plan 04) reflects it too.
+      await upsertFamilyCalendar(familyId, { region_preset: selectedPresetId })
+      await loadData(familyId)
+      setApplyStatus(t('settings.periodsManager.presetPicker.appliedCount', { count: inserted }))
+    } catch (e) {
+      console.error(e)
+      setApplyStatus(e instanceof Error ? e.message : t('common.error'))
+    } finally {
+      setApplyingPreset(false)
+    }
+  }
+
   function formatDateRange(start: string, end: string) {
     const fmt = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
     const days = Math.floor((new Date(end + 'T12:00:00').getTime() - new Date(start + 'T12:00:00').getTime()) / 86400000) + 1
@@ -180,7 +205,14 @@ export default function PeriodsManager() {
           <div key={p.id} className="flex items-center gap-3 bg-gray-700/50 rounded-xl p-4 border border-gray-600">
             <div className="text-2xl">{p.emoji}</div>
             <div className="flex-1 min-w-0">
-              <div className="font-bold text-white text-sm">{p.name}</div>
+              <div className="font-bold text-white text-sm flex items-center gap-1.5 flex-wrap">
+                {p.name}
+                {p.preset_id != null && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/25 rounded-full px-2 py-0.5">
+                    📅 {t('settings.periodsManager.presetBadge')}
+                  </span>
+                )}
+              </div>
               <div className="text-gray-400 text-xs mt-0.5">{formatDateRange(p.start_date, p.end_date)}</div>
               <div className="text-xs text-gray-500 mt-0.5">{childFilterLabel(p.child_filter)}</div>
             </div>
@@ -267,45 +299,35 @@ export default function PeriodsManager() {
 
       {!showForm && (
         <>
-          {/* Quick templates */}
-          <div className="mb-4">
-            <div className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
-              Templates 2025–2026
+          {/* Region preset picker */}
+          <div className="mb-4 bg-gray-700/40 border border-gray-600 rounded-xl p-4">
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+              {t('settings.periodsManager.presetPicker.title')}
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {PRESETS.map(p => {
-                const alreadyAdded = periods.some(
-                  existing => existing.name === p.name && existing.start_date === p.start
-                )
-                const fmt = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
-                return (
-                  <button
-                    key={p.name}
-                    disabled={alreadyAdded}
-                    onClick={() => {
-                      setName(p.name)
-                      setEmoji(p.emoji)
-                      setStartDate(p.start)
-                      setEndDate(p.end)
-                      setChildFilter('all')
-                      setShowForm(true)
-                    }}
-                    className={`flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all ${
-                      alreadyAdded
-                        ? 'border-gray-700 bg-gray-800/30 opacity-50 cursor-not-allowed'
-                        : 'border-gray-600 bg-gray-700/40 hover:border-amber-500/60 hover:bg-amber-500/8 cursor-pointer'
-                    }`}
-                  >
-                    <span className="text-xl flex-shrink-0">{p.emoji}</span>
-                    <div className="min-w-0">
-                      <div className="text-xs font-bold text-white truncate">{p.name}</div>
-                      <div className="text-xs text-gray-500 mt-0.5">{fmt(p.start)} – {fmt(p.end)}</div>
-                    </div>
-                    {alreadyAdded && <span className="text-green-500 text-xs ml-auto flex-shrink-0">✓</span>}
-                  </button>
-                )
-              })}
+            <div className="text-gray-500 text-xs mb-3">
+              {t('settings.periodsManager.presetPicker.hint')}
             </div>
+            <div className="flex gap-2">
+              <select
+                className="flex-1 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm px-3 py-2.5 outline-none focus:border-amber-500"
+                value={selectedPresetId}
+                onChange={e => { setSelectedPresetId(e.target.value); setApplyStatus('') }}
+              >
+                {presets.map(preset => (
+                  <option key={preset.id} value={preset.id}>{preset.label}</option>
+                ))}
+              </select>
+              <button
+                onClick={handleApplyPreset}
+                disabled={!selectedPresetId || applyingPreset}
+                className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold text-sm rounded-lg transition-colors whitespace-nowrap"
+              >
+                {applyingPreset ? '...' : t('settings.periodsManager.presetPicker.apply')}
+              </button>
+            </div>
+            {applyStatus && (
+              <div className="text-amber-400 text-xs mt-2">{applyStatus}</div>
+            )}
           </div>
 
           <button onClick={() => setShowForm(true)}
