@@ -9,6 +9,7 @@ import { getWallet } from '@/lib/repositories/wallet.repo'
 import { KidDayFillForm } from '@/components/kid/KidDayFillForm'
 import { KidChallenges } from '@/components/kid/KidChallenges'
 import { getVacationPeriods } from '@/lib/vacation-api'
+import { getFamilyCalendar } from '@/lib/repositories/calendar.repo'
 import { getDayType } from '@/lib/day-type'
 import type { Wallet } from '@/lib/models/wallet.types'
 import { T } from '@/components/kid/design/tokens'
@@ -96,8 +97,12 @@ export default function KidDayPage() {
       // and may target one child via child_filter — use the shared getDayType helper
       // so the kid screen agrees with day-type.ts everywhere else.
       try {
-        const vacations = await getVacationPeriods((childData as any).family_id)
-        const info = getDayType(today, false, vacations ?? [], resolvedId)
+        const familyId = (childData as any).family_id
+        const [vacations, familyCalendar] = await Promise.all([
+          getVacationPeriods(familyId),
+          getFamilyCalendar(familyId),
+        ])
+        const info = getDayType(today, false, vacations ?? [], resolvedId, undefined, familyCalendar)
         // getDayType can also return 'sick'; the day form only handles these three.
         setDayType(info.type === 'sick' ? 'school' : info.type)
       } catch {
