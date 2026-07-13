@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createAdminClient, requireParent } from '@/lib/supabase/admin'
 import { checkAndAwardBadges } from '@/lib/services/badges.service'
 import { updateStreaks } from '@/lib/services/streaks.service'
 import { localDateString } from '@/utils/helpers'
@@ -21,6 +21,11 @@ export interface RepairResult {
  * prevent duplicate awards.
  */
 export async function repairAchievements(): Promise<RepairResult[]> {
+  // WR-02: server actions are POST-invocable by any authenticated session —
+  // this one creates a service-role client, so gate it to parents (the UI
+  // only exposes it in the parent Settings screen).
+  await requireParent()
+
   const supabase = await createClient()
   const { data: children, error } = await supabase
     .from('children')
