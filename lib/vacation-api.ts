@@ -14,6 +14,7 @@ export interface VacationPeriod {
   end_date: string
   emoji: string
   child_filter: string // 'all' | child_id
+  preset_id?: string | null // set when materialized from a bundled preset (Phase 5.5 D-02); null/absent = manual entry
   created_at: string
 }
 
@@ -63,7 +64,7 @@ export async function createVacationPeriod(
 
 export async function updateVacationPeriod(
   id: string,
-  fields: Partial<Pick<VacationPeriod, 'name' | 'start_date' | 'end_date' | 'emoji' | 'child_filter'>>
+  fields: Partial<Pick<VacationPeriod, 'name' | 'start_date' | 'end_date' | 'emoji' | 'child_filter' | 'preset_id'>>
 ): Promise<void> {
   const { error } = await supabase.from('vacation_periods').update(fields).eq('id', id)
   if (error) throw error
