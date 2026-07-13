@@ -27,7 +27,9 @@ import { PhotoLightbox } from '@/components/chat/PhotoLightbox'
 import { track } from '@/lib/analytics'
 import { supabase } from '@/lib/supabase'
 import { getRoomTasks, getRoomChecks, saveRoomChecks } from '@/lib/repositories/room.repo'
+import { getFamilyCalendar } from '@/lib/repositories/calendar.repo'
 import type { RoomTask, RoomLegacyKey } from '@/lib/models/room.types'
+import type { FamilyCalendar } from '@/lib/models/calendar.types'
 
 // ─── Local Types ──────────────────────────────────────────────────────────────
 
@@ -95,6 +97,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
   // Day type
   const [vacationPeriods, setVacationPeriods] = useState<VacationPeriod[]>([])
+  const [familyCalendar, setFamilyCalendar] = useState<FamilyCalendar | null>(null)
   const [dayTypeInfo, setDayTypeInfo] = useState<DayTypeInfo>({ type: 'school', label: 'School', emoji: '📚' })
   const [isSick, setIsSick] = useState(false)
 
@@ -161,19 +164,23 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
     else resetForm()
   }, [isOpen, date, childId])
 
-  // Recompute day type when isSick or vacationPeriods change
+  // Recompute day type when isSick, vacationPeriods, or familyCalendar change
   useEffect(() => {
-    setDayTypeInfo(getDayType(date, isSick, vacationPeriods, childId, t))
-  }, [isSick, vacationPeriods, date, childId])
+    setDayTypeInfo(getDayType(date, isSick, vacationPeriods, childId, t, familyCalendar))
+  }, [isSick, vacationPeriods, date, childId, familyCalendar])
 
   async function loadData() {
     try {
       setLoading(true)
 
-      // Load vacation periods first (needed for day type)
+      // Load vacation periods and family_calendar first (needed for day type)
       let periods: VacationPeriod[] = []
       try { periods = await getVacationPeriods(familyId ?? 'default') } catch { periods = [] }
       setVacationPeriods(periods)
+
+      let fc: FamilyCalendar | null = null
+      try { fc = await getFamilyCalendar(familyId ?? 'default') } catch { fc = null }
+      setFamilyCalendar(fc)
 
       let subjectsData: Subject[] = []
       let exerciseTypesData: ExerciseType[] = []
@@ -299,7 +306,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
       // Extra activities — pre-filtered by date/dayType/days_of_week
       try {
-        const localDayType = getDayType(date, isSickLocal, periods, childId, t).type
+        const localDayType = getDayType(date, isSickLocal, periods, childId, t, fc).type
         const [activitiesData, logsData] = await Promise.all([
           getActivitiesForDay(childId, date, localDayType),
           getActivityLogs(childId, date),
