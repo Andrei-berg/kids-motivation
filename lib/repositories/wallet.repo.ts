@@ -202,6 +202,7 @@ export async function getWalletSettings(): Promise<WalletSettings> {
       coins_per_coach_3: 0,
       coins_per_coach_2: -3,
       coins_per_coach_1: -10,
+      coins_per_book: 20,
       p2p_max_per_transfer: 100,
       p2p_max_per_day: 200,
       p2p_max_per_month: 500,

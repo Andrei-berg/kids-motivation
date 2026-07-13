@@ -23,7 +23,9 @@ import { useT, useLanguage } from '@/lib/i18n'
 import { localDateString } from '@/utils/helpers'
 import { track } from '@/lib/analytics'
 
-const GRADE_COINS: Record<number, number> = { 5: 5, 4: 3, 3: -3, 2: -5, 1: -10 }
+// Pre-load fallback only — mirrors SETTINGS_DEFAULTS in app/api/wallet/_lib.ts.
+// The live preview uses the loaded per-family wallet_settings (WR-05).
+const GRADE_COINS: Record<number, number> = { 5: 10, 4: 5, 3: -3, 2: -5, 1: -10 }
 
 // ============================================================================
 // TYPES
@@ -846,11 +848,21 @@ export function KidDayFillForm({
                           )
                         })}
                       </div>
-                      {note.coachRating && (
-                        <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.coral, fontWeight: 700, marginTop: 6, textAlign: 'center' }}>
-                          {note.coachRating === 5 ? '+25🪙' : note.coachRating === 4 ? '+15🪙' : note.coachRating === 3 ? '+5🪙' : note.coachRating === 2 ? '-3🪙' : '-10🪙'}
-                        </div>
-                      )}
+                      {note.coachRating && (() => {
+                        // WR-05: hint from per-family wallet_settings (fallbacks
+                        // mirror SETTINGS_DEFAULTS), matching what the server credits.
+                        const r = note.coachRating
+                        const c = r === 5 ? (settings?.coins_per_coach_5 ?? 10)
+                          : r === 4 ? (settings?.coins_per_coach_4 ?? 5)
+                          : r === 3 ? (settings?.coins_per_coach_3 ?? 0)
+                          : r === 2 ? (settings?.coins_per_coach_2 ?? -3)
+                          : (settings?.coins_per_coach_1 ?? -10)
+                        return (
+                          <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.coral, fontWeight: 700, marginTop: 6, textAlign: 'center' }}>
+                            {c > 0 ? `+${c}🪙` : `${c}🪙`}
+                          </div>
+                        )
+                      })()}
                     </div>
                   )}
                 </div>

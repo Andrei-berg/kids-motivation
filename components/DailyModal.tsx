@@ -19,15 +19,14 @@ import {
   getDayType,
   DayTypeInfo,
   isNonSchoolDay,
-  calcReadingCoins,
-  calcHomeHelpCoins,
-  readingCoinHint,
 } from '@/lib/day-type'
 import { PhotoLightbox } from '@/components/chat/PhotoLightbox'
 import { track } from '@/lib/analytics'
 import { supabase } from '@/lib/supabase'
 import { getRoomTasks, getRoomChecks, saveRoomChecks } from '@/lib/repositories/room.repo'
 import { getFamilyCalendar } from '@/lib/repositories/calendar.repo'
+import { getWalletSettings } from '@/lib/repositories/wallet.repo'
+import type { WalletSettings } from '@/lib/models/wallet.types'
 import type { RoomTask, RoomLegacyKey } from '@/lib/models/room.types'
 import type { FamilyCalendar } from '@/lib/models/calendar.types'
 
@@ -98,6 +97,9 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   // Day type
   const [vacationPeriods, setVacationPeriods] = useState<VacationPeriod[]>([])
   const [familyCalendar, setFamilyCalendar] = useState<FamilyCalendar | null>(null)
+  // Per-family coin settings (WR-05): the coin previews below must mirror what
+  // /api/wallet/award actually credits — no hardcoded amounts.
+  const [walletSettings, setWalletSettings] = useState<WalletSettings | null>(null)
   const [dayTypeInfo, setDayTypeInfo] = useState<DayTypeInfo>({ type: 'school', label: 'School', emoji: '📚' })
   const [isSick, setIsSick] = useState(false)
 
@@ -181,6 +183,8 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
       let fc: FamilyCalendar | null = null
       try { fc = await getFamilyCalendar(familyId ?? 'default') } catch { fc = null }
       setFamilyCalendar(fc)
+
+      try { setWalletSettings(await getWalletSettings()) } catch { setWalletSettings(null) }
 
       let subjectsData: Subject[] = []
       let exerciseTypesData: ExerciseType[] = []
@@ -556,31 +560,49 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   }
 
   // ─── Coins preview (footer) ───────────────────────────────────────────────
+  // WR-05: previews mirror exactly what /api/wallet/award credits (room,
+  // behavior, grades, activities, finished book) using the per-family
+  // wallet_settings. Reading thresholds, home help, and weekend homework have
+  // NO server-side award path — they are not counted or advertised here.
 
-  const readingCoins = calcReadingCoins(pagesRead, minutesRead, bookFinished)
+  // Book-finished bonus: credited server-side (coins_per_book) — the parent
+  // modal always credits it (parents are the verifiers).
+  const bookCoins = bookFinished ? (walletSettings?.coins_per_book ?? 20) : 0
   const activityCoins = activities
     .filter(a => activityDone[a.id])
     .reduce((sum, a) => sum + a.coins, 0)
-  const helpCoins = calcHomeHelpCoins(homeHelp)
-  const homeworkCoins = homeworkDone ? 5 : 0
   // Preview only — the server (/api/wallet/award) recomputes from room_checks
   // with the same threshold rule: max(1, ceil(0.6 * activeTaskCount)) → 3/5 for defaults.
   const roomScore = Object.values(roomChecked).filter(Boolean).length
   const roomTaskCount = roomTasks.length
   const roomOk = roomTaskCount > 0 && roomScore >= Math.max(1, Math.ceil(0.6 * roomTaskCount))
-  const roomCoins = roomOk ? 3 : 0
-  const behaviorCoins = (dayTypeInfo.type === 'sick' || goodBehavior) ? 5 : 0
+  const roomCoins = roomOk ? (walletSettings?.coins_per_room_task ?? 3) : 0
+  const behaviorCoins = (dayTypeInfo.type === 'sick' || goodBehavior)
+    ? (walletSettings?.coins_per_good_behavior ?? 5)
+    : 0
 
-  const GRADE_COINS: Record<number, number> = { 5: 5, 4: 3, 3: -3, 2: -5, 1: -10 }
-  const gradeCoins = grades.reduce((sum, g) => sum + (GRADE_COINS[g.grade] ?? 0), 0)
+  // Fallbacks mirror SETTINGS_DEFAULTS in app/api/wallet/_lib.ts (pre-load only).
+  const GRADE_COINS: Record<number, number> = { 5: 10, 4: 5, 3: -3, 2: -5, 1: -10 }
+  const gradeCoinsFor = (grade: number): number => {
+    if (!walletSettings) return GRADE_COINS[grade] ?? 0
+    switch (grade) {
+      case 5: return walletSettings.coins_per_grade_5
+      case 4: return walletSettings.coins_per_grade_4
+      case 3: return walletSettings.coins_per_grade_3
+      case 2: return walletSettings.coins_per_grade_2
+      case 1: return walletSettings.coins_per_grade_1
+      default: return 0
+    }
+  }
+  const gradeCoins = grades.reduce((sum, g) => sum + gradeCoinsFor(g.grade), 0)
 
   const dayType = dayTypeInfo.type
   const nonSchool = isNonSchoolDay(dayType) || dayType === 'sick'
   const styles = DAY_TYPE_STYLES[dayType] || DAY_TYPE_STYLES.school
 
   const totalCoins = nonSchool
-    ? readingCoins + activityCoins + helpCoins + homeworkCoins + roomCoins + behaviorCoins
-    : gradeCoins + roomCoins + behaviorCoins
+    ? bookCoins + activityCoins + roomCoins + behaviorCoins
+    : gradeCoins + bookCoins + activityCoins + roomCoins + behaviorCoins
 
   if (!isOpen) return null
 
@@ -641,9 +663,9 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                 <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
                   <span className="scroll-section-icon">📚</span>
                   <span className="scroll-section-title">{t('dailyModal.reading')}</span>
-                  {readingCoins > 0 && (
+                  {bookCoins > 0 && (
                     <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.22)', padding: '2px 8px', borderRadius: '20px' }}>
-                      +{readingCoins}💰
+                      +{bookCoins}💰
                     </span>
                   )}
                 </div>
@@ -697,13 +719,6 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                       </div>
                     </div>
                   </div>
-
-                  {/* Coin hint */}
-                  {(pagesRead > 0 || minutesRead > 0) && (
-                    <div style={{ padding: '8px 12px', background: styles.bg, border: `1px solid ${styles.border}`, borderRadius: '8px', fontSize: '12px', fontWeight: 700, color: styles.text, marginBottom: '10px' }}>
-                      🪙 {readingCoinHint(pagesRead, minutesRead, bookFinished)}
-                    </div>
-                  )}
 
                   {/* Book finished */}
                   <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.18)', borderRadius: '10px', cursor: 'pointer', marginBottom: '10px' }}>
@@ -857,11 +872,6 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                 <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
                   <span className="scroll-section-icon">🏠</span>
                   <span className="scroll-section-title">{t('dailyModal.homeHelp')}</span>
-                  {homeHelp && (
-                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.22)', padding: '2px 8px', borderRadius: '20px' }}>
-                      +3💰
-                    </span>
-                  )}
                 </div>
                 <div style={{ padding: '12px 0 0' }}>
                   <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
@@ -910,11 +920,6 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                 <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
                   <span className="scroll-section-icon">📝</span>
                   <span className="scroll-section-title">{t('dailyModal.homework')}</span>
-                  {homeworkDone && (
-                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.22)', padding: '2px 8px', borderRadius: '20px' }}>
-                      +5💰
-                    </span>
-                  )}
                 </div>
                 <div style={{ padding: '12px 0 0' }}>
                   <div style={{ display: 'flex', gap: '8px' }}>
@@ -1238,15 +1243,16 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '10px' }}>
                 {nonSchool ? (
                   <>
-                    {readingCoins > 0 && <span style={chipStyle('#10B981')}>📚 +{readingCoins}💰</span>}
+                    {bookCoins > 0 && <span style={chipStyle('#10B981')}>📚 +{bookCoins}💰</span>}
                     {activityCoins > 0 && <span style={chipStyle('#F59E0B')}>📋 +{activityCoins}💰</span>}
-                    {homeHelp && <span style={chipStyle('#10B981')}>🏠 +{helpCoins}💰</span>}
                     {roomCoins > 0 && <span style={chipStyle('#10B981')}>🛏️ +{roomCoins}💰</span>}
                     {behaviorCoins > 0 && <span style={chipStyle('#10B981')}>⭐ +{behaviorCoins}💰</span>}
                   </>
                 ) : (
                   <>
                     {gradeCoins !== 0 && <span style={chipStyle(gradeCoins >= 0 ? '#10B981' : '#F43F5E')}>📚 {gradeCoins >= 0 ? '+' : ''}{gradeCoins}💰</span>}
+                    {bookCoins > 0 && <span style={chipStyle('#10B981')}>📖 +{bookCoins}💰</span>}
+                    {activityCoins > 0 && <span style={chipStyle('#F59E0B')}>📋 +{activityCoins}💰</span>}
                     {roomCoins > 0 && <span style={chipStyle('#10B981')}>🏠 +{roomCoins}💰</span>}
                     {behaviorCoins > 0 && <span style={chipStyle('#10B981')}>⭐ +{behaviorCoins}💰</span>}
                   </>

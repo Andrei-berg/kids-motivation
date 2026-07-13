@@ -188,17 +188,10 @@ export default function PeriodsManager() {
         {t('settings.periodsManager.title')}
       </p>
 
-      {/* Rules reminder */}
-      <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-4 mb-5 text-sm">
-        <div className="font-bold text-amber-400 mb-2">📋 {t('settings.periodsManager.type')}</div>
-        <div className="text-gray-400 space-y-1">
-          <div>📚 {t('settings.periodsManager.vacation')}: ≥15 min or ≥10 p → <span className="text-amber-400 font-bold">+3💰</span></div>
-          <div>📚 {t('settings.periodsManager.vacation')}: ≥30 min or ≥20 p → <span className="text-amber-400 font-bold">+5💰</span></div>
-          <div>📚 Book finished → <span className="text-amber-400 font-bold">+10💰</span></div>
-          <div>📖 Each extra lesson → <span className="text-amber-400 font-bold">+3💰</span></div>
-          <div>🏠 Home help → <span className="text-amber-400 font-bold">+3💰</span></div>
-        </div>
-      </div>
+      {/* WR-05: the hardcoded "rules reminder" banner was removed — it
+          advertised reading-threshold / extra-lesson / home-help coins that
+          /api/wallet/award never credits, at amounts that ignored the
+          per-family wallet_settings. */}
 
       {/* Period list */}
       <div className="space-y-3 mb-4">

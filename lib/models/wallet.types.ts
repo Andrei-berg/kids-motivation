@@ -112,6 +112,7 @@ export interface WalletSettings {
   coins_per_coach_3: number
   coins_per_coach_2: number
   coins_per_coach_1: number
+  coins_per_book: number
   p2p_max_per_transfer: number
   p2p_max_per_day: number
   p2p_max_per_month: number

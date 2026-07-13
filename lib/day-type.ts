@@ -72,30 +72,7 @@ export function isNonSchoolDay(type: DayType): boolean {
   return type === 'vacation' || type === 'weekend'
 }
 
-// ─── Coin calculators for non-school activities ───────────────────────────────
-
-export function calcReadingCoins(pagesRead: number, minutesRead: number, bookFinished: boolean): number {
-  let coins = 0
-  if (pagesRead >= 20 || minutesRead >= 30) coins = 5
-  else if (pagesRead >= 10 || minutesRead >= 15) coins = 3
-  if (bookFinished) coins += 10
-  return coins
-}
-
-export function calcExtraLessonsCoins(doneCount: number): number {
-  return doneCount * 3
-}
-
-export function calcHomeHelpCoins(helped: boolean): number {
-  return helped ? 3 : 0
-}
-
-/** Returns a human-readable hint for reading coins */
-export function readingCoinHint(pages: number, minutes: number, finished: boolean): string {
-  let base = ''
-  if (pages >= 20 || minutes >= 30) base = `${minutes} мин / ${pages} стр → +5💰 (≥30 мин или ≥20 стр)`
-  else if (pages >= 10 || minutes >= 15) base = `${minutes} мин / ${pages} стр → +3💰 (≥15 мин или ≥10 стр)`
-  else base = `${minutes} мин / ${pages} стр → 0💰 (нужно ≥15 мин или ≥10 стр)`
-  if (finished) base += ' + книга дочитана 🎉 +10💰'
-  return base
-}
+// WR-05: the former coin calculators (calcReadingCoins, calcExtraLessonsCoins,
+// calcHomeHelpCoins, readingCoinHint) were removed — they advertised hardcoded
+// coin amounts that /api/wallet/award never credits. Coin values are per-family
+// (wallet_settings) and computed server-side only.
