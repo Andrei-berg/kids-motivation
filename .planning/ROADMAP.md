@@ -175,7 +175,7 @@ Plans:
 - [x] **Phase 5.3: design-tokens** — Unified `lib/design/tokens.ts` (paper/ink themes; Bitter/Golos Text/JetBrains Mono) re-exported through legacy `T` objects + shared atoms (LedgerRow, Amount, StatusChip, stamp animation) (completed 2026-07-07)
 - [x] **Phase 5.4: streak-settings** — Streak thresholds/bonuses move from award-route constants into `wallet_settings` + rules UI (completed 2026-07-07)
 - [x] **Phase 5.5: year-calendar** — School year (dates, quarters/trimesters), regional vacation presets with manual override, configurable weekend days, sick-day pauses streaks (completed 2026-07-13)
-- [ ] **Phase 5.6: day-blocks** — Day assembly engine: day type × schedule × block rules; per-child `day_blocks` config; block-list renderer replaces hardcoded form sections; award computes from blocks; per-family feature flag
+- [x] **Phase 5.6: day-blocks** — Day assembly engine: day type × schedule × block rules; per-child `day_blocks` config; block-list renderer replaces hardcoded form sections; award computes from blocks; per-family feature flag (completed 2026-07-14)
 - [ ] **Phase 5.7: kid-redesign** — Kid screens on unified tokens, nav 6→5 (leaderboard becomes a tab inside awards), motion discipline (single signature gesture)
 - [ ] **Phase 5.8: parent-redesign** — Parent Center on unified tokens + Day Constructor UI + Year Calendar screen + Weekly Summary card
 - [ ] **Phase 5.9: rules-presets** — Rule presets (Classic / No-penalties / Bonuses-only), `grade_scale` per family, configurable behavior tags
@@ -273,12 +273,12 @@ Plans:
   3. `/api/wallet/award` computes coins from the assembled blocks, keeping idempotency per `(child_id, source_type, source_id)`; verify scripts pass
   4. Rollout behind a per-family feature flag: own family → beta families → all
 
-**Plans:** 3/5 plans executed
+**Plans:** 5/5 plans complete
 Plans:
 - [x] 05.6-01-PLAN.md — day_blocks + day_block_entries schema, families feature flag, parent-only RLS, seed/backfill, types + repo, [BLOCKING] prod apply
 - [x] 05.6-02-PLAN.md — shared assembleDayBlocks visibility/price/multiplier utility (tested) + server loadFeatureFlag
-- [ ] 05.6-03-PLAN.md — /api/wallet/award feature-flag branch: block-driven built-in pricing/multipliers + custom_block source type; flag-off byte-parity; verify scripts
-- [ ] 05.6-04-PLAN.md — both day-fill forms render the assembled block list (kid page + KidDayFillForm + DailyModal), D-06 parity, D-08 visibility
+- [x] 05.6-03-PLAN.md — /api/wallet/award feature-flag branch: block-driven built-in pricing/multipliers + custom_block source type; flag-off byte-parity; verify scripts
+- [x] 05.6-04-PLAN.md — both day-fill forms render the assembled block list (kid page + KidDayFillForm + DailyModal), D-06 parity, D-08 visibility
 - [x] 05.6-05-PLAN.md — minimal DayBlocksManager parent settings surface (toggle/price/multiplier/custom create-delete)
 
 ### Phase 5.7: kid-redesign
