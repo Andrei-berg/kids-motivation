@@ -1077,6 +1077,12 @@ export function KidDayFillForm({
         </>
       ) : (
         <>
+      {/* ─── Room checklist (pre-5.6 parity, D-07/CR-01: rendered here since
+           flag-on covers it via renderBuiltinBlock('room')) ─── */}
+      <FillSection title={t('kidFillForm.roomSection')} icon="🏠" sub={`${Object.values(roomChecked).filter(Boolean).length}/${roomTasks.length}`}>
+        {roomBody}
+      </FillSection>
+
       {/* ─── Extra activities ─── */}
       {activities.length > 0 && (
         <FillSection title={t('kidFillForm.extraSection')} icon="⭐">
