@@ -14,6 +14,14 @@
 //      new source_type participates in the (child_id, source_type, source_id)
 //      idempotency contract the award route relies on.
 //   3. Cleanup removes the synthetic row (a re-run stays green).
+//   4. The actual CR-02 exploit path (Phase 5.6, Plan 08 gap closure): insert
+//      a synthetic day_block + day_block_entries row, award it with the
+//      NATURAL key `${date}:${block_id}` (matching app/api/wallet/award's
+//      post-Plan-07 sourceId), delete + re-insert the entry row so it gets a
+//      NEW UUID (simulating entry rotation), then assert a second
+//      natural-key award insert is rejected (23505) — proving entry rotation
+//      no longer defeats idempotency, unlike the old literal-duplicate-only
+//      check in step 2. Self-cleaning.
 
 import { createClient } from '@supabase/supabase-js'
 
@@ -104,7 +112,120 @@ async function main() {
   }
   console.log('✓ Cleanup done.')
 
-  console.log('\n✅ Day-blocks award idempotency contract verified.')
+  // 4. Entry-rotation exploit probe (CR-02, Plan 08 gap closure). Proves that
+  // deleting and re-inserting a day_block_entries row (which mints a NEW
+  // UUID) does NOT defeat the (child_id, source_type, source_id) idempotency
+  // index, because the award route keys custom_block intents on the NATURAL
+  // `${date}:${block_id}` string (Plan 07), not the entry row's own id.
+  const TEST_DATE = '1999-12-31'
+  let testBlockId = null
+  let testEntryId = null
+  try {
+    // a. Synthetic custom day_block (legacy_key NULL — no legacy-delete guard).
+    const blockIns = await db.from('day_blocks').insert({
+      family_id: child.family_id,
+      name: 'verify-day-blocks rotation probe',
+      icon: '🧪',
+      price: 1,
+      is_active: true,
+    }).select('id').single()
+    if (blockIns.error) {
+      console.error('❌ Could not create synthetic day_block for rotation probe:', blockIns.error.message)
+      process.exit(1)
+    }
+    testBlockId = blockIns.data.id
+    console.log('✓ Synthetic day_block created for rotation probe:', testBlockId)
+
+    // b. First day_block_entries row (v1 id).
+    const entryIns = await db.from('day_block_entries').insert({
+      child_id: child.id,
+      family_id: child.family_id,
+      date: TEST_DATE,
+      block_id: testBlockId,
+      done: true,
+    }).select('id').single()
+    if (entryIns.error) {
+      console.error('❌ Could not create synthetic day_block_entries row:', entryIns.error.message)
+      process.exit(1)
+    }
+    testEntryId = entryIns.data.id
+    console.log('✓ Synthetic day_block_entries row inserted (v1 id):', testEntryId)
+
+    // c. Award the NATURAL key `${date}:${block_id}` — must match the route's
+    // sourceId: `${date}:${entry.block_id}` (app/api/wallet/award/route.ts).
+    const naturalSourceId = `${TEST_DATE}:${testBlockId}`
+    const rotationBaseRow = {
+      child_id: child.id,
+      family_id: child.family_id,
+      transaction_type: 'earn_coins',
+      coins_change: 0,
+      money_change: 0,
+      description: 'day-blocks rotation probe',
+      icon: '🧪',
+      balance_after_coins: 0,
+      balance_after_money: 0,
+      source_type: SOURCE_TYPE,
+      source_id: naturalSourceId,
+    }
+    const firstAward = await db.from('wallet_transactions').insert(rotationBaseRow).select('id').single()
+    if (firstAward.error) {
+      console.error('❌ First natural-key award insert failed:', firstAward.error.message)
+      process.exit(1)
+    }
+    console.log('✓ First natural-key award insert succeeded:', firstAward.data.id)
+
+    // d. Simulate rotation: delete + re-insert the entry -> gets a NEW id.
+    // (The 05.6-02 migration now denies DELETE to every client role via RLS;
+    // this probe runs as the service role, which bypasses RLS, so it can
+    // still exercise the raw exploit mechanics and prove the NATURAL key —
+    // not RLS alone — is what keeps idempotency intact.)
+    const delEntry = await db.from('day_block_entries').delete().eq('id', testEntryId)
+    if (delEntry.error) {
+      console.error('❌ Could not delete synthetic entry to simulate rotation:', delEntry.error.message)
+      process.exit(1)
+    }
+    const reinsertEntry = await db.from('day_block_entries').insert({
+      child_id: child.id,
+      family_id: child.family_id,
+      date: TEST_DATE,
+      block_id: testBlockId,
+      done: true,
+    }).select('id').single()
+    if (reinsertEntry.error) {
+      console.error('❌ Could not re-insert entry to simulate rotation:', reinsertEntry.error.message)
+      process.exit(1)
+    }
+    testEntryId = reinsertEntry.data.id
+    console.log('✓ Entry rotated to a NEW id (UUID rotates, natural key does not):', testEntryId)
+
+    // e. Second award attempt with the SAME natural key — must be rejected.
+    const secondAward = await db.from('wallet_transactions').insert(rotationBaseRow).select('id').single()
+    if (!secondAward.error) {
+      console.error('❌ Second natural-key award insert SUCCEEDED after entry rotation — CR-02 reopened! Cleaning up.')
+      await db.from('wallet_transactions').delete().eq('source_type', SOURCE_TYPE).eq('source_id', naturalSourceId)
+      process.exit(1)
+    }
+    if (secondAward.error.code === '23505') {
+      console.log('✓ Entry-rotation double-credit rejected by unique index (23505) — CR-02 stays closed.')
+    } else {
+      console.error('⚠ Second natural-key award insert failed but not with 23505:', secondAward.error.code, secondAward.error.message)
+      await db.from('wallet_transactions').delete().eq('source_type', SOURCE_TYPE).eq('source_id', naturalSourceId)
+      process.exit(1)
+    }
+
+    // f. Cleanup: transaction, entry, synthetic block.
+    await db.from('wallet_transactions').delete().eq('source_type', SOURCE_TYPE).eq('source_id', naturalSourceId)
+    await db.from('day_block_entries').delete().eq('id', testEntryId)
+    await db.from('day_blocks').delete().eq('id', testBlockId)
+    console.log('✓ Rotation-probe cleanup done.')
+  } catch (e) {
+    console.error('EXC during rotation probe, attempting cleanup:', e)
+    if (testEntryId) await db.from('day_block_entries').delete().eq('id', testEntryId)
+    if (testBlockId) await db.from('day_blocks').delete().eq('id', testBlockId)
+    process.exit(1)
+  }
+
+  console.log('\n✅ Day-blocks award idempotency contract verified (literal duplicate + entry-rotation exploit path).')
 }
 
 main().catch((e) => { console.error('EXC', e); process.exit(1) })
