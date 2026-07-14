@@ -687,6 +687,30 @@
       "systemTask": "системная",
       "deleteConfirm": "Удалить эту задачу?"
     },
+    "dayBlocksManager": {
+      "title": "Блоки дня",
+      "subtitle": "Включайте, задавайте цену и управляйте блоками, из которых состоит день ребёнка",
+      "addPlaceholder": "Название нового блока",
+      "namePlaceholder": "Название нового блока",
+      "pricePlaceholder": "Цена в монетах",
+      "empty": "Пока нет блоков",
+      "systemBlock": "встроенный блок",
+      "cannotDeleteBuiltin": "Встроенные блоки нельзя удалить — только отключить",
+      "deleteConfirm": "Удалить этот блок?",
+      "vacationMultiplier": "Множитель на каникулах ×",
+      "whoFills": {
+        "label": "Кто заполняет",
+        "kid": "Ребёнок",
+        "parent": "Родитель",
+        "both": "Оба"
+      },
+      "dayTypes": {
+        "label": "Применяется",
+        "school": "Учебные дни",
+        "weekend": "Выходные",
+        "vacation": "Каникулы"
+      }
+    },
     "calendarSettingsManager": {
       "title": "Учебный год и выходные",
       "subtitle": "Настройте даты учебного года, тип четвертей, выходные дни и региональный шаблон",
@@ -811,7 +835,8 @@
       "schedule": "Расписание",
       "activities": "Активности",
       "room": "Комната",
-      "calendar": "Календарь"
+      "calendar": "Календарь",
+      "blocks": "Блоки дня"
     },
     "auditBtn": "Журнал",
     "walletsBtn": "Кошельки",
