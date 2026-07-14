@@ -76,6 +76,23 @@ export async function loadSettings(admin: Admin, familyId: string): Promise<Wall
   return { id: 'default', family_id: familyId, ...SETTINGS_DEFAULTS, ...(data ?? {}) }
 }
 
+/**
+ * Loads a family's day_blocks_enabled feature flag via the service client.
+ * Defaults to false when the family row is missing (should not happen) or
+ * the column is not yet populated — a missing/legacy row is treated as
+ * flag-off so the award route falls back to the existing 7-block path
+ * byte-for-byte (D-09 byte-parity). The client can never set this flag: it
+ * is read here server-side, not accepted from the request body (T-056-05).
+ */
+export async function loadFeatureFlag(admin: Admin, familyId: string): Promise<boolean> {
+  const { data } = await admin
+    .from('families')
+    .select('day_blocks_enabled')
+    .eq('id', familyId)
+    .maybeSingle()
+  return (data as { day_blocks_enabled?: boolean } | null)?.day_blocks_enabled ?? false
+}
+
 export type WalletRow = {
   child_id: string
   coins: number
