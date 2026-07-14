@@ -11,6 +11,8 @@ import { KidChallenges } from '@/components/kid/KidChallenges'
 import { getVacationPeriods } from '@/lib/vacation-api'
 import { getFamilyCalendar } from '@/lib/repositories/calendar.repo'
 import { getDayType } from '@/lib/day-type'
+import { getFamilyDayBlocksEnabled, getDayBlocks } from '@/lib/repositories/day-blocks.repo'
+import type { DayBlock } from '@/lib/models/day-block.types'
 import type { Wallet } from '@/lib/models/wallet.types'
 import { T } from '@/components/kid/design/tokens'
 import { Avatar, Coin, AnimatedNum, StreakFlame, Confetti, XPBar } from '@/components/kid/design/atoms'
@@ -58,6 +60,8 @@ export default function KidDayPage() {
   const [wallet, setWallet] = useState<Wallet | null>(null)
   const [streaks, setStreaks] = useState<any[]>([])
   const [dayType, setDayType] = useState<'school' | 'weekend' | 'vacation'>('school')
+  const [dayBlocksEnabled, setDayBlocksEnabled] = useState(false)
+  const [dayBlocks, setDayBlocks] = useState<DayBlock[]>([])
   const [editMode, setEditMode] = useState(false)
   const [confetti, setConfetti] = useState(0)
   const isDesktop = useDesktop()
@@ -98,16 +102,31 @@ export default function KidDayPage() {
       // so the kid screen agrees with day-type.ts everywhere else.
       try {
         const familyId = (childData as any).family_id
-        const [vacations, familyCalendar] = await Promise.all([
+        const [vacations, familyCalendar, flagEnabled] = await Promise.all([
           getVacationPeriods(familyId),
           getFamilyCalendar(familyId),
+          getFamilyDayBlocksEnabled(familyId),
         ])
         const info = getDayType(today, false, vacations ?? [], resolvedId, undefined, familyCalendar)
         // getDayType can also return 'sick'; the day form only handles these three.
         setDayType(info.type === 'sick' ? 'school' : info.type)
+
+        // Day-blocks (Phase 5.6): load the family's active block config only
+        // when the flag is on — flag-off families never fetch it, preserving
+        // byte-parity (D-07). KidDayFillForm computes the assembled/visible
+        // subset itself via assembleDayBlocks (D-06 shared-assembler parity).
+        setDayBlocksEnabled(flagEnabled)
+        if (flagEnabled) {
+          const blocks = await getDayBlocks(familyId, { childId: resolvedId, activeOnly: true })
+          setDayBlocks(blocks)
+        } else {
+          setDayBlocks([])
+        }
       } catch {
         const dow = new Date(today + 'T12:00:00').getDay()
         setDayType(dow === 0 || dow === 6 ? 'weekend' : 'school')
+        setDayBlocksEnabled(false)
+        setDayBlocks([])
       }
     } catch (err) {
       console.error('KidDayPage error', err)
@@ -290,6 +309,8 @@ export default function KidDayPage() {
                 dayType={dayType}
                 existingDay={todayDay}
                 onSaved={handleFillSaved}
+                dayBlocksEnabled={dayBlocksEnabled}
+                dayBlocks={dayBlocks}
               />
             )}
           </>

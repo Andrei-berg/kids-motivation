@@ -13,6 +13,9 @@ import { getSubjectGradesForDate, saveSubjectGrade } from '@/lib/repositories/gr
 import { getWalletSettings } from '@/lib/repositories/wallet.repo'
 import { getRoomTasks, getRoomChecks, saveRoomChecks } from '@/lib/repositories/room.repo'
 import type { RoomTask, RoomLegacyKey } from '@/lib/models/room.types'
+import { assembleDayBlocks } from '@/lib/day-blocks'
+import { getDayBlockEntries, saveDayBlockEntries } from '@/lib/repositories/day-blocks.repo'
+import type { DayBlock } from '@/lib/models/day-block.types'
 import { checkAndAwardBadges } from '@/lib/badges'
 import { compressImage, uploadPhoto, getSignedPhotoUrl } from '@/lib/photo-upload'
 import { supabase } from '@/lib/supabase'
@@ -38,6 +41,8 @@ export interface KidDayFillFormProps {
   dayType: 'school' | 'weekend' | 'vacation'
   existingDay: DayData | null   // pre-filled if parent already saved
   onSaved: (coinsEarned: number) => void // callback after successful save
+  dayBlocksEnabled: boolean    // family flag (Phase 5.6) — flag-off keeps the hardcoded sections below
+  dayBlocks: DayBlock[]        // family's active block config (empty when flag-off)
 }
 
 // ============================================================================
@@ -80,6 +85,8 @@ export function KidDayFillForm({
   dayType,
   existingDay,
   onSaved,
+  dayBlocksEnabled,
+  dayBlocks,
 }: KidDayFillFormProps) {
   const t = useT()
   const { language } = useLanguage()
@@ -142,6 +149,20 @@ export function KidDayFillForm({
     note: '',
   })
   const [readingActive, setReadingActive] = useState(false) // toggle "читал сегодня"
+
+  // ── Day-blocks (Phase 5.6) — custom-block completion toggles ────────────
+  // Keyed by block id; pre-filled from day_block_entries. Built-in blocks
+  // (legacy_key non-null) persist through their existing tables (room_checks,
+  // grades, activity logs, section visits, reading log, home exercises) —
+  // this map is only for custom blocks (legacy_key null).
+  const [customBlockDone, setCustomBlockDone] = useState<Record<string, boolean>>({})
+
+  // Visible/ordered block list for today — the SAME shared assembler the
+  // parent's DailyModal calls, so the two forms can never diverge (D-06).
+  const visibleBlocks = useMemo(() => {
+    if (!dayBlocksEnabled || dayBlocks.length === 0) return []
+    return assembleDayBlocks(dayBlocks, dayType, date)
+  }, [dayBlocksEnabled, dayBlocks, dayType, date])
 
   // ── Lock logic ───────────────────────────────────────────────────────────
   const isLocked = useMemo(() => {
@@ -225,6 +246,20 @@ export function KidDayFillForm({
         if (existingReading.book_finished) setPrevBookFinished(true)
       }
 
+      // Pre-fill custom-block toggle states (Phase 5.6, flag-on only) — only
+      // custom blocks (legacy_key null) persist here; built-ins keep using
+      // their existing tables loaded above.
+      if (dayBlocksEnabled) {
+        try {
+          const entries = await getDayBlockEntries(childId, date)
+          const doneMap: Record<string, boolean> = {}
+          entries.forEach(e => { doneMap[e.block_id] = e.done })
+          setCustomBlockDone(doneMap)
+        } catch {
+          setCustomBlockDone({})
+        }
+      }
+
       // Pre-check activities that were previously saved
       if (existingLogs.length > 0) {
         const doneIds = new Set<string>(
@@ -261,7 +296,7 @@ export function KidDayFillForm({
       }
     }
     load()
-  }, [childId, dayType, date])
+  }, [childId, dayType, date, dayBlocksEnabled])
 
   // ── Live coin calculation (no state — pure compute) ──────────────────────
   const coinsPreview = useMemo(() => {
@@ -312,8 +347,16 @@ export function KidDayFillForm({
     if (readingActive && reading.bookFinished && !requireReadingCheck) {
       total += (settings as any)?.coins_per_book ?? 20
     }
+    // Custom day-blocks (flag-on only) — flat block.price for each toggled-on
+    // custom block, mirroring resolveBlockPrice's explicit-price case. Preview
+    // only; /api/wallet/award recomputes server-side from day_block_entries.
+    if (dayBlocksEnabled) {
+      visibleBlocks.forEach(b => {
+        if (!b.legacy_key && customBlockDone[b.id] && b.price) total += b.price
+      })
+    }
     return total
-  }, [roomTasks, roomChecked, checkedActivities, activities, settings, kidGrades, sections, sectionNotes, reading, readingActive, requireReadingCheck])
+  }, [roomTasks, roomChecked, checkedActivities, activities, settings, kidGrades, sections, sectionNotes, reading, readingActive, requireReadingCheck, dayBlocksEnabled, visibleBlocks, customBlockDone])
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   function toggleRoomTask(taskId: string) {
@@ -352,6 +395,14 @@ export function KidDayFillForm({
       }
       return next
     })
+  }
+
+  // T-056-12 (UI-level, defense-in-depth): who_fills==='parent' blocks are not
+  // kid-toggleable here — the award route is the authoritative backstop since
+  // day_block_entries RLS is family-wide.
+  function toggleCustomBlock(block: DayBlock) {
+    if (isLocked || block.who_fills === 'parent') return
+    setCustomBlockDone(prev => ({ ...prev, [block.id]: !prev[block.id] }))
   }
 
   function toggleExercise(exerciseTypeId: string) {
@@ -507,6 +558,21 @@ export function KidDayFillForm({
         } as any)
       }
 
+      // Save custom-block completions (Phase 5.6, flag-on only). Built-in
+      // blocks already persist through the saves above (room_checks, grades,
+      // activity logs, section visits, reading log, home exercises) — this
+      // covers ONLY custom blocks (legacy_key null), writing ALL of them
+      // (done true/false) so unchecking persists.
+      if (dayBlocksEnabled) {
+        const customBlocks = visibleBlocks.filter(b => !b.legacy_key)
+        if (customBlocks.length > 0) {
+          await saveDayBlockEntries(childId, date, customBlocks.map(b => ({
+            blockId: b.id,
+            done: customBlockDone[b.id] ?? false,
+          })))
+        }
+      }
+
       triggerCoinFlyup(coinsPreview)
 
       // Credit all of today's coin awards server-side (idempotent). The server
@@ -543,6 +609,407 @@ export function KidDayFillForm({
     } finally {
       setSaving(false)
     }
+  }
+
+  // ── Day-blocks (Phase 5.6) — shared content bodies ──────────────────────
+  // Flag-off renders these wrapped in a static FillSection (unchanged, D-07
+  // byte-parity). Flag-on renders the SAME bodies wrapped in a FillSection
+  // driven by the assembled block's own name/icon (D-06) — no inner content
+  // is duplicated between the two branches.
+  const roomBody = (
+    <>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        {roomTasks.map(task => {
+          const on = roomChecked[task.id] ?? false
+          return (
+            <button key={task.id} onClick={() => { toggleRoomTask(task.id); if (!on) triggerConfetti() }} disabled={isLocked} style={{
+              height: 48, padding: '0 14px', borderRadius: 24,
+              background: on ? T.tealSoft : '#fff',
+              border: on ? `2px solid ${T.teal}` : `1.5px solid ${T.line}`,
+              display: 'flex', alignItems: 'center', gap: 8, cursor: isLocked ? 'not-allowed' : 'pointer',
+              fontFamily: T.fDisp, fontSize: 13, fontWeight: 800, color: T.ink,
+              boxShadow: on ? `0 4px 12px ${T.teal}30` : '0 2px 6px rgba(0,0,0,0.03)',
+              transition: 'all 0.2s',
+            }}>
+              <span style={{ fontSize: 18 }}>{task.icon ?? '🏠'}</span>
+              <span style={{ flex: 1, textAlign: 'left' }}>{task.name}</span>
+              {on && <span style={{ width: 22, height: 22, borderRadius: 11, background: T.teal, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6l3 3 5-6" stroke="#fff" strokeWidth="2.4" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </span>}
+            </button>
+          )
+        })}
+      </div>
+      {/* Photo proof */}
+      {proofLocalUrl ? (
+        <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={proofLocalUrl} alt={t('kidFillForm.photoAttached')} style={{ width: 60, height: 60, borderRadius: 14, objectFit: 'cover', border: `2px solid ${T.teal}` }}/>
+          <div>
+            <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.teal, fontWeight: 700 }}>{t('kidFillForm.photoAttached')}</div>
+            <button onClick={handleProofRetake} style={{ fontFamily: T.fBody, fontSize: 11, color: T.coral, background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 4 }}>{t('kidFillForm.retakePhoto')}</button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => proofInputRef.current?.click()} disabled={isLocked} style={{
+          marginTop: 10, height: 44, width: '100%', borderRadius: 22,
+          background: '#fff', border: `1.5px dashed ${T.line}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          fontFamily: T.fDisp, fontSize: 13, fontWeight: 800,
+          color: T.ink3, cursor: isLocked ? 'not-allowed' : 'pointer',
+        }}>{t('kidFillForm.takePhoto')}</button>
+      )}
+      <input ref={proofInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleProofCapture}/>
+    </>
+  )
+
+  const extraActivitiesBody = (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {activities.map(act => {
+        const checked = checkedActivities.has(act.id)
+        return (
+          <button key={act.id} onClick={() => { toggleActivity(act.id); if (!checked) triggerConfetti() }} disabled={isLocked} style={{
+            height: 48, padding: '0 14px', borderRadius: 24,
+            background: checked ? T.tealSoft : '#fff',
+            border: checked ? `2px solid ${T.teal}` : `1.5px solid ${T.line}`,
+            display: 'flex', alignItems: 'center', gap: 8, cursor: isLocked ? 'not-allowed' : 'pointer',
+            fontFamily: T.fDisp, fontSize: 13, fontWeight: 800, color: T.ink,
+            transition: 'all 0.2s',
+          }}>
+            <span style={{ fontSize: 18 }}>{act.emoji ?? '⭐'}</span>
+            <span style={{ flex: 1, textAlign: 'left' }}>{act.name}</span>
+            {act.coins > 0 && <span style={{ fontFamily: T.fNum, fontSize: 12, color: checked ? T.tealDeep : T.ink3, fontWeight: 800 }}>+{act.coins}🪙</span>}
+            {checked && <span style={{ width: 22, height: 22, borderRadius: 11, background: T.teal, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6l3 3 5-6" stroke="#fff" strokeWidth="2.4" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </span>}
+          </button>
+        )
+      })}
+    </div>
+  )
+
+  const gradesBody = (
+    <>
+      <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, marginBottom: 10, lineHeight: 1.4 }}>
+        <b style={{ color: T.coral }}>📱 Digital</b>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {subjects.map(sub => {
+          const entries = kidGrades[sub.name] ?? []
+          const gradeEntries = entries.filter(e => e.grade !== null)
+          return (
+            <div key={sub.id} style={{
+              background: '#fff', borderRadius: 20, padding: 14,
+              border: `1.5px solid ${T.line}`, boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 12, background: T.plumSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>📝</div>
+                <span style={{ flex: 1, fontFamily: T.fDisp, fontSize: 14, fontWeight: 800, color: T.ink }}>{sub.name}</span>
+                {gradeEntries.length > 0 && (
+                  <span style={{ padding: '2px 8px', borderRadius: 999, background: T.coralSoft, fontFamily: T.fNum, fontSize: 11, fontWeight: 800, color: T.coralDeep }}>
+                    {t('kidFillForm.gradePill', { count: gradeEntries.length })}
+                  </span>
+                )}
+              </div>
+              {/* Grade picker for each unsaved entry */}
+              {entries.map((entry, idx) => (
+                <div key={idx}>
+                  {!entry.saved && (
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
+                      {[2, 3, 4, 5].map(g => {
+                        const colors: Record<number, string> = { 5: T.teal, 4: '#95E1B4', 3: T.sunDeep, 2: '#FF8FB1' }
+                        const c = colors[g]
+                        const on = entry.grade === g
+                        return (
+                          <button key={g} disabled={isLocked} onClick={() => setKidGrades(prev => ({ ...prev, [sub.name]: prev[sub.name].map((e, i) => i === idx ? { ...e, grade: e.grade === g ? null : g } : e) }))} style={{
+                            width: 38, height: 38, borderRadius: 19, cursor: isLocked ? 'not-allowed' : 'pointer',
+                            background: on ? c : '#fff', border: on ? `2px solid ${c}` : `1.5px solid ${T.line}`,
+                            fontFamily: T.fDisp, fontSize: 16, fontWeight: 900, color: on ? '#fff' : T.ink, padding: 0,
+                            boxShadow: on ? `0 3px 10px ${c}55` : 'none', transition: 'all 0.15s',
+                          }}>{g}</button>
+                        )
+                      })}
+                      <button disabled={isLocked} onClick={() => setKidGrades(prev => ({ ...prev, [sub.name]: prev[sub.name].map((e, i) => i === idx ? { ...e, isDigital: !e.isDigital } : e) }))} style={{
+                        height: 30, padding: '0 10px', borderRadius: 15, border: 'none', cursor: isLocked ? 'not-allowed' : 'pointer',
+                        background: entry.isDigital ? T.coral : T.lineSoft,
+                        color: entry.isDigital ? '#fff' : T.ink3,
+                        fontFamily: T.fDisp, fontSize: 11, fontWeight: 800,
+                      }}>📱 {language === 'en' ? 'Dig.' : 'Цифр'}</button>
+                      {entries.filter(e => !e.saved).length > 1 && (
+                        <button onClick={() => setKidGrades(prev => ({ ...prev, [sub.name]: prev[sub.name].filter((_, i) => i !== idx) }))} style={{
+                          width: 26, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
+                          background: 'transparent', color: T.ink3, fontSize: 16, lineHeight: '1', padding: 0,
+                        }}>×</button>
+                      )}
+                    </div>
+                  )}
+                  {entry.saved && entry.grade !== null && (
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 999, background: T.lineSoft, marginRight: 6, marginBottom: 4 }}>
+                      <span style={{ fontFamily: T.fDisp, fontSize: 13, fontWeight: 900, color: entry.grade >= 4 ? T.tealDeep : entry.grade === 3 ? T.sunDeep : T.coral }}>{entry.grade}</span>
+                      {entry.isDigital && <span style={{ fontFamily: T.fBody, fontSize: 10, color: T.ink3 }}>📱</span>}
+                      <span style={{ fontFamily: T.fBody, fontSize: 10, color: T.teal, fontWeight: 700 }}>✓</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {!isLocked && (
+                <button onClick={() => setKidGrades(prev => ({ ...prev, [sub.name]: [...(prev[sub.name] ?? []), { grade: null, isDigital: false, saved: false }] }))} style={{
+                  height: 30, padding: '0 14px', borderRadius: 15, border: `1.5px dashed ${T.line}`,
+                  background: 'transparent', cursor: 'pointer',
+                  fontFamily: T.fBody, fontSize: 12, color: T.coral, fontWeight: 700,
+                }}>{t('kidFillForm.moreGrade')}</button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </>
+  )
+
+  const exercisesBody = (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {exerciseTypes.map(et => {
+        const active = exercises.find(e => e.exercise_type_id === et.id)
+        return (
+          <div key={et.id} style={{
+            background: '#fff', borderRadius: 20, padding: '12px 14px',
+            border: active ? `2px solid ${T.teal}` : `1.5px solid ${T.line}`,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 12, background: active ? T.tealSoft : T.lineSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>💪</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: T.fDisp, fontSize: 14, fontWeight: 800, color: T.ink }}>{et.name}</div>
+                <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 600 }}>{et.unit}</div>
+              </div>
+              <button onClick={() => { if (!isLocked && active && (active.quantity ?? 0) > 0) updateExerciseQuantity(et.id, (active.quantity ?? 1) - 1) }} style={{
+                width: 32, height: 32, borderRadius: 16, border: 'none', cursor: 'pointer',
+                background: T.lineSoft, fontSize: 18, fontWeight: 900, color: T.ink, padding: 0, lineHeight: '1',
+              }}>−</button>
+              <button onClick={() => {
+                if (isLocked) return
+                if (!active) {
+                  toggleExercise(et.id)
+                  setTimeout(() => updateExerciseQuantity(et.id, 1), 0)
+                } else {
+                  updateExerciseQuantity(et.id, (active.quantity ?? 0) + 1)
+                }
+              }} style={{
+                width: 32, height: 32, borderRadius: 16, border: 'none', cursor: 'pointer',
+                background: T.coral, color: '#fff', fontSize: 18, fontWeight: 900, padding: 0, lineHeight: '1',
+              }}>+</button>
+              <div style={{
+                minWidth: 52, height: 32, borderRadius: 16,
+                background: active ? T.teal : T.lineSoft, color: active ? '#fff' : T.ink,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: T.fNum, fontSize: 14, fontWeight: 800, padding: '0 8px',
+              }}>{active?.quantity ?? 0}</div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+
+  const sectionsBody = sections.length === 0 ? (
+    <div style={{ textAlign: 'center', padding: '12px 0', fontFamily: T.fBody, fontSize: 13, color: T.ink3 }}>
+      {t('kidFillForm.noSections')}
+    </div>
+  ) : (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {sections.map(section => {
+        const attended = section.visit?.attended ?? false
+        const note = sectionNotes[section.id] ?? { progress: '', coachRating: null }
+        return (
+          <div key={section.id} style={{
+            background: '#fff', borderRadius: 22, padding: 14,
+            border: attended ? `2px solid ${T.coral}` : `1.5px solid ${T.line}`,
+            boxShadow: attended ? `0 6px 18px ${T.coral}20` : '0 2px 8px rgba(0,0,0,0.03)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, background: T.coralSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🏅</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: T.fDisp, fontSize: 15, fontWeight: 900, color: T.ink }}>{section.name}</div>
+              </div>
+              <button onClick={() => !isLocked && toggleSectionAttended(section.id)} style={{
+                height: 36, padding: '0 14px', borderRadius: 18, border: 'none', cursor: isLocked ? 'not-allowed' : 'pointer',
+                background: attended ? T.coral : T.lineSoft, color: attended ? '#fff' : T.ink,
+                fontFamily: T.fDisp, fontSize: 12, fontWeight: 800,
+              }}>{attended ? t('kidFillForm.attended') : t('kidFillForm.notAttended')}</button>
+            </div>
+            {attended && (
+              <div style={{ marginTop: 12, padding: 12, borderRadius: 16, background: T.lineSoft, border: `1px solid ${T.line}` }}>
+                <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 700, letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' }}>{t('kidFillForm.coachRatingLabel')}</div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {[1, 2, 3, 4, 5].map(s => {
+                    const on = s <= (note.coachRating ?? 0)
+                    return (
+                      <button key={s} onClick={() => !isLocked && updateSectionCoachRating(section.id, note.coachRating === s ? null : s)} style={{
+                        flex: 1, height: 38, borderRadius: 12, border: on ? 'none' : `1.5px solid ${T.line}`,
+                        background: on ? T.coral : '#fff', cursor: isLocked ? 'not-allowed' : 'pointer',
+                        fontSize: 20, padding: 0, transition: 'all 0.15s',
+                      }}>{on ? '⭐' : '☆'}</button>
+                    )
+                  })}
+                </div>
+                {note.coachRating && (() => {
+                  // WR-05: hint from per-family wallet_settings (fallbacks
+                  // mirror SETTINGS_DEFAULTS), matching what the server credits.
+                  const r = note.coachRating
+                  const c = r === 5 ? (settings?.coins_per_coach_5 ?? 10)
+                    : r === 4 ? (settings?.coins_per_coach_4 ?? 5)
+                    : r === 3 ? (settings?.coins_per_coach_3 ?? 0)
+                    : r === 2 ? (settings?.coins_per_coach_2 ?? -3)
+                    : (settings?.coins_per_coach_1 ?? -10)
+                  return (
+                    <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.coral, fontWeight: 700, marginTop: 6, textAlign: 'center' }}>
+                      {c > 0 ? `+${c}🪙` : `${c}🪙`}
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+
+  const readingBody = (
+    <div style={{
+      background: '#fff', borderRadius: 22, padding: 14,
+      border: readingActive ? `2px solid ${T.plum}` : `1.5px solid ${T.line}`,
+      boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: readingActive ? 14 : 0 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 14, background: T.plumSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>📖</div>
+        <span style={{ flex: 1, fontFamily: T.fDisp, fontSize: 14, fontWeight: 800, color: T.ink }}>{t('kidFillForm.readingSection')}?</span>
+        <button onClick={() => !isLocked && setReadingActive(v => !v)} style={{
+          height: 34, padding: '0 14px', borderRadius: 17, border: 'none', cursor: isLocked ? 'not-allowed' : 'pointer',
+          background: readingActive ? T.teal : T.lineSoft, color: readingActive ? '#fff' : T.ink,
+          fontFamily: T.fDisp, fontSize: 12, fontWeight: 800,
+        }}>{readingActive ? t('kidFillForm.didRead') : t('kidFillForm.readToggle')}</button>
+      </div>
+      {readingActive && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <input value={reading.bookTitle} onChange={e => setReading(r => ({ ...r, bookTitle: e.target.value }))} disabled={isLocked} placeholder={t('kidFillForm.bookField')} style={{
+            height: 44, padding: '0 16px', borderRadius: 22,
+            border: `1.5px solid ${T.line}`, background: T.lineSoft,
+            fontFamily: T.fBody, fontSize: 14, color: T.ink, outline: 'none', width: '100%', boxSizing: 'border-box',
+          }}/>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            {(['pagesRead', 'minutesRead', 'currentPage'] as const).map((field, fi) => {
+              const labels = [t('kidFillForm.pagesLabel'), t('kidFillForm.minutesLabel'), t('kidFillForm.bookmarkLabel')]
+              return (
+                <div key={field} style={{ borderRadius: 16, background: T.lineSoft, border: `1.5px solid ${T.line}`, padding: '6px 10px' }}>
+                  <div style={{ fontFamily: T.fBody, fontSize: 9, color: T.ink3, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase' }}>{labels[fi]}</div>
+                  <input type="number" inputMode="numeric" min="0" value={reading[field] || ''} disabled={isLocked}
+                    onChange={e => setReading(r => ({ ...r, [field]: e.target.value }))} placeholder="0"
+                    style={{ width: '100%', border: 'none', background: 'transparent', outline: 'none', fontFamily: T.fNum, fontSize: 18, fontWeight: 800, color: T.ink, padding: 0 }}/>
+                </div>
+              )
+            })}
+          </div>
+          <button onClick={() => { if (!isLocked) { setReading(r => ({ ...r, bookFinished: !r.bookFinished })); if (!reading.bookFinished) triggerConfetti() } }} style={{
+            height: 48, borderRadius: 24, border: 'none', cursor: isLocked ? 'not-allowed' : 'pointer',
+            background: reading.bookFinished ? `linear-gradient(135deg, ${T.sun}, ${T.sunDeep})` : T.lineSoft,
+            color: reading.bookFinished ? T.ink : T.ink2,
+            fontFamily: T.fDisp, fontSize: 13, fontWeight: 800,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          }}>
+            🏆 {reading.bookFinished ? t('kidFillForm.finishedBtnDone') : t('kidFillForm.finishedBtn')}
+          </button>
+          {reading.bookFinished && requireReadingCheck && (
+            <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.sunDeep, fontWeight: 700, textAlign: 'center' }}>
+              🕓 {t('kidFillForm.readingPending')}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+
+  // Flag-on: one FillSection per assembled block, titled/iconed from the
+  // block's own config (parent-editable — Plan 05). Built-in blocks
+  // (legacy_key non-null) reuse the exact bodies above; 'behavior' has no
+  // kid-side widget today (good-behavior has always been a parent-only
+  // assessment — see DailyModal) so it renders nothing here, unchanged from
+  // before this feature existed. Custom blocks render a generic toggle.
+  function renderBuiltinBlock(block: DayBlock) {
+    switch (block.legacy_key) {
+      case 'room':
+        return (
+          <FillSection key={block.id} title={block.name} icon={block.icon ?? '🏠'} sub={`${Object.values(roomChecked).filter(Boolean).length}/${roomTasks.length}`}>
+            {roomBody}
+          </FillSection>
+        )
+      case 'activity':
+        return activities.length > 0 ? (
+          <FillSection key={block.id} title={block.name} icon={block.icon ?? '⭐'}>
+            {extraActivitiesBody}
+          </FillSection>
+        ) : null
+      case 'grade':
+        return (dayType === 'school' && subjects.length > 0) ? (
+          <FillSection key={block.id} title={block.name} icon={block.icon ?? '📚'} sub={t('kidFillForm.schoolSub')}>
+            {gradesBody}
+          </FillSection>
+        ) : null
+      case 'exercise':
+        return exerciseTypes.length > 0 ? (
+          <FillSection key={block.id} title={block.name} icon={block.icon ?? '💪'} sub={t('kidFillForm.homeSub')}>
+            {exercisesBody}
+          </FillSection>
+        ) : null
+      case 'sport':
+        return (
+          <FillSection key={block.id} title={block.name} icon={block.icon ?? '🏆'} sub={t('kidFillForm.trainerSub')}>
+            {sectionsBody}
+          </FillSection>
+        )
+      case 'book':
+        return (
+          <FillSection key={block.id} title={block.name} icon={block.icon ?? '📖'} sub={t('kidFillForm.everyDay')}>
+            {readingBody}
+          </FillSection>
+        )
+      case 'behavior':
+      default:
+        return null
+    }
+  }
+
+  function renderCustomBlock(block: DayBlock) {
+    const done = customBlockDone[block.id] ?? false
+    const readOnly = block.who_fills === 'parent'
+    return (
+      <FillSection key={block.id} title={block.name} icon={block.icon ?? '⭐'}>
+        <button
+          onClick={() => { toggleCustomBlock(block); if (!done && !readOnly) triggerConfetti() }}
+          disabled={isLocked || readOnly}
+          style={{
+            width: '100%', height: 48, padding: '0 14px', borderRadius: 24,
+            background: done ? T.tealSoft : '#fff',
+            border: done ? `2px solid ${T.teal}` : `1.5px solid ${T.line}`,
+            display: 'flex', alignItems: 'center', gap: 8, cursor: (isLocked || readOnly) ? 'not-allowed' : 'pointer',
+            fontFamily: T.fDisp, fontSize: 13, fontWeight: 800, color: T.ink,
+            opacity: readOnly ? 0.6 : 1,
+            transition: 'all 0.2s',
+          }}
+        >
+          <span style={{ fontSize: 18 }}>{block.icon ?? '⭐'}</span>
+          <span style={{ flex: 1, textAlign: 'left' }}>{block.name}</span>
+          {block.price != null && block.price !== 0 && (
+            <span style={{ fontFamily: T.fNum, fontSize: 12, color: done ? T.tealDeep : T.ink3, fontWeight: 800 }}>
+              {block.price > 0 ? `+${block.price}` : block.price}🪙
+            </span>
+          )}
+          {done && <span style={{ width: 22, height: 22, borderRadius: 11, background: T.teal, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6l3 3 5-6" stroke="#fff" strokeWidth="2.4" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </span>}
+        </button>
+      </FillSection>
+    )
   }
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -582,53 +1049,7 @@ export function KidDayFillForm({
         </div>
       </div>
 
-      {/* ─── Room ─── */}
-      <FillSection title={t('kidFillForm.roomSection')} icon="🏠" sub={`${Object.values(roomChecked).filter(Boolean).length}/${roomTasks.length}`}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            {roomTasks.map(task => {
-              const on = roomChecked[task.id] ?? false
-              return (
-                <button key={task.id} onClick={() => { toggleRoomTask(task.id); if (!on) triggerConfetti() }} disabled={isLocked} style={{
-                  height: 48, padding: '0 14px', borderRadius: 24,
-                  background: on ? T.tealSoft : '#fff',
-                  border: on ? `2px solid ${T.teal}` : `1.5px solid ${T.line}`,
-                  display: 'flex', alignItems: 'center', gap: 8, cursor: isLocked ? 'not-allowed' : 'pointer',
-                  fontFamily: T.fDisp, fontSize: 13, fontWeight: 800, color: T.ink,
-                  boxShadow: on ? `0 4px 12px ${T.teal}30` : '0 2px 6px rgba(0,0,0,0.03)',
-                  transition: 'all 0.2s',
-                }}>
-                  <span style={{ fontSize: 18 }}>{task.icon ?? '🏠'}</span>
-                  <span style={{ flex: 1, textAlign: 'left' }}>{task.name}</span>
-                  {on && <span style={{ width: 22, height: 22, borderRadius: 11, background: T.teal, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 6l3 3 5-6" stroke="#fff" strokeWidth="2.4" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </span>}
-                </button>
-              )
-            })}
-          </div>
-          {/* Photo proof */}
-          {proofLocalUrl ? (
-            <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={proofLocalUrl} alt={t('kidFillForm.photoAttached')} style={{ width: 60, height: 60, borderRadius: 14, objectFit: 'cover', border: `2px solid ${T.teal}` }}/>
-              <div>
-                <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.teal, fontWeight: 700 }}>{t('kidFillForm.photoAttached')}</div>
-                <button onClick={handleProofRetake} style={{ fontFamily: T.fBody, fontSize: 11, color: T.coral, background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 4 }}>{t('kidFillForm.retakePhoto')}</button>
-              </div>
-            </div>
-          ) : (
-            <button onClick={() => proofInputRef.current?.click()} disabled={isLocked} style={{
-              marginTop: 10, height: 44, width: '100%', borderRadius: 22,
-              background: '#fff', border: `1.5px dashed ${T.line}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              fontFamily: T.fDisp, fontSize: 13, fontWeight: 800,
-              color: T.ink3, cursor: isLocked ? 'not-allowed' : 'pointer',
-            }}>{t('kidFillForm.takePhoto')}</button>
-          )}
-          <input ref={proofInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handleProofCapture}/>
-        </FillSection>
-
-      {/* ─── Mood ─── */}
+      {/* ─── Mood (always shown — not part of the day-blocks model) ─── */}
       <FillSection title={t('kidFillForm.moodSection')} icon="✨">
         <div style={{ display: 'flex', gap: 6, justifyContent: 'space-between' }}>
           {MOOD_OPTIONS.map(m => {
@@ -650,6 +1071,12 @@ export function KidDayFillForm({
         </div>
       </FillSection>
 
+      {dayBlocksEnabled && visibleBlocks.length > 0 ? (
+        <>
+          {visibleBlocks.map(block => block.legacy_key ? renderBuiltinBlock(block) : renderCustomBlock(block))}
+        </>
+      ) : (
+        <>
       {/* ─── Extra activities ─── */}
       {activities.length > 0 && (
         <FillSection title={t('kidFillForm.extraSection')} icon="⭐">
@@ -926,6 +1353,8 @@ export function KidDayFillForm({
           )}
         </div>
       </FillSection>
+        </>
+      )}
 
       {/* ─── Save button ─── */}
       <div style={{ padding: '20px 16px 0' }}>
