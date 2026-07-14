@@ -273,15 +273,15 @@ Plans:
   3. `/api/wallet/award` computes coins from the assembled blocks, keeping idempotency per `(child_id, source_type, source_id)`; verify scripts pass
   4. Rollout behind a per-family feature flag: own family → beta families → all
 
-**Plans:** 5/5 base plans complete; 3 gap-closure plans added (verification gaps_found 2/4)
+**Plans:** 7/8 plans executed
 Plans:
 - [x] 05.6-01-PLAN.md — day_blocks + day_block_entries schema, families feature flag, parent-only RLS, seed/backfill, types + repo, [BLOCKING] prod apply
 - [x] 05.6-02-PLAN.md — shared assembleDayBlocks visibility/price/multiplier utility (tested) + server loadFeatureFlag
 - [x] 05.6-03-PLAN.md — /api/wallet/award feature-flag branch: block-driven built-in pricing/multipliers + custom_block source type; flag-off byte-parity; verify scripts
 - [x] 05.6-04-PLAN.md — both day-fill forms render the assembled block list (kid page + KidDayFillForm + DailyModal), D-06 parity, D-08 visibility
 - [x] 05.6-05-PLAN.md — minimal DayBlocksManager parent settings surface (toggle/price/multiplier/custom create-delete)
-- [ ] 05.6-06-PLAN.md — [gap CR-01] restore the Room checklist FillSection to KidDayFillForm flag-off branch (D-07 parity)
-- [ ] 05.6-07-PLAN.md — [gap CR-02 code + WR-01] deterministic custom_block sourceId (`${date}:${block_id}`) + family-scoped entries read in award route
+- [x] 05.6-06-PLAN.md — [gap CR-01] restore the Room checklist FillSection to KidDayFillForm flag-off branch (D-07 parity)
+- [x] 05.6-07-PLAN.md — [gap CR-02 code + WR-01] deterministic custom_block sourceId (`${date}:${block_id}`) + family-scoped entries read in award route
 - [ ] 05.6-08-PLAN.md — [gap CR-02 DB + WR-01/WR-07] entry-RLS hardening (drop child DELETE, tie child_id<->family_id), seed membership guard, source_id backfill, [BLOCKING] prod apply, exploit-path verify probe
 
 ### Phase 5.7: kid-redesign
