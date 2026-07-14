@@ -552,6 +552,7 @@ export async function POST(req: NextRequest) {
           .select('id, block_id, done')
           .eq('child_id', childId)
           .eq('date', date)
+          .eq('family_id', member.familyId)
         for (const entry of entries ?? []) {
           if (!entry.done || !customBlockIds.has(entry.block_id)) continue
           const block = customBlockById.get(entry.block_id)
@@ -566,7 +567,12 @@ export async function POST(req: NextRequest) {
             description: block.name,
             icon: block.icon ?? '⭐',
             sourceType: 'custom_block',
-            sourceId: entry.id,
+            // Natural key (date + block_id), not the entry row's own UUID:
+            // entries RLS is family-wide, so a child can delete+reinsert the
+            // row to rotate entry.id and defeat the (child_id, source_type,
+            // source_id) idempotency index (CR-02). This key is stable across
+            // any number of rotations.
+            sourceId: `${date}:${entry.block_id}`,
           })
         }
       }
