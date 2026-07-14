@@ -719,6 +719,30 @@
       "systemTask": "system task",
       "deleteConfirm": "Delete this task?"
     },
+    "dayBlocksManager": {
+      "title": "Day blocks",
+      "subtitle": "Toggle, price and manage the blocks that make up a child's day",
+      "addPlaceholder": "New block name",
+      "namePlaceholder": "New block name",
+      "pricePlaceholder": "Coin price",
+      "empty": "No blocks yet",
+      "systemBlock": "built-in block",
+      "cannotDeleteBuiltin": "Built-in blocks can't be deleted — deactivate instead",
+      "deleteConfirm": "Delete this block?",
+      "vacationMultiplier": "Vacation ×",
+      "whoFills": {
+        "label": "Who fills",
+        "kid": "Child",
+        "parent": "Parent",
+        "both": "Both"
+      },
+      "dayTypes": {
+        "label": "Applies on",
+        "school": "School days",
+        "weekend": "Weekend",
+        "vacation": "Vacation"
+      }
+    },
     "calendarSettingsManager": {
       "title": "School Year & Weekends",
       "subtitle": "Set the school-year dates, term mode, weekend days, and region preset",
@@ -843,7 +867,8 @@
       "schedule": "Schedule",
       "activities": "Activities",
       "room": "Room",
-      "calendar": "Calendar"
+      "calendar": "Calendar",
+      "blocks": "Day Blocks"
     },
     "auditBtn": "Audit log",
     "walletsBtn": "Wallets",
