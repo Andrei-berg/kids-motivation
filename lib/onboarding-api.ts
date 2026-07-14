@@ -199,6 +199,19 @@ export async function createFamily(
     console.warn('seedDefaultRoomTasks failed (non-fatal):', seedError)
   }
 
+  // Step 5c: seed the 7 built-in day blocks + 3 "previously-free" custom
+  // defaults (Помощь по дому/Домашка на выходных/Доп. чтение)
+  try {
+    const { error: dayBlocksSeedError } = await supabase.rpc('seed_default_day_blocks', {
+      p_family_id: familyRow.id,
+    })
+    if (dayBlocksSeedError) throw dayBlocksSeedError
+  } catch (seedError) {
+    // Non-critical: family creation must still succeed if day-blocks seeding
+    // hiccups — the migration's idempotent seed function can be re-invoked later.
+    console.warn('seedDefaultDayBlocks failed (non-fatal):', seedError)
+  }
+
   return {
     familyId: familyRow.id,
     inviteCode: familyRow.invite_code,
