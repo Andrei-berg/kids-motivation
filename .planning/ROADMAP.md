@@ -273,6 +273,14 @@ Plans:
   3. `/api/wallet/award` computes coins from the assembled blocks, keeping idempotency per `(child_id, source_type, source_id)`; verify scripts pass
   4. Rollout behind a per-family feature flag: own family → beta families → all
 
+**Plans:** 5 plans
+Plans:
+- [ ] 05.6-01-PLAN.md — day_blocks + day_block_entries schema, families feature flag, parent-only RLS, seed/backfill, types + repo, [BLOCKING] prod apply
+- [ ] 05.6-02-PLAN.md — shared assembleDayBlocks visibility/price/multiplier utility (tested) + server loadFeatureFlag
+- [ ] 05.6-03-PLAN.md — /api/wallet/award feature-flag branch: block-driven built-in pricing/multipliers + custom_block source type; flag-off byte-parity; verify scripts
+- [ ] 05.6-04-PLAN.md — both day-fill forms render the assembled block list (kid page + KidDayFillForm + DailyModal), D-06 parity, D-08 visibility
+- [ ] 05.6-05-PLAN.md — minimal DayBlocksManager parent settings surface (toggle/price/multiplier/custom create-delete)
+
 ### Phase 5.7: kid-redesign
 **Goal**: Kid UI fully on the unified system — warm paper theme, ledger rows, consolidated navigation
 **Depends on**: Phases 5.3, 5.6
