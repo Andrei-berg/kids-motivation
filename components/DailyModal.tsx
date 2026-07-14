@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useT } from '@/lib/i18n'
 import { api } from '@/lib/api'
 import { flexibleApi, Subject, ExerciseType } from '@/lib/flexible-api'
@@ -26,6 +26,9 @@ import { supabase } from '@/lib/supabase'
 import { getRoomTasks, getRoomChecks, saveRoomChecks } from '@/lib/repositories/room.repo'
 import { getFamilyCalendar } from '@/lib/repositories/calendar.repo'
 import { getWalletSettings } from '@/lib/repositories/wallet.repo'
+import { assembleDayBlocks } from '@/lib/day-blocks'
+import { getFamilyDayBlocksEnabled, getDayBlocks, getDayBlockEntries, saveDayBlockEntries } from '@/lib/repositories/day-blocks.repo'
+import type { DayBlock } from '@/lib/models/day-block.types'
 import type { WalletSettings } from '@/lib/models/wallet.types'
 import type { RoomTask, RoomLegacyKey } from '@/lib/models/room.types'
 import type { FamilyCalendar } from '@/lib/models/calendar.types'
@@ -84,6 +87,23 @@ const DAY_TYPE_STYLES: Record<string, { bg: string; border: string; text: string
   },
 }
 
+// ─── Day-blocks (Phase 5.6) section wrapper ──────────────────────────────────
+// Mirrors the existing scroll-section/scroll-section-header markup used by
+// every hardcoded section below, so assembled blocks (flag-on) look identical
+// to the hardcoded ones (flag-off) — just titled/iconed from block config.
+function BlockSection({ title, icon, badge, children }: { title: string; icon: string; badge?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="scroll-section">
+      <div className="scroll-section-header">
+        <span className="scroll-section-icon">{icon}</span>
+        <span className="scroll-section-title">{title}</span>
+        {badge}
+      </div>
+      {children}
+    </div>
+  )
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function DailyModal({ isOpen, onClose, childId, date, onSave }: DailyModalProps) {
@@ -102,6 +122,13 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   const [walletSettings, setWalletSettings] = useState<WalletSettings | null>(null)
   const [dayTypeInfo, setDayTypeInfo] = useState<DayTypeInfo>({ type: 'school', label: 'School', emoji: '📚' })
   const [isSick, setIsSick] = useState(false)
+
+  // Day-blocks (Phase 5.6, D-06 parity) — family flag + active block config.
+  // dayBlocksEnabled defaults false so a fetch failure fails closed to the
+  // flag-off (hardcoded) render, matching every existing/legacy family.
+  const [dayBlocksEnabled, setDayBlocksEnabled] = useState(false)
+  const [dayBlocks, setDayBlocks] = useState<DayBlock[]>([])
+  const [customBlockDone, setCustomBlockDone] = useState<Record<string, boolean>>({})
 
   // Справочники
   const [subjects, setSubjects] = useState<Subject[]>([])
@@ -170,6 +197,48 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   useEffect(() => {
     setDayTypeInfo(getDayType(date, isSick, vacationPeriods, childId, t, familyCalendar))
   }, [isSick, vacationPeriods, date, childId, familyCalendar])
+
+  // Day-blocks (Phase 5.6, D-06): load the flag + active block config +
+  // today's custom-block completions whenever the resolved day/child changes.
+  // Kept in its own effect (not the render) so this NEVER re-implements
+  // assembleDayBlocks' filtering locally — only the shared assembler does.
+  useEffect(() => {
+    if (!isOpen) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const { data: childRow } = await supabase.from('children').select('family_id').eq('id', childId).maybeSingle()
+        const dbFamilyId = (childRow?.family_id as string | undefined) ?? familyId ?? undefined
+        if (!dbFamilyId) return
+        const flagEnabled = await getFamilyDayBlocksEnabled(dbFamilyId)
+        if (cancelled) return
+        setDayBlocksEnabled(flagEnabled)
+        if (flagEnabled) {
+          const blocks = await getDayBlocks(dbFamilyId, { childId, activeOnly: true })
+          if (cancelled) return
+          setDayBlocks(blocks)
+          const entries = await getDayBlockEntries(childId, date)
+          if (cancelled) return
+          const doneMap: Record<string, boolean> = {}
+          entries.forEach(e => { doneMap[e.block_id] = e.done })
+          setCustomBlockDone(doneMap)
+        } else {
+          setDayBlocks([])
+          setCustomBlockDone({})
+        }
+      } catch {
+        if (!cancelled) { setDayBlocksEnabled(false); setDayBlocks([]); setCustomBlockDone({}) }
+      }
+    })()
+    return () => { cancelled = true }
+  }, [isOpen, date, childId, familyId])
+
+  // Assembled/visible block list for today — the SAME shared assembler
+  // KidDayFillForm calls, so the two forms can never diverge (D-06).
+  const visibleDayBlocks = useMemo(() => {
+    if (!dayBlocksEnabled || dayBlocks.length === 0) return []
+    return assembleDayBlocks(dayBlocks, dayTypeInfo.type, date)
+  }, [dayBlocksEnabled, dayBlocks, dayTypeInfo.type, date])
 
   async function loadData() {
     try {
@@ -362,6 +431,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
     setBookTitle(''); setPagesRead(0); setMinutesRead(0); setBookFinished(false); setReadingNote('')
     setActivities([]); setActivityDone({}); setActivityNote({})
     setActivityPages({}); setActivityDuration({}); setActivityRating({}); setActivityBookmark({})
+    setDayBlocksEnabled(false); setDayBlocks([]); setCustomBlockDone({})
     setStatus(''); setError(false)
   }
 
@@ -519,6 +589,20 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
       await Promise.all([saveDay, saveGrades, saveExercises, saveSections, saveReading, saveActivities, saveRoom])
 
+      // Save custom-block completions (Phase 5.6, flag-on only). Built-in
+      // blocks already persist through the saves above — this covers ONLY
+      // custom blocks (legacy_key null), writing ALL of them (done true/false)
+      // so unchecking persists.
+      if (dayBlocksEnabled) {
+        const customBlocks = visibleDayBlocks.filter(b => !b.legacy_key)
+        if (customBlocks.length > 0) {
+          await saveDayBlockEntries(childId, date, customBlocks.map(b => ({
+            blockId: b.id,
+            done: customBlockDone[b.id] ?? false,
+          })))
+        }
+      }
+
       // Credit all coin awards server-side (idempotent). The server recomputes
       // amounts from the saved rows — grades, room, behavior, sport, activities,
       // book, streak bonus (REQ-COIN-002..008) — so no coins are granted from
@@ -602,9 +686,544 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   const nonSchool = isNonSchoolDay(dayType) || dayType === 'sick'
   const styles = DAY_TYPE_STYLES[dayType] || DAY_TYPE_STYLES.school
 
-  const totalCoins = nonSchool
+  // Custom day-blocks (flag-on only) — flat block.price for each toggled-on
+  // custom block, mirroring resolveBlockPrice's explicit-price case. Preview
+  // only; /api/wallet/award recomputes server-side from day_block_entries.
+  const customBlockCoins = dayBlocksEnabled
+    ? visibleDayBlocks.filter(b => !b.legacy_key && customBlockDone[b.id] && b.price).reduce((sum, b) => sum + (b.price ?? 0), 0)
+    : 0
+
+  const totalCoins = (nonSchool
     ? bookCoins + activityCoins + roomCoins + behaviorCoins
-    : gradeCoins + bookCoins + activityCoins + roomCoins + behaviorCoins
+    : gradeCoins + bookCoins + activityCoins + roomCoins + behaviorCoins) + customBlockCoins
+
+  // ── Day-blocks (Phase 5.6) — shared content bodies ──────────────────────
+  // Flag-off renders these wrapped in the original scroll-section markup
+  // (unchanged, D-07 byte-parity). Flag-on renders the SAME bodies wrapped
+  // in a BlockSection driven by the assembled block's own name/icon (D-06).
+  const readingBadge = bookCoins > 0 && (
+    <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.22)', padding: '2px 8px', borderRadius: '20px' }}>
+      +{bookCoins}💰
+    </span>
+  )
+  const readingBody = (
+    <div style={{ padding: '12px 0 0' }}>
+      <div style={{ marginBottom: '10px' }}>
+        <div className="premium-label">{t('dailyModal.book')}</div>
+        <input
+          className="premium-input"
+          type="text"
+          placeholder={t('dailyModal.bookPlaceholder')}
+          value={bookTitle}
+          onChange={e => setBookTitle(e.target.value)}
+          style={{ fontSize: '14px', padding: '10px 12px' }}
+        />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+        <div>
+          <div className="premium-label">{t('dailyModal.pages')}</div>
+          <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface,#0D0D1E)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden' }}>
+            <button
+              onClick={() => setPagesRead(Math.max(0, pagesRead - 5))}
+              style={{ width: 42, height: 44, background: 'rgba(255,255,255,0.04)', border: 'none', color: 'white', fontSize: '18px', cursor: 'pointer' }}
+            >−</button>
+            <div style={{ flex: 1, textAlign: 'center' }}>
+              <div style={{ fontSize: '18px', fontWeight: 900 }}>{pagesRead}</div>
+              <div style={{ fontSize: '9px', color: 'rgba(238,238,255,0.4)', fontWeight: 700 }}>{t('dailyModal.pagesUnit')}</div>
+            </div>
+            <button
+              onClick={() => setPagesRead(pagesRead + 5)}
+              style={{ width: 42, height: 44, background: 'rgba(255,255,255,0.04)', border: 'none', color: 'white', fontSize: '18px', cursor: 'pointer' }}
+            >+</button>
+          </div>
+        </div>
+        <div>
+          <div className="premium-label">{t('dailyModal.minutes')}</div>
+          <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface,#0D0D1E)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden' }}>
+            <button
+              onClick={() => setMinutesRead(Math.max(0, minutesRead - 5))}
+              style={{ width: 42, height: 44, background: 'rgba(255,255,255,0.04)', border: 'none', color: 'white', fontSize: '18px', cursor: 'pointer' }}
+            >−</button>
+            <div style={{ flex: 1, textAlign: 'center' }}>
+              <div style={{ fontSize: '18px', fontWeight: 900 }}>{minutesRead}</div>
+              <div style={{ fontSize: '9px', color: 'rgba(238,238,255,0.4)', fontWeight: 700 }}>{t('dailyModal.minutesUnit')}</div>
+            </div>
+            <button
+              onClick={() => setMinutesRead(Math.min(120, minutesRead + 5))}
+              style={{ width: 42, height: 44, background: 'rgba(255,255,255,0.04)', border: 'none', color: 'white', fontSize: '18px', cursor: 'pointer' }}
+            >+</button>
+          </div>
+        </div>
+      </div>
+
+      {/* Book finished */}
+      <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.18)', borderRadius: '10px', cursor: 'pointer', marginBottom: '10px' }}>
+        <span style={{ fontSize: '13px', fontWeight: 700 }}>{t('dailyModal.bookFinished')}</span>
+        <input type="checkbox" checked={bookFinished} onChange={e => setBookFinished(e.target.checked)} style={{ width: '18px', height: '18px', accentColor: '#10B981' }} />
+      </label>
+
+      <textarea className="premium-textarea" placeholder={t('dailyModal.readingNote')} value={readingNote} onChange={e => setReadingNote(e.target.value)} rows={2} />
+    </div>
+  )
+
+  const activitiesBadge = activityCoins > 0 && (
+    <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.22)', padding: '2px 8px', borderRadius: '20px' }}>
+      +{activityCoins}💰
+    </span>
+  )
+  const activitiesBody = (
+    <div style={{ padding: '12px 0 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      {activities.map(a => {
+        const done = activityDone[a.id] ?? false
+        const trackType = a.tracking_type || 'checkbox'
+        return (
+          <div
+            key={a.id}
+            style={{
+              padding: '10px 14px',
+              background: done ? 'rgba(16,185,129,0.07)' : 'rgba(255,255,255,0.03)',
+              border: `1.5px solid ${done ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.08)'}`,
+              borderRadius: '10px',
+            }}
+          >
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={done}
+                onChange={e => setActivityDone(prev => ({ ...prev, [a.id]: e.target.checked }))}
+                style={{ width: '18px', height: '18px', accentColor: '#10B981', flexShrink: 0 }}
+              />
+              <span style={{ fontSize: '18px', flexShrink: 0 }}>{a.emoji}</span>
+              <span style={{ flex: 1, fontSize: '13px', fontWeight: 800, color: done ? '#fff' : 'rgba(238,238,255,0.7)' }}>
+                {a.name}
+              </span>
+              <span style={{ fontSize: '11px', fontWeight: 900, color: '#10B981', flexShrink: 0 }}>
+                +{a.coins}💰
+              </span>
+            </label>
+
+            {/* Tracking-type-specific inputs, shown when checked */}
+            {done && trackType === 'pages' && (
+              <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 1 100px' }}>
+                  <span style={{ fontSize: '11px', color: 'rgba(238,238,255,0.45)', whiteSpace: 'nowrap' }}>📄 стр.</span>
+                  <input
+                    className="premium-input"
+                    type="number"
+                    min={0}
+                    placeholder="0"
+                    value={activityPages[a.id] ?? ''}
+                    onChange={e => setActivityPages(prev => ({ ...prev, [a.id]: parseInt(e.target.value) || 0 }))}
+                    style={{ fontSize: '13px', padding: '6px 8px', width: '70px' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 1 100px' }}>
+                  <span style={{ fontSize: '11px', color: 'rgba(238,238,255,0.45)', whiteSpace: 'nowrap' }}>⏱ мин.</span>
+                  <input
+                    className="premium-input"
+                    type="number"
+                    min={0}
+                    placeholder="0"
+                    value={activityDuration[a.id] ?? ''}
+                    onChange={e => setActivityDuration(prev => ({ ...prev, [a.id]: parseInt(e.target.value) || 0 }))}
+                    style={{ fontSize: '13px', padding: '6px 8px', width: '70px' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 1 120px' }}>
+                  <span style={{ fontSize: '11px', color: 'rgba(238,238,255,0.45)', whiteSpace: 'nowrap' }}>🔖 закл.</span>
+                  <input
+                    className="premium-input"
+                    type="number"
+                    min={0}
+                    placeholder="0"
+                    value={activityBookmark[a.id] ?? ''}
+                    onChange={e => setActivityBookmark(prev => ({ ...prev, [a.id]: parseInt(e.target.value) || 0 }))}
+                    style={{ fontSize: '13px', padding: '6px 8px', width: '70px' }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {done && trackType === 'duration' && (
+              <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '11px', color: 'rgba(238,238,255,0.45)' }}>⏱ минут</span>
+                <input
+                  className="premium-input"
+                  type="number"
+                  min={0}
+                  placeholder="0"
+                  value={activityDuration[a.id] ?? ''}
+                  onChange={e => setActivityDuration(prev => ({ ...prev, [a.id]: parseInt(e.target.value) || 0 }))}
+                  style={{ fontSize: '13px', padding: '6px 8px', width: '80px' }}
+                />
+              </div>
+            )}
+
+            {done && trackType === 'rating' && (
+              <div style={{ marginTop: '8px', display: 'flex', gap: '4px' }}>
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button
+                    key={star}
+                    onClick={() => setActivityRating(prev => ({ ...prev, [a.id]: star }))}
+                    style={{
+                      flex: 1, padding: '6px', fontSize: '16px', borderRadius: '8px', border: '1px solid',
+                      borderColor: (activityRating[a.id] ?? 0) >= star ? 'rgba(251,191,36,0.5)' : 'rgba(255,255,255,0.08)',
+                      background: (activityRating[a.id] ?? 0) >= star ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.03)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    ⭐
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {done && (
+              <input
+                className="premium-input"
+                type="text"
+                placeholder={t('dailyModal.activityNotePlaceholder')}
+                value={activityNote[a.id] || ''}
+                onChange={e => setActivityNote(prev => ({ ...prev, [a.id]: e.target.value }))}
+                style={{ marginTop: '8px', fontSize: '13px', padding: '8px 10px' }}
+              />
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+
+  const gradesBadge = gradeCoins !== 0 && (
+    <span style={{ fontSize: '12px', fontWeight: 800, color: gradeCoins >= 0 ? '#10B981' : '#F43F5E', background: gradeCoins >= 0 ? 'rgba(16,185,129,0.12)' : 'rgba(244,63,94,0.1)', border: `1px solid ${gradeCoins >= 0 ? 'rgba(16,185,129,0.22)' : 'rgba(244,63,94,0.25)'}`, padding: '2px 8px', borderRadius: '20px' }}>
+      {gradeCoins >= 0 ? '+' : ''}{gradeCoins}💰
+    </span>
+  )
+  const gradesBody = (
+    <>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
+        {scheduleForToday.length > 0 && !showSchedulePanel && (
+          <button className="premium-btn-gradient" onClick={openSchedulePanel} style={{ flex: 1 }}>
+            {t('dailyModal.scheduleBtn', { count: scheduleForToday.length })}
+          </button>
+        )}
+        {!showQuickAdd && (
+          <button className="premium-btn-primary" onClick={() => setShowQuickAdd(true)} style={{ flex: scheduleForToday.length === 0 ? 1 : undefined }}>
+            {t('dailyModal.addSubjectBtn')}
+          </button>
+        )}
+      </div>
+
+      {showSchedulePanel && (
+        <div className="schedule-panel">
+          <div className="schedule-panel-header">
+            <div className="schedule-panel-title">{t('dailyModal.schedulePanelTitle')}</div>
+            <button className="schedule-panel-close" onClick={() => setShowSchedulePanel(false)}>✕</button>
+          </div>
+          <div className="schedule-panel-content">
+            {scheduleForToday.map((lesson, idx) => (
+              <div key={idx} className="schedule-item">
+                <div className="schedule-item-name">{lesson.subject.name}</div>
+                <div className="schedule-item-grades">
+                  {[5, 4, 3, 2].map(grade => (
+                    <button key={grade}
+                      className={`grade-quick-btn ${scheduleGrades[lesson.subject.id] === grade ? 'active' : ''}`}
+                      onClick={() => setScheduleGrades({ ...scheduleGrades, [lesson.subject.id]: grade })}
+                      style={{ background: scheduleGrades[lesson.subject.id] === grade ? getGradeColor(grade) : undefined }}
+                    >{grade}</button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="schedule-panel-footer">
+            <button className="premium-btn-secondary" onClick={() => setShowSchedulePanel(false)}>{t('dailyModal.schedulePanelCancel')}</button>
+            <button className="premium-btn-gradient" onClick={addFromSchedule}>{t('dailyModal.schedulePanelAdd')}</button>
+          </div>
+        </div>
+      )}
+
+      {showQuickAdd && (
+        <div className="quick-add-panel">
+          <div className="quick-add-header">
+            <div className="quick-add-title">{t('dailyModal.quickAddTitle')}</div>
+            <button className="quick-add-close" onClick={() => setShowQuickAdd(false)}>✕</button>
+          </div>
+          <div className="quick-add-content">
+            <select className="premium-select" value={quickAddSubject} onChange={(e) => setQuickAddSubject(e.target.value)}>
+              <option value="">{t('dailyModal.subjectPlaceholder')}</option>
+              {subjects.filter(s => !grades.find(g => g.subject_id === s.id)).map(subject => (
+                <option key={subject.id} value={subject.id}>{subject.name}</option>
+              ))}
+            </select>
+            <div className="quick-add-grades">
+              {[5, 4, 3, 2].map(grade => (
+                <button key={grade}
+                  className={`grade-quick-btn ${quickAddGrade === grade ? 'active' : ''}`}
+                  onClick={() => setQuickAddGrade(grade)}
+                  style={{ background: quickAddGrade === grade ? getGradeColor(grade) : undefined }}
+                >{grade}</button>
+              ))}
+            </div>
+            <button className="premium-btn-gradient" onClick={handleQuickAddGrade} disabled={!quickAddSubject} style={{ width: '100%' }}>
+              {t('dailyModal.addSubjectConfirm')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {grades.length > 0 && (
+        <div className="premium-grades-list">
+          {grades.map((g, idx) => (
+            <div key={idx} className="editable-grade-card">
+              <div className="grade-card-main">
+                <div className="grade-card-subject">{g.subject}</div>
+                <div className="grade-card-controls">
+                  <div className="grade-card-grades">
+                    {[5, 4, 3, 2].map(grade => (
+                      <button key={grade}
+                        className={`grade-edit-btn ${g.grade === grade ? 'active' : ''}`}
+                        onClick={() => updateGradeInline(idx, grade)}
+                        style={{ background: g.grade === grade ? getGradeColor(grade) : undefined }}
+                      >{grade}</button>
+                    ))}
+                  </div>
+                  <button className="grade-card-delete" onClick={() => removeGrade(idx)}>🗑️</button>
+                </div>
+              </div>
+              <input type="text" className="grade-card-note" placeholder={t('dailyModal.gradeCommentPlaceholder')} value={g.note} onChange={(e) => updateNoteInline(idx, e.target.value)} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {grades.length === 0 && !showQuickAdd && !showSchedulePanel && (
+        <div className="premium-empty" style={{ padding: '16px' }}>
+          <div className="premium-empty-text" style={{ fontSize: '14px' }}>{t('dailyModal.noGrades')}</div>
+        </div>
+      )}
+    </>
+  )
+
+  const roomBadge = (
+    <span className={`scroll-section-badge ${dayType === 'sick' ? 'ok' : roomOk ? 'ok' : 'warn'}`}>
+      {dayType === 'sick' ? '🤒' : `${roomScore}/${roomTaskCount}`}
+    </span>
+  )
+  const roomBody = (
+    <>
+      {dayType === 'sick' ? (
+        <div style={{ padding: '8px 0', fontSize: '12px', color: 'rgba(238,238,255,0.45)' }}>
+          {t('dailyModal.sickGraceNote')}
+        </div>
+      ) : (
+        <div className="premium-checklist">
+          {roomTasks.map(task => (
+            <label key={task.id} className="premium-checkbox">
+              <input
+                type="checkbox"
+                checked={roomChecked[task.id] ?? false}
+                onChange={(e) => setRoomChecked(prev => ({ ...prev, [task.id]: e.target.checked }))}
+              />
+              <span className="premium-checkbox-icon">{task.icon ?? '🏠'}</span>
+              <span className="premium-checkbox-label">{task.name}</span>
+              <span className="premium-checkbox-check">✓</span>
+            </label>
+          ))}
+        </div>
+      )}
+      {/* Proof photo — shown only when present (proof is optional) */}
+      {roomProofUrl && (
+        <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(238,238,255,0.08)' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={roomProofUrl}
+            alt="Room photo"
+            className="w-20 h-20 rounded-xl object-cover cursor-pointer"
+            style={{ border: '2px solid rgba(238,238,255,0.15)' }}
+            onClick={() => setLightboxProofUrl(roomProofUrl)}
+          />
+        </div>
+      )}
+    </>
+  )
+
+  // 'behavior' block body (Phase 5.6) — extracted from the original ДЕНЬ
+  // section so it can be wrapped in an assembled BlockSection flag-on; the
+  // diary/day-note pieces stay outside the block system (see dayNoteSection
+  // below), same as Mood stays outside the block system in KidDayFillForm.
+  const behaviorBody = (
+    <label className="premium-checkbox">
+      <input
+        type="checkbox"
+        checked={dayType === 'sick' ? true : goodBehavior}
+        disabled={dayType === 'sick'}
+        onChange={(e) => setGoodBehavior(e.target.checked)}
+      />
+      <span className="premium-checkbox-icon">✅</span>
+      <span className="premium-checkbox-label">
+        {t('dailyModal.goodBehaviorLabel')}
+        {dayType === 'sick' && <span style={{ color: 'rgba(238,238,255,0.4)', fontSize: '12px', marginLeft: '6px' }}>{t('dailyModal.goodBehaviorAuto')}</span>}
+      </span>
+      <span className="premium-checkbox-check">✓</span>
+    </label>
+  )
+
+  const exerciseBody = exerciseTypes.length === 0 ? (
+    <div className="premium-empty" style={{ padding: '16px' }}>
+      <div className="premium-empty-text" style={{ fontSize: '14px' }}>{t('dailyModal.noExercises')}</div>
+    </div>
+  ) : (
+    <>
+      <div className="premium-exercises-grid">
+        {exerciseTypes.map(exerciseType => {
+          const exercise = exercises.find(e => e.exercise_type_id === exerciseType.id)
+          const isChecked = !!exercise
+          return (
+            <div key={exerciseType.id} className={`premium-exercise-card ${isChecked ? 'active' : ''}`}>
+              <label className="premium-exercise-header" onClick={(e) => { if (e.target instanceof HTMLInputElement) return; toggleExercise(exerciseType.id) }}>
+                <input type="checkbox" checked={isChecked} onChange={() => toggleExercise(exerciseType.id)} onClick={(e) => e.stopPropagation()} />
+                <span className="premium-exercise-icon">💪</span>
+                <span className="premium-exercise-name">{exerciseType.name}</span>
+              </label>
+              {isChecked && (
+                <div className="premium-exercise-input">
+                  <input type="number" placeholder="0" value={exercise?.quantity || ''} onChange={(e) => updateQuantity(exerciseType.id, e.target.value ? parseInt(e.target.value) : null)} min="0" />
+                  <span className="premium-exercise-unit">{exerciseType.unit}</span>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      <textarea className="premium-textarea" style={{ marginTop: '12px' }} placeholder={t('dailyModal.sportNotePlaceholder')} value={sportNote} onChange={(e) => setSportNote(e.target.value)} rows={2} />
+    </>
+  )
+
+  const sectionsBody = (
+    <div className="premium-exercises-grid">
+      {sections.map(section => {
+        const isAttended = section.visit?.attended || false
+        const notes = sectionNotes[section.id] || { progress: '', feedback: '', coachRating: null }
+        return (
+          <div key={section.id} className={`premium-exercise-card ${isAttended ? 'active' : ''}`}>
+            <label className="premium-exercise-header" onClick={(e) => { if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return; toggleSectionAttended(section.id) }}>
+              <input type="checkbox" checked={isAttended} onChange={() => toggleSectionAttended(section.id)} onClick={(e) => e.stopPropagation()} />
+              <span className="premium-exercise-icon">🏊</span>
+              <div className="premium-exercise-name">
+                <div>{section.name}</div>
+                {section.trainer && <div style={{ fontSize: '13px', color: 'var(--gray-600)', fontWeight: 400 }}>{t('dailyModal.trainerLabel', { name: section.trainer })}</div>}
+              </div>
+            </label>
+            {isAttended && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                <input type="text" className="premium-input" placeholder={t('dailyModal.progressPlaceholder')} value={notes.progress} onChange={(e) => updateSectionNote(section.id, 'progress', e.target.value)} onClick={(e) => e.stopPropagation()} style={{ fontSize: '14px', padding: '10px 12px' }} />
+                <input type="text" className="premium-input" placeholder={t('dailyModal.feedbackPlaceholder')} value={notes.feedback} onChange={(e) => updateSectionNote(section.id, 'feedback', e.target.value)} onClick={(e) => e.stopPropagation()} style={{ fontSize: '14px', padding: '10px 12px' }} />
+                {/* Coach rating (numeric 1-5) */}
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
+                  <span style={{ fontSize: '13px', color: 'var(--gray-600)' }}>{t('dailyModal.coachRatingLabel')}</span>
+                  {[1, 2, 3, 4, 5].map(r => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); updateSectionRating(section.id, notes.coachRating === r ? null : r) }}
+                      style={{
+                        width: '28px', height: '28px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                        fontSize: '13px', fontWeight: 600,
+                        background: notes.coachRating === r ? (r >= 4 ? '#22c55e' : r === 3 ? '#f59e0b' : '#ef4444') : 'var(--gray-200)',
+                        color: notes.coachRating === r ? '#fff' : 'var(--gray-700)',
+                      }}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+
+  // Flag-on: one BlockSection per assembled block, titled/iconed from the
+  // block's own config (parent-editable — Plan 05). Built-in blocks
+  // (legacy_key non-null) reuse the exact bodies above — no duplicated logic
+  // between the flag-off and flag-on renders. Custom blocks render a generic
+  // toggle checkbox; who_fills is NOT restricted here — parents can fill
+  // anything.
+  function renderBuiltinBlock(block: DayBlock) {
+    switch (block.legacy_key) {
+      case 'book':
+        return (
+          <BlockSection key={block.id} title={block.name} icon={block.icon ?? '📚'} badge={readingBadge}>
+            {readingBody}
+          </BlockSection>
+        )
+      case 'activity':
+        return activities.length > 0 ? (
+          <BlockSection key={block.id} title={block.name} icon={block.icon ?? '📋'} badge={activitiesBadge}>
+            {activitiesBody}
+          </BlockSection>
+        ) : null
+      case 'grade':
+        return !nonSchool ? (
+          <BlockSection key={block.id} title={block.name} icon={block.icon ?? '📚'} badge={gradesBadge}>
+            {gradesBody}
+          </BlockSection>
+        ) : null
+      case 'room':
+        return (
+          <BlockSection key={block.id} title={block.name} icon={block.icon ?? '🏠'} badge={roomBadge}>
+            {roomBody}
+          </BlockSection>
+        )
+      case 'behavior':
+        return (
+          <BlockSection key={block.id} title={block.name} icon={block.icon ?? '😊'}>
+            <div className="premium-checklist">{behaviorBody}</div>
+          </BlockSection>
+        )
+      case 'exercise':
+        return (
+          <BlockSection key={block.id} title={block.name} icon={block.icon ?? '💪'}>
+            {exerciseBody}
+          </BlockSection>
+        )
+      case 'sport':
+        return sections.length > 0 ? (
+          <BlockSection key={block.id} title={block.name} icon={block.icon ?? '🏊'}>
+            {sectionsBody}
+          </BlockSection>
+        ) : null
+      default:
+        return null
+    }
+  }
+
+  function renderCustomBlock(block: DayBlock) {
+    const done = customBlockDone[block.id] ?? false
+    return (
+      <BlockSection key={block.id} title={block.name} icon={block.icon ?? '⭐'}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '10px 14px', background: done ? 'rgba(16,185,129,0.07)' : 'rgba(255,255,255,0.03)', border: `1.5px solid ${done ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.08)'}`, borderRadius: '10px' }}>
+          <input
+            type="checkbox"
+            checked={done}
+            onChange={(e) => setCustomBlockDone(prev => ({ ...prev, [block.id]: e.target.checked }))}
+            style={{ width: '18px', height: '18px', accentColor: '#10B981', flexShrink: 0 }}
+          />
+          <span style={{ fontSize: '18px', flexShrink: 0 }}>{block.icon ?? '⭐'}</span>
+          <span style={{ flex: 1, fontSize: '13px', fontWeight: 800, color: done ? '#fff' : 'rgba(238,238,255,0.7)' }}>{block.name}</span>
+          {block.price != null && block.price !== 0 && (
+            <span style={{ fontSize: '11px', fontWeight: 900, color: '#10B981', flexShrink: 0 }}>
+              {block.price > 0 ? `+${block.price}` : block.price}💰
+            </span>
+          )}
+        </label>
+      </BlockSection>
+    )
+  }
 
   if (!isOpen) return null
 
@@ -659,77 +1278,24 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
               </div>
             )}
 
+            {/* ── Day-blocks (Phase 5.6, D-06) — flag-on assembled list ── */}
+            {dayBlocksEnabled && visibleDayBlocks.length > 0 && (
+              <>
+                {visibleDayBlocks.map(block => block.legacy_key ? renderBuiltinBlock(block) : renderCustomBlock(block))}
+              </>
+            )}
+
+            {!dayBlocksEnabled && (
+              <>
             {/* ── ЧТЕНИЕ (all day types) ──────────── */}
             {(
               <div className="scroll-section">
                 <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
                   <span className="scroll-section-icon">📚</span>
                   <span className="scroll-section-title">{t('dailyModal.reading')}</span>
-                  {bookCoins > 0 && (
-                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.22)', padding: '2px 8px', borderRadius: '20px' }}>
-                      +{bookCoins}💰
-                    </span>
-                  )}
+                  {readingBadge}
                 </div>
-
-                <div style={{ padding: '12px 0 0' }}>
-                  <div style={{ marginBottom: '10px' }}>
-                    <div className="premium-label">{t('dailyModal.book')}</div>
-                    <input
-                      className="premium-input"
-                      type="text"
-                      placeholder={t('dailyModal.bookPlaceholder')}
-                      value={bookTitle}
-                      onChange={e => setBookTitle(e.target.value)}
-                      style={{ fontSize: '14px', padding: '10px 12px' }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
-                    <div>
-                      <div className="premium-label">{t('dailyModal.pages')}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface,#0D0D1E)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden' }}>
-                        <button
-                          onClick={() => setPagesRead(Math.max(0, pagesRead - 5))}
-                          style={{ width: 42, height: 44, background: 'rgba(255,255,255,0.04)', border: 'none', color: 'white', fontSize: '18px', cursor: 'pointer' }}
-                        >−</button>
-                        <div style={{ flex: 1, textAlign: 'center' }}>
-                          <div style={{ fontSize: '18px', fontWeight: 900 }}>{pagesRead}</div>
-                          <div style={{ fontSize: '9px', color: 'rgba(238,238,255,0.4)', fontWeight: 700 }}>{t('dailyModal.pagesUnit')}</div>
-                        </div>
-                        <button
-                          onClick={() => setPagesRead(pagesRead + 5)}
-                          style={{ width: 42, height: 44, background: 'rgba(255,255,255,0.04)', border: 'none', color: 'white', fontSize: '18px', cursor: 'pointer' }}
-                        >+</button>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="premium-label">{t('dailyModal.minutes')}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface,#0D0D1E)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden' }}>
-                        <button
-                          onClick={() => setMinutesRead(Math.max(0, minutesRead - 5))}
-                          style={{ width: 42, height: 44, background: 'rgba(255,255,255,0.04)', border: 'none', color: 'white', fontSize: '18px', cursor: 'pointer' }}
-                        >−</button>
-                        <div style={{ flex: 1, textAlign: 'center' }}>
-                          <div style={{ fontSize: '18px', fontWeight: 900 }}>{minutesRead}</div>
-                          <div style={{ fontSize: '9px', color: 'rgba(238,238,255,0.4)', fontWeight: 700 }}>{t('dailyModal.minutesUnit')}</div>
-                        </div>
-                        <button
-                          onClick={() => setMinutesRead(Math.min(120, minutesRead + 5))}
-                          style={{ width: 42, height: 44, background: 'rgba(255,255,255,0.04)', border: 'none', color: 'white', fontSize: '18px', cursor: 'pointer' }}
-                        >+</button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Book finished */}
-                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.18)', borderRadius: '10px', cursor: 'pointer', marginBottom: '10px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700 }}>{t('dailyModal.bookFinished')}</span>
-                    <input type="checkbox" checked={bookFinished} onChange={e => setBookFinished(e.target.checked)} style={{ width: '18px', height: '18px', accentColor: '#10B981' }} />
-                  </label>
-
-                  <textarea className="premium-textarea" placeholder={t('dailyModal.readingNote')} value={readingNote} onChange={e => setReadingNote(e.target.value)} rows={2} />
-                </div>
+                {readingBody}
               </div>
             )}
 
@@ -739,136 +1305,15 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                 <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
                   <span className="scroll-section-icon">📋</span>
                   <span className="scroll-section-title">{t('dailyModal.extraActivities')}</span>
-                  {activityCoins > 0 && (
-                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.22)', padding: '2px 8px', borderRadius: '20px' }}>
-                      +{activityCoins}💰
-                    </span>
-                  )}
+                  {activitiesBadge}
                 </div>
-                <div style={{ padding: '12px 0 0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {activities.map(a => {
-                    const done = activityDone[a.id] ?? false
-                    const trackType = a.tracking_type || 'checkbox'
-                    return (
-                      <div
-                        key={a.id}
-                        style={{
-                          padding: '10px 14px',
-                          background: done ? 'rgba(16,185,129,0.07)' : 'rgba(255,255,255,0.03)',
-                          border: `1.5px solid ${done ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.08)'}`,
-                          borderRadius: '10px',
-                        }}
-                      >
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                          <input
-                            type="checkbox"
-                            checked={done}
-                            onChange={e => setActivityDone(prev => ({ ...prev, [a.id]: e.target.checked }))}
-                            style={{ width: '18px', height: '18px', accentColor: '#10B981', flexShrink: 0 }}
-                          />
-                          <span style={{ fontSize: '18px', flexShrink: 0 }}>{a.emoji}</span>
-                          <span style={{ flex: 1, fontSize: '13px', fontWeight: 800, color: done ? '#fff' : 'rgba(238,238,255,0.7)' }}>
-                            {a.name}
-                          </span>
-                          <span style={{ fontSize: '11px', fontWeight: 900, color: '#10B981', flexShrink: 0 }}>
-                            +{a.coins}💰
-                          </span>
-                        </label>
-
-                        {/* Tracking-type-specific inputs, shown when checked */}
-                        {done && trackType === 'pages' && (
-                          <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 1 100px' }}>
-                              <span style={{ fontSize: '11px', color: 'rgba(238,238,255,0.45)', whiteSpace: 'nowrap' }}>📄 стр.</span>
-                              <input
-                                className="premium-input"
-                                type="number"
-                                min={0}
-                                placeholder="0"
-                                value={activityPages[a.id] ?? ''}
-                                onChange={e => setActivityPages(prev => ({ ...prev, [a.id]: parseInt(e.target.value) || 0 }))}
-                                style={{ fontSize: '13px', padding: '6px 8px', width: '70px' }}
-                              />
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 1 100px' }}>
-                              <span style={{ fontSize: '11px', color: 'rgba(238,238,255,0.45)', whiteSpace: 'nowrap' }}>⏱ мин.</span>
-                              <input
-                                className="premium-input"
-                                type="number"
-                                min={0}
-                                placeholder="0"
-                                value={activityDuration[a.id] ?? ''}
-                                onChange={e => setActivityDuration(prev => ({ ...prev, [a.id]: parseInt(e.target.value) || 0 }))}
-                                style={{ fontSize: '13px', padding: '6px 8px', width: '70px' }}
-                              />
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 1 120px' }}>
-                              <span style={{ fontSize: '11px', color: 'rgba(238,238,255,0.45)', whiteSpace: 'nowrap' }}>🔖 закл.</span>
-                              <input
-                                className="premium-input"
-                                type="number"
-                                min={0}
-                                placeholder="0"
-                                value={activityBookmark[a.id] ?? ''}
-                                onChange={e => setActivityBookmark(prev => ({ ...prev, [a.id]: parseInt(e.target.value) || 0 }))}
-                                style={{ fontSize: '13px', padding: '6px 8px', width: '70px' }}
-                              />
-                            </div>
-                          </div>
-                        )}
-
-                        {done && trackType === 'duration' && (
-                          <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ fontSize: '11px', color: 'rgba(238,238,255,0.45)' }}>⏱ минут</span>
-                            <input
-                              className="premium-input"
-                              type="number"
-                              min={0}
-                              placeholder="0"
-                              value={activityDuration[a.id] ?? ''}
-                              onChange={e => setActivityDuration(prev => ({ ...prev, [a.id]: parseInt(e.target.value) || 0 }))}
-                              style={{ fontSize: '13px', padding: '6px 8px', width: '80px' }}
-                            />
-                          </div>
-                        )}
-
-                        {done && trackType === 'rating' && (
-                          <div style={{ marginTop: '8px', display: 'flex', gap: '4px' }}>
-                            {[1, 2, 3, 4, 5].map(star => (
-                              <button
-                                key={star}
-                                onClick={() => setActivityRating(prev => ({ ...prev, [a.id]: star }))}
-                                style={{
-                                  flex: 1, padding: '6px', fontSize: '16px', borderRadius: '8px', border: '1px solid',
-                                  borderColor: (activityRating[a.id] ?? 0) >= star ? 'rgba(251,191,36,0.5)' : 'rgba(255,255,255,0.08)',
-                                  background: (activityRating[a.id] ?? 0) >= star ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.03)',
-                                  cursor: 'pointer',
-                                }}
-                              >
-                                ⭐
-                              </button>
-                            ))}
-                          </div>
-                        )}
-
-                        {done && (
-                          <input
-                            className="premium-input"
-                            type="text"
-                            placeholder={t('dailyModal.activityNotePlaceholder')}
-                            value={activityNote[a.id] || ''}
-                            onChange={e => setActivityNote(prev => ({ ...prev, [a.id]: e.target.value }))}
-                            style={{ marginTop: '8px', fontSize: '13px', padding: '8px 10px' }}
-                          />
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
+                {activitiesBody}
               </div>
             )}
 
-            {/* ── ПОМОЩЬ ПО ДОМУ (vacation + weekend) ────────── */}
+            {/* ── ПОМОЩЬ ПО ДОМУ (vacation + weekend) — orphaned legacy field
+                 (D-03/D-07): the seeded 'home help' custom block supersedes
+                 this flag-on, so it's confined to the flag-off branch only ── */}
             {(isNonSchoolDay(dayType)) && (
               <div className="scroll-section">
                 <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
@@ -915,8 +1360,12 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                 </div>
               </div>
             )}
+              </>
+            )}
 
-            {/* ── ДОМАШНЕЕ ЗАДАНИЕ (weekend only) ─────────────── */}
+            {/* ── ДОМАШНЕЕ ЗАДАНИЕ (weekend only) — not part of the day-blocks
+                 model (unlike homeHelp, the plan does not scope this field to
+                 be superseded); always shown regardless of the flag ── */}
             {dayType === 'weekend' && (
               <div className="scroll-section">
                 <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
@@ -954,120 +1403,17 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
               </div>
             )}
 
+            {!dayBlocksEnabled && (
+              <>
             {/* ── УЧЁБА (school days only) ─────────────────────── */}
             {!nonSchool && (
               <div className="scroll-section">
                 <div className="scroll-section-header">
                   <span className="scroll-section-icon">📚</span>
                   <span className="scroll-section-title">{t('dailyModal.study')}</span>
-                  {gradeCoins !== 0 && (
-                    <span style={{ fontSize: '12px', fontWeight: 800, color: gradeCoins >= 0 ? '#10B981' : '#F43F5E', background: gradeCoins >= 0 ? 'rgba(16,185,129,0.12)' : 'rgba(244,63,94,0.1)', border: `1px solid ${gradeCoins >= 0 ? 'rgba(16,185,129,0.22)' : 'rgba(244,63,94,0.25)'}`, padding: '2px 8px', borderRadius: '20px' }}>
-                      {gradeCoins >= 0 ? '+' : ''}{gradeCoins}💰
-                    </span>
-                  )}
+                  {gradesBadge}
                 </div>
-
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-                  {scheduleForToday.length > 0 && !showSchedulePanel && (
-                    <button className="premium-btn-gradient" onClick={openSchedulePanel} style={{ flex: 1 }}>
-                      {t('dailyModal.scheduleBtn', { count: scheduleForToday.length })}
-                    </button>
-                  )}
-                  {!showQuickAdd && (
-                    <button className="premium-btn-primary" onClick={() => setShowQuickAdd(true)} style={{ flex: scheduleForToday.length === 0 ? 1 : undefined }}>
-                      {t('dailyModal.addSubjectBtn')}
-                    </button>
-                  )}
-                </div>
-
-                {showSchedulePanel && (
-                  <div className="schedule-panel">
-                    <div className="schedule-panel-header">
-                      <div className="schedule-panel-title">{t('dailyModal.schedulePanelTitle')}</div>
-                      <button className="schedule-panel-close" onClick={() => setShowSchedulePanel(false)}>✕</button>
-                    </div>
-                    <div className="schedule-panel-content">
-                      {scheduleForToday.map((lesson, idx) => (
-                        <div key={idx} className="schedule-item">
-                          <div className="schedule-item-name">{lesson.subject.name}</div>
-                          <div className="schedule-item-grades">
-                            {[5, 4, 3, 2].map(grade => (
-                              <button key={grade}
-                                className={`grade-quick-btn ${scheduleGrades[lesson.subject.id] === grade ? 'active' : ''}`}
-                                onClick={() => setScheduleGrades({ ...scheduleGrades, [lesson.subject.id]: grade })}
-                                style={{ background: scheduleGrades[lesson.subject.id] === grade ? getGradeColor(grade) : undefined }}
-                              >{grade}</button>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="schedule-panel-footer">
-                      <button className="premium-btn-secondary" onClick={() => setShowSchedulePanel(false)}>{t('dailyModal.schedulePanelCancel')}</button>
-                      <button className="premium-btn-gradient" onClick={addFromSchedule}>{t('dailyModal.schedulePanelAdd')}</button>
-                    </div>
-                  </div>
-                )}
-
-                {showQuickAdd && (
-                  <div className="quick-add-panel">
-                    <div className="quick-add-header">
-                      <div className="quick-add-title">{t('dailyModal.quickAddTitle')}</div>
-                      <button className="quick-add-close" onClick={() => setShowQuickAdd(false)}>✕</button>
-                    </div>
-                    <div className="quick-add-content">
-                      <select className="premium-select" value={quickAddSubject} onChange={(e) => setQuickAddSubject(e.target.value)}>
-                        <option value="">{t('dailyModal.subjectPlaceholder')}</option>
-                        {subjects.filter(s => !grades.find(g => g.subject_id === s.id)).map(subject => (
-                          <option key={subject.id} value={subject.id}>{subject.name}</option>
-                        ))}
-                      </select>
-                      <div className="quick-add-grades">
-                        {[5, 4, 3, 2].map(grade => (
-                          <button key={grade}
-                            className={`grade-quick-btn ${quickAddGrade === grade ? 'active' : ''}`}
-                            onClick={() => setQuickAddGrade(grade)}
-                            style={{ background: quickAddGrade === grade ? getGradeColor(grade) : undefined }}
-                          >{grade}</button>
-                        ))}
-                      </div>
-                      <button className="premium-btn-gradient" onClick={handleQuickAddGrade} disabled={!quickAddSubject} style={{ width: '100%' }}>
-                        {t('dailyModal.addSubjectConfirm')}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {grades.length > 0 && (
-                  <div className="premium-grades-list">
-                    {grades.map((g, idx) => (
-                      <div key={idx} className="editable-grade-card">
-                        <div className="grade-card-main">
-                          <div className="grade-card-subject">{g.subject}</div>
-                          <div className="grade-card-controls">
-                            <div className="grade-card-grades">
-                              {[5, 4, 3, 2].map(grade => (
-                                <button key={grade}
-                                  className={`grade-edit-btn ${g.grade === grade ? 'active' : ''}`}
-                                  onClick={() => updateGradeInline(idx, grade)}
-                                  style={{ background: g.grade === grade ? getGradeColor(grade) : undefined }}
-                                >{grade}</button>
-                              ))}
-                            </div>
-                            <button className="grade-card-delete" onClick={() => removeGrade(idx)}>🗑️</button>
-                          </div>
-                        </div>
-                        <input type="text" className="grade-card-note" placeholder={t('dailyModal.gradeCommentPlaceholder')} value={g.note} onChange={(e) => updateNoteInline(idx, e.target.value)} />
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {grades.length === 0 && !showQuickAdd && !showSchedulePanel && (
-                  <div className="premium-empty" style={{ padding: '16px' }}>
-                    <div className="premium-empty-text" style={{ fontSize: '14px' }}>{t('dailyModal.noGrades')}</div>
-                  </div>
-                )}
+                {gradesBody}
               </div>
             )}
 
@@ -1076,43 +1422,9 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
               <div className="scroll-section-header">
                 <span className="scroll-section-icon">🏠</span>
                 <span className="scroll-section-title">{t('dailyModal.room')}</span>
-                <span className={`scroll-section-badge ${dayType === 'sick' ? 'ok' : roomOk ? 'ok' : 'warn'}`}>
-                  {dayType === 'sick' ? '🤒' : `${roomScore}/${roomTaskCount}`}
-                </span>
+                {roomBadge}
               </div>
-              {dayType === 'sick' ? (
-                <div style={{ padding: '8px 0', fontSize: '12px', color: 'rgba(238,238,255,0.45)' }}>
-                  {t('dailyModal.sickGraceNote')}
-                </div>
-              ) : (
-                <div className="premium-checklist">
-                  {roomTasks.map(task => (
-                    <label key={task.id} className="premium-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={roomChecked[task.id] ?? false}
-                        onChange={(e) => setRoomChecked(prev => ({ ...prev, [task.id]: e.target.checked }))}
-                      />
-                      <span className="premium-checkbox-icon">{task.icon ?? '🏠'}</span>
-                      <span className="premium-checkbox-label">{task.name}</span>
-                      <span className="premium-checkbox-check">✓</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-              {/* Proof photo — shown only when present (proof is optional) */}
-              {roomProofUrl && (
-                <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(238,238,255,0.08)' }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={roomProofUrl}
-                    alt="Room photo"
-                    className="w-20 h-20 rounded-xl object-cover cursor-pointer"
-                    style={{ border: '2px solid rgba(238,238,255,0.15)' }}
-                    onClick={() => setLightboxProofUrl(roomProofUrl)}
-                  />
-                </div>
-              )}
+              {roomBody}
             </div>
 
             {/* ── ДЕНЬ / ПОВЕДЕНИЕ ─────────────────────────────── */}
@@ -1122,20 +1434,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                 <span className="scroll-section-title">{t('dailyModal.day')}</span>
               </div>
               <div className="premium-checklist">
-                <label className="premium-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={dayType === 'sick' ? true : goodBehavior}
-                    disabled={dayType === 'sick'}
-                    onChange={(e) => setGoodBehavior(e.target.checked)}
-                  />
-                  <span className="premium-checkbox-icon">✅</span>
-                  <span className="premium-checkbox-label">
-                    {t('dailyModal.goodBehaviorLabel')}
-                    {dayType === 'sick' && <span style={{ color: 'rgba(238,238,255,0.4)', fontSize: '12px', marginLeft: '6px' }}>{t('dailyModal.goodBehaviorAuto')}</span>}
-                  </span>
-                  <span className="premium-checkbox-check">✓</span>
-                </label>
+                {behaviorBody}
                 {!nonSchool && (
                   <label className="premium-checkbox">
                     <input type="checkbox" checked={diaryNotDone} onChange={(e) => setDiaryNotDone(e.target.checked)} />
@@ -1154,36 +1453,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                 <span className="scroll-section-icon">💪</span>
                 <span className="scroll-section-title">{t('dailyModal.sport')}</span>
               </div>
-              {exerciseTypes.length === 0 ? (
-                <div className="premium-empty" style={{ padding: '16px' }}>
-                  <div className="premium-empty-text" style={{ fontSize: '14px' }}>{t('dailyModal.noExercises')}</div>
-                </div>
-              ) : (
-                <>
-                  <div className="premium-exercises-grid">
-                    {exerciseTypes.map(exerciseType => {
-                      const exercise = exercises.find(e => e.exercise_type_id === exerciseType.id)
-                      const isChecked = !!exercise
-                      return (
-                        <div key={exerciseType.id} className={`premium-exercise-card ${isChecked ? 'active' : ''}`}>
-                          <label className="premium-exercise-header" onClick={(e) => { if (e.target instanceof HTMLInputElement) return; toggleExercise(exerciseType.id) }}>
-                            <input type="checkbox" checked={isChecked} onChange={() => toggleExercise(exerciseType.id)} onClick={(e) => e.stopPropagation()} />
-                            <span className="premium-exercise-icon">💪</span>
-                            <span className="premium-exercise-name">{exerciseType.name}</span>
-                          </label>
-                          {isChecked && (
-                            <div className="premium-exercise-input">
-                              <input type="number" placeholder="0" value={exercise?.quantity || ''} onChange={(e) => updateQuantity(exerciseType.id, e.target.value ? parseInt(e.target.value) : null)} min="0" />
-                              <span className="premium-exercise-unit">{exerciseType.unit}</span>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                  <textarea className="premium-textarea" style={{ marginTop: '12px' }} placeholder={t('dailyModal.sportNotePlaceholder')} value={sportNote} onChange={(e) => setSportNote(e.target.value)} rows={2} />
-                </>
-              )}
+              {exerciseBody}
             </div>
 
             {/* ── СЕКЦИИ ───────────────────────────────────────── */}
@@ -1193,49 +1463,33 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                   <span className="scroll-section-icon">🏊</span>
                   <span className="scroll-section-title">{t('dailyModal.sections')}</span>
                 </div>
-                <div className="premium-exercises-grid">
-                  {sections.map(section => {
-                    const isAttended = section.visit?.attended || false
-                    const notes = sectionNotes[section.id] || { progress: '', feedback: '', coachRating: null }
-                    return (
-                      <div key={section.id} className={`premium-exercise-card ${isAttended ? 'active' : ''}`}>
-                        <label className="premium-exercise-header" onClick={(e) => { if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return; toggleSectionAttended(section.id) }}>
-                          <input type="checkbox" checked={isAttended} onChange={() => toggleSectionAttended(section.id)} onClick={(e) => e.stopPropagation()} />
-                          <span className="premium-exercise-icon">🏊</span>
-                          <div className="premium-exercise-name">
-                            <div>{section.name}</div>
-                            {section.trainer && <div style={{ fontSize: '13px', color: 'var(--gray-600)', fontWeight: 400 }}>{t('dailyModal.trainerLabel', { name: section.trainer })}</div>}
-                          </div>
-                        </label>
-                        {isAttended && (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-                            <input type="text" className="premium-input" placeholder={t('dailyModal.progressPlaceholder')} value={notes.progress} onChange={(e) => updateSectionNote(section.id, 'progress', e.target.value)} onClick={(e) => e.stopPropagation()} style={{ fontSize: '14px', padding: '10px 12px' }} />
-                            <input type="text" className="premium-input" placeholder={t('dailyModal.feedbackPlaceholder')} value={notes.feedback} onChange={(e) => updateSectionNote(section.id, 'feedback', e.target.value)} onClick={(e) => e.stopPropagation()} style={{ fontSize: '14px', padding: '10px 12px' }} />
-                            {/* Coach rating (numeric 1-5) */}
-                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
-                              <span style={{ fontSize: '13px', color: 'var(--gray-600)' }}>{t('dailyModal.coachRatingLabel')}</span>
-                              {[1, 2, 3, 4, 5].map(r => (
-                                <button
-                                  key={r}
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); updateSectionRating(section.id, notes.coachRating === r ? null : r) }}
-                                  style={{
-                                    width: '28px', height: '28px', borderRadius: '6px', border: 'none', cursor: 'pointer',
-                                    fontSize: '13px', fontWeight: 600,
-                                    background: notes.coachRating === r ? (r >= 4 ? '#22c55e' : r === 3 ? '#f59e0b' : '#ef4444') : 'var(--gray-200)',
-                                    color: notes.coachRating === r ? '#fff' : 'var(--gray-700)',
-                                  }}
-                                >
-                                  {r}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
+                {sectionsBody}
+              </div>
+            )}
+              </>
+            )}
+
+            {/* ── Day-blocks (Phase 5.6) flag-on: diary/day-note stays
+                 outside the block system (like Mood in KidDayFillForm) — the
+                 'behavior' checkbox itself is covered by the assembled list
+                 above via renderBuiltinBlock('behavior') ── */}
+            {dayBlocksEnabled && (
+              <div className="scroll-section">
+                <div className="scroll-section-header">
+                  <span className="scroll-section-icon">📝</span>
+                  <span className="scroll-section-title">{t('dailyModal.day')}</span>
                 </div>
+                {!nonSchool && (
+                  <div className="premium-checklist">
+                    <label className="premium-checkbox">
+                      <input type="checkbox" checked={diaryNotDone} onChange={(e) => setDiaryNotDone(e.target.checked)} />
+                      <span className="premium-checkbox-icon">⚠️</span>
+                      <span className="premium-checkbox-label">{t('dailyModal.diaryNotDone')}</span>
+                      <span className="premium-checkbox-check">✓</span>
+                    </label>
+                  </div>
+                )}
+                <textarea className="premium-textarea" style={{ marginTop: '12px' }} placeholder={t('dailyModal.dayNotePlaceholder')} value={dayNote} onChange={(e) => setDayNote(e.target.value)} rows={3} />
               </div>
             )}
 
