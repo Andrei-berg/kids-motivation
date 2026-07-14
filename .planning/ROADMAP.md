@@ -358,7 +358,12 @@ Plans:
 | 4.3 localization | 4/6 | In Progress|  | - |
 | 4.4 security-compliance | 5/5 | Complete   | 2026-05-17 | - |
 | 4.5 desktop | 2/4 | In Progress|  | - |
-| 5.1–5.11 | v5.0 Flexibility & Design | 0/? | Planned | - |
+| 5.1 launch-prep | v5.0 | 6/6 | Complete | 2026-07-06 |
+| 5.2 room-tasks | v5.0 | 6/6 | Complete | 2026-07-07 |
+| 5.3 design-tokens | v5.0 | 3/3 | Complete | 2026-07-07 |
+| 5.4 streak-settings | v5.0 | 3/3 | Complete | 2026-07-07 |
+| 5.5 year-calendar | v5.0 | 7/7 | Complete | 2026-07-13 |
+| 5.6–5.11 | v5.0 Flexibility & Design | 0/? | Planned | - |
 | 6.1–6.3 | v6.0 Monetization | 0/? | Planned | - |
 | 7.1–7.3 | v7.0 Social | 0/? | Planned | - |
 | 8.1–8.3 | v8.0 Native Apps | 0/? | Planned | - |
