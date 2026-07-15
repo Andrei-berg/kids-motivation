@@ -314,12 +314,18 @@ export async function POST(req: NextRequest) {
       const dayType = getDayType(date, isSick, vacationPeriods, childId, undefined, familyCalendar).type
 
       // Load the family's blocks visible to this child, dedupe per-child
-      // overrides vs family defaults, then assemble (is_active + day_types +
+      // overrides vs family defaults, then assemble (day_types +
       // days_of_week filter, sort_order) to get the exact set earnable today.
+      // WR-05: filter is_active in SQL BEFORE deduping — exactly like the
+      // client repo (getDayBlocks activeOnly: true) both forms use —
+      // otherwise an INACTIVE per-child override would shadow an active
+      // family default here and the block would render in the UI but never
+      // be credited.
       const { data: blockRows } = await admin
         .from('day_blocks')
         .select('*')
         .eq('family_id', member.familyId)
+        .eq('is_active', true)
         .or(`child_id.is.null,child_id.eq.${childId}`)
       const dedupedBlocks = dedupeBlocksForChild((blockRows ?? []) as DayBlock[])
       const visibleBlocks = assembleDayBlocks(dedupedBlocks, dayType, date)
