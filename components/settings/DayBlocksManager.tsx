@@ -110,9 +110,13 @@ export default function DayBlocksManager() {
     const current = block.multipliers?.vacation
     if (nextValue === current) return
     try {
-      await updateDayBlock(block.id, {
-        multipliers: { ...(block.multipliers ?? {}), ...(nextValue !== undefined ? { vacation: nextValue } : {}) },
-      })
+      // WR-04: build the map explicitly and DELETE the key when clearing —
+      // spreading the existing multipliers alone kept the old vacation value
+      // in the DB, so a "removed" multiplier stayed active in every award.
+      const next = { ...(block.multipliers ?? {}) }
+      if (nextValue === undefined || !Number.isFinite(nextValue)) delete next.vacation
+      else next.vacation = nextValue
+      await updateDayBlock(block.id, { multipliers: next })
       await load()
     } catch (e: any) {
       setError(e.message)
