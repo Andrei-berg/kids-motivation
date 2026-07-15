@@ -1108,7 +1108,9 @@
     "moodOk": "Ok",
     "moodSad": "Sad",
     "moodTired": "Tired",
-    "gradePill": "{{count}} grade"
+    "gradePill": "{{count}} grade",
+    "nothingTodaySection": "Today",
+    "nothingToday": "Nothing to fill in today — enjoy your day!"
   },
   "auditLogExtra": {
     "subtitle": "Full transparency! All operations are logged.",

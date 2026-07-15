@@ -301,36 +301,46 @@ export function KidDayFillForm({
   // ── Live coin calculation (no state — pure compute) ──────────────────────
   const coinsPreview = useMemo(() => {
     let total = 0
+    // WR-02: under flag-on only count sources whose built-in block is visible
+    // today — the server's flag-on award path credits nothing for hidden
+    // blocks, so the preview must not promise those coins. Flag-off keeps the
+    // pre-5.6 behavior (every source counts).
+    const legacyVisible = (key: string) =>
+      !dayBlocksEnabled || visibleBlocks.some(b => b.legacy_key === key)
     // Preview only — the server (/api/wallet/award) recomputes from room_checks
     // with the same threshold rule: max(1, ceil(0.6 * activeTaskCount)).
     const roomDoneCount = Object.values(roomChecked).filter(Boolean).length
     const roomTaskCount = roomTasks.length
-    if (roomTaskCount > 0 && roomDoneCount >= Math.max(1, Math.ceil(0.6 * roomTaskCount))) {
+    if (legacyVisible('room') && roomTaskCount > 0 && roomDoneCount >= Math.max(1, Math.ceil(0.6 * roomTaskCount))) {
       total += settings?.coins_per_room_task ?? 3
     }
-    checkedActivities.forEach(id => {
-      const act = activities.find(a => a.id === id)
-      if (act) total += act.coins
-    })
+    if (legacyVisible('activity')) {
+      checkedActivities.forEach(id => {
+        const act = activities.find(a => a.id === id)
+        if (act) total += act.coins
+      })
+    }
     // Grade coins (mode 3) — only unsaved (new) entries. Use wallet_settings so
     // the preview matches what /api/wallet/award credits server-side; GRADE_COINS
     // is only a fallback before settings load.
-    Object.values(kidGrades).flat().forEach(e => {
-      if (e.saved || e.grade === null) return
-      const g = e.grade
-      if (settings) {
-        if (g === 5) total += settings.coins_per_grade_5
-        else if (g === 4) total += settings.coins_per_grade_4
-        else if (g === 3) total += settings.coins_per_grade_3
-        else if (g === 2) total += settings.coins_per_grade_2
-        else if (g === 1) total += settings.coins_per_grade_1
-      } else {
-        total += GRADE_COINS[g] ?? 0
-      }
-    })
+    if (legacyVisible('grade')) {
+      Object.values(kidGrades).flat().forEach(e => {
+        if (e.saved || e.grade === null) return
+        const g = e.grade
+        if (settings) {
+          if (g === 5) total += settings.coins_per_grade_5
+          else if (g === 4) total += settings.coins_per_grade_4
+          else if (g === 3) total += settings.coins_per_grade_3
+          else if (g === 2) total += settings.coins_per_grade_2
+          else if (g === 1) total += settings.coins_per_grade_1
+        } else {
+          total += GRADE_COINS[g] ?? 0
+        }
+      })
+    }
     // Coach rating coins for attended sections. coins_per_coach_2/_1 are already
     // negative (penalties), so always add — matching the server's award logic.
-    if (settings) {
+    if (settings && legacyVisible('sport')) {
       sections.forEach(s => {
         const note = sectionNotes[s.id]
         if (!note?.coachRating) return
@@ -344,7 +354,7 @@ export function KidDayFillForm({
     }
     // Book finished bonus — only counted in the preview when it credits on save.
     // If parent verification is required, it stays pending, so don't promise coins.
-    if (readingActive && reading.bookFinished && !requireReadingCheck) {
+    if (legacyVisible('book') && readingActive && reading.bookFinished && !requireReadingCheck) {
       total += (settings as any)?.coins_per_book ?? 20
     }
     // Custom day-blocks (flag-on only) — flat block.price for each toggled-on
@@ -1071,10 +1081,23 @@ export function KidDayFillForm({
         </div>
       </FillSection>
 
-      {dayBlocksEnabled && visibleBlocks.length > 0 ? (
-        <>
-          {visibleBlocks.map(block => block.legacy_key ? renderBuiltinBlock(block) : renderCustomBlock(block))}
-        </>
+      {dayBlocksEnabled ? (
+        // WR-02: flag-on is AUTHORITATIVE — even with zero visible blocks the
+        // legacy form must NOT render, because the server's flag-on award path
+        // (/api/wallet/award) credits nothing for hidden blocks; the legacy
+        // form would promise coins that never arrive. Matches DailyModal,
+        // which renders no block sections in the same state.
+        visibleBlocks.length > 0 ? (
+          <>
+            {visibleBlocks.map(block => block.legacy_key ? renderBuiltinBlock(block) : renderCustomBlock(block))}
+          </>
+        ) : (
+          <FillSection title={t('kidFillForm.nothingTodaySection')} icon="🌤️">
+            <div style={{ textAlign: 'center', padding: '12px 0', fontFamily: T.fBody, fontSize: 13, color: T.ink3 }}>
+              {t('kidFillForm.nothingToday')}
+            </div>
+          </FillSection>
+        )
       ) : (
         <>
       {/* ─── Room checklist (pre-5.6 parity, D-07/CR-01: rendered here since

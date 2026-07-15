@@ -1076,7 +1076,9 @@
     "moodOk": "Норм",
     "moodSad": "Грустно",
     "moodTired": "Устал",
-    "gradePill": "{{count}} оценок"
+    "gradePill": "{{count}} оценок",
+    "nothingTodaySection": "Сегодня",
+    "nothingToday": "Сегодня заполнять нечего — отдыхай!"
   },
   "auditLogExtra": {
     "subtitle": "Полная прозрачность! Все операции логируются.",
