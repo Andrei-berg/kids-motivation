@@ -78,18 +78,24 @@ export async function loadSettings(admin: Admin, familyId: string): Promise<Wall
 
 /**
  * Loads a family's day_blocks_enabled feature flag via the service client.
- * Defaults to false when the family row is missing (should not happen) or
- * the column is not yet populated — a missing/legacy row is treated as
- * flag-off so the award route falls back to the existing 7-block path
- * byte-for-byte (D-09 byte-parity). The client can never set this flag: it
- * is read here server-side, not accepted from the request body (T-056-05).
+ * Defaults to false when the family row is missing (should not happen) —
+ * a missing/legacy row is treated as flag-off so the award route falls back
+ * to the existing 7-block path byte-for-byte (D-09 byte-parity). A QUERY
+ * error, however, throws (WR-03): silently treating a transient failure as
+ * flag-off would run the flag-OFF award branch for a flag-ON family and the
+ * (child_id, source_type, source_id) idempotency index would permanently
+ * lock in the wrong (legacy-priced) amounts for that day. Failing the whole
+ * request lets the client retry instead. The client can never set this
+ * flag: it is read here server-side, not accepted from the request body
+ * (T-056-05).
  */
 export async function loadFeatureFlag(admin: Admin, familyId: string): Promise<boolean> {
-  const { data } = await admin
+  const { data, error } = await admin
     .from('families')
     .select('day_blocks_enabled')
     .eq('id', familyId)
     .maybeSingle()
+  if (error) throw error // missing row (data === null) still → false
   return (data as { day_blocks_enabled?: boolean } | null)?.day_blocks_enabled ?? false
 }
 
