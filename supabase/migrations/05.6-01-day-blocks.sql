@@ -5,6 +5,14 @@
 -- award route (that's Plan 03) — this plan only lays the schema + seed + repo.
 -- Idempotent: safe to re-run (CREATE TABLE/INDEX IF NOT EXISTS, DROP+CREATE
 -- for policies/trigger, ON CONFLICT DO NOTHING for the seed).
+--
+-- WR-01 NOTE (updated in-place after 05.6-02): this file now carries the
+-- 05.6-02 hardening so a re-run CONVERGES on the final state instead of
+-- silently reverting it — no day_block_entries DELETE policy (CR-02
+-- defense-in-depth), child_id tied to family_id in the entries INSERT/UPDATE
+-- WITH CHECK, and the parent/extended-guarded seed_default_day_blocks
+-- (WR-07). Keep this file and 05.6-02 in sync: re-running an OLD copy of
+-- this file after 05.6-02 would be a one-command silent security regression.
 
 -- ============================================================================
 -- TABLE: day_blocks
@@ -192,6 +200,10 @@ CREATE POLICY "day_block_entries_select_own_family"
     )
   );
 
+-- INSERT/UPDATE WITH CHECK additionally tie child_id to a child of the row's
+-- family_id (05.6-02, WR-01 RLS half) so a caller cannot insert an entry
+-- naming a child from a different family under their own family_id.
+
 DROP POLICY IF EXISTS "day_block_entries_insert_own_family" ON public.day_block_entries;
 CREATE POLICY "day_block_entries_insert_own_family"
   ON public.day_block_entries
@@ -199,6 +211,9 @@ CREATE POLICY "day_block_entries_insert_own_family"
   WITH CHECK (
     family_id IN (
       SELECT family_id FROM public.family_members WHERE user_id = auth.uid()
+    )
+    AND child_id IN (
+      SELECT id FROM public.children WHERE family_id = day_block_entries.family_id
     )
   );
 
@@ -215,17 +230,17 @@ CREATE POLICY "day_block_entries_update_own_family"
     family_id IN (
       SELECT family_id FROM public.family_members WHERE user_id = auth.uid()
     )
-  );
-
-DROP POLICY IF EXISTS "day_block_entries_delete_own_family" ON public.day_block_entries;
-CREATE POLICY "day_block_entries_delete_own_family"
-  ON public.day_block_entries
-  FOR DELETE
-  USING (
-    family_id IN (
-      SELECT family_id FROM public.family_members WHERE user_id = auth.uid()
+    AND child_id IN (
+      SELECT id FROM public.children WHERE family_id = day_block_entries.family_id
     )
   );
+
+-- NO DELETE policy on day_block_entries — 05.6-02 dropped it as CR-02
+-- defense-in-depth (with RLS enabled and no DELETE policy, no client role
+-- can delete entry rows, removing the UUID-rotation primitive). Do NOT
+-- recreate a DELETE policy on this table without re-opening CR-02; the DROP
+-- below keeps a re-run of this file convergent with 05.6-02.
+DROP POLICY IF EXISTS "day_block_entries_delete_own_family" ON public.day_block_entries;
 
 -- ============================================================================
 -- FUNCTION: seed_default_day_blocks(p_family_id UUID)
@@ -233,6 +248,11 @@ CREATE POLICY "day_block_entries_delete_own_family"
 -- custom defaults for a family (existing or new). Idempotent via ON CONFLICT
 -- on the partial unique indexes (both scoped to child_id IS NULL default rows).
 -- Mirrors seed_default_room_tasks (05.2-01-room-tasks.sql).
+--
+-- GUARDED version pasted verbatim from 05.6-02 (WR-07): only a parent/
+-- extended member of the target family may seed its config. Do NOT revert to
+-- the original unguarded body — any authenticated user could then write
+-- another family's money-adjacent block config.
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION public.seed_default_day_blocks(p_family_id UUID)
@@ -241,6 +261,15 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
+  -- WR-07 guard: only a parent/extended member of the target family may seed
+  -- its day-blocks config (money-adjacent, mirrors day_blocks write policies).
+  IF NOT EXISTS (
+    SELECT 1 FROM public.family_members
+    WHERE user_id = auth.uid() AND family_id = p_family_id AND role IN ('parent', 'extended')
+  ) THEN
+    RAISE EXCEPTION 'not authorized to seed day blocks for this family';
+  END IF;
+
   -- (1) The 7 built-in family-default rows (child_id NULL, price NULL, seed_key NULL).
   INSERT INTO public.day_blocks (family_id, legacy_key, seed_key, name, icon, price, day_types, sort_order, who_fills, is_active)
   VALUES
@@ -273,9 +302,20 @@ GRANT EXECUTE ON FUNCTION public.seed_default_day_blocks(UUID) TO authenticated;
 -- Idempotent — safe to re-run (seed_default_day_blocks itself is idempotent
 -- because both ON CONFLICT arbiters match their partial indexes on the
 -- child_id IS NULL default rows).
+--
+-- Scoped to families with NO day_blocks rows yet: after the first
+-- application every family is already seeded, so a re-run selects zero
+-- families and never invokes the (now WR-07-guarded) function — which would
+-- otherwise RAISE when run from the SQL editor (auth.uid() is NULL there).
+-- On a fresh database the families table is empty at migration time
+-- (onboarding seeds per-family via RPC), so this is also a no-op there. If a
+-- family is ever mid-state (exists but unseeded), this fails LOUDLY instead
+-- of running unguarded — seed it via the RPC as a parent member instead.
 -- ============================================================================
 
-SELECT public.seed_default_day_blocks(id) FROM public.families;
+SELECT public.seed_default_day_blocks(f.id)
+FROM public.families f
+WHERE NOT EXISTS (SELECT 1 FROM public.day_blocks db WHERE db.family_id = f.id);
 
 -- ============================================================================
 -- LEGACY-DELETE GUARD
