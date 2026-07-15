@@ -118,20 +118,27 @@ async function main() {
   // index, because the award route keys custom_block intents on the NATURAL
   // `${date}:${block_id}` string (Plan 07), not the entry row's own id.
   const TEST_DATE = '1999-12-31'
+  // WR-06: every failure path inside the try THROWS instead of calling
+  // process.exit(1) — process.exit inside a try bypasses the catch, which is
+  // the only place the synthetic block/entry/transaction get cleaned up on
+  // failure. The catch cleans whatever ids were registered, then exits 1.
   let testBlockId = null
   let testEntryId = null
+  let naturalSourceId = null
   try {
     // a. Synthetic custom day_block (legacy_key NULL — no legacy-delete guard).
+    // is_active: false (WR-06) — the probe never reads the block back through
+    // the assembler, so keeping it inactive means it can never render as an
+    // earnable block in a real family's day-fill forms, even mid-run.
     const blockIns = await db.from('day_blocks').insert({
       family_id: child.family_id,
       name: 'verify-day-blocks rotation probe',
       icon: '🧪',
       price: 1,
-      is_active: true,
+      is_active: false,
     }).select('id').single()
     if (blockIns.error) {
-      console.error('❌ Could not create synthetic day_block for rotation probe:', blockIns.error.message)
-      process.exit(1)
+      throw new Error(`Could not create synthetic day_block for rotation probe: ${blockIns.error.message}`)
     }
     testBlockId = blockIns.data.id
     console.log('✓ Synthetic day_block created for rotation probe:', testBlockId)
@@ -145,15 +152,14 @@ async function main() {
       done: true,
     }).select('id').single()
     if (entryIns.error) {
-      console.error('❌ Could not create synthetic day_block_entries row:', entryIns.error.message)
-      process.exit(1)
+      throw new Error(`Could not create synthetic day_block_entries row: ${entryIns.error.message}`)
     }
     testEntryId = entryIns.data.id
     console.log('✓ Synthetic day_block_entries row inserted (v1 id):', testEntryId)
 
     // c. Award the NATURAL key `${date}:${block_id}` — must match the route's
     // sourceId: `${date}:${entry.block_id}` (app/api/wallet/award/route.ts).
-    const naturalSourceId = `${TEST_DATE}:${testBlockId}`
+    naturalSourceId = `${TEST_DATE}:${testBlockId}`
     const rotationBaseRow = {
       child_id: child.id,
       family_id: child.family_id,
@@ -169,8 +175,7 @@ async function main() {
     }
     const firstAward = await db.from('wallet_transactions').insert(rotationBaseRow).select('id').single()
     if (firstAward.error) {
-      console.error('❌ First natural-key award insert failed:', firstAward.error.message)
-      process.exit(1)
+      throw new Error(`First natural-key award insert failed: ${firstAward.error.message}`)
     }
     console.log('✓ First natural-key award insert succeeded:', firstAward.data.id)
 
@@ -181,8 +186,7 @@ async function main() {
     // not RLS alone — is what keeps idempotency intact.)
     const delEntry = await db.from('day_block_entries').delete().eq('id', testEntryId)
     if (delEntry.error) {
-      console.error('❌ Could not delete synthetic entry to simulate rotation:', delEntry.error.message)
-      process.exit(1)
+      throw new Error(`Could not delete synthetic entry to simulate rotation: ${delEntry.error.message}`)
     }
     const reinsertEntry = await db.from('day_block_entries').insert({
       child_id: child.id,
@@ -192,8 +196,10 @@ async function main() {
       done: true,
     }).select('id').single()
     if (reinsertEntry.error) {
-      console.error('❌ Could not re-insert entry to simulate rotation:', reinsertEntry.error.message)
-      process.exit(1)
+      // testEntryId is stale (the delete above succeeded) — clear it so the
+      // catch cleanup does not try to delete a row that no longer exists.
+      testEntryId = null
+      throw new Error(`Could not re-insert entry to simulate rotation: ${reinsertEntry.error.message}`)
     }
     testEntryId = reinsertEntry.data.id
     console.log('✓ Entry rotated to a NEW id (UUID rotates, natural key does not):', testEntryId)
@@ -201,16 +207,12 @@ async function main() {
     // e. Second award attempt with the SAME natural key — must be rejected.
     const secondAward = await db.from('wallet_transactions').insert(rotationBaseRow).select('id').single()
     if (!secondAward.error) {
-      console.error('❌ Second natural-key award insert SUCCEEDED after entry rotation — CR-02 reopened! Cleaning up.')
-      await db.from('wallet_transactions').delete().eq('source_type', SOURCE_TYPE).eq('source_id', naturalSourceId)
-      process.exit(1)
+      throw new Error('Second natural-key award insert SUCCEEDED after entry rotation — CR-02 reopened!')
     }
     if (secondAward.error.code === '23505') {
       console.log('✓ Entry-rotation double-credit rejected by unique index (23505) — CR-02 stays closed.')
     } else {
-      console.error('⚠ Second natural-key award insert failed but not with 23505:', secondAward.error.code, secondAward.error.message)
-      await db.from('wallet_transactions').delete().eq('source_type', SOURCE_TYPE).eq('source_id', naturalSourceId)
-      process.exit(1)
+      throw new Error(`Second natural-key award insert failed but not with 23505: ${secondAward.error.code} ${secondAward.error.message}`)
     }
 
     // f. Cleanup: transaction, entry, synthetic block.
@@ -219,7 +221,11 @@ async function main() {
     await db.from('day_blocks').delete().eq('id', testBlockId)
     console.log('✓ Rotation-probe cleanup done.')
   } catch (e) {
-    console.error('EXC during rotation probe, attempting cleanup:', e)
+    // WR-06 cleanup: remove everything registered so far — the natural-key
+    // transaction (a visible row in a real child's history), the entry, and
+    // the synthetic block (an earnable row in a real family's config).
+    console.error('❌ EXC during rotation probe, attempting cleanup:', e)
+    if (naturalSourceId) await db.from('wallet_transactions').delete().eq('source_type', SOURCE_TYPE).eq('source_id', naturalSourceId)
     if (testEntryId) await db.from('day_block_entries').delete().eq('id', testEntryId)
     if (testBlockId) await db.from('day_blocks').delete().eq('id', testBlockId)
     process.exit(1)
