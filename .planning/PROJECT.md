@@ -318,4 +318,4 @@ Two fully separate experiences — Parent Center (dark, control-focused) and Kid
 
 ---
 
-*Документ создан: 2026-03-01. Обновлён: 2026-07-07 — Phase 5.4 (streak-settings) complete: streak thresholds/bonuses are per-family wallet_settings, not code constants.*
+*Документ создан: 2026-03-01. Обновлён: 2026-07-15 — Phase 5.6 (day-blocks) complete: the kid's day is assembled from per-child `day_blocks` config (day type × schedule × block rules) behind the per-family `day_blocks_enabled` flag; `/api/wallet/award` computes coins from assembled blocks with rotation-proof natural-key idempotency; verification 4/4 passed.*
