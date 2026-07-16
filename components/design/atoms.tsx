@@ -32,6 +32,7 @@ function resolve(theme: AtomTheme) {
       successText: inkTheme.success,
       warningText: inkTheme.warning,
       dangerText: inkTheme.danger,
+      accent: inkTheme.accent,
     }
   }
   return {
@@ -47,6 +48,7 @@ function resolve(theme: AtomTheme) {
     successText: paper.successText,
     warningText: paper.warningText,
     dangerText: paper.dangerText,
+    accent: paper.accent,
   }
 }
 
@@ -197,6 +199,112 @@ export function LedgerRow({ name, amount, tone = 'earn', theme = 'paper', sub, s
         <Amount value={amount} theme={theme} money={t.money} color={t.color}/>
       </span>
     </div>
+  )
+}
+
+// ─── Tabs ────────────────────────────────────────────────────────────────────
+// Theme-aware segmented control, ported from components/parent-center/ui.tsx's
+// ink-hardcoded Tabs (lines 330-358) — active tab renders in the theme's
+// accent color (indigo on paper per D-02/D-05), inactive in muted. Each tab
+// button is >=44px tall to satisfy the touch-target requirement.
+
+interface TabsProps {
+  tabs: { id: string; label: string; icon?: string }[]
+  value: string
+  onChange: (id: string) => void
+  theme?: AtomTheme
+  scroll?: boolean
+}
+
+export function Tabs({ tabs, value, onChange, theme = 'paper', scroll = false }: TabsProps) {
+  const c = resolve(theme)
+  const cardSurface = theme === 'ink' ? inkTheme.card : paper.card
+  return (
+    <div style={{
+      display: 'flex', gap: 4, padding: 4,
+      background: 'transparent', border: `1px solid ${c.leader}`,
+      borderRadius: 999, overflowX: scroll ? 'auto' : 'visible',
+      scrollbarWidth: 'none',
+    }}>
+      {tabs.map(t => (
+        <button key={t.id} onClick={() => onChange(t.id)} style={{
+          flex: scroll ? '0 0 auto' : 1, minHeight: 44, padding: '0 14px',
+          background: value === t.id ? cardSurface : 'transparent',
+          color: value === t.id ? c.accent : c.muted,
+          border: 'none', borderRadius: 999,
+          fontFamily: base.fontBody, fontSize: 12, fontWeight: value === t.id ? 700 : 600,
+          cursor: 'pointer', whiteSpace: 'nowrap',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          transition: 'all .15s',
+        }}>
+          {t.icon && <span style={{ fontSize: 13, color: value === t.id ? c.accent : c.muted }}>{t.icon}</span>}
+          {t.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ─── Tick ────────────────────────────────────────────────────────────────────
+// Micro-tick primitive (D-18): a checkmark that draws in via stroke-dashoffset
+// (<=200ms) plus a short scale pulse, replacing per-toggle confetti bursts.
+// Reuses the exact Stamp-style double guard: keyframes injected once inside a
+// `@media (prefers-reduced-motion: no-preference)` block, plus a JS post-mount
+// check that drops the animation. Under reduced motion it renders the final
+// checked/unchecked state instantly, with no particles.
+
+const TICK_STYLE_ID = 'fc-tick-kf'
+
+function ensureTickKeyframes() {
+  if (typeof document === 'undefined') return
+  if (document.getElementById(TICK_STYLE_ID)) return
+  const el = document.createElement('style')
+  el.id = TICK_STYLE_ID
+  el.textContent =
+    '@media (prefers-reduced-motion: no-preference){' +
+    '@keyframes fcTickDraw{from{stroke-dashoffset:16}to{stroke-dashoffset:0}}' +
+    '@keyframes fcTickPulse{0%{transform:scale(0.85)}60%{transform:scale(1.08)}100%{transform:scale(1)}}' +
+    '}'
+  document.head.appendChild(el)
+}
+
+interface TickProps {
+  on: boolean
+  theme?: AtomTheme
+  size?: number
+}
+
+export function Tick({ on, theme = 'paper', size = 18 }: TickProps) {
+  const c = resolve(theme)
+  const [reduced, setReduced] = useState(false)
+  useEffect(() => {
+    ensureTickKeyframes()
+    setReduced(reducedMotion())
+  }, [])
+  return (
+    <span
+      key={on ? 'on' : 'off'}
+      style={{
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        width: size, height: size,
+        ...(reduced ? {} : { animation: 'fcTickPulse 200ms cubic-bezier(.2,.9,.3,1) both' }),
+      }}
+    >
+      <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden>
+        <circle cx="10" cy="10" r="9" fill={on ? c.success : 'transparent'} stroke={on ? c.success : c.leader} strokeWidth="1.5"/>
+        {on && (
+          <path
+            d="M5.5 10.2l2.7 2.7 6.3-6.3"
+            stroke="#fff"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray="16"
+            style={reduced ? { strokeDashoffset: 0 } : { strokeDashoffset: 16, animation: 'fcTickDraw 200ms cubic-bezier(.2,.9,.3,1) forwards' }}
+          />
+        )}
+      </svg>
+    </span>
   )
 }
 
