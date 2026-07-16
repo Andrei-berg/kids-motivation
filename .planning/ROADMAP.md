@@ -293,9 +293,9 @@ Plans:
   3. Coin credit uses the signature stamp+count-up gesture; confetti fires only for streak bonuses and level-ups
 
 **Plans**: 12 plans (4 waves)
-- [ ] 05.7-01-PLAN.md — Shared atoms (Tabs/Tick) + useDesktop hook + all phase i18n keys
-- [ ] 05.7-02-PLAN.md — Pure fns (level/rating-rank/awardResult) + tests + award appliedSources field
-- [ ] 05.7-03-PLAN.md — ScreenHeader + chat unread-marker data layer (migration + repo)
+- [x] 05.7-01-PLAN.md — Shared atoms (Tabs/Tick) + useDesktop hook + all phase i18n keys
+- [x] 05.7-02-PLAN.md — Pure fns (level/rating-rank/awardResult) + tests + award appliedSources field
+- [x] 05.7-03-PLAN.md — ScreenHeader + chat unread-marker data layer (migration + repo)
 - [ ] 05.7-04-PLAN.md — Day form decompose + reskin + micro-tick toggles (D-09/D-18)
 - [ ] 05.7-05-PLAN.md — Wallet hero сберкнижка + goals as вклады + goal Stamp (D-16/D-20)
 - [ ] 05.7-06-PLAN.md — Awards 3-tab + Rating podium/solo + delete leaderboard route (D-05..D-08)
