@@ -610,7 +610,7 @@ export async function POST(req: NextRequest) {
 
     const { creditedCoins, applied } = await creditAwards(admin, childId, intents)
 
-    return NextResponse.json({ ok: true, creditedCoins, awards: applied.length, streakEvents })
+    return NextResponse.json({ ok: true, creditedCoins, awards: applied.length, streakEvents, appliedSources: applied.map(a => a.sourceType) })
   } catch (err) {
     return errorResponse(err)
   }
