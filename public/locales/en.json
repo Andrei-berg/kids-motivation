@@ -112,7 +112,13 @@
     "shop": "Shop",
     "rating": "Rating",
     "chat": "Chat",
-    "logout": "Log out"
+    "logout": "Log out",
+    "logoutConfirm": {
+      "title": "Log out?",
+      "body": "You'll need to sign back in with your code and PIN.",
+      "cancel": "Cancel",
+      "confirm": "Log out"
+    }
   },
   "achievements": {
     "title": "Trophy Room",
