@@ -106,13 +106,21 @@
     "loginBtn": "Log in →"
   },
   "kidNav": {
-    "myDay": "My Day",
+    "myDay": "My day",
     "wallet": "Wallet",
     "trophies": "Trophies",
+    "awards": "Awards",
     "shop": "Shop",
     "rating": "Rating",
     "chat": "Chat",
-    "logout": "Log out"
+    "unreadAria": "{{count}} unread messages",
+    "logout": "Log out",
+    "logoutConfirm": {
+      "title": "Log out?",
+      "body": "You'll need to sign back in with your code and PIN.",
+      "cancel": "Cancel",
+      "confirm": "Log out"
+    }
   },
   "achievements": {
     "title": "Trophy Room",
@@ -146,7 +154,12 @@
     "remainGoals": "{{n}} more goals",
     "nudgeHeading": "Almost there! 🏆",
     "nudgeGo": "Open badges",
-    "nudgeLater": "Later"
+    "nudgeLater": "Later",
+    "tabBadges": "Badges",
+    "tabStreaks": "Streaks",
+    "tabRating": "Rating",
+    "soloCompareHeading": "You vs. last week",
+    "soloCompareEmpty": "Next week you'll see how this week compares."
   },
   "kidWallet": {
     "title": "Wallet",
@@ -169,6 +182,21 @@
       "gift": "Gift",
       "stats": "Stats"
     }
+  },
+  "wallet": {
+    "emptyHeading": "Nothing here yet",
+    "emptyBody": "Fill in a day — your transaction history will show up here."
+  },
+  "kidHeader": {
+    "day": "My day",
+    "wallet": "Wallet",
+    "awards": "Awards",
+    "shop": "Shop",
+    "chat": "Chat"
+  },
+  "stamp": {
+    "received": "Received",
+    "goalReached": "Goal reached"
   },
   "kidShop": {
     "myCoins": "MY COINS",
@@ -213,7 +241,9 @@
     "savedBadge": "🎉 Done! Badge earned!",
     "schoolDay": "School",
     "vacationDay": "Vacation",
-    "weekendDay": "Weekend"
+    "weekendDay": "Weekend",
+    "saveDay": "Save day",
+    "saveError": "Couldn't save today. Check your connection and try again."
   },
   "kidLeaderboard": {
     "title": "Leaderboard",

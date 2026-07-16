@@ -109,10 +109,18 @@
     "myDay": "Мой день",
     "wallet": "Кошелёк",
     "trophies": "Трофеи",
+    "awards": "Награды",
     "shop": "Магазин",
     "rating": "Рейтинг",
     "chat": "Чат",
-    "logout": "Выйти"
+    "unreadAria": "Непрочитанные сообщения: {{count}}",
+    "logout": "Выйти",
+    "logoutConfirm": {
+      "title": "Выйти из аккаунта?",
+      "body": "Тебе нужно будет снова войти по коду и PIN.",
+      "cancel": "Отмена",
+      "confirm": "Выйти"
+    }
   },
   "achievements": {
     "title": "ТРОФЕЙНАЯ КОМНАТА",
@@ -146,7 +154,12 @@
     "remainGoals": "Ещё {{n}} целей",
     "nudgeHeading": "Почти получилось! 🏆",
     "nudgeGo": "Открыть значки",
-    "nudgeLater": "Позже"
+    "nudgeLater": "Позже",
+    "tabBadges": "Бейджи",
+    "tabStreaks": "Стрики",
+    "tabRating": "Рейтинг",
+    "soloCompareHeading": "Ты против себя",
+    "soloCompareEmpty": "На следующей неделе здесь появится сравнение с этой неделей."
   },
   "kidWallet": {
     "title": "Кошелёк",
@@ -169,6 +182,21 @@
       "gift": "Подарить",
       "stats": "Статистика"
     }
+  },
+  "wallet": {
+    "emptyHeading": "Пока пусто",
+    "emptyBody": "Заполни день — здесь появится история операций."
+  },
+  "kidHeader": {
+    "day": "Мой день",
+    "wallet": "Кошелёк",
+    "awards": "Награды",
+    "shop": "Магазин",
+    "chat": "Чат"
+  },
+  "stamp": {
+    "received": "ПОЛУЧЕНО",
+    "goalReached": "ЦЕЛЬ ДОСТИГНУТА"
   },
   "kidShop": {
     "myCoins": "ТВОИ МОНЕТЫ",
@@ -213,7 +241,9 @@
     "savedBadge": "🎉 Готово! Получен бейдж!",
     "schoolDay": "Учебный",
     "vacationDay": "Каникулы",
-    "weekendDay": "Выходной"
+    "weekendDay": "Выходной",
+    "saveDay": "Сохранить день",
+    "saveError": "Не удалось сохранить день. Проверь соединение и попробуй ещё раз."
   },
   "kidLeaderboard": {
     "title": "Рейтинг",
