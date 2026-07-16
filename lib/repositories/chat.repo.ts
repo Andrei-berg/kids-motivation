@@ -164,6 +164,47 @@ export async function postSystemMessage(params: {
   if (error) throw error
 }
 
+// ─── Unread marker (D-04) ───────────────────────────────────────────────────
+// Own-row read-state tracking on family_members.chat_last_read_at. Not a
+// money table — browser client under RLS is correct here (own-row UPDATE
+// policy in 05.7-01-chat-read-marker.sql enforces user_id = auth.uid()).
+
+export async function markChatRead(memberId: string): Promise<void> {
+  const { error } = await supabase
+    .from('family_members')
+    .update({ chat_last_read_at: new Date().toISOString() })
+    .eq('id', memberId)
+
+  if (error) {
+    console.error('[chat.repo] markChatRead error:', error)
+  }
+}
+
+export async function getChatUnreadCount(
+  familyId: string,
+  memberId: string,
+  lastReadAt: string | null
+): Promise<number> {
+  let query = supabase
+    .from('chat_messages')
+    .select('*', { count: 'exact', head: true })
+    .eq('family_id', familyId)
+    .neq('sender_id', memberId)
+
+  if (lastReadAt) {
+    query = query.gt('created_at', lastReadAt)
+  }
+
+  const { count, error } = await query
+
+  if (error) {
+    console.error('[chat.repo] getChatUnreadCount error:', error)
+    return 0
+  }
+
+  return count ?? 0
+}
+
 export function subscribeToReactions(
   familyId: string,
   onUpdate: (reaction: ChatReaction, eventType: 'INSERT' | 'DELETE') => void
