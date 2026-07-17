@@ -1,23 +1,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-
-function useDesktop() {
-  const [is, setIs] = useState(false)
-  useEffect(() => {
-    const check = () => setIs(window.innerWidth >= 1024)
-    check()
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
-  }, [])
-  return is
-}
 import { useAppStore } from '@/lib/store'
 import { getWallet, getRewards, getPurchases } from '@/lib/repositories/wallet.repo'
 import { requestPurchase } from '@/app/kid/shop/actions'
+import { api } from '@/lib/api'
 import type { Wallet, Reward, RewardPurchase } from '@/lib/models/wallet.types'
-import { T } from '@/components/kid/design/tokens'
-import { AnimatedNum, CoinPill, KMButton } from '@/components/kid/design/atoms'
+import type { Child } from '@/lib/models/child.types'
+import { base, paper } from '@/lib/design/tokens'
+import { Amount, StatusChip, Tabs } from '@/components/design/atoms'
+import ScreenHeader from '@/components/kid/design/ScreenHeader'
+import { useDesktop } from '@/lib/hooks/useDesktop'
 import { useT } from '@/lib/i18n'
 
 function LoadingSkeleton() {
@@ -37,6 +30,7 @@ export default function KidShopPage() {
   const [tab, setTab] = useState<'real' | 'virtual'>('real')
   const [loading, setLoading] = useState(true)
   const [wallet, setWallet] = useState<Wallet | null>(null)
+  const [child, setChild] = useState<Child | null>(null)
   const [rewards, setRewards] = useState<Reward[]>([])
   const [purchases, setPurchases] = useState<RewardPurchase[]>([])
   const [pending, setPending] = useState<Reward | null>(null)
@@ -51,14 +45,16 @@ export default function KidShopPage() {
     const load = async () => {
       setLoading(true)
       try {
-        const [w, r, p] = await Promise.all([
+        const [w, r, p, c] = await Promise.all([
           getWallet(activeMemberId),
           getRewards({ activeOnly: true }),
           getPurchases(activeMemberId),
+          api.getChild(activeMemberId).catch(() => null),
         ])
         setWallet(w)
         setRewards(r.filter(x => !x.for_child || x.for_child === activeMemberId))
         setPurchases(p)
+        setChild(c)
       } catch (err) { console.error(err) } finally { setLoading(false) }
     }
     load()
@@ -93,89 +89,62 @@ export default function KidShopPage() {
   return (
     <div style={isDesktop ? { paddingBottom: 110, padding: '0 32px 32px' } : { paddingBottom: 110, maxWidth: 500, margin: '0 auto' }}>
       {toast && (
-        <div style={{ position: 'fixed', top: 16, left: 16, right: 16, zIndex: 60, background: T.teal, color: '#fff', padding: '12px 16px', borderRadius: 16, fontFamily: T.fDisp, fontWeight: 800, fontSize: 14, textAlign: 'center', boxShadow: '0 8px 20px rgba(0,0,0,0.2)', animation: 'fadeIn 0.2s' }}>
+        <div style={{ position: 'fixed', top: 16, left: 16, right: 16, zIndex: 60, background: paper.ink, color: '#fff', padding: '12px 16px', borderRadius: 14, fontFamily: base.fontBody, fontWeight: 600, fontSize: 14, textAlign: 'center', boxShadow: '0 8px 20px rgba(0,0,0,0.2)', animation: 'fadeIn 0.2s' }}>
           {toast}
         </div>
       )}
 
-      {/* ═══ Balance strip ════════════════════════════════════════════════════ */}
-      <div style={{ padding: '12px 16px 0' }}>
-        <div style={{
-          background: `linear-gradient(135deg, ${T.sun}, ${T.sunDeep})`,
-          borderRadius: 22, padding: '14px 18px',
-          display: 'flex', alignItems: 'center', gap: 14,
-          boxShadow: `0 8px 20px ${T.sunDeep}55`, position: 'relative', overflow: 'hidden',
-        }}>
-          <div style={{ position: 'absolute', top: -40, right: 20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.2)' }}/>
-          <svg width="42" height="42" viewBox="0 0 22 22" style={{ position: 'relative' }}>
-            <circle cx="11" cy="11" r="10" fill="#fff" stroke={T.ink} strokeWidth="1"/>
-            <text x="11" y="14.5" textAnchor="middle" fontSize="9" fontWeight="900" fontFamily={T.fDisp} fill={T.ink}>K</text>
-          </svg>
-          <div style={{ flex: 1, position: 'relative' }}>
-            <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink2, fontWeight: 700, letterSpacing: 1 }}>{t('kidShop.myCoins')}</div>
-            <div style={{ fontFamily: T.fNum, fontSize: 26, fontWeight: 800, color: T.ink, letterSpacing: -1, lineHeight: 1 }}>
-              <AnimatedNum value={coins}/>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* ═══ Header («сберкнижка», D-13) ══════════════════════════════════════ */}
+      <ScreenHeader title={t('kidHeader.shop')} coins={coins} name={child?.name ?? ''}/>
 
-      {/* ═══ Tabs ═════════════════════════════════════════════════════════════ */}
-      <div style={{ padding: '14px 16px 0' }}>
-        <div style={{ display: 'flex', background: T.lineSoft, borderRadius: 18, padding: 3, gap: 3 }}>
-          {(['real', 'virtual'] as const).map(tabKey => (
-            <button key={tabKey} onClick={() => setTab(tabKey)} style={{
-              flex: 1, height: 40, borderRadius: 15, border: 'none', cursor: 'pointer',
-              background: tab === tabKey ? '#fff' : 'transparent',
-              fontFamily: T.fDisp, fontSize: 13, fontWeight: 800,
-              color: tab === tabKey ? T.ink : T.ink3,
-              boxShadow: tab === tabKey ? '0 2px 8px rgba(0,0,0,0.08)' : 'none',
-              transition: 'all 0.2s',
-            }}>
-              {tabKey === 'real' ? `🎁 ${t('kidShop.rewardsTab')}` : `✨ ${t('kidShop.virtualTab')}`}
-            </button>
-          ))}
-        </div>
+      {/* ═══ Tabs (shared atom) ═══════════════════════════════════════════════ */}
+      <div style={{ padding: '8px 16px 0' }}>
+        <Tabs
+          theme="paper"
+          tabs={[
+            { id: 'real', label: t('kidShop.rewardsTab'), icon: '🎁' },
+            { id: 'virtual', label: t('kidShop.virtualTab'), icon: '✨' },
+          ]}
+          value={tab}
+          onChange={(id) => setTab(id as 'real' | 'virtual')}
+        />
       </div>
 
       {/* ═══ Rewards grid ═════════════════════════════════════════════════════ */}
       <div style={{ padding: '16px 16px 0' }}>
-        <h3 style={{ margin: '0 0 12px', fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>{tab === 'real' ? t('kidShop.realRewards') : t('kidShop.virtualItems')}</h3>
+        <h3 style={{ margin: '0 0 12px', fontFamily: base.fontDisplay, fontSize: 18, fontWeight: 700, color: paper.ink, lineHeight: 1.2 }}>{tab === 'real' ? t('kidShop.realRewards') : t('kidShop.virtualItems')}</h3>
         {tab === 'virtual' ? (
           <>
-            <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, marginBottom: 12, lineHeight: 1.4 }}>
+            <div style={{ fontFamily: base.fontBody, fontSize: 12, color: paper.ink2, marginBottom: 12, lineHeight: 1.4 }}>
               {t('kidShop.virtualComingSoon')}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? 'repeat(3, 1fr)' : '1fr 1fr', gap: 10 }}>
-              {VIRTUAL_ITEMS.map(item => {
-                const canAfford = coins >= item.price_coins
-                return (
-                  <div key={item.id} style={{
-                    background: '#fff', borderRadius: 20, padding: 12,
-                    border: `1.5px solid ${T.line}`, boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-                    display: 'flex', flexDirection: 'column', opacity: 0.7,
-                  }}>
-                    <div style={{ height: 88, borderRadius: 14, background: `linear-gradient(135deg, ${T.plum}30, ${T.plum}10)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 44, position: 'relative' }}>
-                      {item.icon}
-                      <div style={{ position: 'absolute', top: 6, right: 6, padding: '2px 7px', borderRadius: 999, background: T.plum + '20', fontFamily: T.fBody, fontSize: 9, fontWeight: 800, color: T.plum }}>{item.tag}</div>
-                    </div>
-                    <div style={{ fontFamily: T.fDisp, fontSize: 13, fontWeight: 800, color: T.ink, marginTop: 10, lineHeight: 1.2, minHeight: 30 }}>{item.title}</div>
-                    <div style={{ marginTop: 8 }}><CoinPill value={item.price_coins} size="sm"/></div>
-                    <button disabled style={{ marginTop: 8, height: 34, borderRadius: 12, border: 'none', background: T.lineSoft, color: T.ink3, fontFamily: T.fDisp, fontSize: 12, fontWeight: 800, cursor: 'not-allowed' }}>
-                      {t('kidShop.comingSoon')}
-                    </button>
+              {VIRTUAL_ITEMS.map(item => (
+                <div key={item.id} style={{
+                  background: paper.card, borderRadius: 16, padding: 12,
+                  border: `1px solid ${paper.line}`,
+                  display: 'flex', flexDirection: 'column', opacity: 0.7,
+                }}>
+                  <div style={{ height: 88, borderRadius: 12, background: paper.lineSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 44, position: 'relative' }}>
+                    {item.icon}
+                    <div style={{ position: 'absolute', top: 6, right: 6, padding: '2px 7px', borderRadius: 999, background: paper.card, border: `1px solid ${paper.line}`, fontFamily: base.fontBody, fontSize: 9, fontWeight: 600, color: paper.ink2 }}>{item.tag}</div>
                   </div>
-                )
-              })}
+                  <div style={{ fontFamily: base.fontBody, fontSize: 14, fontWeight: 600, color: paper.ink, marginTop: 10, lineHeight: 1.3, minHeight: 36 }}>{item.title}</div>
+                  <div style={{ marginTop: 8 }}><Amount value={item.price_coins} theme="paper" money size="md"/></div>
+                  <button disabled style={{ marginTop: 8, minHeight: 44, borderRadius: 12, border: 'none', background: paper.lineSoft, color: paper.ink3, fontFamily: base.fontBody, fontSize: 13, fontWeight: 600, cursor: 'not-allowed' }}>
+                    {t('kidShop.comingSoon')}
+                  </button>
+                </div>
+              ))}
             </div>
           </>
         ) : rewards.length === 0 ? (
-          <div style={{ background: '#fff', borderRadius: 22, padding: 40, textAlign: 'center', border: `1.5px solid ${T.line}` }}>
+          <div style={{ background: paper.card, borderRadius: 16, padding: 40, textAlign: 'center', border: `1px solid ${paper.line}` }}>
             <div style={{ fontSize: 40 }}>🛍️</div>
-            <div style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 800, color: T.ink3, marginTop: 12 }}>
+            <div style={{ fontFamily: base.fontDisplay, fontSize: 16, fontWeight: 700, color: paper.ink2, marginTop: 12 }}>
               {t('kidShop.shopEmpty')}
             </div>
-            <div style={{ fontFamily: T.fBody, fontSize: 13, color: T.ink3, marginTop: 4 }}>
+            <div style={{ fontFamily: base.fontBody, fontSize: 13, color: paper.ink3, marginTop: 4 }}>
               {t('kidShop.askParents')}
             </div>
           </div>
@@ -184,30 +153,29 @@ export default function KidShopPage() {
             {rewards.map(item => {
               const price = item.price_coins ?? 0
               const canAfford = coins >= price
-              const color = T.plum
               return (
                 <div key={item.id} style={{
-                  background: '#fff', borderRadius: 20, padding: 12,
-                  border: `1.5px solid ${T.line}`, boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+                  background: paper.card, borderRadius: 16, padding: 12,
+                  border: `1px solid ${paper.line}`,
                   display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden',
                 }}>
                   <div style={{
-                    height: 88, borderRadius: 14,
-                    background: `linear-gradient(135deg, ${color}30, ${color}15)`,
+                    height: 88, borderRadius: 12,
+                    background: paper.lineSoft,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 44, border: `1px solid ${color}25`,
+                    fontSize: 44, border: `1px solid ${paper.line}`,
                   }}>{item.icon || '🎁'}</div>
-                  <div style={{ fontFamily: T.fDisp, fontSize: 13, fontWeight: 800, color: T.ink, marginTop: 10, lineHeight: 1.2, minHeight: 30 }}>
+                  <div style={{ fontFamily: base.fontBody, fontSize: 14, fontWeight: 600, color: paper.ink, marginTop: 10, lineHeight: 1.3, minHeight: 36 }}>
                     {item.title}
                   </div>
                   <div style={{ marginTop: 8 }}>
-                    <CoinPill value={price} size="sm"/>
+                    <Amount value={price} theme="paper" money size="md"/>
                   </div>
                   <button onClick={canAfford ? () => setPending(item) : undefined} disabled={!canAfford} style={{
-                    marginTop: 8, height: 34, borderRadius: 12, border: 'none',
-                    background: canAfford ? T.ink : T.lineSoft,
-                    color: canAfford ? '#fff' : T.ink3,
-                    fontFamily: T.fDisp, fontSize: 12, fontWeight: 800,
+                    marginTop: 8, minHeight: 44, borderRadius: 12, border: 'none',
+                    background: canAfford ? paper.accent : paper.lineSoft,
+                    color: canAfford ? '#fff' : paper.ink3,
+                    fontFamily: base.fontBody, fontSize: 13, fontWeight: 700,
                     cursor: canAfford ? 'pointer' : 'not-allowed',
                   }}>
                     {canAfford ? t('kidShop.getButton') : t('kidShop.moreNeeded', { amount: price - coins })}
@@ -223,17 +191,15 @@ export default function KidShopPage() {
       {tab === 'real' && (
         <div style={{ padding: '16px 16px 0' }}>
           <div style={{
-            borderRadius: 22, padding: '18px 20px',
-            background: `linear-gradient(135deg, ${T.teal}, #3DB8B0)`,
+            borderRadius: 16, padding: '18px 20px',
+            background: paper.card, border: `1px solid ${paper.line}`,
             display: 'flex', alignItems: 'center', gap: 16,
-            boxShadow: `0 8px 20px ${T.teal}44`, position: 'relative', overflow: 'hidden',
           }}>
-            <div style={{ position: 'absolute', top: -30, right: -10, width: 130, height: 130, borderRadius: '50%', background: 'rgba(255,255,255,0.12)' }}/>
-            <div style={{ fontSize: 44, position: 'relative' }}>🌟</div>
-            <div style={{ position: 'relative' }}>
-              <div style={{ fontFamily: T.fBody, fontSize: 10, color: 'rgba(255,255,255,0.8)', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>{t('kidShop.earnMore')}</div>
-              <div style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 900, color: '#fff', lineHeight: 1.2, marginTop: 2 }}>{t('kidShop.fillEachDay')}</div>
-              <div style={{ fontFamily: T.fBody, fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 4 }}>{t('kidShop.earnAndSpend')}</div>
+            <div style={{ fontSize: 44 }}>🌟</div>
+            <div>
+              <div style={{ fontFamily: base.fontBody, fontSize: 10, color: paper.ink3, fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase' }}>{t('kidShop.earnMore')}</div>
+              <div style={{ fontFamily: base.fontDisplay, fontSize: 16, fontWeight: 700, color: paper.ink, lineHeight: 1.2, marginTop: 2 }}>{t('kidShop.fillEachDay')}</div>
+              <div style={{ fontFamily: base.fontBody, fontSize: 12, color: paper.ink2, marginTop: 4 }}>{t('kidShop.earnAndSpend')}</div>
             </div>
           </div>
         </div>
@@ -242,29 +208,26 @@ export default function KidShopPage() {
       {/* ═══ Recent purchases ═════════════════════════════════════════════════ */}
       {purchases.length > 0 && (
         <div style={{ padding: '20px 16px 0' }}>
-          <h3 style={{ margin: '0 0 12px', fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, letterSpacing: -0.3 }}>{t('kidShop.myRequests')}</h3>
-          <div style={{ background: '#fff', borderRadius: 22, border: `1.5px solid ${T.line}`, overflow: 'hidden' }}>
+          <h3 style={{ margin: '0 0 12px', fontFamily: base.fontDisplay, fontSize: 18, fontWeight: 700, color: paper.ink, lineHeight: 1.2 }}>{t('kidShop.myRequests')}</h3>
+          <div style={{ background: paper.card, borderRadius: 16, border: `1px solid ${paper.line}`, overflow: 'hidden' }}>
             {purchases.slice(0, 5).map((p, i) => {
               const s = p.status ?? (p.fulfilled ? 'delivered' : 'pending')
-              const statusColor = s === 'approved' || s === 'delivered' ? T.teal : s === 'rejected' ? T.coral : T.sunDeep
+              const statusTone = s === 'rejected' ? 'danger' as const : s === 'pending' ? 'warning' as const : 'success' as const
               const statusLabel = s === 'pending' ? t('kidShop.statusPending') : s === 'approved' ? t('kidShop.statusApproved') : s === 'rejected' ? t('kidShop.statusRejected') : t('kidShop.statusDelivered')
               return (
                 <div key={p.id} style={{
                   padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12,
-                  borderBottom: i < Math.min(purchases.length, 5) - 1 ? `1px solid ${T.lineSoft}` : 'none',
+                  borderBottom: i < Math.min(purchases.length, 5) - 1 ? `1px solid ${paper.lineSoft}` : 'none',
                 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: T.fDisp, fontSize: 14, fontWeight: 700, color: T.ink }}>
+                    <div style={{ fontFamily: base.fontBody, fontSize: 14, fontWeight: 600, color: paper.ink }}>
                       {(p as any).reward_title ?? t('kidShop.realRewards')}
                     </div>
-                    <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, marginTop: 1 }}>
+                    <div style={{ fontFamily: base.fontBody, fontSize: 11.5, color: paper.ink3, marginTop: 1 }}>
                       {new Date(p.purchased_at).toLocaleDateString('ru-RU')}
                     </div>
                   </div>
-                  <div style={{
-                    padding: '3px 10px', borderRadius: 999, background: statusColor + '18',
-                    fontFamily: T.fDisp, fontSize: 11, fontWeight: 800, color: statusColor,
-                  }}>{statusLabel}</div>
+                  <StatusChip tone={statusTone} theme="paper">{statusLabel}</StatusChip>
                 </div>
               )
             })}
@@ -274,30 +237,41 @@ export default function KidShopPage() {
 
       {/* ═══ Confirm sheet ════════════════════════════════════════════════════ */}
       {pending && (
-        <div onClick={() => setPending(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'flex-end', animation: 'fadeIn 0.2s' }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: '#fff', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: '20px 20px 30px', animation: 'slideUp 0.3s cubic-bezier(.2,.9,.3,1.1)' }}>
-            <div style={{ width: 40, height: 4, background: T.line, borderRadius: 999, margin: '0 auto 18px' }}/>
+        <div onClick={() => setPending(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(36,30,56,0.5)', zIndex: 200, display: 'flex', alignItems: 'flex-end', animation: 'fadeIn 0.2s' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', background: paper.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: '20px 20px 30px', animation: 'slideUp 0.3s cubic-bezier(.2,.9,.3,1.1)' }}>
+            <div style={{ width: 40, height: 4, background: paper.line, borderRadius: 999, margin: '0 auto 18px' }}/>
             <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-              <div style={{ width: 74, height: 74, borderRadius: 18, background: T.plumSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>
+              <div style={{ width: 74, height: 74, borderRadius: 16, background: paper.lineSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>
                 {pending.icon || '🎁'}
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 700, letterSpacing: 1 }}>{t('kidShopConfirm.title')}</div>
-                <div style={{ fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: T.ink, lineHeight: 1.15, marginTop: 2 }}>{pending.title}</div>
-                <div style={{ marginTop: 6 }}><CoinPill value={pending.price_coins ?? 0} size="md"/></div>
+                <div style={{ fontFamily: base.fontBody, fontSize: 11, color: paper.ink3, fontWeight: 600, letterSpacing: 1 }}>{t('kidShopConfirm.title')}</div>
+                <div style={{ fontFamily: base.fontDisplay, fontSize: 20, fontWeight: 700, color: paper.ink, lineHeight: 1.15, marginTop: 2 }}>{pending.title}</div>
+                <div style={{ marginTop: 6 }}><Amount value={pending.price_coins ?? 0} theme="paper" money size="md"/></div>
               </div>
             </div>
-            <div style={{ marginTop: 14, padding: 12, borderRadius: 16, background: T.pinkSoft, display: 'flex', gap: 10, alignItems: 'center' }}>
+            <div style={{ marginTop: 14, padding: 12, borderRadius: 14, background: paper.lineSoft, display: 'flex', gap: 10, alignItems: 'center' }}>
               <div style={{ fontSize: 22 }}>🛡️</div>
-              <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink, fontWeight: 600, lineHeight: 1.35 }}>
+              <div style={{ fontFamily: base.fontBody, fontSize: 12, color: paper.ink2, fontWeight: 500, lineHeight: 1.4 }}>
                 {t('kidShopConfirm.parentNote')}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-              <KMButton tone="ghost" full onClick={() => setPending(null)}>{t('kidShopConfirm.cancel')}</KMButton>
-              <KMButton tone="coral" full onClick={handleConfirm} disabled={purchasing}>
+              <button onClick={() => setPending(null)} style={{
+                flex: 1, minHeight: 44, borderRadius: 12, cursor: 'pointer',
+                border: `1.5px solid ${paper.line}`, background: paper.card, color: paper.ink,
+                fontFamily: base.fontBody, fontSize: 14, fontWeight: 600,
+              }}>
+                {t('kidShopConfirm.cancel')}
+              </button>
+              <button onClick={handleConfirm} disabled={purchasing} style={{
+                flex: 1, minHeight: 44, borderRadius: 12, cursor: purchasing ? 'default' : 'pointer',
+                border: 'none', background: paper.accent, color: '#fff',
+                fontFamily: base.fontBody, fontSize: 14, fontWeight: 700,
+                opacity: purchasing ? 0.6 : 1,
+              }}>
                 {purchasing ? t('kidShopConfirm.sending') : t('kidShopConfirm.sendRequest')}
-              </KMButton>
+              </button>
             </div>
           </div>
         </div>
@@ -324,30 +298,36 @@ function ApprovalSheet({ item, onClose }: { item: Reward; onClose: () => void })
   ]
   const curIdx = steps.findIndex(s => s.k === stage)
   return (
-    <div onClick={stage === 'approved' ? onClose : undefined} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 0.2s', padding: 20 }}>
-      <div style={{ width: '100%', background: '#fff', borderRadius: 28, padding: 24, animation: 'popIn 0.35s cubic-bezier(.2,.9,.3,1.3)' }}>
-        <div style={{ width: 72, height: 72, borderRadius: '50%', background: stage === 'approved' ? `linear-gradient(135deg, ${T.sun}, ${T.sunDeep})` : `linear-gradient(135deg, ${T.teal}, #3DB8B0)`, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, boxShadow: `0 10px 24px ${stage === 'approved' ? T.sunDeep : T.teal}66` }}>
+    <div onClick={stage === 'approved' ? onClose : undefined} style={{ position: 'fixed', inset: 0, background: 'rgba(36,30,56,0.55)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 0.2s', padding: 20 }}>
+      <div style={{ width: '100%', maxWidth: 380, background: paper.card, borderRadius: 20, padding: 24, animation: 'popIn 0.35s cubic-bezier(.2,.9,.3,1.3)' }}>
+        <div style={{ width: 72, height: 72, borderRadius: '50%', background: stage === 'approved' ? paper.success : paper.lineSoft, border: `1.5px solid ${stage === 'approved' ? paper.success : paper.line}`, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>
           {stage === 'approved' ? '🎁' : '💸'}
         </div>
-        <div style={{ fontFamily: T.fDisp, fontSize: 22, fontWeight: 900, color: T.ink, textAlign: 'center', marginTop: 14 }}>
+        <div style={{ fontFamily: base.fontDisplay, fontSize: 20, fontWeight: 700, color: paper.ink, textAlign: 'center', marginTop: 14 }}>
           {stage === 'approved' ? t('kidShopApproval.done') : t('kidShopApproval.waiting')}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 18 }}>
           {steps.map((s, i) => {
             const done = i <= curIdx
             return (
-              <div key={s.k} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 14, background: done ? T.tealSoft : T.lineSoft, border: `1.5px solid ${done ? T.teal + '40' : T.line}`, transition: 'all 0.4s' }}>
-                <div style={{ width: 28, height: 28, borderRadius: '50%', background: done ? T.teal : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: '#fff', fontWeight: 900 }}>
+              <div key={s.k} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 12, background: done ? `${paper.success}14` : paper.lineSoft, border: `1.5px solid ${done ? `${paper.success}55` : paper.line}`, transition: 'all 0.4s' }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: done ? paper.success : paper.card, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: '#fff', fontWeight: 700 }}>
                   {done ? '✓' : s.ic}
                 </div>
-                <span style={{ flex: 1, fontFamily: T.fDisp, fontSize: 14, fontWeight: 800, color: done ? T.ink : T.ink3 }}>{s.l}</span>
+                <span style={{ flex: 1, fontFamily: base.fontBody, fontSize: 14, fontWeight: 600, color: done ? paper.ink : paper.ink3 }}>{s.l}</span>
               </div>
             )
           })}
         </div>
         {stage === 'approved' && (
           <div style={{ marginTop: 18 }}>
-            <KMButton tone="teal" full onClick={onClose}>{t('kidShopApproval.greatBtn')}</KMButton>
+            <button onClick={onClose} style={{
+              width: '100%', minHeight: 44, borderRadius: 12, cursor: 'pointer',
+              border: 'none', background: paper.accent, color: '#fff',
+              fontFamily: base.fontBody, fontSize: 14, fontWeight: 700,
+            }}>
+              {t('kidShopApproval.greatBtn')}
+            </button>
           </div>
         )}
       </div>
