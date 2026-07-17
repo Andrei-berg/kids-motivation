@@ -69,7 +69,7 @@ interface AmountProps {
   value: number
   theme?: AtomTheme
   money?: boolean
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
   signed?: boolean
   /** Explicit foreground override (used by LedgerRow tones). */
   color?: string
@@ -82,6 +82,8 @@ export function Amount({ value, theme = 'paper', money = true, size = 'md', sign
     sm: { fs: 13, fw: 700 },
     md: { fs: 15, fw: 800 },
     lg: { fs: 22, fw: 800 },
+    // xl: hero-only (wallet сберкнижка balance, D-16) — atom-owned type exception
+    xl: { fs: 30, fw: 800 },
   } as const
   const s = sizes[size]
   const fg = color ?? (money ? c.goldText : c.text)
