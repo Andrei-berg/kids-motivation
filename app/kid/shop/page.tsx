@@ -8,7 +8,7 @@ import { api } from '@/lib/api'
 import type { Wallet, Reward, RewardPurchase } from '@/lib/models/wallet.types'
 import type { Child } from '@/lib/models/child.types'
 import { base, paper } from '@/lib/design/tokens'
-import { Amount, StatusChip, Tabs } from '@/components/design/atoms'
+import { Amount, StatusChip, Tabs, Stamp } from '@/components/design/atoms'
 import ScreenHeader from '@/components/kid/design/ScreenHeader'
 import { useDesktop } from '@/lib/hooks/useDesktop'
 import { useT } from '@/lib/i18n'
@@ -306,6 +306,20 @@ function ApprovalSheet({ item, onClose }: { item: Reward; onClose: () => void })
         <div style={{ fontFamily: base.fontDisplay, fontSize: 20, fontWeight: 700, color: paper.ink, textAlign: 'center', marginTop: 14 }}>
           {stage === 'approved' ? t('kidShopApproval.done') : t('kidShopApproval.waiting')}
         </div>
+        {/* D-20: approved → Stamp ceremony («ПОЛУЧЕНО», −8° tilt, 450ms), no confetti */}
+        {stage === 'approved' && (
+          <Stamp trigger="approved" style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
+            <div aria-hidden style={{
+              transform: 'rotate(-8deg)',
+              border: `3px solid ${paper.successText}`, color: paper.successText,
+              borderRadius: 8, padding: '4px 16px',
+              fontFamily: base.fontDisplay, fontSize: 18, fontWeight: 700,
+              letterSpacing: 2, textTransform: 'uppercase',
+            }}>
+              {t('stamp.received')}
+            </div>
+          </Stamp>
+        )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 18 }}>
           {steps.map((s, i) => {
             const done = i <= curIdx
