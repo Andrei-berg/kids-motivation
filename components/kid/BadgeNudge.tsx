@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/lib/store'
 import { getClosestBadge, type ClosestBadge } from '@/lib/services/badges.service'
 import { localDateString } from '@/utils/helpers'
-import { T } from '@/components/kid/design/tokens'
+import { base, paper } from '@/lib/design/tokens'
 import { ProgressRing } from '@/components/kid/design/atoms'
 import { useT } from '@/lib/i18n'
 
@@ -83,37 +83,36 @@ export default function BadgeNudge() {
         animation: 'fadeIn 0.2s',
       }}>
       <div onClick={e => e.stopPropagation()} style={{
-        width: '100%', maxWidth: 360, borderRadius: 28, padding: '24px 20px',
-        background: `linear-gradient(135deg, ${T.sun} 0%, #FFB35C 45%, ${T.coral} 100%)`,
-        boxShadow: '0 18px 48px rgba(0,0,0,0.35)', position: 'relative', overflow: 'hidden',
+        width: '100%', maxWidth: 360, borderRadius: 24, padding: '24px 20px',
+        background: paper.card, border: `1px solid ${paper.line}`,
+        boxShadow: '0 18px 48px rgba(0,0,0,0.25)', position: 'relative', overflow: 'hidden',
         animation: 'slideUp 0.3s cubic-bezier(.2,.9,.3,1.1)',
       }}>
-        <div style={{ position: 'absolute', top: -30, right: -30, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.16)' }}/>
         <div style={{ position: 'relative', textAlign: 'center' }}>
-          <div style={{ fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: '#fff' }}>
+          <div style={{ fontFamily: base.fontDisplay, fontSize: 20, fontWeight: 700, color: paper.ink }}>
             {t('achievements.nudgeHeading')}
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
-            <ProgressRing pct={badge.ratio * 100} size={108} stroke={11} color="#fff" bg="rgba(0,0,0,0.18)">
+            <ProgressRing pct={badge.ratio * 100} size={108} stroke={11} color={paper.accent} bg={paper.lineSoft}>
               <div style={{ fontSize: 44 }}>{badge.icon}</div>
             </ProgressRing>
           </div>
-          <div style={{ fontFamily: T.fDisp, fontSize: 18, fontWeight: 900, color: '#fff', marginTop: 14 }}>
+          <div style={{ fontFamily: base.fontDisplay, fontSize: 18, fontWeight: 700, color: paper.ink, marginTop: 14 }}>
             {t(badge.titleKey)}
           </div>
-          <div style={{ fontFamily: T.fBody, fontSize: 14, color: '#fff', fontWeight: 700, marginTop: 4 }}>
+          <div style={{ fontFamily: base.fontBody, fontSize: 14, color: paper.ink2, fontWeight: 600, marginTop: 4 }}>
             {t(REMAIN_KEY[badge.key] ?? 'achievements.remainGeneric', { n: remaining })}
           </div>
           <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
             <button onClick={dismiss} style={{
-              flex: 1, height: 48, borderRadius: 24, border: 'none', cursor: 'pointer',
-              background: 'rgba(255,255,255,0.22)', color: '#fff',
-              fontFamily: T.fDisp, fontSize: 15, fontWeight: 800,
+              flex: 1, height: 48, borderRadius: 24, border: `1px solid ${paper.line}`, cursor: 'pointer',
+              background: paper.lineSoft, color: paper.ink2,
+              fontFamily: base.fontDisplay, fontSize: 15, fontWeight: 700,
             }}>{t('achievements.nudgeLater')}</button>
             <button onClick={() => { dismiss(); router.push('/kid/achievements') }} style={{
               flex: 2, height: 48, borderRadius: 24, border: 'none', cursor: 'pointer',
-              background: '#fff', color: T.coral,
-              fontFamily: T.fDisp, fontSize: 15, fontWeight: 900,
+              background: paper.accent, color: '#fff',
+              fontFamily: base.fontDisplay, fontSize: 15, fontWeight: 700,
             }}>{t('achievements.nudgeGo')}</button>
           </div>
         </div>
