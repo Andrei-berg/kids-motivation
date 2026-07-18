@@ -296,12 +296,12 @@ Plans:
 - [x] 05.7-01-PLAN.md — Shared atoms (Tabs/Tick) + useDesktop hook + all phase i18n keys
 - [x] 05.7-02-PLAN.md — Pure fns (level/rating-rank/awardResult) + tests + award appliedSources field
 - [x] 05.7-03-PLAN.md — ScreenHeader + chat unread-marker data layer (migration + repo)
-- [ ] 05.7-04-PLAN.md — Day form decompose + reskin + micro-tick toggles (D-09/D-18)
-- [ ] 05.7-05-PLAN.md — Wallet hero сберкнижка + goals as вклады + goal Stamp (D-16/D-20)
-- [ ] 05.7-06-PLAN.md — Awards 3-tab + Rating podium/solo + delete leaderboard route (D-05..D-08)
-- [ ] 05.7-07-PLAN.md — Shop cards on Amount/StatusChip/Tabs + approved Stamp (D-14/D-20)
-- [ ] 05.7-08-PLAN.md — 5-tab ledger nav + unread badge + FAB/logout removal + layout/login reskin (D-01..D-04/D-10)
-- [ ] 05.7-09-PLAN.md — Theme-aware ChatThread (retire Nunito) + kid chat mark-read (D-11/D-04)
+- [x] 05.7-04-PLAN.md — Day form decompose + reskin + micro-tick toggles (D-09/D-18)
+- [x] 05.7-05-PLAN.md — Wallet hero сберкнижка + goals as вклады + goal Stamp (D-16/D-20)
+- [x] 05.7-06-PLAN.md — Awards 3-tab + Rating podium/solo + delete leaderboard route (D-05..D-08)
+- [x] 05.7-07-PLAN.md — Shop cards on Amount/StatusChip/Tabs + approved Stamp (D-14/D-20)
+- [x] 05.7-08-PLAN.md — 5-tab ledger nav + unread badge + FAB/logout removal + layout/login reskin (D-01..D-04/D-10)
+- [x] 05.7-09-PLAN.md — Theme-aware ChatThread (retire Nunito) + kid chat mark-read (D-11/D-04)
 - [ ] 05.7-10-PLAN.md — Overlays reskin + badge Stamp + retire goal confetti (D-12/D-20)
 - [ ] 05.7-11-PLAN.md — Day-save stamp+count-up + streak/level-up confetti (D-17/D-19)
 - [ ] 05.7-12-PLAN.md — Green gate + i18n parity + operator SC1/SC2/SC3 verify + dead-code decision
