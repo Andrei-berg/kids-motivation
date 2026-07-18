@@ -44,6 +44,15 @@ export function triggerConfetti() {
   })
 }
 
+/**
+ * @deprecated Retired from live use (D-20 — goal/badge/purchase celebrations
+ * now use the `Stamp` ceremony in `components/design/atoms.tsx`, not confetti).
+ * No live callers remain in `app/kid`, `components/kid`, or `app/api/wallet`.
+ * The export is kept only because the dead-code `components/GoalsModal.tsx`
+ * (root-level, out of scope, zero import sites) still references it; removal
+ * rides with that file's dead-code disposition (Plan 12 / possibly Phase 5.11).
+ * Do not add new callers — use `Stamp` instead.
+ */
 export function triggerGoalConfetti() {
   if (typeof window === 'undefined') return
   
