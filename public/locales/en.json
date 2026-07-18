@@ -159,7 +159,9 @@
     "tabStreaks": "Streaks",
     "tabRating": "Rating",
     "soloCompareHeading": "You vs. last week",
-    "soloCompareEmpty": "Next week you'll see how this week compares."
+    "soloCompareEmpty": "Next week you'll see how this week compares.",
+    "soloThisWeek": "This week",
+    "soloLastWeek": "Last week"
   },
   "kidWallet": {
     "title": "Wallet",
