@@ -6,7 +6,7 @@ import KidInitializer from '@/components/kid/KidInitializer'
 import CelebrationOverlay from '@/components/kid/CelebrationOverlay'
 import BadgeNudge from '@/components/kid/BadgeNudge'
 import ParentPreviewBanner from '@/components/kid/ParentPreviewBanner'
-import KidChatFAB from '@/components/kid/KidChatFAB'
+import { paper } from '@/lib/design/tokens'
 
 export default async function KidLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -25,13 +25,12 @@ export default async function KidLayout({ children }: { children: React.ReactNod
 
   if (previewChildId && membership?.role === 'parent') {
     return (
-      <div className="min-h-screen" style={{ background: '#FFFBF5', color: '#1A1423' }}>
+      <div className="min-h-screen" style={{ background: paper.bg, color: paper.ink }}>
         <KidInitializer memberId={previewChildId} />
         <ParentPreviewBanner />
         <KidNav />
         <CelebrationOverlay />
         <BadgeNudge />
-        <KidChatFAB />
         <main className="pb-24 lg:pb-0 lg:pl-16">
           {children}
         </main>
@@ -44,12 +43,11 @@ export default async function KidLayout({ children }: { children: React.ReactNod
   const resolvedChildId = membership.child_id
 
   return (
-    <div className="min-h-screen" style={{ background: '#FFFBF5', color: '#1A1423' }}>
+    <div className="min-h-screen" style={{ background: paper.bg, color: paper.ink }}>
       <KidInitializer memberId={resolvedChildId} />
       <KidNav />
       <CelebrationOverlay />
       <BadgeNudge />
-      <KidChatFAB />
       <main className="pb-24 lg:pb-0 lg:pl-16">
         {children}
       </main>
