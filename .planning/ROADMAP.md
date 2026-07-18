@@ -302,8 +302,8 @@ Plans:
 - [x] 05.7-07-PLAN.md — Shop cards on Amount/StatusChip/Tabs + approved Stamp (D-14/D-20)
 - [x] 05.7-08-PLAN.md — 5-tab ledger nav + unread badge + FAB/logout removal + layout/login reskin (D-01..D-04/D-10)
 - [x] 05.7-09-PLAN.md — Theme-aware ChatThread (retire Nunito) + kid chat mark-read (D-11/D-04)
-- [ ] 05.7-10-PLAN.md — Overlays reskin + badge Stamp + retire goal confetti (D-12/D-20)
-- [ ] 05.7-11-PLAN.md — Day-save stamp+count-up + streak/level-up confetti (D-17/D-19)
+- [x] 05.7-10-PLAN.md — Overlays reskin + badge Stamp + retire goal confetti (D-12/D-20)
+- [x] 05.7-11-PLAN.md — Day-save stamp+count-up + streak/level-up confetti (D-17/D-19)
 - [ ] 05.7-12-PLAN.md — Green gate + i18n parity + operator SC1/SC2/SC3 verify + dead-code decision
 
 ### Phase 5.8: parent-redesign
