@@ -1,20 +1,44 @@
 'use client'
 
 // components/kid/GoalsPanel.tsx
-// Kid savings goal: pick a dream + target, watch the coins fill toward it, and
-// celebrate when reached. Completion latches the milestone and unlocks the goal
+// Kid savings goal, framed as a "вклад" (deposit) per D-16: pick a dream + target,
+// watch the coins fill toward it, and celebrate when reached with a Stamp ceremony
+// (D-20 — confetti retired). Completion latches the milestone and unlocks the goal
 // badges (goal_achiever / goals_3 / goals_5). Goals never move money — progress is
 // just the child's current wallet balance.
 
 import { useState, useEffect, useCallback } from 'react'
 import { getGoals, createGoal, archiveGoal, completeGoalsIfReached, getCompletedGoalCount } from '@/lib/repositories/children.repo'
 import { checkGoalBadges } from '@/lib/services/badges.service'
-import { triggerGoalConfetti } from '@/utils/confetti'
 import { T } from '@/components/kid/design/tokens'
+import { base, paper } from '@/lib/design/tokens'
 import { ProgressRing } from '@/components/kid/design/atoms'
+import { Amount, Stamp } from '@/components/design/atoms'
 import { useT } from '@/lib/i18n'
 
 const EMOJIS = ['🎮', '🚲', '🎧', '📱', '⚽', '🎸', '🛹', '🎨', '📚', '🦄', '🎁', '🎯']
+
+// Rubber-stamp plaque (D-20): tilted −8°, success tone — completion is a
+// status signal, not money (gold) or navigation (indigo).
+function StampPlaque({ label, small = false }: { label: string; small?: boolean }) {
+  return (
+    <span style={{
+      display: 'inline-block',
+      padding: small ? '3px 10px' : '10px 18px',
+      border: `${small ? 2 : 3}px solid ${paper.successText}`,
+      borderRadius: small ? 8 : 10,
+      color: paper.successText,
+      fontFamily: base.fontDisplay,
+      fontSize: small ? 12 : 20,
+      fontWeight: 800,
+      letterSpacing: '0.08em',
+      textTransform: 'uppercase',
+      transform: 'rotate(-8deg)',
+    }}>
+      {label}
+    </span>
+  )
+}
 
 export default function GoalsPanel({ childId, coins }: { childId: string; coins: number }) {
   const t = useT()
@@ -28,7 +52,6 @@ export default function GoalsPanel({ childId, coins }: { childId: string; coins:
     // Latch any goal whose target the savings have reached, then load state.
     const done = await completeGoalsIfReached(childId, coins)
     if (done.length > 0) {
-      triggerGoalConfetti()
       await checkGoalBadges(childId)
       setJustDone(done[0])
     }
@@ -71,32 +94,37 @@ export default function GoalsPanel({ childId, coins }: { childId: string; coins:
 
       {goal ? (
         <div style={{
-          background: completed ? `linear-gradient(135deg, ${T.teal} 0%, #3DB8B0 100%)` : '#fff',
-          borderRadius: 24, padding: 18,
-          border: completed ? 'none' : `1.5px solid ${T.line}`,
-          boxShadow: completed ? `0 10px 28px ${T.teal}40` : '0 4px 14px rgba(0,0,0,0.04)',
+          background: paper.card,
+          borderRadius: 20, padding: 18,
+          border: `1px solid ${completed ? paper.success : paper.line}`,
+          boxShadow: '0 4px 14px rgba(0,0,0,0.04)',
           display: 'flex', alignItems: 'center', gap: 16, position: 'relative', overflow: 'hidden',
         }}>
-          <ProgressRing pct={pct} size={92} stroke={10} color={completed ? '#fff' : T.plum} bg={completed ? 'rgba(0,0,0,0.18)' : T.lineSoft}>
+          <ProgressRing pct={pct} size={92} stroke={10} color={completed ? paper.successText : paper.accent} bg={paper.lineSoft}>
             <div style={{ fontSize: 34 }}>{goal.emoji ?? '🎯'}</div>
           </ProgressRing>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: T.fDisp, fontSize: 18, fontWeight: 900, color: completed ? '#fff' : T.ink, lineHeight: 1.15 }}>
+            <div style={{ fontFamily: base.fontDisplay, fontSize: 18, fontWeight: 700, color: paper.ink, lineHeight: 1.2 }}>
               {goal.title}
             </div>
             {completed ? (
-              <div style={{ fontFamily: T.fDisp, fontSize: 14, fontWeight: 800, color: '#fff', marginTop: 4 }}>{t('goals.reached')} 🎉</div>
+              <div style={{ marginTop: 8 }}>
+                <StampPlaque label={t('stamp.goalReached')} small/>
+              </div>
             ) : (
               <>
-                <div style={{ fontFamily: T.fNum, fontSize: 14, fontWeight: 800, color: T.ink, marginTop: 4 }}>
-                  {current.toLocaleString('ru-RU')}<span style={{ color: T.ink3, fontWeight: 600 }}> / {target.toLocaleString('ru-RU')} 🪙</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 4, whiteSpace: 'nowrap' }}>
+                  <Amount value={current} theme="paper" money size="md"/>
+                  <span style={{ fontFamily: base.fontBody, fontSize: 13, fontWeight: 500, color: paper.ink3 }}>/</span>
+                  <Amount value={target} theme="paper" money size="sm"/>
+                  <span style={{ fontSize: 13 }} aria-hidden>🪙</span>
                 </div>
-                <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, fontWeight: 700, marginTop: 2 }}>
+                <div style={{ fontFamily: base.fontBody, fontSize: 12, color: paper.ink3, fontWeight: 600, marginTop: 2 }}>
                   {t('goals.left', { n: remaining.toLocaleString('ru-RU') })}
                 </div>
                 <button onClick={changeGoal} style={{
                   marginTop: 6, padding: 0, background: 'none', border: 'none', cursor: 'pointer',
-                  fontFamily: T.fBody, fontSize: 11, fontWeight: 700, color: T.plum,
+                  fontFamily: base.fontBody, fontSize: 11, fontWeight: 700, color: paper.accent,
                 }}>{t('goals.changeGoal')}</button>
               </>
             )}
@@ -104,22 +132,22 @@ export default function GoalsPanel({ childId, coins }: { childId: string; coins:
           {completed && (
             <button onClick={() => setCreating(true)} style={{
               height: 36, padding: '0 14px', borderRadius: 18, border: 'none', cursor: 'pointer',
-              background: 'rgba(255,255,255,0.22)', color: '#fff', fontFamily: T.fDisp, fontSize: 12, fontWeight: 800,
+              background: paper.accent, color: '#fff', fontFamily: base.fontBody, fontSize: 12, fontWeight: 700,
             }}>{t('goals.newGoal')}</button>
           )}
         </div>
       ) : (
         <button onClick={() => setCreating(true)} style={{
-          width: '100%', borderRadius: 24, padding: '22px 18px', cursor: 'pointer',
-          background: '#fff', border: `1.5px dashed ${T.plum}55`,
+          width: '100%', borderRadius: 20, padding: '22px 18px', cursor: 'pointer',
+          background: paper.card, border: `1.5px dashed ${paper.accent}55`,
           display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left',
         }}>
-          <div style={{ width: 52, height: 52, borderRadius: 16, background: `${T.plum}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>🎯</div>
+          <div style={{ width: 52, height: 52, borderRadius: 16, background: `${paper.accent}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>🎯</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 900, color: T.ink }}>{t('goals.setGoalTitle')}</div>
-            <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, fontWeight: 600, marginTop: 2 }}>{t('goals.setGoalSub')}</div>
+            <div style={{ fontFamily: base.fontDisplay, fontSize: 16, fontWeight: 700, color: paper.ink }}>{t('goals.setGoalTitle')}</div>
+            <div style={{ fontFamily: base.fontBody, fontSize: 12, color: paper.ink3, fontWeight: 600, marginTop: 2 }}>{t('goals.setGoalSub')}</div>
           </div>
-          <div style={{ fontSize: 22, color: T.plum }}>＋</div>
+          <div style={{ fontSize: 22, color: paper.accent }}>＋</div>
         </button>
       )}
 
@@ -167,23 +195,27 @@ export default function GoalsPanel({ childId, coins }: { childId: string; coins:
         </div>
       )}
 
-      {/* Completion celebration */}
+      {/* Completion celebration — Stamp ceremony (D-20), confetti retired */}
       {justDone && (
         <div onClick={() => setJustDone(null)} style={{
-          position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.55)',
+          position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(36,30,56,0.55)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, animation: 'fadeIn 0.2s',
         }}>
           <div onClick={e => e.stopPropagation()} style={{
-            width: '100%', maxWidth: 340, borderRadius: 28, padding: '28px 22px', textAlign: 'center',
-            background: `linear-gradient(135deg, ${T.teal} 0%, #3DB8B0 100%)`,
-            boxShadow: '0 18px 48px rgba(0,0,0,0.35)', animation: 'slideUp 0.3s cubic-bezier(.2,.9,.3,1.1)',
+            width: '100%', maxWidth: 340, borderRadius: 24, padding: '28px 22px', textAlign: 'center',
+            background: paper.card, border: `1px solid ${paper.line}`,
+            boxShadow: '0 18px 48px rgba(0,0,0,0.25)',
           }}>
             <div style={{ fontSize: 64, lineHeight: 1 }}>{justDone.emoji ?? '🎯'}</div>
-            <div style={{ fontFamily: T.fDisp, fontSize: 22, fontWeight: 900, color: '#fff', marginTop: 12 }}>{t('goals.reached')} 🎉</div>
-            <div style={{ fontFamily: T.fBody, fontSize: 15, color: 'rgba(255,255,255,0.9)', fontWeight: 700, marginTop: 4 }}>{justDone.title}</div>
+            <div style={{ fontFamily: base.fontBody, fontSize: 15, color: paper.ink2, fontWeight: 600, marginTop: 10 }}>{justDone.title}</div>
+            <div style={{ marginTop: 16 }}>
+              <Stamp trigger={justDone.id}>
+                <StampPlaque label={t('stamp.goalReached')}/>
+              </Stamp>
+            </div>
             <button onClick={() => setJustDone(null)} style={{
-              marginTop: 18, width: '100%', height: 48, borderRadius: 24, border: 'none', cursor: 'pointer',
-              background: '#fff', color: T.tealDeep, fontFamily: T.fDisp, fontSize: 15, fontWeight: 900,
+              marginTop: 22, width: '100%', height: 48, borderRadius: 24, border: 'none', cursor: 'pointer',
+              background: paper.accent, color: '#fff', fontFamily: base.fontDisplay, fontSize: 15, fontWeight: 700,
             }}>{t('goals.hooray')}</button>
           </div>
         </div>
