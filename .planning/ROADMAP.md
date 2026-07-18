@@ -176,7 +176,7 @@ Plans:
 - [x] **Phase 5.4: streak-settings** — Streak thresholds/bonuses move from award-route constants into `wallet_settings` + rules UI (completed 2026-07-07)
 - [x] **Phase 5.5: year-calendar** — School year (dates, quarters/trimesters), regional vacation presets with manual override, configurable weekend days, sick-day pauses streaks (completed 2026-07-13)
 - [x] **Phase 5.6: day-blocks** — Day assembly engine: day type × schedule × block rules; per-child `day_blocks` config; block-list renderer replaces hardcoded form sections; award computes from blocks; per-family feature flag (5/5 plans executed 2026-07-14; verification: gaps_found 2/4 — see 05.6-VERIFICATION.md) (completed 2026-07-14)
-- [ ] **Phase 5.7: kid-redesign** — Kid screens on unified tokens, nav 6→5 (leaderboard becomes a tab inside awards), motion discipline (single signature gesture)
+- [x] **Phase 5.7: kid-redesign** — Kid screens on unified tokens, nav 6→5 (leaderboard becomes a tab inside awards), motion discipline (single signature gesture) (completed 2026-07-18)
 - [ ] **Phase 5.8: parent-redesign** — Parent Center on unified tokens + Day Constructor UI + Year Calendar screen + Weekly Summary card
 - [ ] **Phase 5.9: rules-presets** — Rule presets (Classic / No-penalties / Bonuses-only), `grade_scale` per family, configurable behavior tags
 - [ ] **Phase 5.10: automation** — Scheduled allowance, auto-approve under trust limit, schedule-driven smart reminders
@@ -304,7 +304,7 @@ Plans:
 - [x] 05.7-09-PLAN.md — Theme-aware ChatThread (retire Nunito) + kid chat mark-read (D-11/D-04)
 - [x] 05.7-10-PLAN.md — Overlays reskin + badge Stamp + retire goal confetti (D-12/D-20)
 - [x] 05.7-11-PLAN.md — Day-save stamp+count-up + streak/level-up confetti (D-17/D-19)
-- [ ] 05.7-12-PLAN.md — Green gate + i18n parity + operator SC1/SC2/SC3 verify + dead-code decision
+- [x] 05.7-12-PLAN.md — Green gate + i18n parity + operator SC1/SC2/SC3 verify + dead-code decision
 
 ### Phase 5.8: parent-redesign
 **Goal**: Parent Center fully on the unified system, including the new configuration screens
