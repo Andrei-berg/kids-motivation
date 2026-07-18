@@ -1074,6 +1074,11 @@
     "moodNote": "Great job filling in the day!",
     "noData": "No data"
   },
+  "kidDay": {
+    "saveError": "Couldn't credit coins. Please try again.",
+    "retryBtn": "Retry",
+    "awardedHeading": "Credited today"
+  },
   "kidLeaderboardPage": {
     "familyRating": "FAMILY RATING",
     "youLabel": "YOU",

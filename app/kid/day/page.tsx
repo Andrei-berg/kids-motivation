@@ -6,7 +6,7 @@ import { api, getChildren } from '@/lib/api'
 import type { Child } from '@/lib/api'
 import { localDateString } from '@/utils/helpers'
 import { getWallet } from '@/lib/repositories/wallet.repo'
-import { KidDayFillForm } from '@/components/kid/KidDayFillForm'
+import { KidDayFillForm, type DaySaveResult } from '@/components/kid/KidDayFillForm'
 import { KidChallenges } from '@/components/kid/KidChallenges'
 import { getVacationPeriods } from '@/lib/vacation-api'
 import { getFamilyCalendar } from '@/lib/repositories/calendar.repo'
@@ -15,7 +15,9 @@ import { getFamilyDayBlocksEnabled, getDayBlocks } from '@/lib/repositories/day-
 import type { DayBlock } from '@/lib/models/day-block.types'
 import type { Wallet } from '@/lib/models/wallet.types'
 import { T } from '@/components/kid/design/tokens'
-import { Avatar, Coin, AnimatedNum, StreakFlame, Confetti, XPBar } from '@/components/kid/design/atoms'
+import { Avatar, Coin, AnimatedNum, StreakFlame, XPBar } from '@/components/kid/design/atoms'
+import { Stamp, useCountUp, LedgerRow } from '@/components/design/atoms'
+import { triggerConfetti } from '@/utils/confetti'
 import ScreenHeader from '@/components/kid/design/ScreenHeader'
 import { useDesktop } from '@/lib/hooks/useDesktop'
 import { useT, useLanguage } from '@/lib/i18n'
@@ -54,8 +56,15 @@ export default function KidDayPage() {
   const [dayBlocksEnabled, setDayBlocksEnabled] = useState(false)
   const [dayBlocks, setDayBlocks] = useState<DayBlock[]>([])
   const [editMode, setEditMode] = useState(false)
-  const [confetti, setConfetti] = useState(0)
+  // Server-confirmed result of the most recent day save (05.7-11, D-17) —
+  // drives the stamp + day-summary ledger rows; null until the child saves
+  // once this session (never derived from the pre-save client estimate).
+  const [savedResult, setSavedResult] = useState<DaySaveResult | null>(null)
   const isDesktop = useDesktop()
+  // Header balance count-up (05.7-11, D-17): drives ONLY the ScreenHeader
+  // balance to the new server-confirmed total; never fed a client estimate.
+  // Hook must run unconditionally (before the loading/no-child early returns).
+  const headerCoins = useCountUp(wallet?.coins ?? 0)
 
   const today = localDateString()
 
@@ -142,9 +151,12 @@ export default function KidDayPage() {
   const streakDays = streaks.reduce((max, s) => Math.max(max, s.current_count), 0)
   const fillMode = (child as any)?.kid_fill_mode ?? 3
 
-  function handleFillSaved(coinsEarned: number) {
+  function handleFillSaved(result: DaySaveResult) {
     setEditMode(false)
-    if (coinsEarned > 0) setConfetti(c => c + 1)
+    setSavedResult(result)
+    // D-19: confetti reserved for a credited streak source or an XP level-up
+    // crossing — never fires for an ordinary award.
+    if (result.hasStreak || result.leveledUp) triggerConfetti()
     loadData()
   }
 
@@ -159,7 +171,6 @@ export default function KidDayPage() {
     } : {
       maxWidth: 500, margin: '0 auto', position: 'relative',
     }}>
-      <Confetti trigger={confetti}/>
 
       {/* ── LEFT: Stats panel (desktop only) OR inline header (mobile) ── */}
       {isDesktop ? (
@@ -249,6 +260,16 @@ export default function KidDayPage() {
               <div style={{ fontFamily: T.fDisp, fontSize: 20, fontWeight: 900, color: '#fff', marginTop: 4 }}>
                 {t('kidDayPage.greatJob')}
               </div>
+              {/* Signature stamp (05.7-11, D-17): fires only after /api/wallet/award
+                  resolved this session, keyed to the server-confirmed creditedCoins.
+                  Never rendered for an idempotent re-save (creditedCoins === 0). */}
+              {savedResult && savedResult.creditedCoins > 0 && (
+                <Stamp trigger={savedResult.creditedCoins} style={{ marginTop: 10 }}>
+                  <div style={{ fontFamily: T.fNum, fontSize: 24, fontWeight: 900, color: '#fff' }}>
+                    +{savedResult.creditedCoins} 🪙
+                  </div>
+                </Stamp>
+              )}
               <button onClick={() => setEditMode(true)} style={{
                 marginTop: 12, height: 34, padding: '0 16px', borderRadius: 17,
                 background: 'rgba(255,255,255,0.22)', border: 'none', color: '#fff',
@@ -256,11 +277,35 @@ export default function KidDayPage() {
               }}>{t('kidDayPage.editBtn')}</button>
             </div>
           )}
+
+          {/* Day-summary ledger (05.7-11, D-17): awarded items from the
+              server-confirmed appliedItems — theme='paper' per UI-SPEC. */}
+          {!showForm && savedResult && savedResult.appliedItems.length > 0 && (
+            <div style={{
+              background: '#fff', borderRadius: 20, padding: '16px 20px',
+              border: '1.5px solid rgba(0,0,0,0.07)',
+              display: 'flex', flexDirection: 'column', gap: 10,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+            }}>
+              <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 700, letterSpacing: 1.2 }}>
+                {t('kidDay.awardedHeading')}
+              </div>
+              {savedResult.appliedItems.map((item, i) => (
+                <LedgerRow
+                  key={`${item.sourceType}-${i}`}
+                  name={item.description}
+                  amount={item.coins}
+                  tone={item.coins < 0 ? 'penalty' : 'earn'}
+                  theme="paper"
+                />
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         /* Mobile: unified «сберкнижка» header (D-13) with logout (D-03) + XP strip */
         <div>
-          <ScreenHeader title={t('kidHeader.day')} coins={coins} name={child?.name ?? ''} showLogout/>
+          <ScreenHeader title={t('kidHeader.day')} coins={headerCoins} name={child?.name ?? ''} showLogout/>
           <div style={{ padding: '0 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <XPBar xp={xpInLevel} max={1000} level={level} compact/>
@@ -275,7 +320,7 @@ export default function KidDayPage() {
         {/* Desktop: unified «сберкнижка» header (D-13) with logout (D-03) —
             the 4.5 sticky sidebar keeps the stats (D-15) */}
         {isDesktop && (
-          <ScreenHeader title={t('kidHeader.day')} coins={coins} name={child?.name ?? ''} showLogout/>
+          <ScreenHeader title={t('kidHeader.day')} coins={headerCoins} name={child?.name ?? ''} showLogout/>
         )}
         {activeMemberId && <KidChallenges childId={activeMemberId}/>}
         {showForm ? (
@@ -316,6 +361,17 @@ export default function KidDayPage() {
                   <div style={{ fontFamily: T.fBody, fontSize: 11, color: 'rgba(255,255,255,0.8)', fontWeight: 700, letterSpacing: 1.5, position: 'relative' }}>{t('kidDayPage.filledToday')}</div>
                   <div style={{ fontFamily: T.fDisp, fontSize: 26, fontWeight: 900, color: '#fff', marginTop: 4, position: 'relative' }}>{t('kidDayPage.greatJob')}</div>
                   <div style={{ fontFamily: T.fBody, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginTop: 4, position: 'relative' }}>{todayLabel(language)}</div>
+                  {/* Signature stamp (05.7-11, D-17): fires only after
+                      /api/wallet/award resolved this session, keyed to the
+                      server-confirmed creditedCoins. Skipped on an idempotent
+                      re-save (creditedCoins === 0). */}
+                  {savedResult && savedResult.creditedCoins > 0 && (
+                    <Stamp trigger={savedResult.creditedCoins} style={{ position: 'relative', marginTop: 8 }}>
+                      <div style={{ fontFamily: T.fNum, fontSize: 22, fontWeight: 900, color: '#fff' }}>
+                        +{savedResult.creditedCoins} 🪙
+                      </div>
+                    </Stamp>
+                  )}
                   <button onClick={() => setEditMode(true)} style={{
                     marginTop: 14, height: 40, padding: '0 18px', borderRadius: 20, border: 'none', cursor: 'pointer',
                     background: 'rgba(255,255,255,0.2)', color: '#fff',
@@ -323,6 +379,31 @@ export default function KidDayPage() {
                   }}>{t('kidDayPage.editBtn')}</button>
                 </div>
               </div>
+
+              {/* Day-summary ledger (05.7-11, D-17): awarded items from the
+                  server-confirmed appliedItems — theme='paper' per UI-SPEC. */}
+              {savedResult && savedResult.appliedItems.length > 0 && (
+                <div style={{ padding: '14px 16px 0' }}>
+                  <div style={{
+                    background: '#fff', borderRadius: 20, padding: '14px 16px',
+                    border: `1.5px solid ${T.line}`, boxShadow: `0 4px 14px rgba(0,0,0,0.04)`,
+                    display: 'flex', flexDirection: 'column', gap: 10,
+                  }}>
+                    <div style={{ fontFamily: T.fBody, fontSize: 10, color: T.ink3, fontWeight: 700 }}>
+                      {t('kidDay.awardedHeading')}
+                    </div>
+                    {savedResult.appliedItems.map((item, i) => (
+                      <LedgerRow
+                        key={`${item.sourceType}-${i}`}
+                        name={item.description}
+                        amount={item.coins}
+                        tone={item.coins < 0 ? 'penalty' : 'earn'}
+                        theme="paper"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Stats row */}
               <div style={{ display: 'flex', gap: 10, padding: '14px 16px 0' }}>

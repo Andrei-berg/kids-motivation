@@ -6,7 +6,7 @@ import type { DayData, SubjectGrade } from '@/lib/models/child.types'
 import type { Subject, ExerciseType } from '@/lib/models/flexible.types'
 import type { ExtraActivity, Section, SectionVisit } from '@/lib/models/expense.types'
 import type { WalletSettings } from '@/lib/models/wallet.types'
-import { saveDay } from '@/lib/repositories/children.repo'
+import { saveDay, getChild } from '@/lib/repositories/children.repo'
 import { getExtraActivities, getActivityLogs, saveActivityLogs, getSectionsForDate, markSectionVisit } from '@/lib/repositories/expenses.repo'
 import { getActiveSubjects, getExerciseTypes, saveHomeExercise, getHomeExercises } from '@/lib/repositories/schedule.repo'
 import { getSubjectGradesForDate, saveSubjectGrade } from '@/lib/repositories/grades.repo'
@@ -17,6 +17,8 @@ import { assembleDayBlocks } from '@/lib/day-blocks'
 import { getDayBlockEntries, saveDayBlockEntries } from '@/lib/repositories/day-blocks.repo'
 import type { DayBlock } from '@/lib/models/day-block.types'
 import { checkAndAwardBadges } from '@/lib/badges'
+import { detectAward } from '@/lib/kid/awardResult'
+import { computeLevelUp } from '@/lib/kid/level'
 import { compressImage, uploadPhoto, getSignedPhotoUrl } from '@/lib/photo-upload'
 import { supabase } from '@/lib/supabase'
 import { getReadingLog, saveReadingLog } from '@/lib/vacation-api'
@@ -40,13 +42,33 @@ const GRADE_COINS: Record<number, number> = { 5: 10, 4: 5, 3: -3, 2: -5, 1: -10 
 // TYPES
 // ============================================================================
 
+// Per-item detail for a single credited award, mirroring the award route's
+// appliedItems entries (05.7-11) — used to render day-summary LedgerRows.
+export interface AwardedItem {
+  sourceType: string
+  coins: number
+  description: string
+  icon: string
+}
+
+// Server-confirmed save result (05.7-11, D-17): everything the day/page
+// stamp+count-up+confetti orchestration needs. NEVER built from coinsPreview —
+// creditedCoins/hasStreak come from detectAward(awardResponse); leveledUp from
+// comparing the child's xp before/after checkAndAwardBadges.
+export interface DaySaveResult {
+  creditedCoins: number
+  hasStreak: boolean
+  leveledUp: boolean
+  appliedItems: AwardedItem[]
+}
+
 export interface KidDayFillFormProps {
   childId: string
   date: string         // YYYY-MM-DD
   fillMode: 1 | 2 | 3 // from child.kid_fill_mode
   dayType: 'school' | 'weekend' | 'vacation'
   existingDay: DayData | null   // pre-filled if parent already saved
-  onSaved: (coinsEarned: number) => void // callback after successful save
+  onSaved: (result: DaySaveResult) => void // callback after successful save — server-confirmed numbers only (D-17)
   dayBlocksEnabled: boolean    // family flag (Phase 5.6) — flag-off keeps the hardcoded sections below
   dayBlocks: DayBlock[]        // family's active block config (empty when flag-off)
 }
@@ -111,6 +133,11 @@ export function KidDayFillForm({
   // of crediting on save. Fetched per child.
   const [requireReadingCheck, setRequireReadingCheck] = useState(true)
   const [saving, setSaving] = useState(false)
+  // True when the day's rows saved but /api/wallet/award failed — the form
+  // stays visible with a retry (D-17: never stamp/confetti on an unconfirmed
+  // award; retrying only re-runs the award step, not the already-persisted
+  // row saves, since several of those writes are insert-only, not upsert).
+  const [saveError, setSaveError] = useState(false)
   const [noteChild, setNoteChild] = useState<string>(existingDay?.note_child ?? '')
   // Grades (mode 3 only)
   // saved=true means already in DB — skip on submit to avoid duplicates
@@ -431,9 +458,88 @@ export function KidDayFillForm({
     setSectionNotes(prev => ({ ...prev, [sectionId]: { ...(prev[sectionId] ?? { progress: '' }), coachRating: rating } }))
   }
 
+  // Credits today's coin awards server-side and reports the server-confirmed
+  // result to the caller (05.7-11, D-17). Split out from handleSubmit so a
+  // retry after an award-fetch failure re-runs ONLY this step — the day's
+  // rows (grades, room checks, activity logs…) are already persisted by then
+  // and several of those writes are insert-only, not upsert, so re-running
+  // them on retry would create duplicates.
+  async function creditAwardAndFinish() {
+    setSaveError(false)
+
+    let prevXp: number | null = null
+    try {
+      const childBefore = await getChild(childId)
+      prevXp = childBefore.xp
+    } catch (e) {
+      console.warn('[KidDayFillForm] could not read xp before award:', e)
+    }
+
+    let awardOk = false
+    let creditedCoins = 0
+    let hasStreak = false
+    let appliedItems: AwardedItem[] = []
+
+    try {
+      const res = await fetch('/api/wallet/award', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ childId, date }),
+      })
+      if (!res.ok) {
+        console.warn('[KidDayFillForm] award failed:', res.status)
+      } else {
+        awardOk = true
+        track('day_saved', { role: 'kid' })
+        const data = await res.json().catch(() => ({}))
+        const parsed = detectAward(data)
+        creditedCoins = parsed.creditedCoins
+        hasStreak = parsed.hasStreak
+        appliedItems = Array.isArray(data?.appliedItems) ? data.appliedItems : []
+        // Fire-and-forget: don't block save completion on push delivery
+        import('@/app/actions/push-streaks').then(({ notifyStreakEvents }) => {
+          notifyStreakEvents(childId, '', data?.streakEvents ?? { broken: [], records: [] }).catch(() => {})
+        })
+      }
+    } catch (e) {
+      console.warn('[KidDayFillForm] award request failed:', e)
+    }
+
+    if (!awardOk) {
+      setSaveError(true)
+      return
+    }
+
+    await checkAndAwardBadges(childId, date)
+
+    let leveledUp = false
+    if (prevXp !== null) {
+      try {
+        const childAfter = await getChild(childId)
+        leveledUp = computeLevelUp(prevXp, childAfter.xp)
+      } catch (e) {
+        console.warn('[KidDayFillForm] could not read xp after award:', e)
+      }
+    }
+
+    if (proofLocalUrl) URL.revokeObjectURL(proofLocalUrl)
+    onSaved({ creditedCoins, hasStreak, leveledUp, appliedItems })
+  }
+
+  async function handleRetryAward() {
+    if (saving) return
+    setSaving(true)
+    try {
+      await creditAwardAndFinish()
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function handleSubmit() {
     if (isLocked || saving) return
     setSaving(true)
+    setSaveError(false)
 
     try {
       // Dual-write (CONTEXT decision 3): every rendered task gets a room_checks
@@ -577,30 +683,9 @@ export function KidDayFillForm({
       // activities, book, streak bonus — so the client never grants coins.
       // It also updates the streak counts server-side (admin client) and
       // returns streakEvents — the client no longer writes streaks directly.
-      try {
-        const res = await fetch('/api/wallet/award', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ childId, date }),
-        })
-        if (!res.ok) {
-          console.warn('[KidDayFillForm] award failed:', res.status)
-        } else {
-          track('day_saved', { role: 'kid' })
-          const { streakEvents } = await res.json().catch(() => ({ streakEvents: undefined }))
-          // Fire-and-forget: don't block save completion on push delivery
-          import('@/app/actions/push-streaks').then(({ notifyStreakEvents }) => {
-            notifyStreakEvents(childId, '', streakEvents ?? { broken: [], records: [] }).catch(() => {})
-          })
-        }
-      } catch (e) {
-        console.warn('[KidDayFillForm] award request failed:', e)
-      }
-
-      await checkAndAwardBadges(childId, date)
-
-      if (proofLocalUrl) URL.revokeObjectURL(proofLocalUrl)
-      onSaved(coinsPreview)
+      // See creditAwardAndFinish — parses the response via detectAward and
+      // hands the server-confirmed result (never coinsPreview) to onSaved.
+      await creditAwardAndFinish()
     } catch (err) {
       console.error('KidDayFillForm submit error:', err)
     } finally {
@@ -1016,6 +1101,24 @@ export function KidDayFillForm({
         <div style={{ textAlign: 'center', fontFamily: base.fontBody, fontSize: 12, fontWeight: 500, color: paper.ink3, marginBottom: 8 }}>
           {t('kidFillForm.trustNote')}
         </div>
+        {saveError && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+            padding: '10px 14px', borderRadius: 12, marginBottom: 10,
+            background: `${paper.dangerText}14`, border: `1.5px solid ${paper.dangerText}40`,
+          }}>
+            <span style={{ fontFamily: base.fontBody, fontSize: 13, fontWeight: 600, color: paper.dangerText }}>
+              {t('kidDay.saveError')}
+            </span>
+            <button onClick={handleRetryAward} disabled={saving} style={{
+              flexShrink: 0, minHeight: 32, padding: '0 14px', borderRadius: 10, border: 'none',
+              cursor: saving ? 'not-allowed' : 'pointer', background: paper.dangerText, color: '#fff',
+              fontFamily: base.fontBody, fontSize: 13, fontWeight: 700, opacity: saving ? 0.7 : 1,
+            }}>
+              {t('kidDay.retryBtn')}
+            </button>
+          </div>
+        )}
         {isLocked ? (
           <div style={{ textAlign: 'center', fontFamily: base.fontBody, fontSize: 14, fontWeight: 500, color: paper.ink3, padding: '16px 0' }}>{t('kidFillForm.dayLocked')}</div>
         ) : (

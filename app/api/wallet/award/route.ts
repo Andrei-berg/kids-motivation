@@ -610,7 +610,17 @@ export async function POST(req: NextRequest) {
 
     const { creditedCoins, applied } = await creditAwards(admin, childId, intents)
 
-    return NextResponse.json({ ok: true, creditedCoins, awards: applied.length, streakEvents, appliedSources: applied.map(a => a.sourceType) })
+    // appliedItems (05.7-11): per-item detail (description/coins/icon) for the
+    // client's day-summary ledger rows — additive alongside appliedSources
+    // (Plan 02, sourceType-only, kept unchanged for detectAward/existing callers).
+    return NextResponse.json({
+      ok: true,
+      creditedCoins,
+      awards: applied.length,
+      streakEvents,
+      appliedSources: applied.map(a => a.sourceType),
+      appliedItems: applied.map(a => ({ sourceType: a.sourceType, coins: a.coins, description: a.description, icon: a.icon })),
+    })
   } catch (err) {
     return errorResponse(err)
   }
