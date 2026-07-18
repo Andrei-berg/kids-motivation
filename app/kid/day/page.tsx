@@ -16,22 +16,13 @@ import type { DayBlock } from '@/lib/models/day-block.types'
 import type { Wallet } from '@/lib/models/wallet.types'
 import { T } from '@/components/kid/design/tokens'
 import { Avatar, Coin, AnimatedNum, StreakFlame, Confetti, XPBar } from '@/components/kid/design/atoms'
+import ScreenHeader from '@/components/kid/design/ScreenHeader'
+import { useDesktop } from '@/lib/hooks/useDesktop'
 import { useT, useLanguage } from '@/lib/i18n'
 
 function todayLabel(language: string): string {
   const locale = language === 'ru' ? 'ru-RU' : 'en-US'
   return new Date().toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' })
-}
-
-function useDesktop() {
-  const [is, setIs] = useState(false)
-  useEffect(() => {
-    const check = () => setIs(window.innerWidth >= 1024)
-    check()
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
-  }, [])
-  return is
 }
 
 function LoadingSkeleton() {
@@ -267,28 +258,25 @@ export default function KidDayPage() {
           )}
         </div>
       ) : (
-        /* Mobile: existing inline header */
-        <div style={{ padding: '12px 16px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Avatar size={38} skin="#F5C9A1" hair="#2B1810" shirt={T.coral}/>
+        /* Mobile: unified «сберкнижка» header (D-13) with logout (D-03) + XP strip */
+        <div>
+          <ScreenHeader title={t('kidHeader.day')} coins={coins} name={child?.name ?? ''} showLogout/>
+          <div style={{ padding: '0 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: T.fDisp, fontSize: 15, fontWeight: 900, color: T.ink }}>
-                {t('kidDayPage.greeting', { name: child?.name ?? '...' })}
-              </div>
-              <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 600 }}>
-                {t('kidDayPage.levelDay', { level, date: todayLabel(language) })}
-              </div>
+              <XPBar xp={xpInLevel} max={1000} level={level} compact/>
             </div>
             <StreakFlame days={streakDays}/>
-          </div>
-          <div style={{ marginTop: 10 }}>
-            <XPBar xp={xpInLevel} max={1000} level={level} compact/>
           </div>
         </div>
       )}
 
       {/* ── RIGHT (desktop) or full-width (mobile): form / summary ── */}
-      <div style={isDesktop ? { padding: '32px 32px', overflowY: 'auto' } : { position: 'relative' }}>
+      <div style={isDesktop ? { padding: '16px 32px 32px', overflowY: 'auto' } : { position: 'relative' }}>
+        {/* Desktop: unified «сберкнижка» header (D-13) with logout (D-03) —
+            the 4.5 sticky sidebar keeps the stats (D-15) */}
+        {isDesktop && (
+          <ScreenHeader title={t('kidHeader.day')} coins={coins} name={child?.name ?? ''} showLogout/>
+        )}
         {activeMemberId && <KidChallenges childId={activeMemberId}/>}
         {showForm ? (
           <>
