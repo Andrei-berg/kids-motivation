@@ -87,7 +87,7 @@ const ACT: Record<ActivityType, { bg: string; border: string; text: string; glow
   coins_gain: { bg: 'linear-gradient(135deg,#F0FFF4,#DCFCE7)', border: '#86EFAC', text: '#14532D' },
   coins_loss: { bg: 'linear-gradient(135deg,#FFF7ED,#FFEDD5)', border: '#FED7AA', text: '#7C2D12' },
   streak:     { bg: 'linear-gradient(135deg,#FFF7ED,#FEF3C7)', border: '#FDE68A', text: '#92400E', glow: '0 0 18px rgba(251,191,36,.3)' },
-  badge:      { bg: 'linear-gradient(135deg,#FFFBEB,#FEF3C7)', border: '#F59E0B', text: '#78350F', glow: '0 0 24px rgba(245,158,11,.4)' },
+  badge:      { bg: 'linear-gradient(135deg,#FFFBEB,#FEF3C7)', border: base.gold, text: '#78350F', glow: '0 0 24px rgba(245,158,11,.4)' },
   generic:    { bg: 'linear-gradient(135deg,#F8F6FF,#EDE9FE)', border: '#C4B5FD', text: '#5B21B6' },
 }
 
@@ -235,7 +235,7 @@ function SingleActivity({ msg, C }: { msg: ChatMessage; C: ChatTokens }) {
         }}>
           <div style={{ width: 40, height: 40, borderRadius: 14, flexShrink: 0, background: 'rgba(245,158,11,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{icon}</div>
           <div>
-            <div style={{ fontFamily: C.fBody, fontSize: 10, fontWeight: 700, color: '#F59E0B', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>Новый значок!</div>
+            <div style={{ fontFamily: C.fBody, fontSize: 10, fontWeight: 700, color: base.gold, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>Новый значок!</div>
             <div style={{ fontFamily: C.fDisp, fontSize: 14, fontWeight: 800, color: c.text, lineHeight: 1.3 }}>{stripLeadingEmoji(label)}</div>
           </div>
         </div>
@@ -266,7 +266,7 @@ function ActivityBurst({ messages, C }: { messages: ChatMessage[]; C: ChatTokens
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 16px' }}>
-      <div style={{ background: 'linear-gradient(135deg,#FFFBF5,#FFF7ED)', border: '1.5px solid #FDE68A', borderRadius: 18, overflow: 'hidden', maxWidth: 300, width: '100%', boxShadow: '0 2px 14px rgba(251,191,36,.18)' }}>
+      <div style={{ background: `linear-gradient(135deg,${base.goldSoft},#FFF7ED)`, border: '1.5px solid #FDE68A', borderRadius: 18, overflow: 'hidden', maxWidth: 300, width: '100%', boxShadow: '0 2px 14px rgba(251,191,36,.18)' }}>
         <button onClick={() => setOpen(v => !v)} style={{ width: '100%', padding: '10px 14px', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left' }}>
           <div style={{ display: 'flex', flexShrink: 0 }}>
             {icons.map((ic, idx) => <span key={idx} style={{ fontSize: 16, marginLeft: idx > 0 ? -4 : 0, display: 'block' }}>{ic}</span>)}
