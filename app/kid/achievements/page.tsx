@@ -8,13 +8,47 @@ import { api } from '@/lib/api'
 import type { Child } from '@/lib/api'
 import { getWallet } from '@/lib/repositories/wallet.repo'
 import { T } from '@/components/kid/design/tokens'
-import { SectionHeader, ProgressRing } from '@/components/kid/design/atoms'
-import { Tabs } from '@/components/design/atoms'
+import { SectionHeader, ProgressRing, Avatar } from '@/components/kid/design/atoms'
+import { Tabs, Amount } from '@/components/design/atoms'
 import ScreenHeader from '@/components/kid/design/ScreenHeader'
 import { paper } from '@/lib/design/tokens'
 import { levelForXp } from '@/lib/kid/level'
+import { rankChildren, type RankEntry } from '@/lib/kid/rating-rank'
 import { useDesktop } from '@/lib/hooks/useDesktop'
+import { normalizeDate, getWeekRange, addDays } from '@/utils/helpers'
 import { useT } from '@/lib/i18n'
+
+// ─── Rating tab types & tones ─────────────────────────────────────────────────
+// Podium ranks/medals are NOT money — non-gold accent/support tones only (D-07).
+interface RatingEntry extends RankEntry {
+  level: number
+  xp: number
+  coins: number
+  badgeCount: number
+  longestStreak: number
+}
+
+const RANK_TONES = [paper.accent, T.teal, T.pink] as const
+
+function rankTone(rank: number) {
+  return RANK_TONES[Math.min(rank - 1, RANK_TONES.length - 1)]
+}
+
+// Neutral secondary-stat chip (XP / badges / streak) — never gold, never StatusChip
+// (those tones are reserved for status semantics per the UI-SPEC).
+function StatChip({ icon, value, label }: { icon: string; value: number; label: string }) {
+  return (
+    <span title={label} aria-label={`${label}: ${value}`} style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px',
+      borderRadius: 999, background: T.lineSoft,
+      fontFamily: T.fBody, fontSize: 11, fontWeight: 600, color: T.ink2,
+      whiteSpace: 'nowrap',
+    }}>
+      <span aria-hidden="true">{icon}</span>
+      <span style={{ fontFamily: T.fNum, fontVariantNumeric: 'tabular-nums' }}>{value.toLocaleString('ru-RU')}</span>
+    </span>
+  )
+}
 
 // ─── Rarity config (labels are computed inside component via useT) ────────────
 const RARITY_STATIC = [
@@ -60,6 +94,9 @@ export default function AchievementsPage() {
   const [badgeProgress, setBadgeProgress] = useState<Record<string, { current: number; target: number }>>({})
   const [focused, setFocused] = useState<any | null>(null)
   const [tab, setTab] = useState('badges')
+  const [ratingState, setRatingState] = useState<'idle' | 'loading' | 'ready'>('idle')
+  const [entries, setEntries] = useState<RatingEntry[]>([])
+  const [soloLastWeek, setSoloLastWeek] = useState<number>(0)
 
   useEffect(() => {
     if (!activeMemberId) return
@@ -86,6 +123,60 @@ export default function AchievementsPage() {
     }
     load()
   }, [activeMemberId])
+
+  // Rating tab data (D-07/D-08) — lazy-loaded on first visit to the tab.
+  // Reuses the old leaderboard's all-children query (N-length, Pitfall 5) and
+  // feeds EVERY entry into rankChildren — no 2-child `.find()` compare.
+  useEffect(() => {
+    if (tab !== 'rating' || ratingState !== 'idle' || !activeMemberId) return
+    setRatingState('loading')
+    const load = async () => {
+      try {
+        const today = normalizeDate(new Date())
+        const weekStart = getWeekRange(today).start
+        const { createClient } = await import('@/lib/supabase/client')
+        const { data: members } = await createClient()
+          .from('family_members')
+          .select('child_id')
+          .eq('role', 'child')
+          .not('child_id', 'is', null)
+        const childIds = Array.from(new Set(
+          (members ?? []).map((m: any) => m.child_id).filter(Boolean)
+        )) as string[]
+        const data = await Promise.all(childIds.map(async (id) => {
+          const [c, wallet, weekScore, badges, streaksData] = await Promise.all([
+            api.getChild(id).catch(() => null),
+            getWallet(id).catch(() => null),
+            api.getWeekScore(id, weekStart).then(w => w?.total ?? 0).catch(() => 0),
+            getChildBadges(id).catch(() => []),
+            api.getStreaks(id).catch(() => []),
+          ])
+          if (!c) return null
+          const bestStreak = (streaksData as any[] ?? []).reduce((m: number, s: any) => Math.max(m, s.best_count ?? 0), 0)
+          return {
+            id, name: c.name, coinsWeek: weekScore ?? 0, avatarUrl: null,
+            level: c.level ?? 1, xp: c.xp ?? 0, coins: wallet?.coins ?? 0,
+            badgeCount: badges.length, longestStreak: bestStreak,
+          } satisfies RatingEntry
+        }))
+        const list = data.filter(Boolean) as RatingEntry[]
+        setEntries(list)
+        if (list.length === 1) {
+          // D-08 solo: this-week vs last-week via the same getWeekScore aggregation.
+          // NOTE (RESEARCH caveat): getWeekScore is a hardcoded-formula approximation,
+          // consistent with the wallet's "earned this week" chip — do not "fix" here.
+          const lastWeekStart = getWeekRange(addDays(today, -7)).start
+          const lw = await api.getWeekScore(list[0].id, lastWeekStart).then(w => w?.total ?? 0).catch(() => 0)
+          setSoloLastWeek(lw)
+        }
+      } catch (err) {
+        console.error('Rating error:', err)
+      } finally {
+        setRatingState('ready')
+      }
+    }
+    load()
+  }, [tab, ratingState, activeMemberId])
 
   // The single unearned badge the child is closest to (highest progress under 100%).
   // Drives the "Ближе всего" spotlight. Computed before any early return so the hook
@@ -313,8 +404,158 @@ export default function AchievementsPage() {
         </div>
       )}
 
-      {/* ═══ Tab: Rating ══════════════════════════════════════════════════════ */}
-      {tab === 'rating' && null /* Rating tab body lands in the next task */}
+      {/* ═══ Tab: Rating (D-07 podium+list, D-08 solo fallback) ══════════════ */}
+      {tab === 'rating' && (
+        <div style={{ padding: '16px 16px 0' }}>
+          {ratingState !== 'ready' ? (
+            <div className="kid-skeleton" style={{ height: 240, borderRadius: 16 }}/>
+          ) : entries.length === 0 ? (
+            <div style={{
+              background: T.card, borderRadius: 16, padding: 32, border: `1px solid ${T.line}`,
+              textAlign: 'center', fontFamily: T.fBody, fontSize: 14, fontWeight: 500, color: T.ink3,
+            }}>
+              {t('kidLeaderboardPage.noData')}
+            </div>
+          ) : entries.length === 1 ? (
+            /* D-08: single-child family — «я против себя», this week vs last week */
+            <div style={{ background: T.card, borderRadius: 16, padding: 20, border: `1px solid ${T.line}` }}>
+              <div style={{ fontFamily: T.fDisp, fontSize: 18, fontWeight: 700, color: T.ink, lineHeight: 1.2 }}>
+                {t('achievements.soloCompareHeading')}
+              </div>
+              <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+                <div style={{
+                  flex: 1, borderRadius: 12, padding: '12px 14px',
+                  border: `1.5px solid ${paper.accent}`, background: T.card,
+                }}>
+                  <div style={{ fontFamily: T.fBody, fontSize: 12, fontWeight: 600, color: T.ink2 }}>
+                    {t('achievements.soloThisWeek')}
+                  </div>
+                  <div style={{ marginTop: 4 }}>
+                    <Amount value={entries[0].coinsWeek} theme="paper" money size="lg"/>
+                  </div>
+                </div>
+                {soloLastWeek > 0 && (
+                  <div style={{
+                    flex: 1, borderRadius: 12, padding: '12px 14px',
+                    border: `1px solid ${T.line}`, background: T.lineSoft,
+                  }}>
+                    <div style={{ fontFamily: T.fBody, fontSize: 12, fontWeight: 600, color: T.ink3 }}>
+                      {t('achievements.soloLastWeek')}
+                    </div>
+                    <div style={{ marginTop: 4 }}>
+                      <Amount value={soloLastWeek} theme="paper" money size="lg"/>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {soloLastWeek <= 0 && (
+                <div style={{ fontFamily: T.fBody, fontSize: 13, fontWeight: 500, color: T.ink3, marginTop: 12, lineHeight: 1.5 }}>
+                  {t('achievements.soloCompareEmpty')}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* D-07: N-children podium (top-3) + list for the rest */
+            (() => {
+              const { podium, list: rest } = rankChildren(entries)
+              const spots = podium.map((e, i) => ({ e, rank: i + 1 }))
+              const displayOrder = spots.length === 3 ? [spots[1], spots[0], spots[2]] : spots
+              return (
+                <>
+                  <div style={{ background: T.card, borderRadius: 16, padding: '18px 12px 16px', border: `1px solid ${T.line}` }}>
+                    <div style={{
+                      textAlign: 'center', fontFamily: T.fBody, fontSize: 12, fontWeight: 600,
+                      color: T.ink3, letterSpacing: 1.2,
+                    }}>
+                      {t('kidLeaderboardPage.familyRating')}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 16 }}>
+                      {displayOrder.map(({ e, rank }) => {
+                        const isMe = e.id === activeMemberId
+                        const tone = rankTone(rank)
+                        return (
+                          <div key={e.id} style={{
+                            flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column',
+                            alignItems: 'center', paddingTop: rank === 1 ? 0 : 18,
+                          }}>
+                            <div style={{ position: 'relative' }}>
+                              <Avatar size={rank === 1 ? 76 : 60} shirt={tone} glow={rank === 1}/>
+                              <div aria-hidden="true" style={{
+                                position: 'absolute', top: -4, right: -6, width: 24, height: 24,
+                                borderRadius: '50%', background: tone, color: '#fff',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontFamily: T.fNum, fontSize: 12, fontWeight: 700,
+                                border: `2px solid ${T.card}`,
+                              }}>{rank}</div>
+                            </div>
+                            <div style={{
+                              marginTop: 8, fontFamily: T.fDisp, fontSize: rank === 1 ? 15 : 14, fontWeight: 700,
+                              color: isMe ? paper.accent : T.ink, textAlign: 'center', lineHeight: 1.2,
+                              maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                            }}>{e.name}</div>
+                            {isMe && (
+                              <div style={{ fontFamily: T.fBody, fontSize: 10, fontWeight: 700, color: paper.accent, letterSpacing: 0.8 }}>
+                                {t('kidLeaderboardPage.youLabel')}
+                              </div>
+                            )}
+                            <div style={{ marginTop: 2 }} title={t('kidLeaderboardPage.coinsWeek')}>
+                              <Amount value={e.coinsWeek} theme="paper" money size={rank === 1 ? 'md' : 'sm'}/>
+                            </div>
+                            <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
+                              <StatChip icon="⚡" value={e.xp} label={t('kidLeaderboardPage.xpTotal')}/>
+                              <StatChip icon="🏆" value={e.badgeCount} label={t('kidLeaderboardPage.badges')}/>
+                              <StatChip icon="🔥" value={e.longestStreak} label={t('kidLeaderboardPage.streakRecord')}/>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                  {rest.length > 0 && (
+                    <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {rest.map((e, i) => {
+                        const rank = i + 4
+                        const isMe = e.id === activeMemberId
+                        return (
+                          <div key={e.id} style={{
+                            display: 'flex', alignItems: 'center', gap: 10,
+                            background: T.card, borderRadius: 12, padding: '10px 12px',
+                            border: `1px solid ${isMe ? paper.accent : T.line}`,
+                          }}>
+                            <div style={{
+                              width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                              background: T.lineSoft, color: T.ink2,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontFamily: T.fNum, fontSize: 13, fontWeight: 700,
+                            }}>{rank}</div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{
+                                fontFamily: T.fBody, fontSize: 14, fontWeight: 600,
+                                color: isMe ? paper.accent : T.ink,
+                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                              }}>
+                                {e.name}{isMe ? ` · ${t('kidLeaderboardPage.youLabel')}` : ''}
+                              </div>
+                              <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                                <StatChip icon="⚡" value={e.xp} label={t('kidLeaderboardPage.xpTotal')}/>
+                                <StatChip icon="🏆" value={e.badgeCount} label={t('kidLeaderboardPage.badges')}/>
+                                <StatChip icon="🔥" value={e.longestStreak} label={t('kidLeaderboardPage.streakRecord')}/>
+                              </div>
+                            </div>
+                            <div title={t('kidLeaderboardPage.coinsWeek')}>
+                              <Amount value={e.coinsWeek} theme="paper" money size="sm"/>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </>
+              )
+            })()
+          )}
+        </div>
+      )}
 
       {/* ═══ Badge bottom sheet ═══════════════════════════════════════════════ */}
       {focused && (

@@ -159,7 +159,9 @@
     "tabStreaks": "Стрики",
     "tabRating": "Рейтинг",
     "soloCompareHeading": "Ты против себя",
-    "soloCompareEmpty": "На следующей неделе здесь появится сравнение с этой неделей."
+    "soloCompareEmpty": "На следующей неделе здесь появится сравнение с этой неделей.",
+    "soloThisWeek": "Эта неделя",
+    "soloLastWeek": "Прошлая неделя"
   },
   "kidWallet": {
     "title": "Кошелёк",
