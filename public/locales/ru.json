@@ -1042,6 +1042,11 @@
     "moodNote": "Молодец что заполнил день!",
     "noData": "Нет данных"
   },
+  "kidDay": {
+    "saveError": "Не получилось начислить монеты. Попробуй ещё раз.",
+    "retryBtn": "Повторить",
+    "awardedHeading": "Начислено сегодня"
+  },
   "kidLeaderboardPage": {
     "familyRating": "СЕМЕЙНЫЙ РЕЙТИНГ",
     "youLabel": "ТЫ",
