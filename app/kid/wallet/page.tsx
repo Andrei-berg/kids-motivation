@@ -8,22 +8,14 @@ import { getWallet, getTransactions } from '@/lib/repositories/wallet.repo'
 import { api } from '@/lib/api'
 import { normalizeDate, getWeekRange } from '@/utils/helpers'
 import type { Wallet, WalletTransaction } from '@/lib/models/wallet.types'
+import type { Child } from '@/lib/models/child.types'
 import { T } from '@/components/kid/design/tokens'
-import { Coin, CoinPill, AnimatedNum, SectionHeader, KMButton } from '@/components/kid/design/atoms'
-import { LedgerRow } from '@/components/design/atoms'
+import { base, paper } from '@/lib/design/tokens'
+import { LedgerRow, Amount, useCountUp } from '@/components/design/atoms'
+import ScreenHeader from '@/components/kid/design/ScreenHeader'
+import { useDesktop } from '@/lib/hooks/useDesktop'
 import GoalsPanel from '@/components/kid/GoalsPanel'
 import { useT } from '@/lib/i18n'
-
-function useDesktop() {
-  const [is, setIs] = useState(false)
-  useEffect(() => {
-    const check = () => setIs(window.innerWidth >= 1024)
-    check()
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
-  }, [])
-  return is
-}
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 function LoadingSkeleton() {
@@ -54,6 +46,7 @@ export default function KidWalletPage() {
   const { activeMemberId } = useAppStore()
   const [loading, setLoading] = useState(true)
   const [wallet, setWallet] = useState<Wallet | null>(null)
+  const [child, setChild] = useState<Child | null>(null)
   const [transactions, setTransactions] = useState<WalletTransaction[]>([])
   const [weekScore, setWeekScore] = useState<number>(0)
   const isDesktop = useDesktop()
@@ -64,14 +57,16 @@ export default function KidWalletPage() {
     try {
       const today = normalizeDate(new Date())
       const weekStart = getWeekRange(today).start
-      const [walletData, txData, weekData] = await Promise.all([
+      const [walletData, txData, weekData, childData] = await Promise.all([
         getWallet(activeMemberId),
         getTransactions(activeMemberId, 20),
         api.getWeekScore(activeMemberId, weekStart),
+        api.getChild(activeMemberId).catch(() => null),
       ])
       setWallet(walletData)
       setTransactions(txData)
       setWeekScore(weekData?.total ?? 0)
+      setChild(childData)
     } catch (err) {
       console.error('KidWalletPage error', err)
     } finally {
@@ -81,10 +76,21 @@ export default function KidWalletPage() {
 
   useEffect(() => { loadData() }, [loadData])
 
+  const coins = wallet?.coins ?? 0
+  // Hero count-up (D-16) — hook must run unconditionally, before the early return.
+  const heroCoins = useCountUp(coins)
+
   if (loading) return <LoadingSkeleton/>
 
-  const coins = wallet?.coins ?? 0
-  const saved = wallet?.total_earned_coins ?? 0
+  // Weekly +earned / −spent summary (D-16). Earned reuses the existing
+  // getWeekScore total; spent is derived from the already-loaded transactions
+  // within the current week. Display-only — the balance stays authoritative
+  // server-side (money tables are RLS SELECT-only).
+  const weekStartMs = new Date(`${getWeekRange(normalizeDate(new Date())).start}T00:00:00`).getTime()
+  const weekSpent = transactions.reduce((sum, x) => {
+    if (x.coins_change >= 0 || !x.created_at) return sum
+    return new Date(x.created_at).getTime() >= weekStartMs ? sum + Math.abs(x.coins_change) : sum
+  }, 0)
 
   const QUICK_ACTIONS = [
     { icon: '💸', label: t('kidWallet.quickActions.save'),  href: '/kid/wallet#goals' },
@@ -95,58 +101,32 @@ export default function KidWalletPage() {
 
   return (
     <div style={isDesktop ? {} : { paddingBottom: 110, maxWidth: 500, margin: '0 auto' }}>
-      {/* ═══ Balance hero ═════════════════════════════════════════════════════ */}
-      <div style={{ padding: '12px 16px 0' }}>
+      <ScreenHeader title={t('kidHeader.wallet')} coins={coins} name={child?.name ?? ''}/>
+
+      {/* ═══ Hero сберкнижка balance (D-16) ═══════════════════════════════════ */}
+      <div style={{ padding: '4px 16px 0' }}>
         <div style={{
-          borderRadius: 28, padding: '22px 22px 20px',
-          background: `linear-gradient(160deg, #1A1423 0%, #3D2B5C 65%, #6C5CE7 100%)`,
-          position: 'relative', overflow: 'hidden',
-          boxShadow: '0 10px 30px rgba(108,92,231,0.3)',
+          background: paper.card, borderRadius: 20, padding: '24px 20px',
+          border: `1px solid ${paper.line}`,
         }}>
-          <div style={{ position: 'absolute', top: -50, right: -20, width: 160, height: 160, borderRadius: '50%',
-            background: `radial-gradient(${T.sun}60, transparent 65%)`, filter: 'blur(20px)' }}/>
-          <div style={{ position: 'absolute', bottom: -80, left: -20, width: 180, height: 180, borderRadius: '50%',
-            background: `radial-gradient(${T.coral}50, transparent 65%)`, filter: 'blur(20px)' }}/>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
-            <div style={{ fontFamily: T.fBody, fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.7)', letterSpacing: 1, textTransform: 'uppercase' }}>
-              {t('kidWallet.balance')}
-            </div>
-            {weekScore > 0 && (
-              <div style={{
-                padding: '4px 10px', borderRadius: 999, whiteSpace: 'nowrap',
-                background: `${T.sun}22`, border: `1px solid ${T.sun}55`,
-                fontFamily: T.fBody, fontSize: 11, fontWeight: 700, color: T.sun,
-              }}>{t('kidWallet.earnedThisWeek', { amount: weekScore })}</div>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginTop: 10, position: 'relative' }}>
-            <svg width="42" height="42" viewBox="0 0 22 22">
-              <circle cx="11" cy="11" r="10" fill={T.sun} stroke={T.sunDeep} strokeWidth="1.2"/>
-              <circle cx="11" cy="11" r="7" fill="none" stroke={T.sunDeep} strokeWidth="0.8" opacity="0.5"/>
-              <text x="11" y="14.5" textAnchor="middle" fontSize="9" fontWeight="900" fontFamily={T.fDisp} fill={T.ink}>K</text>
-            </svg>
-            <div style={{ fontFamily: T.fNum, fontSize: 52, fontWeight: 800, color: '#fff', letterSpacing: -2, lineHeight: 1 }}>
-              <AnimatedNum value={coins}/>
-            </div>
-          </div>
-          <div style={{ fontFamily: T.fBody, fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 6, fontWeight: 500, position: 'relative' }}>
-            {t('kidWallet.equivalent', { amount: (coins * 1.5).toLocaleString('ru-RU') })}
-          </div>
-
           <div style={{
-            marginTop: 16, display: 'flex', gap: 8, position: 'relative',
-            background: 'rgba(255,255,255,0.08)', borderRadius: 16, padding: 3,
+            fontFamily: base.fontBody, fontSize: 12, fontWeight: 600, color: paper.ink3,
+            letterSpacing: '0.06em', textTransform: 'uppercase',
           }}>
-            <div style={{ flex: 1, padding: '10px 12px', borderRadius: 13, background: 'rgba(255,255,255,0.12)' }}>
-              <div style={{ fontFamily: T.fBody, fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.6)', letterSpacing: 1 }}>{t('kidWallet.balanceLabel')}</div>
-              <div style={{ fontFamily: T.fNum, fontSize: 18, fontWeight: 800, color: '#fff', marginTop: 2 }}>{coins.toLocaleString('ru-RU')}</div>
-            </div>
-            <div style={{ flex: 1, padding: '10px 12px' }}>
-              <div style={{ fontFamily: T.fBody, fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.6)', letterSpacing: 1 }}>{t('kidWallet.savedLabel')}</div>
-              <div style={{ fontFamily: T.fNum, fontSize: 18, fontWeight: 800, color: T.sun, marginTop: 2 }}>{saved.toLocaleString('ru-RU')}</div>
-            </div>
+            {t('kidWallet.balance')}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 8 }}>
+            <Amount value={heroCoins} theme="paper" money size="xl"/>
+            <span style={{ fontSize: 20 }} aria-hidden>🪙</span>
+          </div>
+          {/* Weekly +earned / −spent line */}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 10 }}>
+            <Amount value={weekScore} theme="paper" money signed size="sm"/>
+            <span style={{ fontFamily: base.fontBody, fontSize: 12, fontWeight: 500, color: paper.ink3 }}>/</span>
+            <span style={{ whiteSpace: 'nowrap' }}>
+              <span style={{ fontFamily: base.fontMono, fontSize: 13, fontWeight: 700, color: paper.ink2, marginRight: 1 }}>−</span>
+              <Amount value={weekSpent} theme="paper" money={false} size="sm" color={paper.ink2}/>
+            </span>
           </div>
         </div>
       </div>
@@ -187,12 +167,14 @@ export default function KidWalletPage() {
             </div>
             {transactions.length === 0 ? (
               <div style={{
-                background: '#fff', borderRadius: 22, padding: 24, textAlign: 'center',
-                border: `1.5px solid ${T.line}`,
+                background: paper.card, borderRadius: 20, padding: '28px 20px', textAlign: 'center',
+                border: `1px solid ${paper.line}`,
               }}>
-                <div style={{ fontSize: 32 }}>💸</div>
-                <div style={{ fontFamily: T.fDisp, fontSize: 15, fontWeight: 800, color: T.ink3, marginTop: 8 }}>
-                  {t('kidWallet.noTransactions')}
+                <div style={{ fontFamily: base.fontDisplay, fontSize: 18, fontWeight: 700, color: paper.ink }}>
+                  {t('wallet.emptyHeading')}
+                </div>
+                <div style={{ fontFamily: base.fontBody, fontSize: 14, fontWeight: 500, color: paper.ink2, marginTop: 6, lineHeight: 1.5 }}>
+                  {t('wallet.emptyBody')}
                 </div>
               </div>
             ) : (
