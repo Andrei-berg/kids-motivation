@@ -6,10 +6,10 @@ import { lookupFamilyByCode, getFamilyPinProfiles } from '@/lib/onboarding-api'
 import { useAppStore } from '@/lib/store'
 import type { ChildProfile } from '@/lib/onboarding-api'
 import { useT } from '@/lib/i18n'
+import { paper, base } from '@/lib/design/tokens'
 
-const AMBER = '#f59e0b'
-const AMBER_DARK = '#d97706'
-const AMBER_LIGHT = 'rgba(245, 158, 11, 0.12)'
+const ACCENT = paper.accent
+const ACCENT_SOFT = base.indigoSoft
 
 export default function KidLogin() {
   const router = useRouter()
@@ -95,22 +95,23 @@ export default function KidLogin() {
     <div
       style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fde68a 100%)',
+        background: paper.bg,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '1rem',
-        fontFamily: 'Inter, system-ui, sans-serif',
+        fontFamily: base.fontBody,
       }}
     >
       <div
         style={{
           width: '100%',
           maxWidth: '400px',
-          backgroundColor: '#ffffff',
-          borderRadius: '1.25rem',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.12)',
+          backgroundColor: paper.card,
+          borderRadius: '1rem',
+          border: `1px solid ${paper.line}`,
+          boxShadow: '0 12px 36px rgba(36,30,56,0.08)',
           padding: '2rem',
           position: 'relative',
         }}
@@ -119,7 +120,7 @@ export default function KidLogin() {
         <div
           style={{
             height: '4px',
-            backgroundColor: '#f3f4f6',
+            backgroundColor: paper.lineSoft,
             borderRadius: '9999px',
             marginBottom: '1.75rem',
             overflow: 'hidden',
@@ -129,7 +130,7 @@ export default function KidLogin() {
             style={{
               height: '100%',
               width: `${progressPct}%`,
-              background: `linear-gradient(90deg, ${AMBER}, ${AMBER_DARK})`,
+              background: ACCENT,
               borderRadius: '9999px',
               transition: 'width 0.4s ease',
             }}
@@ -141,9 +142,10 @@ export default function KidLogin() {
           <div>
             <h1
               style={{
+                fontFamily: base.fontDisplay,
                 fontSize: '1.5rem',
                 fontWeight: 700,
-                color: '#1f2937',
+                color: paper.ink,
                 textAlign: 'center',
                 marginBottom: '0.5rem',
                 marginTop: 0,
@@ -154,7 +156,7 @@ export default function KidLogin() {
             <p
               style={{
                 fontSize: '0.875rem',
-                color: '#6b7280',
+                color: paper.ink2,
                 textAlign: 'center',
                 marginBottom: '1.75rem',
               }}
@@ -172,7 +174,8 @@ export default function KidLogin() {
                 width: '100%',
                 padding: '0.875rem 1rem',
                 borderRadius: '0.625rem',
-                border: `2px solid ${AMBER}`,
+                border: `2px solid ${ACCENT}`,
+                fontFamily: base.fontMono,
                 fontSize: '1.25rem',
                 fontWeight: 700,
                 letterSpacing: '6px',
@@ -180,8 +183,8 @@ export default function KidLogin() {
                 outline: 'none',
                 boxSizing: 'border-box',
                 marginBottom: '1rem',
-                color: '#1f2937',
-                backgroundColor: AMBER_LIGHT,
+                color: paper.ink,
+                backgroundColor: ACCENT_SOFT,
               }}
               autoComplete="off"
               autoCapitalize="characters"
@@ -191,7 +194,7 @@ export default function KidLogin() {
               <p
                 style={{
                   fontSize: '0.875rem',
-                  color: '#ef4444',
+                  color: paper.dangerText,
                   textAlign: 'center',
                   marginBottom: '0.75rem',
                 }}
@@ -209,14 +212,13 @@ export default function KidLogin() {
                 padding: '0.875rem',
                 borderRadius: '0.625rem',
                 border: 'none',
-                background: code.length < 4
-                  ? '#d1d5db'
-                  : `linear-gradient(135deg, ${AMBER}, ${AMBER_DARK})`,
-                color: '#ffffff',
+                background: code.length < 4 ? paper.line : ACCENT,
+                color: code.length < 4 ? paper.ink3 : '#ffffff',
                 fontSize: '1rem',
                 fontWeight: 700,
                 cursor: code.length < 4 ? 'not-allowed' : 'pointer',
                 transition: 'opacity 0.2s',
+                fontFamily: 'inherit',
               }}
             >
               {loading ? t('kidLogin.checking') : t('kidLogin.next')}
@@ -234,7 +236,7 @@ export default function KidLogin() {
               style={{
                 background: 'none',
                 border: 'none',
-                color: AMBER,
+                color: ACCENT,
                 fontSize: '0.875rem',
                 cursor: 'pointer',
                 padding: '0 0 1rem 0',
@@ -246,9 +248,10 @@ export default function KidLogin() {
 
             <h1
               style={{
+                fontFamily: base.fontDisplay,
                 fontSize: '1.5rem',
                 fontWeight: 700,
-                color: '#1f2937',
+                color: paper.ink,
                 textAlign: 'center',
                 marginBottom: '0.5rem',
                 marginTop: 0,
@@ -259,7 +262,7 @@ export default function KidLogin() {
             <p
               style={{
                 fontSize: '0.875rem',
-                color: '#6b7280',
+                color: paper.ink2,
                 textAlign: 'center',
                 marginBottom: '1.25rem',
               }}
@@ -271,7 +274,7 @@ export default function KidLogin() {
               <p
                 style={{
                   fontSize: '0.9375rem',
-                  color: '#9ca3af',
+                  color: paper.ink3,
                   textAlign: 'center',
                   padding: '1rem',
                 }}
@@ -291,9 +294,9 @@ export default function KidLogin() {
                         height: '80px',
                         width: '100%',
                         borderRadius: '0.75rem',
-                        border: isSelected ? `2px solid ${AMBER}` : '2px solid #e5e7eb',
-                        backgroundColor: isSelected ? AMBER_LIGHT : '#f9fafb',
-                        color: '#1f2937',
+                        border: isSelected ? `2px solid ${ACCENT}` : `2px solid ${paper.line}`,
+                        backgroundColor: isSelected ? ACCENT_SOFT : paper.lineSoft,
+                        color: paper.ink,
                         fontSize: '1.125rem',
                         fontWeight: isSelected ? 700 : 500,
                         cursor: 'pointer',
@@ -318,7 +321,7 @@ export default function KidLogin() {
                         </span>
                       )}
                       {profile.displayName}
-                      {isSelected && <span style={{ color: AMBER, fontSize: '1.25rem' }}>✓</span>}
+                      {isSelected && <span style={{ color: ACCENT, fontSize: '1.25rem' }}>✓</span>}
                     </button>
                   )
                 })}
@@ -328,7 +331,7 @@ export default function KidLogin() {
             <p
               style={{
                 fontSize: '0.75rem',
-                color: '#9ca3af',
+                color: paper.ink3,
                 textAlign: 'center',
                 marginBottom: '1rem',
               }}
@@ -340,7 +343,7 @@ export default function KidLogin() {
               <p
                 style={{
                   fontSize: '0.875rem',
-                  color: '#ef4444',
+                  color: paper.dangerText,
                   textAlign: 'center',
                   marginBottom: '0.75rem',
                 }}
@@ -358,10 +361,8 @@ export default function KidLogin() {
                 padding: '0.875rem',
                 borderRadius: '0.625rem',
                 border: 'none',
-                background: !selectedProfile
-                  ? '#d1d5db'
-                  : `linear-gradient(135deg, ${AMBER}, ${AMBER_DARK})`,
-                color: '#ffffff',
+                background: !selectedProfile ? paper.line : ACCENT,
+                color: !selectedProfile ? paper.ink3 : '#ffffff',
                 fontSize: '1rem',
                 fontWeight: 700,
                 cursor: !selectedProfile ? 'not-allowed' : 'pointer',
@@ -384,7 +385,7 @@ export default function KidLogin() {
               style={{
                 background: 'none',
                 border: 'none',
-                color: AMBER,
+                color: ACCENT,
                 fontSize: '0.875rem',
                 cursor: 'pointer',
                 padding: '0 0 1rem 0',
@@ -396,9 +397,10 @@ export default function KidLogin() {
 
             <h1
               style={{
+                fontFamily: base.fontDisplay,
                 fontSize: '1.5rem',
                 fontWeight: 700,
-                color: '#1f2937',
+                color: paper.ink,
                 textAlign: 'center',
                 marginBottom: '0.5rem',
                 marginTop: 0,
@@ -409,7 +411,7 @@ export default function KidLogin() {
             <p
               style={{
                 fontSize: '0.875rem',
-                color: '#6b7280',
+                color: paper.ink2,
                 textAlign: 'center',
                 marginBottom: '1.75rem',
               }}
@@ -429,7 +431,8 @@ export default function KidLogin() {
                 width: '100%',
                 padding: '1rem',
                 borderRadius: '0.625rem',
-                border: `2px solid ${AMBER}`,
+                border: `2px solid ${ACCENT}`,
+                fontFamily: base.fontMono,
                 fontSize: '2.25rem',
                 fontWeight: 700,
                 letterSpacing: '16px',
@@ -437,8 +440,8 @@ export default function KidLogin() {
                 outline: 'none',
                 boxSizing: 'border-box',
                 marginBottom: '1.25rem',
-                color: '#1f2937',
-                backgroundColor: AMBER_LIGHT,
+                color: paper.ink,
+                backgroundColor: ACCENT_SOFT,
               }}
             />
 
@@ -446,7 +449,7 @@ export default function KidLogin() {
               <p
                 style={{
                   fontSize: '0.875rem',
-                  color: '#ef4444',
+                  color: paper.dangerText,
                   textAlign: 'center',
                   marginBottom: '0.75rem',
                 }}
@@ -464,10 +467,8 @@ export default function KidLogin() {
                 padding: '0.875rem',
                 borderRadius: '0.625rem',
                 border: 'none',
-                background: pin.length < 4
-                  ? '#d1d5db'
-                  : `linear-gradient(135deg, ${AMBER}, ${AMBER_DARK})`,
-                color: '#ffffff',
+                background: pin.length < 4 ? paper.line : ACCENT,
+                color: pin.length < 4 ? paper.ink3 : '#ffffff',
                 fontSize: '1rem',
                 fontWeight: 700,
                 cursor: pin.length < 4 ? 'not-allowed' : 'pointer',
