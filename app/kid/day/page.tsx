@@ -149,7 +149,6 @@ export default function KidDayPage() {
   const xp = child?.xp ?? 0
   const xpInLevel = xp % 1000 // XP accumulated toward the next level (1000 per level)
   const streakDays = streaks.reduce((max, s) => Math.max(max, s.current_count), 0)
-  const fillMode = (child as any)?.kid_fill_mode ?? 3
 
   function handleFillSaved(result: DaySaveResult) {
     setEditMode(false)
@@ -338,7 +337,6 @@ export default function KidDayPage() {
               <KidDayFillForm
                 childId={activeMemberId}
                 date={today}
-                fillMode={fillMode as 1 | 2 | 3}
                 dayType={dayType}
                 existingDay={todayDay}
                 onSaved={handleFillSaved}

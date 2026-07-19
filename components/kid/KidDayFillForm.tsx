@@ -65,7 +65,6 @@ export interface DaySaveResult {
 export interface KidDayFillFormProps {
   childId: string
   date: string         // YYYY-MM-DD
-  fillMode: 1 | 2 | 3 // from child.kid_fill_mode
   dayType: 'school' | 'weekend' | 'vacation'
   existingDay: DayData | null   // pre-filled if parent already saved
   onSaved: (result: DaySaveResult) => void // callback after successful save — server-confirmed numbers only (D-17)
@@ -139,19 +138,11 @@ export function KidDayFillForm({
   // row saves, since several of those writes are insert-only, not upsert).
   const [saveError, setSaveError] = useState(false)
   const [noteChild, setNoteChild] = useState<string>(existingDay?.note_child ?? '')
-  // Grades (mode 3 only)
+  // Grades
   // saved=true means already in DB — skip on submit to avoid duplicates
   type GradeEntry = { grade: number | null; isDigital: boolean; saved: boolean }
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [kidGrades, setKidGrades] = useState<Record<string, GradeEntry[]>>({})
-
-  // IDs of activities already awarded on a previous save — used to prevent
-  // double-awarding coins when the child edits and re-saves the form.
-  const [prevAwardedActivityIds, setPrevAwardedActivityIds] = useState<Set<string>>(new Set())
-  // Which sections already had an attended visit recorded before this edit.
-  const [prevAttendedSectionIds, setPrevAttendedSectionIds] = useState<Set<string>>(new Set())
-  // Whether the book-finish bonus was already awarded before this edit.
-  const [prevBookFinished, setPrevBookFinished] = useState(false)
 
   // ── Reading state ────────────────────────────────────────────────────────
   const [reading, setReading] = useState({
@@ -257,7 +248,6 @@ export function KidDayFillForm({
           bookFinished: existingReading.book_finished ?? false,
           note: existingReading.note ?? '',
         })
-        if (existingReading.book_finished) setPrevBookFinished(true)
       }
 
       // Pre-fill custom-block toggle states (Phase 5.6, flag-on only) — only
@@ -282,14 +272,7 @@ export function KidDayFillForm({
             .map((l: any) => l.activity_id as string)
         )
         setCheckedActivities(doneIds)
-        setPrevAwardedActivityIds(doneIds)
       }
-
-      // Track sections that already had an attended visit (to skip coin re-award)
-      const alreadyAttended = new Set<string>(
-        (sectionsData ?? []).filter((s: any) => s.visit?.attended).map((s: any) => s.id as string)
-      )
-      setPrevAttendedSectionIds(alreadyAttended)
 
       // Pre-fill grades for school days
       if (subs) {
@@ -334,7 +317,7 @@ export function KidDayFillForm({
         if (act) total += act.coins
       })
     }
-    // Grade coins (mode 3) — only unsaved (new) entries. Use wallet_settings so
+    // Grade coins — only unsaved (new) entries. Use wallet_settings so
     // the preview matches what /api/wallet/award credits server-side; GRADE_COINS
     // is only a fallback before settings load.
     if (legacyVisible('grade')) {
@@ -566,7 +549,7 @@ export function KidDayFillForm({
         if (task.legacy_key) legacyDone[task.legacy_key] = roomChecked[task.id] ?? false
       })
 
-      // Build saveDay params based on fillMode
+      // Build saveDay params
       const dayParams: Parameters<typeof saveDay>[0] = {
         childId,
         date,
