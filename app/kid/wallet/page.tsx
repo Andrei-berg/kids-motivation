@@ -92,12 +92,24 @@ export default function KidWalletPage() {
     return new Date(x.created_at).getTime() >= weekStartMs ? sum + Math.abs(x.coins_change) : sum
   }, 0)
 
+  // WR-01: "gift" dropped until a P2P entry point exists; "stats" points at the
+  // achievements screen (rating tab) — /kid/analytics does not exist.
   const QUICK_ACTIONS = [
     { icon: '💸', label: t('kidWallet.quickActions.save'),  href: '/kid/wallet#goals' },
     { icon: '🎁', label: t('kidWallet.quickActions.spend'), href: '/kid/shop' },
-    { icon: '📤', label: t('kidWallet.quickActions.gift'),  href: '/kid/wallet#gift' },
-    { icon: '📊', label: t('kidWallet.quickActions.stats'), href: '/kid/analytics' },
+    { icon: '📊', label: t('kidWallet.quickActions.stats'), href: '/kid/achievements' },
   ]
+
+  function handleQuickAction(href: string) {
+    const hash = href.split('#')[1]
+    if (hash) {
+      // Same-page anchor — scroll directly (router.push to the same path
+      // does not reliably re-trigger hash scrolling in the App Router).
+      document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } else {
+      router.push(href)
+    }
+  }
 
   return (
     <div style={isDesktop ? {} : { paddingBottom: 110, maxWidth: 500, margin: '0 auto' }}>
@@ -133,9 +145,9 @@ export default function KidWalletPage() {
 
       {/* ═══ Quick Actions ════════════════════════════════════════════════════ */}
       <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
           {QUICK_ACTIONS.map(a => (
-            <button key={a.label} onClick={() => router.push(a.href)} style={{
+            <button key={a.label} onClick={() => handleQuickAction(a.href)} style={{
               background: '#fff', borderRadius: 20, padding: '14px 6px 12px',
               border: `1.5px solid ${T.line}`, boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
@@ -192,7 +204,7 @@ export default function KidWalletPage() {
         </div>
 
         {/* RIGHT: goals — sticky on desktop */}
-        <div style={isDesktop ? { position: 'sticky', top: 24 } : {}}>
+        <div id="goals" style={isDesktop ? { position: 'sticky', top: 24 } : {}}>
           {activeMemberId && <GoalsPanel childId={activeMemberId} coins={coins} />}
         </div>
       </div>
