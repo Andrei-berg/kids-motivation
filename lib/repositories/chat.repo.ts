@@ -2,11 +2,15 @@ import { supabase } from '@/lib/supabase'
 import type { ChatMessage, ChatReaction, MessageType } from '@/lib/models/chat.types'
 
 export async function getMessages(familyId: string, limit = 50): Promise<ChatMessage[]> {
+  // WR-04: fetch the LATEST `limit` messages (descending), then reverse to
+  // chronological order for rendering. Ascending+limit returned the oldest 50
+  // ever — past 50 messages the chat froze on a historical window while the
+  // unread badge pointed at messages the kid could never see.
   const { data, error } = await supabase
     .from('chat_messages')
     .select('*')
     .eq('family_id', familyId)
-    .order('created_at', { ascending: true })
+    .order('created_at', { ascending: false })
     .limit(limit)
 
   if (error) {
@@ -14,7 +18,7 @@ export async function getMessages(familyId: string, limit = 50): Promise<ChatMes
     return []
   }
 
-  return data ?? []
+  return (data ?? []).reverse()
 }
 
 export async function sendMessage(params: {
