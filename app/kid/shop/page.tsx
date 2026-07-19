@@ -227,7 +227,23 @@ export default function KidShopPage() {
                       {new Date(p.purchased_at).toLocaleDateString('ru-RU')}
                     </div>
                   </div>
-                  <StatusChip tone={statusTone} theme="paper">{statusLabel}</StatusChip>
+                  {s === 'approved' || s === 'delivered' ? (
+                    /* WR-06: the real «ПОЛУЧЕНО» stamp — shown only once the
+                       purchase is genuinely approved/delivered server-side. */
+                    <Stamp trigger={s}>
+                      <div style={{
+                        transform: 'rotate(-8deg)',
+                        border: `2px solid ${paper.successText}`, color: paper.successText,
+                        borderRadius: 6, padding: '2px 10px',
+                        fontFamily: base.fontDisplay, fontSize: 12, fontWeight: 700,
+                        letterSpacing: 1.5, textTransform: 'uppercase',
+                      }}>
+                        {t('stamp.received')}
+                      </div>
+                    </Stamp>
+                  ) : (
+                    <StatusChip tone={statusTone} theme="paper">{statusLabel}</StatusChip>
+                  )}
                 </div>
               )
             })}
@@ -306,7 +322,10 @@ function ApprovalSheet({ item, onClose }: { item: Reward; onClose: () => void })
         <div style={{ fontFamily: base.fontDisplay, fontSize: 20, fontWeight: 700, color: paper.ink, textAlign: 'center', marginTop: 14 }}>
           {stage === 'approved' ? t('kidShopApproval.done') : t('kidShopApproval.waiting')}
         </div>
-        {/* D-20: approved → Stamp ceremony («ПОЛУЧЕНО», −8° tilt, 450ms), no confetti */}
+        {/* D-20 / WR-06: this stage is timer-driven — the purchase is still
+            `pending`, so the stamp asserts only what IS server-confirmed
+            (request sent, coins deducted). `stamp.received` is reserved for
+            purchases that actually reach approved/delivered (see list below). */}
         {stage === 'approved' && (
           <Stamp trigger="approved" style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
             <div aria-hidden style={{
@@ -316,7 +335,7 @@ function ApprovalSheet({ item, onClose }: { item: Reward; onClose: () => void })
               fontFamily: base.fontDisplay, fontSize: 18, fontWeight: 700,
               letterSpacing: 2, textTransform: 'uppercase',
             }}>
-              {t('stamp.received')}
+              {t('stamp.requestSent')}
             </div>
           </Stamp>
         )}

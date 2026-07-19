@@ -198,6 +198,7 @@
   },
   "stamp": {
     "received": "ПОЛУЧЕНО",
+    "requestSent": "ЗАЯВКА ОТПРАВЛЕНА",
     "goalReached": "ЦЕЛЬ ДОСТИГНУТА"
   },
   "kidShop": {

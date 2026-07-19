@@ -198,6 +198,7 @@
   },
   "stamp": {
     "received": "Received",
+    "requestSent": "Request sent",
     "goalReached": "Goal reached"
   },
   "kidShop": {
