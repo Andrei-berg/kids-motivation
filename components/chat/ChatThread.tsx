@@ -142,12 +142,12 @@ function processMessages(msgs: ChatMessage[], t: TranslateFn): ProcessedItem[] {
     }
     if (msg.message_type === 'system') {
       const group = [msg]
-      const base = new Date(msg.created_at).getTime()
+      const groupStartMs = new Date(msg.created_at).getTime()
       let j = i + 1
       while (
         j < msgs.length &&
         msgs[j].message_type === 'system' &&
-        new Date(msgs[j].created_at).getTime() - base <= 600_000
+        new Date(msgs[j].created_at).getTime() - groupStartMs <= 600_000
       ) { group.push(msgs[j]); j++ }
       if (group.length === 1) out.push({ kind: 'message', data: msg })
       else out.push({ kind: 'activity_group', messages: group, key: `grp-${msg.id}` })
