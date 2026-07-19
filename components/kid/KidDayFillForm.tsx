@@ -510,7 +510,14 @@ export function KidDayFillForm({
       return
     }
 
-    await checkAndAwardBadges(childId, date)
+    // WR-03: once the award succeeded, everything below is non-fatal — a badge
+    // or xp-read failure must never strand the save (a silent re-submit would
+    // duplicate subject_grades rows and re-award coins under new row ids).
+    try {
+      await checkAndAwardBadges(childId, date)
+    } catch (e) {
+      console.warn('[KidDayFillForm] badge check failed (non-fatal):', e)
+    }
 
     let leveledUp = false
     if (prevXp !== null) {
@@ -531,6 +538,11 @@ export function KidDayFillForm({
     setSaving(true)
     try {
       await creditAwardAndFinish()
+    } catch (e) {
+      // WR-03: without this catch a rejection here was unhandled and the
+      // retry UI gave no feedback.
+      console.warn('[KidDayFillForm] retry award failed:', e)
+      setSaveError(true)
     } finally {
       setSaving(false)
     }
