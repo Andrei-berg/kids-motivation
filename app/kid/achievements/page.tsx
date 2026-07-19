@@ -325,7 +325,7 @@ export default function AchievementsPage() {
             <SectionHeader title={t('achievements.allBadges')}/>
             <motion.div variants={listV} initial="hidden" animate="show"
               style={{ display: 'grid', gridTemplateColumns: isDesktop ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: 10, marginTop: 12 }}>
-              {allBadges.slice(0, 12).map(badge => {
+              {allBadges.map(badge => {
                 const earned = earnedBadges.find(e => e.badge_key === badge.key)
                 const isEarned = !!earned
                 const prog = badgeProgress[badge.key]
