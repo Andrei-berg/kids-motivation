@@ -318,4 +318,4 @@ Two fully separate experiences — Parent Center (dark, control-focused) and Kid
 
 ---
 
-*Документ создан: 2026-03-01. Обновлён: 2026-07-15 — Phase 5.6 (day-blocks) complete: the kid's day is assembled from per-child `day_blocks` config (day type × schedule × block rules) behind the per-family `day_blocks_enabled` flag; `/api/wallet/award` computes coins from assembled blocks with rotation-proof natural-key idempotency; verification 4/4 passed.*
+*Документ создан: 2026-03-01. Обновлён: 2026-07-19 — Phase 5.7 (kid-redesign) complete: all kid screens on the unified family-bank system (paper theme, tokens/atoms, gold-on-money-only), nav consolidated 6→5 with leaderboard merged into a 3-tab Awards screen, motion discipline (stamp + count-up on server-confirmed award; confetti only on streak/level-up), chat read-marker via SECURITY DEFINER RPC (CR-01 privilege-escalation found in review and fixed); verification 3/3 passed.*
