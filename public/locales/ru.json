@@ -982,7 +982,18 @@
     "wants": "хочет",
     "decline": "Отклонить",
     "approve": "Одобрить",
-    "messagePlaceholder": "Сообщение семье…"
+    "messagePlaceholder": "Сообщение семье…",
+    "viewMixed": "Лента",
+    "viewSplit": "Раздельно",
+    "tabMessages": "Сообщения",
+    "tabActivity": "Активность",
+    "noActivity": "Нет активности",
+    "newBadge": "Новый значок!",
+    "today": "Сегодня",
+    "yesterday": "Вчера",
+    "eventsOne": "{{count}} событие",
+    "eventsFew": "{{count}} события",
+    "eventsMany": "{{count}} событий"
   },
   "manifest": {
     "appName": "FamilyCoins",

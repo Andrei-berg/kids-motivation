@@ -101,12 +101,27 @@ type ProcessedItem =
   | { kind: 'activity_group'; messages: ChatMessage[]; key: string }
   | { kind: 'date_sep'; label: string; key: string }
 
-function formatDate(iso: string): string {
+// WR-05: translation callback type (lib/i18n's t) threaded into the pure
+// helpers below so date separators/labels localize instead of hardcoding RU.
+type TranslateFn = (key: string, vars?: Record<string, string | number>) => string
+
+// Russian plural rules: 1/21/31… → one, 2–4/22–24… → few, else many.
+// The EN keys map one → "event", few/many → "events", so the same selector
+// works for both locales.
+function eventsCountKey(n: number): string {
+  const mod10 = n % 10
+  const mod100 = n % 100
+  if (mod10 === 1 && mod100 !== 11) return 'chat.eventsOne'
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'chat.eventsFew'
+  return 'chat.eventsMany'
+}
+
+function formatDate(iso: string, t: TranslateFn): string {
   const d = new Date(iso)
   const now = new Date()
   const yest = new Date(); yest.setDate(now.getDate() - 1)
-  if (d.toDateString() === now.toDateString()) return 'Сегодня'
-  if (d.toDateString() === yest.toDateString()) return 'Вчера'
+  if (d.toDateString() === now.toDateString()) return t('chat.today')
+  if (d.toDateString() === yest.toDateString()) return t('chat.yesterday')
   return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
 }
 
@@ -114,7 +129,7 @@ function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
 }
 
-function processMessages(msgs: ChatMessage[]): ProcessedItem[] {
+function processMessages(msgs: ChatMessage[], t: TranslateFn): ProcessedItem[] {
   const out: ProcessedItem[] = []
   let lastDate = ''
   let i = 0
@@ -122,7 +137,7 @@ function processMessages(msgs: ChatMessage[]): ProcessedItem[] {
     const msg = msgs[i]
     const dateStr = new Date(msg.created_at).toDateString()
     if (dateStr !== lastDate) {
-      out.push({ kind: 'date_sep', label: formatDate(msg.created_at), key: `sep-${dateStr}` })
+      out.push({ kind: 'date_sep', label: formatDate(msg.created_at, t), key: `sep-${dateStr}` })
       lastDate = dateStr
     }
     if (msg.message_type === 'system') {
@@ -148,6 +163,7 @@ function processMessages(msgs: ChatMessage[]): ProcessedItem[] {
 // ─── Sub-components: UI controls ─────────────────────────────────────────────
 
 function ViewModeToggle({ mode, onToggle, C }: { mode: ViewMode; onToggle: () => void; C: ChatTokens }) {
+  const t = useT()
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '6px 14px 4px', flexShrink: 0 }}>
       <div style={{
@@ -168,7 +184,7 @@ function ViewModeToggle({ mode, onToggle, C }: { mode: ViewMode; onToggle: () =>
               transition: 'all .15s',
             }}
           >
-            {m === 'mixed' ? 'Лента' : 'Раздельно'}
+            {m === 'mixed' ? t('chat.viewMixed') : t('chat.viewSplit')}
           </button>
         ))}
       </div>
@@ -177,14 +193,15 @@ function ViewModeToggle({ mode, onToggle, C }: { mode: ViewMode; onToggle: () =>
 }
 
 function ChatTabBar({ active, onChange, C }: { active: ChatTab; onChange: (t: ChatTab) => void; C: ChatTokens }) {
+  const t = useT()
   return (
     <div style={{
       display: 'flex', padding: '2px 14px 10px', gap: 6, flexShrink: 0,
       borderBottom: `1px solid ${C.line}`,
     }}>
       {([
-        ['messages', '💬 Сообщения', C.coral],
-        ['activity', '✨ Активность', C.plum],
+        ['messages', `💬 ${t('chat.tabMessages')}`, C.coral],
+        ['activity', `✨ ${t('chat.tabActivity')}`, C.plum],
       ] as [ChatTab, string, string][]).map(([tab, label, color]) => (
         <button
           key={tab}
@@ -223,6 +240,7 @@ function DateSep({ label, C }: { label: string; C: ChatTokens }) {
 }
 
 function SingleActivity({ msg, C }: { msg: ChatMessage; C: ChatTokens }) {
+  const t = useT()
   const { icon, type, label } = classifySystemMessage(msg.content)
   const c = ACT[type]
   if (type === 'badge') {
@@ -235,7 +253,7 @@ function SingleActivity({ msg, C }: { msg: ChatMessage; C: ChatTokens }) {
         }}>
           <div style={{ width: 40, height: 40, borderRadius: 14, flexShrink: 0, background: 'rgba(245,158,11,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{icon}</div>
           <div>
-            <div style={{ fontFamily: C.fBody, fontSize: 10, fontWeight: 700, color: base.gold, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>Новый значок!</div>
+            <div style={{ fontFamily: C.fBody, fontSize: 10, fontWeight: 700, color: base.gold, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>{t('chat.newBadge')}</div>
             <div style={{ fontFamily: C.fDisp, fontSize: 14, fontWeight: 800, color: c.text, lineHeight: 1.3 }}>{stripLeadingEmoji(label)}</div>
           </div>
         </div>
@@ -253,6 +271,7 @@ function SingleActivity({ msg, C }: { msg: ChatMessage; C: ChatTokens }) {
 }
 
 function ActivityBurst({ messages, C }: { messages: ChatMessage[]; C: ChatTokens }) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const time = formatTime(messages[0].created_at)
   let delta = 0
@@ -262,7 +281,7 @@ function ActivityBurst({ messages, C }: { messages: ChatMessage[]; C: ChatTokens
   }
   const icons = Array.from(new Set(messages.map(m => classifySystemMessage(m.content).icon))).slice(0, 4)
   const count = messages.length
-  const countLabel = count < 5 ? `${count} события` : `${count} событий`
+  const countLabel = t(eventsCountKey(count), { count })
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 16px' }}>
@@ -313,12 +332,12 @@ function Avatar({ name, role, C }: { name: string; role: 'parent' | 'child'; C: 
 
 interface DayGroup { dateStr: string; label: string; msgs: ChatMessage[]; delta: number }
 
-function buildDayGroups(msgs: ChatMessage[]): DayGroup[] {
+function buildDayGroups(msgs: ChatMessage[], t: TranslateFn): DayGroup[] {
   const days: DayGroup[] = []
   for (const msg of msgs) {
     const dateStr = new Date(msg.created_at).toDateString()
     let day = days.find(d => d.dateStr === dateStr)
-    if (!day) { day = { dateStr, label: formatDate(msg.created_at), msgs: [], delta: 0 }; days.push(day) }
+    if (!day) { day = { dateStr, label: formatDate(msg.created_at, t), msgs: [], delta: 0 }; days.push(day) }
     day.msgs.push(msg)
     const g = msg.content?.match(/\+(\d+)/); if (g) day.delta += parseInt(g[1])
     const l = msg.content?.match(/-(\d+)/);  if (l) day.delta -= parseInt(l[1])
@@ -327,18 +346,19 @@ function buildDayGroups(msgs: ChatMessage[]): DayGroup[] {
 }
 
 function ActivityFeed({ messages, C }: { messages: ChatMessage[]; C: ChatTokens }) {
+  const t = useT()
   const systemMsgs = messages.filter(m => m.message_type === 'system')
 
   if (systemMsgs.length === 0) {
     return (
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, color: C.ink3 }}>
         <span style={{ fontSize: 40 }}>✨</span>
-        <span style={{ fontFamily: C.fBody, fontSize: 14 }}>Нет активности</span>
+        <span style={{ fontFamily: C.fBody, fontSize: 14 }}>{t('chat.noActivity')}</span>
       </div>
     )
   }
 
-  const days = buildDayGroups(systemMsgs)
+  const days = buildDayGroups(systemMsgs, t)
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', paddingTop: 12, paddingBottom: 8 }}>
@@ -564,7 +584,7 @@ export default function ChatThread({
   const chatMessages = viewMode === 'split'
     ? messages.filter(m => m.message_type !== 'system')
     : messages
-  const processed = processMessages(chatMessages)
+  const processed = processMessages(chatMessages, t)
   const showSendArea = viewMode === 'mixed' || activeTab === 'messages'
 
   return (

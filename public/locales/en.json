@@ -1014,7 +1014,18 @@
     "wants": "wants",
     "decline": "Decline",
     "approve": "Approve",
-    "messagePlaceholder": "Message family…"
+    "messagePlaceholder": "Message family…",
+    "viewMixed": "Feed",
+    "viewSplit": "Split",
+    "tabMessages": "Messages",
+    "tabActivity": "Activity",
+    "noActivity": "No activity yet",
+    "newBadge": "New badge!",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "eventsOne": "{{count}} event",
+    "eventsFew": "{{count}} events",
+    "eventsMany": "{{count}} events"
   },
   "manifest": {
     "appName": "FamilyCoins",
