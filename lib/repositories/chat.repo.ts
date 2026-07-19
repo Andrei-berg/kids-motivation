@@ -165,15 +165,14 @@ export async function postSystemMessage(params: {
 }
 
 // ─── Unread marker (D-04) ───────────────────────────────────────────────────
-// Own-row read-state tracking on family_members.chat_last_read_at. Not a
-// money table — browser client under RLS is correct here (own-row UPDATE
-// policy in 05.7-01-chat-read-marker.sql enforces user_id = auth.uid()).
+// Own-row read-state tracking on family_members.chat_last_read_at. Goes
+// through the mark_chat_read() SECURITY DEFINER RPC (05.7-02), which can
+// touch ONLY chat_last_read_at for auth.uid()'s own row — a direct UPDATE
+// policy on family_members would expose privileged columns (role, family_id)
+// to self-service PATCH (CR-01).
 
-export async function markChatRead(memberId: string): Promise<void> {
-  const { error } = await supabase
-    .from('family_members')
-    .update({ chat_last_read_at: new Date().toISOString() })
-    .eq('id', memberId)
+export async function markChatRead(_memberId?: string): Promise<void> {
+  const { error } = await supabase.rpc('mark_chat_read')
 
   if (error) {
     console.error('[chat.repo] markChatRead error:', error)
