@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { useAppStore } from '@/lib/store'
 import { getWallet, getTransactions } from '@/lib/repositories/wallet.repo'
 import { api } from '@/lib/api'
-import { normalizeDate, getWeekRange } from '@/utils/helpers'
+import { localDateString, getWeekRange } from '@/utils/helpers'
 import type { Wallet, WalletTransaction } from '@/lib/models/wallet.types'
 import type { Child } from '@/lib/models/child.types'
 import { T } from '@/components/kid/design/tokens'
@@ -55,7 +55,7 @@ export default function KidWalletPage() {
     if (!activeMemberId) { setLoading(false); return }
     setLoading(true)
     try {
-      const today = normalizeDate(new Date())
+      const today = localDateString()
       const weekStart = getWeekRange(today).start
       const [walletData, txData, weekData, childData] = await Promise.all([
         getWallet(activeMemberId),
@@ -86,7 +86,7 @@ export default function KidWalletPage() {
   // getWeekScore total; spent is derived from the already-loaded transactions
   // within the current week. Display-only — the balance stays authoritative
   // server-side (money tables are RLS SELECT-only).
-  const weekStartMs = new Date(`${getWeekRange(normalizeDate(new Date())).start}T00:00:00`).getTime()
+  const weekStartMs = new Date(`${getWeekRange(localDateString()).start}T00:00:00`).getTime()
   const weekSpent = transactions.reduce((sum, x) => {
     if (x.coins_change >= 0 || !x.created_at) return sum
     return new Date(x.created_at).getTime() >= weekStartMs ? sum + Math.abs(x.coins_change) : sum

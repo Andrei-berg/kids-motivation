@@ -15,7 +15,7 @@ import { paper } from '@/lib/design/tokens'
 import { levelForXp } from '@/lib/kid/level'
 import { rankChildren, type RankEntry } from '@/lib/kid/rating-rank'
 import { useDesktop } from '@/lib/hooks/useDesktop'
-import { normalizeDate, getWeekRange, addDays } from '@/utils/helpers'
+import { localDateString, getWeekRange, addDays } from '@/utils/helpers'
 import { useT } from '@/lib/i18n'
 
 // ─── Rating tab types & tones ─────────────────────────────────────────────────
@@ -132,7 +132,7 @@ export default function AchievementsPage() {
     setRatingState('loading')
     const load = async () => {
       try {
-        const today = normalizeDate(new Date())
+        const today = localDateString()
         const weekStart = getWeekRange(today).start
         const { createClient } = await import('@/lib/supabase/client')
         const { data: members } = await createClient()
