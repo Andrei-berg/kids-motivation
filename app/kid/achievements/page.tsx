@@ -155,7 +155,7 @@ export default function AchievementsPage() {
           const bestStreak = (streaksData as any[] ?? []).reduce((m: number, s: any) => Math.max(m, s.best_count ?? 0), 0)
           return {
             id, name: c.name, coinsWeek: weekScore ?? 0, avatarUrl: null,
-            level: c.level ?? 1, xp: c.xp ?? 0, coins: wallet?.coins ?? 0,
+            level: levelForXp(c.xp ?? 0), xp: c.xp ?? 0, coins: wallet?.coins ?? 0,
             badgeCount: badges.length, longestStreak: bestStreak,
           } satisfies RatingEntry
         }))

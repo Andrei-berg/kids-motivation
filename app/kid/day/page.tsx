@@ -17,6 +17,7 @@ import type { Wallet } from '@/lib/models/wallet.types'
 import { T } from '@/components/kid/design/tokens'
 import { Avatar, Coin, AnimatedNum, StreakFlame, XPBar } from '@/components/kid/design/atoms'
 import { Stamp, useCountUp, LedgerRow } from '@/components/design/atoms'
+import { levelForXp } from '@/lib/kid/level'
 import { triggerConfetti } from '@/utils/confetti'
 import ScreenHeader from '@/components/kid/design/ScreenHeader'
 import { useDesktop } from '@/lib/hooks/useDesktop'
@@ -145,8 +146,10 @@ export default function KidDayPage() {
   )
 
   const coins = wallet?.coins ?? 0
-  const level = child?.level ?? 1
   const xp = child?.xp ?? 0
+  // Level is derived from XP (levelForXp) for display everywhere — never the
+  // stored child.level column, which can lag the XP write (IN-05).
+  const level = levelForXp(xp)
   const xpInLevel = xp % 1000 // XP accumulated toward the next level (1000 per level)
   const streakDays = streaks.reduce((max, s) => Math.max(max, s.current_count), 0)
 
