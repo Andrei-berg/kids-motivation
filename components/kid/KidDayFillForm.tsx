@@ -78,7 +78,7 @@ export interface KidDayFillFormProps {
 // ============================================================================
 
 const MOOD_OPTIONS_STATIC = [
-  { key: 'happy',   emoji: '😄', labelKey: 'kidFillForm.moodFire',  color: '#FF6B35' },
+  { key: 'happy',   emoji: '😄', labelKey: 'kidFillForm.moodFire',  color: T.warn },
   { key: 'neutral', emoji: '🙂', labelKey: 'kidFillForm.moodGood',  color: '#4ECDC4' },
   { key: 'meh',     emoji: '😐', labelKey: 'kidFillForm.moodOk',    color: '#F5A623' },
   { key: 'sad',     emoji: '😔', labelKey: 'kidFillForm.moodSad',   color: '#6C5CE7' },

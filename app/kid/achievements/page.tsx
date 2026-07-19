@@ -55,7 +55,7 @@ const RARITY_STATIC = [
   { bg: '#F5F0E4', ring: '#D9CFB8', labelBg: '#B8AE92', key: 'rarityCommon'  },
   { bg: '#D6F5F2', ring: T.teal,    labelBg: T.teal,    key: 'rarityRare'    },
   { bg: '#E9E5FB', ring: T.plum,    labelBg: T.plum,    key: 'rarityEpic'    },
-  { bg: '#FFE4D6', ring: T.coral,   labelBg: T.coral,   key: 'rarityLegend'  },
+  { bg: T.coralSoft, ring: T.coral,   labelBg: T.coral,   key: 'rarityLegend'  },
 ]
 
 // ─── Stagger variants ─────────────────────────────────────────────────────────

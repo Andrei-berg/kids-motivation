@@ -51,9 +51,9 @@ function resolveChatTokens(theme: ChatThreadTheme) {
     fDisp: base.fontDisplay,
     fBody: base.fontBody,
     fNum: base.fontMono,
-    coral: '#FF6B35', coralDeep: '#E8551F', coralSoft: '#FFE4D6',
-    teal: '#4ECDC4', plum: base.indigo, plumSoft: base.indigoSoft,
-    sun: '#FFE66D', sunDeep: '#F5C83D',
+    coral: base.indigo, coralDeep: base.indigoDeep, coralSoft: base.indigoSoft,
+    teal: base.success, plum: base.indigo, plumSoft: base.indigoSoft,
+    sun: base.gold, sunDeep: base.goldDeep,
   }
 }
 type ChatTokens = ReturnType<typeof resolveChatTokens>

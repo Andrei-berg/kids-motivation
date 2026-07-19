@@ -13,7 +13,7 @@ interface AvatarProps {
   glow?: boolean
 }
 
-export function Avatar({ size = 56, skin = '#F5C9A1', hair = '#2B1810', shirt = '#FF6B35', glow = false }: AvatarProps) {
+export function Avatar({ size = 56, skin = '#F5C9A1', hair = '#2B1810', shirt = T.coral, glow = false }: AvatarProps) {
   const s = size
   const clipId = `av${s}${shirt.slice(1)}`
   return (
