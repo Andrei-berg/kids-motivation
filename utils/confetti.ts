@@ -1,7 +1,5 @@
 'use client'
 
-import { useEffect } from 'react'
-
 export function triggerConfetti() {
   if (typeof window === 'undefined') return
   
