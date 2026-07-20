@@ -39,7 +39,8 @@
     "loginBtn": "Log in",
     "registerBtn": "Create account",
     "googleBtn": "Log in with Google",
-    "joinFamily": "Have an invite code? Join a family →"
+    "joinFamily": "Have an invite code? Join a family →",
+    "kidLoginLink": "Are you a kid? Log in with your family code →"
   },
   "nav": {
     "dashboard": "Dashboard",

@@ -180,9 +180,12 @@ export default function AuthPage() {
         </button>
 
         {/* Join family */}
-        <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+        <div style={{ textAlign: 'center', marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
           <a href="/onboarding/join" style={{ color: '#6366f1', fontSize: '0.8125rem', textDecoration: 'none' }}>
             {t('auth.joinFamily')}
+          </a>
+          <a href="/kid/login" style={{ color: '#6366f1', fontSize: '0.8125rem', textDecoration: 'none' }}>
+            {t('auth.kidLoginLink')}
           </a>
         </div>
       </div>
