@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { T } from '../tokens'
 import { Card, Btn, Pill, Icon, Tabs } from '../ui'
 import type { ParentChild, Route } from '../types'
+import { createClient } from '@/lib/supabase/client'
 import { getWalletSettings } from '@/lib/wallet-api'
 import { setChildPin } from '@/lib/onboarding-api'
 import { updateWalletSettingsApi } from '@/lib/wallet-client'
@@ -55,12 +56,27 @@ function LanguageCard() {
 }
 
 // ───── Family tab ─────
-function FamilyTab({ allChildren, notify }: { allChildren: ParentChild[]; notify: (msg: string, tone?: string) => void }) {
+function FamilyTab({ allChildren, notify, familyId }: { allChildren: ParentChild[]; notify: (msg: string, tone?: string) => void; familyId: string | null }) {
   const [copied, setCopied] = useState(false)
+  const [code, setCode] = useState('')
   const t = useT()
-  const code = 'FAMILY'
+
+  useEffect(() => {
+    if (!familyId) return
+    let cancelled = false
+    createClient()
+      .from('families')
+      .select('invite_code')
+      .eq('id', familyId)
+      .single()
+      .then(({ data }) => {
+        if (!cancelled && data) setCode(data.invite_code)
+      })
+    return () => { cancelled = true }
+  }, [familyId])
 
   const copy = async () => {
+    if (!code) return
     await navigator.clipboard?.writeText(code).catch(() => {})
     setCopied(true)
     notify(t('parentCenter.settings.family.inviteCopied'))
@@ -79,8 +95,8 @@ function FamilyTab({ allChildren, notify }: { allChildren: ParentChild[]; notify
           display: 'flex', alignItems: 'center', gap: 10, padding: 14, borderRadius: T.rM,
           background: T.bg1, border: `1px dashed ${T.indigo}55`, marginBottom: 10,
         }}>
-          <span style={{ fontFamily: T.fMono, fontSize: 24, fontWeight: 700, color: T.cyan, letterSpacing: '0.3em', flex: 1, textAlign: 'center' }}>{code}</span>
-          <Btn variant={copied ? 'success' : 'primary'} size="md" icon={copied ? 'check' : 'copy'} onClick={copy}>
+          <span style={{ fontFamily: T.fMono, fontSize: 24, fontWeight: 700, color: T.cyan, letterSpacing: '0.3em', flex: 1, textAlign: 'center' }}>{code || '······'}</span>
+          <Btn variant={copied ? 'success' : 'primary'} size="md" icon={copied ? 'check' : 'copy'} onClick={copy} disabled={!code}>
             {copied ? t('parentCenter.settings.family.copied') : t('parentCenter.settings.family.copy')}
           </Btn>
         </div>
@@ -553,7 +569,7 @@ export default function SettingsScreen({ allChildren, notify, onNavigate }: {
   ]
 
   const content: Record<string, JSX.Element> = {
-    family:   <FamilyTab allChildren={allChildren} notify={notify}/>,
+    family:   <FamilyTab allChildren={allChildren} notify={notify} familyId={familyId}/>,
     coins:    <CoinsRulesTab notify={notify}/>,
     children: <ChildrenTab allChildren={allChildren} notify={notify}/>,
     schedule: <ScheduleTab allChildren={allChildren}/>,
