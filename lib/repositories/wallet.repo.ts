@@ -888,7 +888,8 @@ async function createTransaction(
 
 export async function getTransactions(
   childId?: string,
-  limit: number = 50
+  limit: number = 50,
+  since?: string // ISO timestamp — only rows with created_at >= since
 ): Promise<WalletTransaction[]> {
   let query = supabase
     .from('wallet_transactions')
@@ -897,6 +898,7 @@ export async function getTransactions(
     .limit(limit)
 
   if (childId) query = query.eq('child_id', childId)
+  if (since) query = query.gte('created_at', since)
 
   const { data, error } = await query
 

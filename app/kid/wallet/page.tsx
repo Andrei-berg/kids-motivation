@@ -48,6 +48,7 @@ export default function KidWalletPage() {
   const [wallet, setWallet] = useState<Wallet | null>(null)
   const [child, setChild] = useState<Child | null>(null)
   const [transactions, setTransactions] = useState<WalletTransaction[]>([])
+  const [weekTransactions, setWeekTransactions] = useState<WalletTransaction[]>([])
   const [weekScore, setWeekScore] = useState<number>(0)
   const isDesktop = useDesktop()
 
@@ -57,14 +58,20 @@ export default function KidWalletPage() {
     try {
       const today = localDateString()
       const weekStart = getWeekRange(today).start
-      const [walletData, txData, weekData, childData] = await Promise.all([
+      // IN-06: fetch the week's transactions explicitly (created_at >= local
+      // week start) so weekSpent covers the whole week — not just whatever
+      // happens to fall inside the last-20 display window.
+      const weekStartIso = new Date(`${weekStart}T00:00:00`).toISOString()
+      const [walletData, txData, weekTxData, weekData, childData] = await Promise.all([
         getWallet(activeMemberId),
         getTransactions(activeMemberId, 20),
+        getTransactions(activeMemberId, 500, weekStartIso),
         api.getWeekScore(activeMemberId, weekStart),
         api.getChild(activeMemberId).catch(() => null),
       ])
       setWallet(walletData)
       setTransactions(txData)
+      setWeekTransactions(weekTxData)
       setWeekScore(weekData?.total ?? 0)
       setChild(childData)
     } catch (err) {
@@ -83,11 +90,11 @@ export default function KidWalletPage() {
   if (loading) return <LoadingSkeleton/>
 
   // Weekly +earned / −spent summary (D-16). Earned reuses the existing
-  // getWeekScore total; spent is derived from the already-loaded transactions
-  // within the current week. Display-only — the balance stays authoritative
-  // server-side (money tables are RLS SELECT-only).
+  // getWeekScore total; spent is derived from the explicitly-fetched
+  // week-window transactions (IN-06). Display-only — the balance stays
+  // authoritative server-side (money tables are RLS SELECT-only).
   const weekStartMs = new Date(`${getWeekRange(localDateString()).start}T00:00:00`).getTime()
-  const weekSpent = transactions.reduce((sum, x) => {
+  const weekSpent = weekTransactions.reduce((sum, x) => {
     if (x.coins_change >= 0 || !x.created_at) return sum
     return new Date(x.created_at).getTime() >= weekStartMs ? sum + Math.abs(x.coins_change) : sum
   }, 0)
