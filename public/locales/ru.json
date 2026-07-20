@@ -1537,11 +1537,11 @@
         "modeSaved": "Режим сохранён (полные настройки → Settings)",
         "childPin": "PIN ребёнка",
         "childPinManage": "Управляйте PIN-кодами в полных",
-        "pinHint": "Задайте 4-значный PIN, чтобы {{name}} мог входить по коду семьи и PIN — без email и Google.",
+        "pinHint": "Задайте PIN из 4–6 цифр, чтобы {{name}} мог входить по коду семьи и PIN — без email и Google.",
         "pinPlaceholder": "4–6 цифр",
         "pinSaveBtn": "Сохранить PIN",
         "pinSaved": "PIN сохранён — {{name}} может войти по коду семьи и PIN",
-        "pinTooShort": "PIN должен состоять из 4 цифр",
+        "pinTooShort": "PIN должен состоять из 4–6 цифр",
         "pinSwitchConfirm": "Переключить вход {{name}} на PIN? Вход через привязанный аккаунт (например Google) перестанет работать."
       },
       "more": {

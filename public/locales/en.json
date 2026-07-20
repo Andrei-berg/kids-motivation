@@ -1537,11 +1537,11 @@
         "modeSaved": "Mode saved (manage fully in Settings)",
         "childPin": "Child Login PIN",
         "childPinManage": "Manage child PINs in the full",
-        "pinHint": "Set a 4-digit PIN so {{name}} can sign in with the family code + PIN — no email or Google needed.",
+        "pinHint": "Set a 4–6 digit PIN so {{name}} can sign in with the family code + PIN — no email or Google needed.",
         "pinPlaceholder": "4–6 digits",
         "pinSaveBtn": "Save PIN",
         "pinSaved": "PIN saved — {{name}} can sign in with the family code + PIN",
-        "pinTooShort": "PIN must be 4 digits",
+        "pinTooShort": "PIN must be 4–6 digits",
         "pinSwitchConfirm": "Switch {{name}} to PIN login? Their linked account (e.g. Google) sign-in will stop working."
       },
       "more": {
