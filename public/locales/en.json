@@ -39,8 +39,8 @@
     "loginBtn": "Log in",
     "registerBtn": "Create account",
     "googleBtn": "Log in with Google",
-    "joinFamily": "Have an invite code? Join a family →",
-    "kidLoginLink": "Are you a kid? Log in with your family code →"
+    "joinFamily": "Second parent, or a kid with their own account? Join with an invite code →",
+    "kidLoginLink": "Kid without an account? Log in with the family code + PIN →"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -87,8 +87,8 @@
     "wrongPin": "Wrong PIN",
     "error": "Login error",
     "step0Title": "Log in as a child",
-    "step0Subtitle": "Ask your parent to show the family code",
-    "familyCodePlaceholder": "Family code (6 letters)",
+    "step0Subtitle": "First, the family code (not your PIN!). Ask a parent — we'll ask for your PIN on the next step.",
+    "familyCodePlaceholder": "Family code, not your PIN",
     "codeNotFound": "Code not found. Check and try again.",
     "connectionError": "Connection error. Try again.",
     "checking": "Checking...",
