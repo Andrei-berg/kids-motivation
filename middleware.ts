@@ -30,7 +30,11 @@ export async function middleware(request: NextRequest) {
   // Classify the path
   const isPublicPath =
     pathname.startsWith('/auth') ||
-    pathname === '/'
+    pathname === '/' ||
+    // The PIN-login screen itself must be reachable by a logged-out visitor —
+    // only /api/kid/login (the submit endpoint) was exempted above, leaving
+    // this page 307'd to '/' and the kid PIN flow unreachable.
+    pathname === '/kid/login'
   const isOnboardingPath = pathname.startsWith('/onboarding')
   const isParentPath = pathname.startsWith('/parent')
   const isKidPath = pathname.startsWith('/kid')

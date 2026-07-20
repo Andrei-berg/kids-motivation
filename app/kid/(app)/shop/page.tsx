@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
 import { getWallet, getRewards, getPurchases } from '@/lib/repositories/wallet.repo'
-import { requestPurchase } from '@/app/kid/shop/actions'
+import { requestPurchase } from '@/app/kid/(app)/shop/actions'
 import { api } from '@/lib/api'
 import type { Wallet, Reward, RewardPurchase } from '@/lib/models/wallet.types'
 import type { Child } from '@/lib/models/child.types'
