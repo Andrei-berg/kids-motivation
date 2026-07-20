@@ -16,14 +16,28 @@ export default async function KidLayout({ children }: { children: React.ReactNod
 
   const { data: membership } = await supabase
     .from('family_members')
-    .select('id, role, child_id')
+    .select('id, role, child_id, family_id')
     .eq('user_id', user.id)
     .maybeSingle()
 
   const cookieStore = await cookies()
   const previewChildId = cookieStore.get('kid_preview')?.value
 
-  if (previewChildId && membership?.role === 'parent') {
+  // IN-07: only honor the preview cookie when it identifies a child of the
+  // parent's own family — a stale/forged value falls through to the normal
+  // branch instead of rendering a blank preview.
+  let previewValid = false
+  if (previewChildId && membership?.role === 'parent' && membership.family_id) {
+    const { data: previewChild } = await supabase
+      .from('children')
+      .select('id')
+      .eq('id', previewChildId)
+      .eq('family_id', membership.family_id)
+      .maybeSingle()
+    previewValid = !!previewChild
+  }
+
+  if (previewChildId && previewValid) {
     return (
       <div className="min-h-screen" style={{ background: paper.bg, color: paper.ink }}>
         <KidInitializer memberId={previewChildId} />
