@@ -1,13 +1,14 @@
 'use client'
 
 import {
+  Suspense,
   useState,
   useEffect,
   useRef,
   KeyboardEvent,
   ClipboardEvent,
 } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   lookupFamilyByCode,
@@ -340,7 +341,10 @@ function ScreenCode({
 
       <p style={{ fontSize: '0.8125rem', color: '#9ca3af', textAlign: 'center', margin: 0 }}>
         {t('onboarding.noAccount')}{' '}
-        <a href="/register" style={{ color: '#10b981', textDecoration: 'none', fontWeight: 700 }}>
+        <a
+          href={code.length === 6 ? `/?next=join&code=${encodeURIComponent(code)}` : '/'}
+          style={{ color: '#10b981', textDecoration: 'none', fontWeight: 700 }}
+        >
           {t('onboarding.register')}
         </a>
       </p>
@@ -636,8 +640,17 @@ function ScreenAdultRole({
 const SCREEN_ORDER: Screen[] = ['code', 'select', 'adult-role']
 
 export default function JoinFamilyPage() {
+  return (
+    <Suspense fallback={null}>
+      <JoinFamilyPageInner />
+    </Suspense>
+  )
+}
+
+function JoinFamilyPageInner() {
   const t = useT()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { setFamilyId: setStoreFamilyId, setActiveMemberId } = useAppStore()
 
   // Auth state
@@ -667,13 +680,16 @@ export default function JoinFamilyPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Auth check on mount
+  // Auth check on mount. Looking up a family by code and seeing who's in it
+  // doesn't require an account — only actually claiming a profile does (see
+  // handleJoinAsChild/handleJoinAsAdult) — so an anonymous visitor is allowed
+  // to browse this flow instead of being bounced away.
   useEffect(() => {
     const init = async () => {
       try {
         const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) { router.replace('/login'); return }
+        if (!user) return
 
         const { data: existingRows } = await supabase
           .from('family_members')
@@ -709,6 +725,34 @@ export default function JoinFamilyPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Resume an in-progress join carried across a login/register round-trip
+  // (?code=XXXXXX, set by app/page.tsx's postAuthPath) by auto-submitting it.
+  const autoLookupRan = useRef(false)
+  useEffect(() => {
+    const codeFromUrl = (searchParams.get('code') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)
+    if (!codeFromUrl || codeFromUrl.length !== 6 || autoLookupRan.current) return
+    autoLookupRan.current = true
+    setCode(codeFromUrl)
+    ;(async () => {
+      setLookingUp(true)
+      setError(null)
+      try {
+        const result = await lookupFamilyByCode(codeFromUrl)
+        if (!result) { setError(t('onboarding.codeNotFound')); return }
+        const children = await getFamilyChildren(result.familyId)
+        setFamilyId(result.familyId)
+        setFamilyName(result.name)
+        setUnlinkedChildren(children)
+        goTo('select', 'forward')
+      } catch (err) {
+        setError(err instanceof Error ? err.message : t('onboarding.tryAgain'))
+      } finally {
+        setLookingUp(false)
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
+
   const goTo = (next: Screen, dir: 'forward' | 'backward') => {
     if (animating) return
     setSlideDir(dir)
@@ -742,9 +786,17 @@ export default function JoinFamilyPage() {
     }
   }
 
+  // An anonymous visitor can browse the code/select screens, but claiming a
+  // profile needs an account — send them to sign in or register, then land
+  // right back here with the code prefilled (see the auto-lookup effect above).
+  const requireAuth = () => {
+    router.push(`/?next=join&code=${encodeURIComponent(code)}`)
+  }
+
   // Screen 2 → join as child
   const handleJoinAsChild = async () => {
-    if (!selectedChildId || !userId) return
+    if (!selectedChildId) return
+    if (!userId) { requireAuth(); return }
     const child = unlinkedChildren.find((c) => c.memberId === selectedChildId)
     if (!child) return
     setLoading(true)
@@ -775,7 +827,8 @@ export default function JoinFamilyPage() {
 
   // Screen 3 → join as adult
   const handleJoinAsAdult = async () => {
-    if (!selectedRole || !userId) return
+    if (!selectedRole) return
+    if (!userId) { requireAuth(); return }
     setLoading(true)
     setError(null)
     try {

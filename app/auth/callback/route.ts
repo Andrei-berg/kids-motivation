@@ -4,6 +4,10 @@ import { createClient } from '@/lib/supabase/server'
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
+  // An in-progress "join family by invite code" flow, forwarded through the
+  // OAuth round-trip via redirectTo — see app/page.tsx's handleGoogle and
+  // app/onboarding/join/page.tsx's unauthenticated-join redirect.
+  const inviteCode = searchParams.get('next') === 'join' ? searchParams.get('code_invite') : null
 
   if (code) {
     const supabase = await createClient()
@@ -19,7 +23,7 @@ export async function GET(request: Request) {
           .eq('user_id', user.id)
           .maybeSingle()
 
-        let next = '/onboarding'
+        let next = inviteCode ? `/onboarding/join?code=${encodeURIComponent(inviteCode)}` : '/onboarding'
         if (membership) {
           next = membership.role === 'child' ? '/kid' : '/parent/dashboard'
         }

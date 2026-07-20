@@ -1,13 +1,22 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useT } from '@/lib/i18n'
 
 export default function AuthPage() {
+  return (
+    <Suspense fallback={null}>
+      <AuthPageInner />
+    </Suspense>
+  )
+}
+
+function AuthPageInner() {
   const t = useT()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [tab, setTab] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -16,13 +25,24 @@ export default function AuthPage() {
   const [error, setError] = useState<string | null>(null)
   const [registered, setRegistered] = useState(false)
 
+  // Carries an in-progress "join family by invite code" flow across the
+  // login/register round-trip — set by /onboarding/join when it bounces an
+  // unauthenticated visitor here (?next=join&code=XXXXXX), read back below
+  // instead of the default post-auth destination.
+  const joinCode = searchParams.get('next') === 'join' ? searchParams.get('code') : null
+  const postAuthPath = (hasFamily: boolean) => {
+    if (joinCode) return `/onboarding/join?code=${encodeURIComponent(joinCode)}`
+    return hasFamily ? '/dashboard' : '/onboarding'
+  }
+
   // Auto-redirect if already logged in
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace('/dashboard')
+      if (session) router.replace(joinCode ? `/onboarding/join?code=${encodeURIComponent(joinCode)}` : '/dashboard')
       else setChecking(false)
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
   async function handleLogin(e: React.FormEvent) {
@@ -39,7 +59,7 @@ export default function AuthPage() {
         .select('id')
         .eq('user_id', data.user!.id)
         .maybeSingle()
-      router.push(membership ? '/dashboard' : '/onboarding')
+      router.push(postAuthPath(!!membership))
     } finally {
       setLoading(false)
     }
@@ -54,8 +74,8 @@ export default function AuthPage() {
       const { data, error: err } = await supabase.auth.signUp({ email, password })
       if (err) { setError(err.message); return }
       if (data.session) {
-        // Email confirmation disabled — go straight to onboarding
-        router.push('/onboarding')
+        // Email confirmation disabled — go straight to onboarding (or back to the join flow)
+        router.push(postAuthPath(false))
       } else {
         // Email confirmation required
         setRegistered(true)
@@ -67,9 +87,14 @@ export default function AuthPage() {
 
   async function handleGoogle() {
     const supabase = createClient()
+    // Supabase appends its own ?code= (the OAuth exchange code) to redirectTo,
+    // so the invite code must travel under a different param name.
+    const redirectTo = joinCode
+      ? `${window.location.origin}/auth/callback?next=join&code_invite=${encodeURIComponent(joinCode)}`
+      : `${window.location.origin}/auth/callback`
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo },
     })
   }
 
