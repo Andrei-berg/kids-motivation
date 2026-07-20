@@ -100,7 +100,7 @@
     "error": "Ошибка входа",
     "step0Title": "Войти как ребёнок",
     "step0Subtitle": "Сначала код семьи (не твой PIN!). Спроси у родителя — на следующем шаге попросим PIN.",
-    "familyCodePlaceholder": "Код семьи, не PIN",
+    "familyCodePlaceholder": "Код семьи",
     "codeNotFound": "Код не найден. Проверь и попробуй снова.",
     "connectionError": "Ошибка соединения. Попробуй снова.",
     "checking": "Проверяю...",

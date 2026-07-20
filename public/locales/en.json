@@ -100,7 +100,7 @@
     "error": "Login error",
     "step0Title": "Log in as a child",
     "step0Subtitle": "First, the family code (not your PIN!). Ask a parent — we'll ask for your PIN on the next step.",
-    "familyCodePlaceholder": "Family code, not your PIN",
+    "familyCodePlaceholder": "Family code",
     "codeNotFound": "Code not found. Check and try again.",
     "connectionError": "Connection error. Try again.",
     "checking": "Checking...",
