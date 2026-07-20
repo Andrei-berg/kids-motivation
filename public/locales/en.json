@@ -1119,6 +1119,8 @@
     "moodSection": "Mood",
     "extraSection": "Extra Activities",
     "gradesSection": "Grades for today",
+    "digitalHint": "📱 Digital",
+    "digitalShort": "Dig.",
     "schoolSub": "School",
     "exercisesSection": "Exercises",
     "homeSub": "Home",

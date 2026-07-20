@@ -30,7 +30,7 @@ import RoomBlock from '@/components/kid/day-blocks/RoomBlock'
 import ActivitiesBlock from '@/components/kid/day-blocks/ActivitiesBlock'
 import BookBlock from '@/components/kid/day-blocks/BookBlock'
 import CustomBlock from '@/components/kid/day-blocks/CustomBlock'
-import { useT, useLanguage } from '@/lib/i18n'
+import { useT } from '@/lib/i18n'
 import { localDateString } from '@/utils/helpers'
 import { track } from '@/lib/analytics'
 
@@ -101,7 +101,6 @@ export function KidDayFillForm({
   dayBlocks,
 }: KidDayFillFormProps) {
   const t = useT()
-  const { language } = useLanguage()
   const MOOD_OPTIONS = MOOD_OPTIONS_STATIC.map(m => ({ ...m, label: t(m.labelKey) }))
 
   // ── Coin animation ───────────────────────────────────────────────────────
@@ -720,7 +719,7 @@ export function KidDayFillForm({
   const gradesBody = (
     <>
       <div style={{ fontFamily: T.fBody, fontSize: 12, color: T.ink3, marginBottom: 10, lineHeight: 1.4 }}>
-        <b style={{ color: T.coral }}>📱 Digital</b>
+        <b style={{ color: T.coral }}>{t('kidFillForm.digitalHint')}</b>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {subjects.map(sub => {
@@ -763,7 +762,7 @@ export function KidDayFillForm({
                         background: entry.isDigital ? T.coral : T.lineSoft,
                         color: entry.isDigital ? '#fff' : T.ink3,
                         fontFamily: T.fDisp, fontSize: 11, fontWeight: 800,
-                      }}>📱 {language === 'en' ? 'Dig.' : 'Цифр'}</button>
+                      }}>📱 {t('kidFillForm.digitalShort')}</button>
                       {entries.filter(e => !e.saved).length > 1 && (
                         <button onClick={() => setKidGrades(prev => ({ ...prev, [sub.name]: prev[sub.name].filter((_, i) => i !== idx) }))} style={{
                           width: 26, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
