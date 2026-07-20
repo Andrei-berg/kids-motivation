@@ -12,9 +12,7 @@ function randomPassword() {
 }
 
 export async function POST(req: NextRequest) {
-  // `force` = the parent explicitly chose to switch this child's login to PIN even
-  // though the profile is already linked to a real (e.g. Google) account.
-  const { childId, pin, force } = await req.json()
+  const { childId, pin } = await req.json()
 
   if (!childId || !pin || !/^\d{4,8}$/.test(pin)) {
     return NextResponse.json({ error: 'Invalid input: childId and 4–8 digit pin required' }, { status: 400 })
@@ -64,8 +62,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Child not found in your family' }, { status: 404 })
   }
 
-  // 2. Create/update the synthetic auth user for PIN-based login.
-  //    Requires SUPABASE_SERVICE_ROLE_KEY. Without it, PIN login cannot be set up.
+  // 2. PIN login is additive, not exclusive: it never overwrites whatever identity
+  //    (real account or a prior synthetic one) is already linked to this child —
+  //    /api/kid/login resolves that identity's email at login time, so setting a
+  //    PIN just gives an existing account a second way in. A synthetic account is
+  //    only ever created here to bootstrap identity for a child with no account
+  //    linked yet at all.
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!serviceKey || serviceKey === 'your_supabase_service_role_key') {
     return NextResponse.json(
@@ -79,65 +81,54 @@ export async function POST(req: NextRequest) {
     serviceKey
   )
 
-  const syntheticEmail = `child_${childId}@internal.familycoins.app`
+  let targetUserId = childMember.user_id
 
-  let syntheticUserId: string | null = null
+  if (!targetUserId) {
+    const syntheticEmail = `child_${childId}@internal.familycoins.app`
 
-  const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
-    email: syntheticEmail,
-    password: randomPassword(),
-    email_confirm: true,
-  })
+    const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
+      email: syntheticEmail,
+      password: randomPassword(),
+      email_confirm: true,
+    })
 
-  if (!createError) {
-    syntheticUserId = createData.user?.id ?? null
-  } else if (
-    createError.message.includes('already been registered') ||
-    createError.message.includes('already exists')
-  ) {
-    // Synthetic user already exists — rotate to a fresh random password and reuse id.
-    const { data: listData, error: listError } = await adminClient.auth.admin.listUsers({ page: 1, perPage: 1000 })
-    if (listError) return NextResponse.json({ error: listError.message }, { status: 500 })
+    if (!createError) {
+      targetUserId = createData.user?.id ?? null
+    } else if (
+      createError.message.includes('already been registered') ||
+      createError.message.includes('already exists')
+    ) {
+      // Synthetic user already exists (e.g. a prior PIN was removed without
+      // clearing the auth user) — reuse it rather than erroring.
+      const { data: listData, error: listError } = await adminClient.auth.admin.listUsers({ page: 1, perPage: 1000 })
+      if (listError) return NextResponse.json({ error: listError.message }, { status: 500 })
 
-    const existingUser = listData?.users?.find((u) => u.email === syntheticEmail)
-    if (!existingUser) return NextResponse.json({ error: createError.message }, { status: 500 })
+      const existingUser = listData?.users?.find((u) => u.email === syntheticEmail)
+      if (!existingUser) return NextResponse.json({ error: createError.message }, { status: 500 })
 
-    const { error: updateError } = await adminClient.auth.admin.updateUserById(existingUser.id, { password: randomPassword() })
-    if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
-    syntheticUserId = existingUser.id
-  } else {
-    return NextResponse.json({ error: createError.message }, { status: 500 })
+      const { error: updateError } = await adminClient.auth.admin.updateUserById(existingUser.id, { password: randomPassword() })
+      if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
+      targetUserId = existingUser.id
+    } else {
+      return NextResponse.json({ error: createError.message }, { status: 500 })
+    }
   }
 
-  if (!syntheticUserId) {
+  if (!targetUserId) {
     return NextResponse.json({ error: 'Could not resolve the child login account' }, { status: 500 })
   }
 
-  // Store the PIN as a bcrypt hash (server-side, RLS-locked). This — not the auth
+  // Store the PIN as a bcrypt hash (server-side, RLS-locked). This — not any auth
   // password — is what /api/kid/login verifies, so the lockout is authoritative.
   const { error: hashError } = await adminClient.rpc('set_child_pin_hash', { p_child_id: childId, p_pin: pin })
   if (hashError) return NextResponse.json({ error: hashError.message }, { status: 500 })
 
-  // 3. Link the synthetic account to the child profile so that, after PIN sign-in,
-  //    middleware/guards/RLS resolve the child by family_members.user_id = auth.uid(),
-  //    and flag the profile as PIN-enabled so the login picker lists it.
-  //    Guard: never silently overwrite a DIFFERENT real account (e.g. Google). The
-  //    parent must pass force:true to switch an already-linked child to PIN login.
-  const linkedToOther = childMember.user_id != null && childMember.user_id !== syntheticUserId
-  if (linkedToOther && !force) {
-    return NextResponse.json(
-      {
-        ok: false,
-        code: 'ALREADY_LINKED',
-        error: 'Этот ребёнок уже входит через привязанный аккаунт. Переключить вход на PIN?',
-      },
-      { status: 409 },
-    )
-  }
-
+  // 3. Flag the profile as PIN-enabled so the login picker lists it. Only writes
+  //    user_id when it was previously unset (the bootstrap case) — an existing
+  //    link (real or synthetic) is left exactly as it was.
   const { error: linkError } = await adminClient
     .from('family_members')
-    .update({ user_id: syntheticUserId, pin_set: true })
+    .update({ user_id: targetUserId, pin_set: true })
     .eq('id', childMember.id)
     .eq('family_id', membership.family_id)
   if (linkError) return NextResponse.json({ error: linkError.message }, { status: 500 })

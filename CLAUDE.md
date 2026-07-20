@@ -47,21 +47,31 @@ Adam & Alim — some legacy top-level pages from that era still exist; see Routi
 ### Auth & roles
 
 - Supabase Auth. **Parents** sign in with email/password (`/` is the login/register page).
-  A child may sign in **either** with a real account (e.g. Google) **or** with a family
-  code + 4–6 digit PIN at `/kid/login` — one method per child. Both resolve to a
+  A child may sign in with a real account (e.g. Google) **and/or** with a family code +
+  4–6 digit PIN at `/kid/login` — the two are **additive, not exclusive**: setting a PIN
+  never displaces a real account already linked to that child. `family_members.user_id`
+  always names whichever identity is currently authoritative for that child (real account
+  if they have one, otherwise a synthetic PIN-only account); PIN login resolves and signs
+  in as *that* identity at login time rather than assuming a fixed synthetic address, so it
+  keeps working even after the child later claims a real account via `/onboarding/join`
+  (`claim_child_profile` — allowed whenever `has_real_account` is false, i.e. no real
+  account yet, regardless of PIN status). Both paths ultimately resolve to a
   `family_members` row via `user_id`.
-- **Child PIN login (password-less model).** Each PIN child has a synthetic auth user
-  `child_<childId>@internal.familycoins.app` whose password is a **long random secret**
-  (never the PIN), so the public token endpoint has nothing to brute-force — do NOT
-  reintroduce `signInWithPassword` with the PIN. The PIN is stored as a **bcrypt hash**
-  in `child_pin_credentials` (RLS deny-all, service-role only) and verified by
-  `verify_child_pin()`, which enforces an **authoritative per-child lockout** (5 fails /
-  15 min → 15 min lock). Flow: `/kid/login` → `getFamilyPinProfiles` picker (returns
-  `child_id`) → POST `/api/kid/login` → verify PIN + lockout → mint a session with
+- **Child PIN login (password-less model).** A PIN-only child (no real account yet) gets
+  a synthetic auth user `child_<childId>@internal.familycoins.app` whose password is a
+  **long random secret** (never the PIN), so the public token endpoint has nothing to
+  brute-force — do NOT reintroduce `signInWithPassword` with the PIN. The PIN is stored as
+  a **bcrypt hash** in `child_pin_credentials` (RLS deny-all, service-role only) and
+  verified by `verify_child_pin()`, which enforces an **authoritative per-child lockout**
+  (5 fails / 15 min → 15 min lock). Flow: `/kid/login` → `getFamilyPinProfiles` picker
+  (returns `child_id`) → POST `/api/kid/login` → verify PIN + lockout → look up the
+  currently-linked identity's email (`admin.auth.admin.getUserById`) → mint a session with
   `generateLink`+`verifyOtp` (sets auth cookies). PINs are set by `/api/set-child-pin`
-  (parent-guarded, service-role): stores the hash via `set_child_pin_hash`, randomizes
-  the synthetic password, links `user_id` + `pin_set`. `/api/kid/login` is exempt from
-  the middleware auth redirect (the caller is pre-auth by definition).
+  (parent-guarded, service-role): stores the hash via `set_child_pin_hash`; only creates/
+  links a synthetic account when the child has **no** account linked yet (`user_id IS
+  NULL`) — otherwise leaves the existing link untouched and just flags `pin_set`.
+  `/api/kid/login` is exempt from the middleware auth redirect (the caller is pre-auth by
+  definition).
 - `family_members` links an auth user to a family with a `role` (`parent` | `child` | `extended`)
   and, for children, a `child_id` → `children.id`.
 - `middleware.ts` is the gatekeeper: redirects unauthenticated users to `/`, does role-based

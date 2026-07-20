@@ -42,6 +42,18 @@
     "joinFamily": "Second parent, or a kid with their own account? Join with an invite code →",
     "kidLoginLink": "Kid without an account? Log in with the family code + PIN →"
   },
+  "authHelp": {
+    "trigger": "How does family sign-in work? →",
+    "title": "How sign-in works in FamilyCoins",
+    "step1Title": "1. A parent registers",
+    "step1Body": "Email + password or Google, right on this page → you create a family → you get an invite code (visible in Settings → Family).",
+    "step2Title": "2. Invite code — for joining",
+    "step2Body": "One shared code per family, it doesn't change. Needed once: for a second parent, or a kid with their own account, on the \"Have an invite code?\" screen. After that they just sign in normally with email/Google.",
+    "step3Title": "3. PIN — for a kid without an account",
+    "step3Body": "You set a PIN (4–6 digits) for the kid in Settings → Children. From then on they sign in themselves on the \"Are you a kid?\" screen: family code → their name → PIN.",
+    "step4Title": "4. Both at once, if you want",
+    "step4Body": "If a kid already has a Google/email account, you can still set a PIN for them. Both sign-in methods work at the same time — the kid picks whichever's convenient."
+  },
   "nav": {
     "dashboard": "Dashboard",
     "wallet": "Wallet",
@@ -1537,12 +1549,11 @@
         "modeSaved": "Mode saved (manage fully in Settings)",
         "childPin": "Child Login PIN",
         "childPinManage": "Manage child PINs in the full",
-        "pinHint": "Set a 4–6 digit PIN so {{name}} can sign in with the family code + PIN — no email or Google needed.",
+        "pinHint": "Set a 4–6 digit PIN — {{name}} will be able to sign in with the family code + PIN any time, in addition to email/Google if they already have it.",
         "pinPlaceholder": "4–6 digits",
         "pinSaveBtn": "Save PIN",
         "pinSaved": "PIN saved — {{name}} can sign in with the family code + PIN",
-        "pinTooShort": "PIN must be 4–6 digits",
-        "pinSwitchConfirm": "Switch {{name}} to PIN login? Their linked account (e.g. Google) sign-in will stop working."
+        "pinTooShort": "PIN must be 4–6 digits"
       },
       "more": {
         "subjects": "Manage subjects",

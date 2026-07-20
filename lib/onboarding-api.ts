@@ -571,28 +571,22 @@ export async function completeOnboarding(
 // ---------------------------------------------------------------------------
 // setChildPin
 // ---------------------------------------------------------------------------
-// Set or update a 4-digit PIN for a child (no-email login).
-// Calls /api/set-child-pin which uses the service-role key server-side to
-// create/update a synthetic Supabase Auth user (password = PIN, stored as a
-// salted bcrypt hash by Supabase Auth). The PIN is not persisted anywhere else.
+// Set or update a 4-6 digit PIN for a child, as an additional (not exclusive)
+// login method — it never disturbs a real Google/email account already linked
+// to the child; it only ever creates a synthetic bootstrap account when no
+// account is linked yet at all. Calls /api/set-child-pin (service-role).
 // Safe to call from client components.
 
-export type SetPinResult = { ok: true } | { ok: false; code: 'ALREADY_LINKED'; error: string }
-
-export async function setChildPin(childId: string, pin: string, force = false): Promise<SetPinResult> {
+export async function setChildPin(childId: string, pin: string): Promise<void> {
   const res = await fetch('/api/set-child-pin', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ childId, pin, force }),
+    body: JSON.stringify({ childId, pin }),
   })
-  const body = await res.json().catch(() => ({ error: 'Unknown error' }))
-  // 409: profile is linked to a real (e.g. Google) account. The caller can retry
-  // with force:true to switch this child's login to PIN.
-  if (res.status === 409 && body?.code === 'ALREADY_LINKED') {
-    return { ok: false, code: 'ALREADY_LINKED', error: body.error }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: 'Unknown error' }))
+    throw new Error(body?.error || 'Failed to set PIN')
   }
-  if (!res.ok) throw new Error(body?.error || 'Failed to set PIN')
-  return { ok: true }
 }
 
 // ---------------------------------------------------------------------------

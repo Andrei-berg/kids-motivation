@@ -27,13 +27,13 @@ export async function POST(req: NextRequest) {
   // arbitrary childIds and ties the attempt to a family the caller actually named).
   const { data: member } = await admin
     .from('family_members')
-    .select('id')
+    .select('id, user_id')
     .eq('child_id', childId)
     .eq('family_id', familyId)
     .eq('role', 'child')
     .eq('pin_set', true)
     .maybeSingle()
-  if (!member) {
+  if (!member || !member.user_id) {
     return NextResponse.json({ error: 'wrong_pin' }, { status: 401 })
   }
 
@@ -53,9 +53,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'wrong_pin' }, { status: 401 })
   }
 
-  // PIN correct → mint a session for the synthetic account without its password.
-  const syntheticEmail = `child_${childId}@internal.familycoins.app`
-  const { data: link, error: linkErr } = await admin.auth.admin.generateLink({ type: 'magiclink', email: syntheticEmail })
+  // PIN correct → mint a session for whichever identity is currently linked to
+  // this child (a real Google/email account if they have one, otherwise the
+  // synthetic PIN-only account) — resolved dynamically rather than assuming a
+  // fixed synthetic email, so PIN login keeps working even after the child
+  // claims a real account.
+  const { data: loginUser, error: loginUserErr } = await admin.auth.admin.getUserById(member.user_id)
+  if (loginUserErr || !loginUser?.user?.email) {
+    return NextResponse.json({ error: 'Could not resolve the child login account' }, { status: 500 })
+  }
+  const loginEmail = loginUser.user.email
+
+  const { data: link, error: linkErr } = await admin.auth.admin.generateLink({ type: 'magiclink', email: loginEmail })
   if (linkErr || !link?.properties?.email_otp) {
     return NextResponse.json({ error: 'Could not start the session' }, { status: 500 })
   }
@@ -63,7 +72,7 @@ export async function POST(req: NextRequest) {
   // verifyOtp on the cookie-bound server client sets the auth cookies on the response.
   const supabase = await createClient()
   const { error: otpErr } = await supabase.auth.verifyOtp({
-    email: syntheticEmail,
+    email: loginEmail,
     token: link.properties.email_otp,
     type: 'email',
   })

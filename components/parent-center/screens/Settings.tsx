@@ -5,6 +5,7 @@ import { T } from '../tokens'
 import { Card, Btn, Pill, Icon, Tabs } from '../ui'
 import type { ParentChild, Route } from '../types'
 import { createClient } from '@/lib/supabase/client'
+import AuthHelpModal from '@/components/AuthHelpModal'
 import { getWalletSettings } from '@/lib/wallet-api'
 import { setChildPin } from '@/lib/onboarding-api'
 import { updateWalletSettingsApi } from '@/lib/wallet-client'
@@ -59,6 +60,7 @@ function LanguageCard() {
 function FamilyTab({ allChildren, notify, familyId }: { allChildren: ParentChild[]; notify: (msg: string, tone?: string) => void; familyId: string | null }) {
   const [copied, setCopied] = useState(false)
   const [code, setCode] = useState('')
+  const [helpOpen, setHelpOpen] = useState(false)
   const t = useT()
 
   useEffect(() => {
@@ -105,7 +107,15 @@ function FamilyTab({ allChildren, notify, familyId }: { allChildren: ParentChild
           <span style={{ fontFamily: T.fMono, color: T.textDim }}>/onboarding/join</span>{' '}
           {t('parentCenter.settings.family.inviteHint2')}
         </div>
+        <button
+          type="button"
+          onClick={() => setHelpOpen(true)}
+          style={{ background: 'none', border: 'none', color: T.indigoHi, fontSize: 12, textDecoration: 'underline', cursor: 'pointer', padding: 0, marginTop: 8 }}
+        >
+          {t('authHelp.trigger')}
+        </button>
       </Card>
+      <AuthHelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
 
       <Card pad={16}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -260,18 +270,11 @@ function PinCard({ child, notify }: { child: ParentChild; notify: (msg: string, 
   const [pin, setPin] = useState('')
   const [saving, setSaving] = useState(false)
 
-  async function save(force = false) {
+  async function save() {
     if (pin.length < 4 || pin.length > 6) { notify(t('parentCenter.settings.child.pinTooShort'), 'error'); return }
     setSaving(true)
     try {
-      const res = await setChildPin(child.id, pin, force)
-      if (!res.ok && res.code === 'ALREADY_LINKED') {
-        // Profile is linked to a real account (e.g. Google). Confirm the switch.
-        if (window.confirm(t('parentCenter.settings.child.pinSwitchConfirm', { name: child.name }))) {
-          await save(true)
-        }
-        return
-      }
+      await setChildPin(child.id, pin)
       setPin('')
       notify(t('parentCenter.settings.child.pinSaved', { name: child.name }))
     } catch (e) {
@@ -302,7 +305,7 @@ function PinCard({ child, notify }: { child: ParentChild; notify: (msg: string, 
             fontFamily: T.fBody, fontSize: 16, letterSpacing: '0.3em', textAlign: 'center',
           }}
         />
-        <Btn variant="primary" size="md" onClick={() => save(false)} disabled={saving || pin.length < 4 || pin.length > 6}>
+        <Btn variant="primary" size="md" onClick={() => save()} disabled={saving || pin.length < 4 || pin.length > 6}>
           {saving ? t('common.loading') : t('parentCenter.settings.child.pinSaveBtn')}
         </Btn>
       </div>

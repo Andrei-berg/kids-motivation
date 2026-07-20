@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useT } from '@/lib/i18n'
+import AuthHelpModal from '@/components/AuthHelpModal'
 
 export default function AuthPage() {
   return (
@@ -24,6 +25,7 @@ function AuthPageInner() {
   const [checking, setChecking] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [registered, setRegistered] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
 
   // Carries an in-progress "join family by invite code" flow across the
   // login/register round-trip — set by /onboarding/join when it bounces an
@@ -212,8 +214,16 @@ function AuthPageInner() {
           <a href="/kid/login" style={{ color: '#6366f1', fontSize: '0.8125rem', textDecoration: 'none' }}>
             {t('auth.kidLoginLink')}
           </a>
+          <button
+            type="button"
+            onClick={() => setHelpOpen(true)}
+            style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.75rem', textDecoration: 'underline', cursor: 'pointer', padding: 0, marginTop: '0.25rem' }}
+          >
+            {t('authHelp.trigger')}
+          </button>
         </div>
       </div>
+      <AuthHelpModal isOpen={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   )
 }
