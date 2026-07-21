@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { createFamily, createChildWithWallet, completeOnboarding } from '@/lib/onboarding-api'
+import { PRESET_IDS, type PresetId } from '@/lib/presets'
 import { useT } from '@/lib/i18n'
 
 // ---------------------------------------------------------------------------
@@ -12,14 +13,6 @@ import { useT } from '@/lib/i18n'
 
 interface ChildRow {
   name: string
-}
-
-interface CoinRulesState {
-  g5: number
-  g4: number
-  g3: number
-  room: number
-  sport: number
 }
 
 // ---------------------------------------------------------------------------
@@ -267,34 +260,53 @@ function StepChildren({
   )
 }
 
-function StepCoinRules({
-  coinRules,
-  setCoinRules,
-  onSkip,
+// D-04: 3-card preset picker — no manual coin-rule number entry. Tap a card,
+// then "Continue with this preset"; fine-tuning moves to post-onboarding
+// Settings/CoinsRulesTab. Card copy reuses the SAME strings as Settings'
+// "Apply preset" flow (settings.rulePresets.*) — D-01/D-02 keep the value
+// sets and their labels identical across both surfaces (05.9-PATTERNS.md
+// Pattern 1); only the CTA (onboarding.presetStep.continueBtn) is unique to
+// this step. Card-select interaction structure mirrors
+// components/parent-center/screens/Settings.tsx ChildrenTab's mode picker
+// (icon + label + desc + selected-dot), styled in onboarding's own light
+// theme rather than the ink tokens used there.
+const PRESET_ICONS: Record<PresetId, string> = {
+  classic: '⚖️',
+  no_penalties: '🛡️',
+  bonuses_only: '🎁',
+}
+
+function StepPresetPicker({
+  selectedPresetId,
+  setSelectedPresetId,
   onNext,
   onBack,
   saving,
 }: {
-  coinRules: CoinRulesState
-  setCoinRules: (v: CoinRulesState) => void
-  onSkip: () => void
+  selectedPresetId: PresetId | null
+  setSelectedPresetId: (v: PresetId) => void
   onNext: () => void
   onBack: () => void
   saving: boolean
 }) {
   const t = useT()
-  function setField(key: keyof CoinRulesState, value: string) {
-    const num = parseInt(value, 10)
-    if (!isNaN(num)) setCoinRules({ ...coinRules, [key]: num })
+
+  const presetCopy: Record<PresetId, { title: string; subhead: string }> = {
+    classic: {
+      title: t('settings.rulePresets.presetClassicTitle'),
+      subhead: t('settings.rulePresets.presetClassicSubhead'),
+    },
+    no_penalties: {
+      title: t('settings.rulePresets.presetNoPenaltiesTitle'),
+      subhead: t('settings.rulePresets.presetNoPenaltiesSubhead'),
+    },
+    bonuses_only: {
+      title: t('settings.rulePresets.presetBonusesOnlyTitle'),
+      subhead: t('settings.rulePresets.presetBonusesOnlySubhead'),
+    },
   }
 
-  const fields: { key: keyof CoinRulesState; label: string; hint?: string }[] = [
-    { key: 'g5', label: t('onboarding.grade5label') },
-    { key: 'g4', label: t('onboarding.grade4label') },
-    { key: 'g3', label: t('onboarding.grade3label'), hint: t('onboarding.grade3hint') },
-    { key: 'room', label: t('onboarding.roomLabel') },
-    { key: 'sport', label: t('onboarding.sportLabel') },
-  ]
+  const canContinue = !saving && selectedPresetId !== null
 
   return (
     <div>
@@ -305,55 +317,58 @@ function StepCoinRules({
         {t('onboarding.step3of4')}
       </p>
 
-      <button
-        onClick={onSkip}
-        disabled={saving}
-        style={{
-          width: '100%',
-          padding: '14px',
-          background: saving ? '#e5e7eb' : 'linear-gradient(135deg,#f59e0b,#f97316)',
-          color: saving ? '#9ca3af' : '#fff',
-          border: 'none',
-          borderRadius: '12px',
-          fontSize: '15px',
-          fontWeight: 700,
-          cursor: saving ? 'not-allowed' : 'pointer',
-          marginBottom: '20px',
-          boxShadow: saving ? 'none' : '0 4px 12px rgba(245,158,11,.3)',
-        }}
-      >
-        {saving ? t('onboarding.creating') : t('onboarding.useDefaults')}
-      </button>
-
-      <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        {fields.map(({ key, label, hint }) => (
-          <label key={key} style={labelStyle}>
-            {label}
-            {hint && <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: 400, marginLeft: '6px' }}>{hint}</span>}
-            <input
-              type="number"
-              value={coinRules[key]}
-              onChange={e => setField(key, e.target.value)}
-              style={{ ...inputStyle, marginTop: '6px' }}
-            />
-          </label>
-        ))}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {PRESET_IDS.map(id => {
+          const active = selectedPresetId === id
+          const { title, subhead } = presetCopy[id]
+          return (
+            <button
+              key={id}
+              onClick={() => setSelectedPresetId(id)}
+              disabled={saving}
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                padding: '16px',
+                background: active ? '#fffbeb' : '#f9fafb',
+                border: `1.5px solid ${active ? '#f59e0b' : '#e5e7eb'}`,
+                borderRadius: '14px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '12px',
+                cursor: saving ? 'not-allowed' : 'pointer',
+                transition: 'all .15s',
+              }}
+            >
+              <span style={{ fontSize: '24px', flexShrink: 0 }}>{PRESET_ICONS[id]}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: '#1f2937' }}>{title}</div>
+                <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px', lineHeight: 1.4 }}>{subhead}</div>
+              </div>
+              {active && (
+                <span
+                  style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#f59e0b', flexShrink: 0, marginTop: '4px' }}
+                />
+              )}
+            </button>
+          )
+        })}
       </div>
 
       <div style={{ display: 'flex', gap: '10px', marginTop: '24px' }}>
         <button onClick={onBack} disabled={saving} style={{ ...backBtnStyle, opacity: saving ? 0.5 : 1, cursor: saving ? 'not-allowed' : 'pointer' }}>← {t('onboarding.back')}</button>
         <button
           onClick={onNext}
-          disabled={saving}
+          disabled={!canContinue}
           style={{
             ...primaryBtnStyle,
             flex: 1,
-            background: saving ? '#e5e7eb' : 'linear-gradient(135deg,#f59e0b,#f97316)',
-            color: saving ? '#9ca3af' : '#fff',
-            cursor: saving ? 'not-allowed' : 'pointer',
+            background: canContinue ? 'linear-gradient(135deg,#f59e0b,#f97316)' : '#e5e7eb',
+            color: canContinue ? '#fff' : '#9ca3af',
+            cursor: canContinue ? 'pointer' : 'not-allowed',
           }}
         >
-          {saving ? t('onboarding.creating') : `${t('onboarding.next')} →`}
+          {saving ? t('onboarding.creating') : t('onboarding.presetStep.continueBtn')}
         </button>
       </div>
     </div>
@@ -574,7 +589,7 @@ export default function OnboardingWizard() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [inviteCode, setInviteCode] = useState('')
-  const [coinRules, setCoinRules] = useState<CoinRulesState>({ g5: 5, g4: 3, g3: -3, room: 3, sport: 10 })
+  const [selectedPresetId, setSelectedPresetId] = useState<PresetId | null>(null)
 
   // Fire confetti when Done screen mounts (step 4)
   useEffect(() => {
@@ -586,7 +601,7 @@ export default function OnboardingWizard() {
   // -------------------------------------------------------------------------
   // handleFinish — writes all rows to DB
   // -------------------------------------------------------------------------
-  async function handleFinish(customCoinRules?: CoinRulesState) {
+  async function handleFinish(presetId: PresetId) {
     setSaving(true)
     setError(null)
     try {
@@ -610,8 +625,13 @@ export default function OnboardingWizard() {
         await createChildWithWallet(familyId, { name: child.name.trim() })
       }
 
-      // 3. Insert wallet_settings defaults (pass overrides if user customized)
-      await completeOnboarding(familyId, customCoinRules)
+      // 3. Write the chosen coin-rule preset. completeOnboarding resolves the
+      //    preset's values (getPresetValues) and writes them server-side via
+      //    PATCH /api/wallet/settings (requireParent + service-role) — the
+      //    parent is now a confirmed member of familyId from step 1, so
+      //    requireParent resolves. This replaces the old RLS-denied direct
+      //    browser upsert (05.9-RESEARCH.md Pitfall 3).
+      await completeOnboarding(familyId, presetId)
 
       setInviteCode(code)
       setStep(4) // advance to Done screen
@@ -703,11 +723,10 @@ export default function OnboardingWizard() {
           )}
 
           {step === 3 && (
-            <StepCoinRules
-              coinRules={coinRules}
-              setCoinRules={setCoinRules}
-              onSkip={() => handleFinish()}
-              onNext={() => handleFinish(coinRules)}
+            <StepPresetPicker
+              selectedPresetId={selectedPresetId}
+              setSelectedPresetId={setSelectedPresetId}
+              onNext={() => { if (selectedPresetId) handleFinish(selectedPresetId) }}
               onBack={() => setStep(2)}
               saving={saving}
             />
