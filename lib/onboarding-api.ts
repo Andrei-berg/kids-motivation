@@ -5,6 +5,8 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { seedDefaultCategories } from '@/lib/categories-api'
+import { getPresetValues, type PresetId } from '@/lib/presets'
+import { updateWalletSettingsApi } from '@/lib/wallet-client'
 
 // ---------------------------------------------------------------------------
 // Internal utilities
@@ -516,56 +518,31 @@ export async function createChildWithWallet(
 // ---------------------------------------------------------------------------
 // completeOnboarding
 // ---------------------------------------------------------------------------
-// Upserts the global wallet_settings row (id='default') with reward defaults.
-// Accepts optional coinRules to override grade/room/sport defaults.
-// Safe to call multiple times — upsert handles idempotency.
+// Writes the family's wallet_settings coin-rule preset (D-04). Resolves the
+// preset's fixed value patch via getPresetValues(presetId) — the SAME lookup
+// CoinsRulesTab's "Apply preset" flow uses (05.9-PATTERNS.md Pattern 1) — and
+// writes it server-side through PATCH /api/wallet/settings (requireParent +
+// service-role), since the money tables are RLS SELECT-only for clients
+// (migration 04.4-03). The previous browser-client direct wallet_settings
+// write (createClient() dot-from dot-upsert) was RLS-denied and blocked
+// onboarding completion (05.9-RESEARCH.md Pitfall 3) — do NOT reintroduce
+// a client-side wallet_settings write.
+// Safe to call multiple times — the PATCH route upserts, so it's idempotent.
 
 export async function completeOnboarding(
   familyId: string,
-  coinRules?: {
-    g5?: number
-    g4?: number
-    g3?: number
-    g2?: number
-    room?: number
-    sport?: number
-  }
+  presetId: PresetId
 ): Promise<void> {
-  const supabase = createClient()
+  const patch = getPresetValues(presetId)
 
-  const { error } = await supabase
-    .from('wallet_settings')
-    .upsert({
-      id: 'default',
-      // Grade coins — negative values mean deductions
-      coins_per_grade_5: coinRules?.g5 ?? 5,
-      coins_per_grade_4: coinRules?.g4 ?? 3,
-      coins_per_grade_3: coinRules?.g3 ?? -3,
-      coins_per_grade_2: coinRules?.g2 ?? -5,
-      // Daily inputs
-      coins_per_room_task: coinRules?.room ?? 3,
-      coins_per_good_behavior: 5,
-      coins_per_exercise: 5,
-      // Coach ratings
-      coins_per_coach_5: coinRules?.sport ?? 10,
-      coins_per_coach_4: 5,
-      coins_per_coach_3: 0,
-      coins_per_coach_2: 3,
-      coins_per_coach_1: 10,
-      // Exchange & P2P limits
-      base_exchange_rate: 10,
-      p2p_max_per_transfer: 100,
-      p2p_max_per_day: 200,
-      p2p_max_per_month: 500,
-      p2p_max_debt: 200,
-      updated_at: new Date().toISOString(),
-    })
-
-  if (error) {
-    throw new Error(`Failed to complete onboarding (wallet_settings): ${error.message}`)
+  try {
+    await updateWalletSettingsApi(patch)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    throw new Error(`Failed to complete onboarding (wallet_settings): ${message}`)
   }
 
-  void familyId // familyId kept in signature for future per-family settings support
+  void familyId // familyId kept in signature for future per-family settings support; the PATCH route derives family from the authenticated parent's own membership (requireParent), never from a client-supplied id
 }
 
 // ---------------------------------------------------------------------------
