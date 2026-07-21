@@ -140,6 +140,15 @@ export async function addDayBlock(params: {
   dayTypes?: string[]
   whoFills?: 'kid' | 'parent' | 'both'
   sortOrder?: number
+  // WR-07 fix: these three were previously only settable via a follow-up
+  // updateDayBlock call (see DayBlocksManager.tsx's writeChildOverride) —
+  // that two-write "carry over the family default's schedule wiring" path
+  // left a permanent partial-write gap if the second call failed after the
+  // first succeeded. Accepting them directly on insert lets the caller do
+  // it in one write instead.
+  daysOfWeek?: number[]
+  multipliers?: Record<string, number>
+  scheduleLink?: string | null
 }): Promise<DayBlock> {
   // Custom blocks always have legacy_key NULL — only the seed function and
   // built-in per-child override copy-on-write (Phase 5.8 D-03, which passes
@@ -157,6 +166,9 @@ export async function addDayBlock(params: {
       day_types: params.dayTypes ?? [],
       who_fills: params.whoFills ?? 'both',
       sort_order: params.sortOrder ?? 0,
+      days_of_week: params.daysOfWeek ?? [],
+      multipliers: params.multipliers ?? {},
+      schedule_link: params.scheduleLink ?? null,
       is_active: true,
     })
     .select()

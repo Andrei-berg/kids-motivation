@@ -366,9 +366,13 @@ export default function DayBlocksManager() {
   // is the single field (or fields) being changed. See RESEARCH Pitfall 2 /
   // UI-SPEC D-03: first edit creates a new override row carrying the family
   // default's legacy_key (so getDayBlocks dedupes it, never duplicates) plus
-  // its days_of_week/multipliers/schedule_link (addDayBlock cannot persist
-  // those three); later edits (or reactivation of a previously-removed
-  // override) update that same row.
+  // its days_of_week/multipliers/schedule_link, with fieldEdit applied on
+  // top — all in a SINGLE addDayBlock insert (WR-07 fix: this used to be a
+  // create-then-update two-write sequence; if the second write failed after
+  // the first succeeded, the new override row was left permanently active
+  // with the carry-over fields silently dropped, and no retry path restored
+  // them). Later edits (or reactivation of a previously-removed override)
+  // update that same row.
   async function writeChildOverride(childId: string, legacyKey: string, fieldEdit: FieldEdit) {
     if (!familyId) return
     const familyDefault = blocks.find(b => b.legacy_key === legacyKey && b.child_id === null)
@@ -378,22 +382,19 @@ export default function DayBlocksManager() {
       const existing = existingRows.find(r => r.child_id === childId && r.legacy_key === legacyKey)
 
       if (!existing) {
-        const created = await addDayBlock({
+        await addDayBlock({
           familyId,
           childId,
           legacyKey: familyDefault.legacy_key,
-          name: familyDefault.name,
-          icon: familyDefault.icon,
-          price: familyDefault.price,
-          dayTypes: familyDefault.day_types,
-          whoFills: familyDefault.who_fills,
+          name: fieldEdit.name ?? familyDefault.name,
+          icon: fieldEdit.icon !== undefined ? fieldEdit.icon : familyDefault.icon,
+          price: fieldEdit.price !== undefined ? fieldEdit.price : familyDefault.price,
+          dayTypes: fieldEdit.day_types ?? familyDefault.day_types,
+          whoFills: fieldEdit.who_fills ?? familyDefault.who_fills,
           sortOrder: familyDefault.sort_order,
-        })
-        await updateDayBlock(created.id, {
-          days_of_week: familyDefault.days_of_week,
-          multipliers: familyDefault.multipliers,
-          schedule_link: familyDefault.schedule_link,
-          ...fieldEdit,
+          daysOfWeek: fieldEdit.days_of_week ?? familyDefault.days_of_week,
+          multipliers: fieldEdit.multipliers ?? familyDefault.multipliers,
+          scheduleLink: fieldEdit.schedule_link !== undefined ? fieldEdit.schedule_link : familyDefault.schedule_link,
         })
       } else if (!existing.is_active) {
         await setDayBlockActive(existing.id, true)
