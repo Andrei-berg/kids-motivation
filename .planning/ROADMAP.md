@@ -337,7 +337,7 @@ Plans:
 Plans:
 - [x] 05.9-01-PLAN.md — Migrations: grade_scale/grade_coin_map cols, subject_grades TEXT widen, behavior_tags/behavior_marks (authoring only)
 - [x] 05.9-02-PLAN.md — Foundation: lib/presets.ts + WalletSettings/behavior types + all i18n keys + presets unit test
-- [ ] 05.9-03-PLAN.md — [BLOCKING] apply the 3 migrations to the live DB in order + schema readback
+- [x] 05.9-03-PLAN.md — [BLOCKING] apply the 3 migrations to the live DB in order + schema readback
 - [ ] 05.9-04-PLAN.md — grade_coin_map read-time fallback (server+client) + clampGradeCoinMap PATCH validator
 - [ ] 05.9-05-PLAN.md — behavior.repo.ts (CRUD + propose) + BehaviorTagsManager settings editor
 - [ ] 05.9-06-PLAN.md — Award route: grade_coin_map lookup + behavior approved-mark sum (both flag paths) + badges/streaks type-fix + tests
