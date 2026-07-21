@@ -21,6 +21,7 @@ import ActivitiesManager from '@/components/settings/ActivitiesManager'
 import RoomTasksManager from '@/components/settings/RoomTasksManager'
 import DayBlocksManager from '@/components/settings/DayBlocksManager'
 import CalendarSettingsManager from '@/components/settings/CalendarSettingsManager'
+import CalendarGrid from '@/components/settings/CalendarGrid'
 
 // ───── Language card ─────
 function LanguageCard() {
@@ -386,6 +387,37 @@ function ChildrenTab({ allChildren, notify }: { allChildren: ParentChild[]; noti
   )
 }
 
+// ───── Collapsed accordion (D-05: Year Calendar's settings form + vacation
+// list demote below the CalendarGrid hero — a simple T-token disclosure
+// toggle, default collapsed) ─────
+function AccordionSection({ title, icon, children }: { title: string; icon?: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div style={{ border: `1px solid ${T.cardBorder}`, borderRadius: T.rL, marginBottom: 12, overflow: 'hidden' }}>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 14px', background: T.card, border: 'none', cursor: 'pointer',
+          color: T.text, fontFamily: T.fBody, fontSize: 13, fontWeight: 700,
+        }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {icon && <span style={{ fontSize: 15 }}>{icon}</span>}
+          {title}
+        </span>
+        <Icon name={open ? 'chevD' : 'chevR'} size={16} color={T.muted} />
+      </button>
+      {open && (
+        <div style={{ padding: 14, background: T.bg2, borderTop: `1px solid ${T.cardBorder}` }}>
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ───── Schedule tab (subjects, sections, vacations, activities) ─────
 function ScheduleTab({ allChildren }: { allChildren: ParentChild[] }) {
   const t = useT()
@@ -425,7 +457,19 @@ function ScheduleTab({ allChildren }: { allChildren: ParentChild[] }) {
 
       {sub === 'subjects'   && <SubjectsManager children={scheduleChildren}/>}
       {sub === 'sections'   && <SectionsManager/>}
-      {sub === 'calendar'   && <CalendarSettingsManager/>}
+      {sub === 'calendar'   && (
+        <div>
+          <Card pad={16} style={{ marginBottom: 16 }}>
+            <CalendarGrid/>
+          </Card>
+          <AccordionSection title={t('settings.calendarSettingsManager.title')} icon="📅">
+            <CalendarSettingsManager/>
+          </AccordionSection>
+          <AccordionSection title={t('settings.periodsManager.title')} icon="🌴">
+            <PeriodsManager/>
+          </AccordionSection>
+        </div>
+      )}
       {sub === 'vacations'  && <PeriodsManager/>}
       {sub === 'activities' && <ActivitiesManager/>}
       {sub === 'room'       && <RoomTasksManager/>}
