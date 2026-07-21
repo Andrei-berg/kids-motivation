@@ -12,6 +12,7 @@ import {
 import { useFamilyMembers } from '@/lib/hooks/useFamilyMembers'
 import { useT } from '@/lib/i18n'
 import { localDateString } from '@/utils/helpers'
+import { T } from '@/components/parent-center/tokens'
 
 const DAYS = [
   { key: 'mon', label: 'Mon' },
@@ -186,8 +187,8 @@ export default function SectionsManager() {
   return (
     <div>
       <div style={{ marginBottom: '16px' }}>
-        <div style={{ fontSize: '16px', fontWeight: 800, color: '#fff', marginBottom: '4px' }}>⚽ {t('settings.sectionsManager.title')}</div>
-        <div style={{ fontSize: '13px', color: 'rgba(238,238,255,0.5)' }}>
+        <div style={{ fontSize: '16px', fontWeight: 800, color: T.text, marginBottom: '4px' }}>⚽ {t('settings.sectionsManager.title')}</div>
+        <div style={{ fontSize: '13px', color: T.textDim }}>
           {t('settings.sectionsManager.addSection')}
         </div>
       </div>
@@ -201,9 +202,9 @@ export default function SectionsManager() {
             style={{
               flex: 1, padding: '10px', fontSize: '13px', fontWeight: 800,
               borderRadius: '10px', border: '1.5px solid', cursor: 'pointer',
-              borderColor: childId === c.id ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.1)',
-              background: childId === c.id ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.03)',
-              color: childId === c.id ? '#818CF8' : 'rgba(238,238,255,0.5)',
+              borderColor: childId === c.id ? `${T.indigo}80` : T.cardBorderHi,
+              background: childId === c.id ? T.indigoSoft : T.card,
+              color: childId === c.id ? T.indigoHi : T.textDim,
             }}
           >
             {c.display_name}
@@ -220,9 +221,9 @@ export default function SectionsManager() {
             style={{
               padding: '6px 14px', fontSize: '12px', fontWeight: 800,
               borderRadius: '8px', border: '1px solid', cursor: 'pointer',
-              borderColor: tab === tabKey ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.1)',
-              background: tab === tabKey ? 'rgba(99,102,241,0.1)' : 'rgba(255,255,255,0.03)',
-              color: tab === tabKey ? '#818CF8' : 'rgba(238,238,255,0.4)',
+              borderColor: tab === tabKey ? `${T.indigo}66` : T.cardBorderHi,
+              background: tab === tabKey ? T.indigoSoft : T.card,
+              color: tab === tabKey ? T.indigoHi : T.muted,
             }}
           >
             {tabKey === 'active' ? `Active (${activeSections.length})` : `Archive (${archivedSections.length})`}
@@ -233,7 +234,7 @@ export default function SectionsManager() {
           style={{
             marginLeft: 'auto', padding: '6px 14px', fontSize: '12px', fontWeight: 800,
             borderRadius: '8px', border: 'none', cursor: 'pointer',
-            background: 'rgba(99,102,241,0.8)', color: '#fff',
+            background: T.indigo, color: T.text,
           }}
         >
           + {t('settings.sectionsManager.addSection')}
@@ -241,15 +242,15 @@ export default function SectionsManager() {
       </div>
 
       {error && (
-        <div style={{ padding: '10px 12px', background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.3)', borderRadius: '8px', color: '#F43F5E', fontSize: '13px', marginBottom: '12px' }}>
+        <div style={{ padding: '10px 12px', background: T.dangerSoft, border: `1px solid ${T.danger}55`, borderRadius: '8px', color: T.danger, fontSize: '13px', marginBottom: '12px' }}>
           {error}
         </div>
       )}
 
       {/* Add/Edit form */}
       {showForm && (
-        <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
-          <div style={{ fontSize: '14px', fontWeight: 800, color: '#818CF8', marginBottom: '12px' }}>
+        <div style={{ background: T.indigoSoft, border: `1px solid ${T.cardBorderHi}`, borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+          <div style={{ fontSize: '14px', fontWeight: 800, color: T.indigoHi, marginBottom: '12px' }}>
             {editingId ? `✏️ ${t('common.edit')}` : `➕ ${t('settings.sectionsManager.addSection')}`}
           </div>
 
@@ -295,9 +296,9 @@ export default function SectionsManager() {
                   style={{
                     padding: '6px 10px', fontSize: '12px', fontWeight: 800,
                     borderRadius: '8px', border: '1px solid', cursor: 'pointer',
-                    borderColor: form.scheduleDays.includes(d.key) ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.1)',
-                    background: form.scheduleDays.includes(d.key) ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.03)',
-                    color: form.scheduleDays.includes(d.key) ? '#818CF8' : 'rgba(238,238,255,0.4)',
+                    borderColor: form.scheduleDays.includes(d.key) ? `${T.indigo}80` : T.cardBorderHi,
+                    background: form.scheduleDays.includes(d.key) ? T.indigoSoft : T.card,
+                    color: form.scheduleDays.includes(d.key) ? T.indigoHi : T.muted,
                   }}
                 >
                   {d.label}
@@ -310,13 +311,13 @@ export default function SectionsManager() {
             <button
               onClick={handleSave}
               disabled={saving}
-              style={{ flex: 1, padding: '10px', fontSize: '13px', fontWeight: 800, borderRadius: '10px', border: 'none', cursor: 'pointer', background: 'rgba(99,102,241,0.8)', color: '#fff' }}
+              style={{ flex: 1, padding: '10px', fontSize: '13px', fontWeight: 800, borderRadius: '10px', border: 'none', cursor: 'pointer', background: T.indigo, color: T.text }}
             >
               {saving ? '...' : `💾 ${t('settings.sectionsManager.save')}`}
             </button>
             <button
               onClick={() => { setShowForm(false); setEditingId(null); setError('') }}
-              style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 800, borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', color: 'rgba(238,238,255,0.5)' }}
+              style={{ padding: '10px 16px', fontSize: '13px', fontWeight: 800, borderRadius: '10px', border: `1px solid ${T.cardBorderHi}`, cursor: 'pointer', background: T.card, color: T.muted }}
             >
               {t('settings.sectionsManager.cancel')}
             </button>
@@ -326,9 +327,9 @@ export default function SectionsManager() {
 
       {/* Section list */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '20px', color: 'rgba(238,238,255,0.4)', fontSize: '13px' }}>{t('common.loading')}</div>
+        <div style={{ textAlign: 'center', padding: '20px', color: T.muted, fontSize: '13px' }}>{t('common.loading')}</div>
       ) : displayed.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '24px', color: 'rgba(238,238,255,0.3)', fontSize: '13px' }}>
+        <div style={{ textAlign: 'center', padding: '24px', color: T.faint, fontSize: '13px' }}>
           {tab === 'active' ? t('settings.sectionsManager.addSection') : 'Archive is empty.'}
         </div>
       ) : (
@@ -338,33 +339,33 @@ export default function SectionsManager() {
               key={s.id}
               style={{
                 padding: '12px 14px',
-                background: isArchived(s) ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)',
-                border: `1px solid ${isArchived(s) ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.1)'}`,
+                background: isArchived(s) ? T.card : T.cardHi,
+                border: `1px solid ${isArchived(s) ? T.cardBorder : T.cardBorderHi}`,
                 borderRadius: '10px',
                 opacity: isArchived(s) ? 0.6 : 1,
               }}
             >
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>{s.name}</div>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: T.text }}>{s.name}</div>
                   {(s.trainer || s.address) && (
-                    <div style={{ fontSize: '12px', color: 'rgba(238,238,255,0.45)', marginTop: '2px' }}>
+                    <div style={{ fontSize: '12px', color: T.textDim, marginTop: '2px' }}>
                       {[s.trainer, s.address].filter(Boolean).join(' · ')}
                     </div>
                   )}
                   <div style={{ display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
                     {formatDateRange(s) && (
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: isArchived(s) ? 'rgba(238,238,255,0.3)' : 'rgba(129,140,248,0.9)', background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)', padding: '2px 7px', borderRadius: '6px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: isArchived(s) ? T.faint : T.indigoHi, background: T.indigoSoft, border: `1px solid ${T.cardBorderHi}`, padding: '2px 7px', borderRadius: '6px' }}>
                         📅 {formatDateRange(s)}
                       </span>
                     )}
                     {s.schedule_days && s.schedule_days.length > 0 && (
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(238,238,255,0.45)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', padding: '2px 7px', borderRadius: '6px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: T.textDim, background: T.card, border: `1px solid ${T.cardBorder}`, padding: '2px 7px', borderRadius: '6px' }}>
                         {s.schedule_days.map(d => DAYS.find(x => x.key === d)?.label).filter(Boolean).join(', ')}
                       </span>
                     )}
                     {s.cost && (
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(238,238,255,0.45)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', padding: '2px 7px', borderRadius: '6px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: T.textDim, background: T.card, border: `1px solid ${T.cardBorder}`, padding: '2px 7px', borderRadius: '6px' }}>
                         💳 {s.cost}/mo
                       </span>
                     )}
@@ -375,14 +376,14 @@ export default function SectionsManager() {
                     <>
                       <button
                         onClick={() => openEdit(s)}
-                        style={{ padding: '6px 10px', fontSize: '12px', fontWeight: 700, borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', background: 'rgba(255,255,255,0.04)', color: 'rgba(238,238,255,0.6)' }}
+                        style={{ padding: '6px 10px', fontSize: '12px', fontWeight: 700, borderRadius: '8px', border: `1px solid ${T.cardBorderHi}`, cursor: 'pointer', background: T.card, color: T.textDim }}
                       >
                         ✏️
                       </button>
                       <button
                         onClick={() => handleArchive(s)}
                         title="Archive"
-                        style={{ padding: '6px 10px', fontSize: '12px', fontWeight: 700, borderRadius: '8px', border: '1px solid rgba(245,158,11,0.2)', cursor: 'pointer', background: 'rgba(245,158,11,0.06)', color: '#F59E0B' }}
+                        style={{ padding: '6px 10px', fontSize: '12px', fontWeight: 700, borderRadius: '8px', border: `1px solid ${T.warning}33`, cursor: 'pointer', background: T.warningSoft, color: T.warning }}
                       >
                         📦
                       </button>
@@ -390,7 +391,7 @@ export default function SectionsManager() {
                   )}
                   <button
                     onClick={() => handleDelete(s)}
-                    style={{ padding: '6px 10px', fontSize: '12px', fontWeight: 700, borderRadius: '8px', border: '1px solid rgba(244,63,94,0.2)', cursor: 'pointer', background: 'rgba(244,63,94,0.06)', color: '#F43F5E' }}
+                    style={{ padding: '6px 10px', fontSize: '12px', fontWeight: 700, borderRadius: '8px', border: `1px solid ${T.danger}33`, cursor: 'pointer', background: T.dangerSoft, color: T.danger }}
                   >
                     🗑️
                   </button>
