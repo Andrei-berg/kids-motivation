@@ -5,6 +5,7 @@ import { useAppStore } from '@/lib/store'
 import { getFamilyCalendar, upsertFamilyCalendar } from '@/lib/repositories/calendar.repo'
 import type { TermMode } from '@/lib/models/calendar.types'
 import { useT } from '@/lib/i18n'
+import { T } from '@/components/parent-center/tokens'
 
 // getDay() indices: Sun=0 … Sat=6 — matches lib/day-type.ts's weekend_days convention.
 const WEEKDAY_ORDER = [0, 1, 2, 3, 4, 5, 6] as const
@@ -109,36 +110,36 @@ export default function CalendarSettingsManager() {
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
+        <div style={{ fontSize: 16, fontWeight: 800, color: T.text, marginBottom: 4 }}>
           📅 {t('settings.calendarSettingsManager.title')}
         </div>
-        <div style={{ fontSize: 13, color: 'rgba(238,238,255,0.5)' }}>
+        <div style={{ fontSize: 13, color: T.muted }}>
           {t('settings.calendarSettingsManager.subtitle')}
         </div>
       </div>
 
       {error && (
-        <div style={{ padding: '10px 12px', background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.3)', borderRadius: 8, color: '#F43F5E', fontSize: 13, marginBottom: 12 }}>
+        <div style={{ padding: '10px 12px', background: T.dangerSoft, border: `1px solid ${T.danger}55`, borderRadius: 8, color: T.danger, fontSize: 13, marginBottom: 12 }}>
           {error}
         </div>
       )}
       {success && (
-        <div style={{ padding: '10px 12px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: 8, color: '#34d399', fontSize: 13, marginBottom: 12 }}>
+        <div style={{ padding: '10px 12px', background: T.successSoft, border: `1px solid ${T.success}55`, borderRadius: 8, color: T.success, fontSize: 13, marginBottom: 12 }}>
           {t('settings.calendarSettingsManager.saveSuccess')}
         </div>
       )}
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 20, color: 'rgba(238,238,255,0.4)', fontSize: 13 }}>
+        <div style={{ textAlign: 'center', padding: 20, color: T.muted, fontSize: 13 }}>
           {t('common.loading')}
         </div>
       ) : (
-        <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ background: T.indigoSoft, border: `1px solid ${T.cardBorderHi}`, borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
 
           {/* School-year dates */}
           <div style={{ display: 'flex', gap: 10 }}>
             <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(238,238,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
                 {t('settings.calendarSettingsManager.yearStart')}
               </label>
               <input
@@ -150,7 +151,7 @@ export default function CalendarSettingsManager() {
               />
             </div>
             <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(238,238,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
                 {t('settings.calendarSettingsManager.yearEnd')}
               </label>
               <input
@@ -165,18 +166,18 @@ export default function CalendarSettingsManager() {
 
           {/* Term mode */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(238,238,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
               {t('settings.calendarSettingsManager.termMode')}
             </label>
-            <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', borderRadius: 10, padding: 4, gap: 4, border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ display: 'flex', background: T.bg1, borderRadius: 10, padding: 4, gap: 4, border: `1px solid ${T.cardBorder}` }}>
               {(['quarters', 'trimesters'] as TermMode[]).map(mode => (
                 <button
                   key={mode}
                   onClick={() => { setTermMode(mode); setSuccess(false) }}
                   style={{
                     flex: 1, padding: '8px 0', fontSize: 13, fontWeight: 700, borderRadius: 7, border: 'none', cursor: 'pointer',
-                    background: termMode === mode ? 'rgba(99,102,241,0.8)' : 'transparent',
-                    color: termMode === mode ? '#fff' : 'rgba(238,238,255,0.5)',
+                    background: termMode === mode ? T.indigo : 'transparent',
+                    color: termMode === mode ? T.text : T.muted,
                   }}
                 >
                   {t(`settings.calendarSettingsManager.${mode}`)}
@@ -187,7 +188,7 @@ export default function CalendarSettingsManager() {
 
           {/* Weekend days */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(238,238,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
               {t('settings.calendarSettingsManager.weekend')}
             </label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -199,9 +200,9 @@ export default function CalendarSettingsManager() {
                     onClick={() => toggleWeekendDay(day)}
                     style={{
                       width: 40, height: 32, fontSize: 12, fontWeight: 700, borderRadius: 7, cursor: 'pointer',
-                      border: `1.5px solid ${active ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.08)'}`,
-                      background: active ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.03)',
-                      color: active ? '#fff' : 'rgba(238,238,255,0.5)',
+                      border: `1.5px solid ${active ? T.indigo : T.cardBorder}`,
+                      background: active ? T.indigo : T.card,
+                      color: active ? T.text : T.muted,
                     }}
                   >
                     {t(`settings.calendarSettingsManager.days.${WEEKDAY_I18N_KEYS[idx]}`)}
@@ -213,7 +214,7 @@ export default function CalendarSettingsManager() {
 
           {/* Region preset */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(238,238,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
               {t('settings.calendarSettingsManager.region')}
             </label>
             <select
@@ -236,7 +237,7 @@ export default function CalendarSettingsManager() {
             style={{
               padding: '10px 16px', fontSize: 13, fontWeight: 800, borderRadius: 10, border: 'none',
               cursor: saving ? 'not-allowed' : 'pointer',
-              background: 'rgba(99,102,241,0.8)', color: '#fff',
+              background: T.indigo, color: T.text,
             }}
           >
             {saving ? '…' : t('settings.calendarSettingsManager.save')}
