@@ -10,6 +10,7 @@ import {
 } from '@/lib/expenses-api'
 import { useFamilyMembers } from '@/lib/hooks/useFamilyMembers'
 import { useT } from '@/lib/i18n'
+import { T } from '@/components/parent-center/tokens'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,11 +33,11 @@ const EMPTY_FORM: FormState = {
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const CAT: Record<Category, { label: string; color: string; bg: string }> = {
-  academic:  { label: 'Учёба',      color: '#60a5fa', bg: 'rgba(96,165,250,0.12)'  },
-  physical:  { label: 'Спорт',      color: '#34d399', bg: 'rgba(52,211,153,0.12)'  },
-  creative:  { label: 'Творчество', color: '#f472b6', bg: 'rgba(244,114,182,0.12)' },
-  chore:     { label: 'Быт',        color: '#fb923c', bg: 'rgba(251,146,60,0.12)'  },
-  other:     { label: 'Другое',     color: '#a78bfa', bg: 'rgba(167,139,250,0.12)' },
+  academic:  { label: 'Учёба',      color: T.indigo,   bg: T.indigoSoft  },
+  physical:  { label: 'Спорт',      color: T.success,  bg: T.successSoft },
+  creative:  { label: 'Творчество', color: T.danger,   bg: T.dangerSoft  },
+  chore:     { label: 'Быт',        color: T.warning,  bg: T.warningSoft },
+  other:     { label: 'Другое',     color: T.indigoHi, bg: T.indigoSoft  },
 }
 
 const TRACK: Record<TrackingType, { label: string; icon: string; desc: string }> = {
@@ -49,10 +50,10 @@ const TRACK: Record<TrackingType, { label: string; icon: string; desc: string }>
 const DAYS_SHORT = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс']
 
 const DAY_TYPE_BADGE: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  always:   { label: 'Всегда', color: 'rgba(255,255,255,0.45)', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.08)' },
-  school:   { label: 'Школа',  color: '#60a5fa', bg: 'rgba(96,165,250,0.1)',   border: 'rgba(96,165,250,0.2)'  },
-  weekend:  { label: 'Вых',    color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',   border: 'rgba(251,191,36,0.2)'  },
-  vacation: { label: 'Кан',    color: '#f472b6', bg: 'rgba(244,114,182,0.1)',  border: 'rgba(244,114,182,0.2)' },
+  always:   { label: 'Всегда', color: T.muted,   bg: T.card,       border: T.cardBorder },
+  school:   { label: 'Школа',  color: T.indigo,  bg: T.indigoSoft, border: T.cardBorderHi },
+  weekend:  { label: 'Вых',    color: T.warning, bg: T.warningSoft,border: T.cardBorderHi },
+  vacation: { label: 'Кан',    color: T.danger,  bg: T.dangerSoft, border: T.cardBorderHi },
 }
 
 const DAY_TYPE_OPTS: { value: DayType; label: string }[] = [
@@ -205,15 +206,15 @@ export default function ActivitiesManager() {
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16, flexWrap:'wrap' }}>
         <div style={{ flex:1 }}>
-          <div style={{ fontSize:16, fontWeight:800, color:'#fff', marginBottom:3 }}>🎯 Активности</div>
-          <div style={{ fontSize:12, color:'rgba(238,238,255,0.4)' }}>
+          <div style={{ fontSize:16, fontWeight:800, color:T.text, marginBottom:3 }}>🎯 Активности</div>
+          <div style={{ fontSize:12, color:T.muted }}>
             Настройте что ребёнок делает каждый день — появится в форме автоматически
           </div>
         </div>
-        <button onClick={() => setShowTemplates(true)} style={{ ...sh, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'rgba(238,238,255,0.6)' }}>
+        <button onClick={() => setShowTemplates(true)} style={{ ...sh, background:T.card, border:`1px solid ${T.cardBorder}`, color:T.textDim }}>
           📦 Шаблоны
         </button>
-        <button onClick={openAdd} style={{ ...sh, background:'rgba(16,185,129,0.18)', border:'1px solid rgba(16,185,129,0.4)', color:'#34d399' }}>
+        <button onClick={openAdd} style={{ ...sh, background:T.successSoft, border:`1px solid ${T.success}66`, color:T.success }}>
           + Добавить
         </button>
       </div>
@@ -224,9 +225,9 @@ export default function ActivitiesManager() {
           {children.map(c => (
             <button key={c.id} onClick={() => setChildId(c.id)} style={{
               ...sh,
-              background: childId === c.id ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.04)',
-              border: `1.5px solid ${childId === c.id ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.08)'}`,
-              color: childId === c.id ? '#34d399' : 'rgba(238,238,255,0.4)',
+              background: childId === c.id ? T.successSoft : T.card,
+              border: `1.5px solid ${childId === c.id ? `${T.success}66` : T.cardBorder}`,
+              color: childId === c.id ? T.success : T.muted,
             }}>
               {c.display_name}
             </button>
@@ -234,29 +235,29 @@ export default function ActivitiesManager() {
         </div>
       )}
 
-      {error && <div style={{ padding:'8px 12px', background:'rgba(244,63,94,0.1)', border:'1px solid rgba(244,63,94,0.3)', borderRadius:8, color:'#F43F5E', fontSize:12, marginBottom:10 }}>{error}</div>}
+      {error && <div style={{ padding:'8px 12px', background:T.dangerSoft, border:`1px solid ${T.danger}55`, borderRadius:8, color:T.danger, fontSize:12, marginBottom:10 }}>{error}</div>}
 
       {loading ? (
-        <div style={{ textAlign:'center', padding:24, color:'rgba(238,238,255,0.3)', fontSize:13 }}>Загрузка…</div>
+        <div style={{ textAlign:'center', padding:24, color:T.faint, fontSize:13 }}>Загрузка…</div>
       ) : activities.length === 0 ? (
         <div style={{ textAlign:'center', padding:'40px 20px' }}>
           <div style={{ fontSize:40, marginBottom:12 }}>🎯</div>
-          <div style={{ fontSize:14, fontWeight:700, color:'#fff', marginBottom:6 }}>Нет активностей</div>
-          <div style={{ fontSize:12, color:'rgba(255,255,255,0.35)', maxWidth:220, margin:'0 auto 20px', lineHeight:1.5 }}>
+          <div style={{ fontSize:14, fontWeight:700, color:T.text, marginBottom:6 }}>Нет активностей</div>
+          <div style={{ fontSize:12, color:T.muted, maxWidth:220, margin:'0 auto 20px', lineHeight:1.5 }}>
             Добавьте первую активность или выберите шаблон
           </div>
           <div style={{ display:'flex', gap:8, justifyContent:'center' }}>
-            <button onClick={() => setShowTemplates(true)} style={{ ...sh, background:'rgba(245,158,11,0.15)', border:'1px solid rgba(245,158,11,0.35)', color:'#fbbf24' }}>📦 Шаблон</button>
-            <button onClick={openAdd} style={{ ...sh, background:'rgba(16,185,129,0.15)', border:'1px solid rgba(16,185,129,0.35)', color:'#34d399' }}>+ Создать</button>
+            <button onClick={() => setShowTemplates(true)} style={{ ...sh, background:T.warningSoft, border:`1px solid ${T.warning}59`, color:T.warning }}>📦 Шаблон</button>
+            <button onClick={openAdd} style={{ ...sh, background:T.successSoft, border:`1px solid ${T.success}59`, color:T.success }}>+ Создать</button>
           </div>
         </div>
       ) : (
         <>
           {/* Weekly grid */}
-          <div style={{ overflowX:'auto', borderRadius:12, border:'1px solid rgba(255,255,255,0.07)', background:'rgba(255,255,255,0.02)' }}>
+          <div style={{ overflowX:'auto', borderRadius:12, border:`1px solid ${T.cardBorder}`, background:T.card }}>
             <div style={{ minWidth:580 }}>
               {/* Column headers */}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr repeat(7,28px) 70px 60px', gap:0, padding:'8px 12px 6px', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr repeat(7,28px) 70px 60px', gap:0, padding:'8px 12px 6px', borderBottom:`1px solid ${T.cardBorder}` }}>
                 <div style={hdr}>Активность</div>
                 {DAYS_SHORT.map(d => <div key={d} style={{ ...hdr, textAlign:'center' }}>{d}</div>)}
                 <div style={{ ...hdr, textAlign:'center' }}>Тип</div>
@@ -275,27 +276,27 @@ export default function ActivitiesManager() {
                     style={{
                       display:'grid', gridTemplateColumns:'1fr repeat(7,28px) 70px 60px', gap:0,
                       padding:'9px 12px', alignItems:'center',
-                      borderBottom: idx < activities.length-1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                      background: hov ? 'rgba(255,255,255,0.025)' : 'transparent',
+                      borderBottom: idx < activities.length-1 ? `1px solid ${T.cardBorder}` : 'none',
+                      background: hov ? T.cardHi : 'transparent',
                       opacity: a.is_active ? 1 : 0.42, transition:'background 0.15s, opacity 0.2s',
                     }}
                   >
                     <div style={{ display:'flex', alignItems:'center', gap:8, paddingRight:8, minWidth:0 }}>
                       <span style={{ fontSize:17, flexShrink:0 }}>{a.emoji}</span>
                       <div style={{ minWidth:0, flex:1 }}>
-                        <div style={{ fontSize:12, fontWeight:700, color:'#e8e8f0', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{a.name}</div>
+                        <div style={{ fontSize:12, fontWeight:700, color:T.text, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{a.name}</div>
                         <div style={{ display:'flex', gap:4, alignItems:'center', marginTop:2 }}>
                           <span style={{ fontSize:9, fontWeight:700, padding:'1px 4px', borderRadius:3, color:cat.color, background:cat.bg }}>{cat.label}</span>
-                          <span style={{ fontSize:9, color:'rgba(255,255,255,0.3)' }}>{track.icon} {track.desc}</span>
+                          <span style={{ fontSize:9, color:T.faint }}>{track.icon} {track.desc}</span>
                         </div>
                       </div>
                       <div style={{ display:'flex', gap:3, flexShrink:0, opacity: hov ? 1 : 0, transition:'opacity 0.15s' }}>
                         <button onClick={() => openEdit(a)} title="Изменить" style={actionBtn}>✏️</button>
                         <button onClick={() => toggleActive(a)} title={a.is_active ? 'Выключить' : 'Включить'}
-                          style={{ ...actionBtn, borderColor: a.is_active ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.1)', color: a.is_active ? '#34d399' : 'rgba(238,238,255,0.35)' }}>
+                          style={{ ...actionBtn, borderColor: a.is_active ? T.success : T.cardBorder, color: a.is_active ? T.success : T.muted }}>
                           {a.is_active ? '●' : '○'}
                         </button>
-                        <button onClick={() => handleDelete(a.id)} title="Удалить" style={{ ...actionBtn, borderColor:'rgba(244,63,94,0.25)', color:'#f43f5e' }}>✕</button>
+                        <button onClick={() => handleDelete(a.id)} title="Удалить" style={{ ...actionBtn, borderColor:T.dangerSoft, color:T.danger }}>✕</button>
                       </div>
                     </div>
 
@@ -307,8 +308,8 @@ export default function ActivitiesManager() {
                           <button onClick={() => toggleGridDay(a, day)} title={`${DAYS_SHORT[day]}`}
                             style={{
                               width:15, height:15, borderRadius:'50%', border:'none', cursor:'pointer', padding:0,
-                              background: on ? (isWknd ? 'rgba(251,191,36,0.9)' : 'rgba(16,185,129,0.9)') : 'rgba(255,255,255,0.08)',
-                              boxShadow: on ? (isWknd ? '0 0 5px rgba(251,191,36,0.35)' : '0 0 5px rgba(16,185,129,0.35)') : 'none',
+                              background: on ? (isWknd ? T.warning : T.success) : T.cardBorderHi,
+                              boxShadow: on ? (isWknd ? `0 0 5px ${T.warning}59` : `0 0 5px ${T.success}59`) : 'none',
                               transition:'all 0.13s',
                             }} />
                         </div>
@@ -321,7 +322,7 @@ export default function ActivitiesManager() {
                       </span>
                     </div>
 
-                    <div style={{ textAlign:'right', fontSize:12, fontWeight:800, color:'#fbbf24' }}>+{a.coins}💰</div>
+                    <div style={{ textAlign:'right', fontSize:12, fontWeight:800, color:T.warning }}>+{a.coins}💰</div>
                   </div>
                 )
               })}
@@ -329,10 +330,10 @@ export default function ActivitiesManager() {
           </div>
 
           {/* Legend */}
-          <div style={{ display:'flex', gap:12, marginTop:10, flexWrap:'wrap', fontSize:11, color:'rgba(255,255,255,0.3)' }}>
-            <LegDot color="rgba(16,185,129,0.9)" label="Пн–Пт" />
-            <LegDot color="rgba(251,191,36,0.9)"  label="Сб–Вс" />
-            <LegDot color="rgba(255,255,255,0.08)" label="Выключен" />
+          <div style={{ display:'flex', gap:12, marginTop:10, flexWrap:'wrap', fontSize:11, color:T.faint }}>
+            <LegDot color={T.success} label="Пн–Пт" />
+            <LegDot color={T.warning} label="Сб–Вс" />
+            <LegDot color={T.cardBorderHi} label="Выключен" />
             <span style={{ marginLeft:'auto' }}>Нажмите на точку — переключить день</span>
           </div>
         </>
@@ -341,20 +342,20 @@ export default function ActivitiesManager() {
       {/* ── TEMPLATES OVERLAY ─────────────────────────────────────────────── */}
       {showTemplates && (
         <Overlay onClose={() => setShowTemplates(false)}>
-          <div style={{ fontSize:15, fontWeight:800, color:'#fff', marginBottom:3 }}>📦 Шаблоны</div>
-          <div style={{ fontSize:12, color:'rgba(255,255,255,0.35)', marginBottom:18 }}>Готовые наборы для быстрого старта</div>
+          <div style={{ fontSize:15, fontWeight:800, color:T.text, marginBottom:3 }}>📦 Шаблоны</div>
+          <div style={{ fontSize:12, color:T.muted, marginBottom:18 }}>Готовые наборы для быстрого старта</div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
             {TEMPLATES.map(tmpl => (
-              <div key={tmpl.id} style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, padding:12 }}>
+              <div key={tmpl.id} style={{ background:T.card, border:`1px solid ${T.cardBorder}`, borderRadius:10, padding:12 }}>
                 <div style={{ fontSize:22, marginBottom:5 }}>{tmpl.emoji}</div>
-                <div style={{ fontSize:13, fontWeight:800, color:'#fff', marginBottom:2 }}>{tmpl.name}</div>
-                <div style={{ fontSize:11, color:'rgba(255,255,255,0.35)', marginBottom:8, lineHeight:1.4 }}>{tmpl.desc}</div>
+                <div style={{ fontSize:13, fontWeight:800, color:T.text, marginBottom:2 }}>{tmpl.name}</div>
+                <div style={{ fontSize:11, color:T.muted, marginBottom:8, lineHeight:1.4 }}>{tmpl.desc}</div>
                 <div style={{ marginBottom:10 }}>
-                  {tmpl.activities.map((a,i) => <div key={i} style={{ fontSize:10, color:'rgba(255,255,255,0.45)', marginBottom:2 }}>{a.emoji} {a.name}</div>)}
+                  {tmpl.activities.map((a,i) => <div key={i} style={{ fontSize:10, color:T.textDim, marginBottom:2 }}>{a.emoji} {a.name}</div>)}
                 </div>
                 <button
                   onClick={() => applyTemplate(tmpl)} disabled={saving}
-                  style={{ width:'100%', padding:'7px 0', borderRadius:7, background:'rgba(16,185,129,0.15)', border:'1px solid rgba(16,185,129,0.3)', color:'#34d399', fontSize:12, fontWeight:700, cursor:'pointer' }}
+                  style={{ width:'100%', padding:'7px 0', borderRadius:7, background:T.successSoft, border:`1px solid ${T.success}4D`, color:T.success, fontSize:12, fontWeight:700, cursor:'pointer' }}
                 >
                   {saving ? '…' : 'Подключить'}
                 </button>
@@ -367,7 +368,7 @@ export default function ActivitiesManager() {
       {/* ── ADD / EDIT MODAL ──────────────────────────────────────────────── */}
       {showModal && (
         <Overlay onClose={() => { setShowModal(false); setEditingId(null) }}>
-          <div style={{ fontSize:15, fontWeight:800, color:'#fff', marginBottom:18 }}>
+          <div style={{ fontSize:15, fontWeight:800, color:T.text, marginBottom:18 }}>
             {editingId ? '✏️ Редактировать' : '➕ Новая активность'}
           </div>
 
@@ -377,8 +378,8 @@ export default function ActivitiesManager() {
             {EMOJIS.map(e => (
               <button key={e} onClick={() => setForm(p=>({...p,emoji:e}))}
                 style={{ width:34, height:34, fontSize:17, borderRadius:7, cursor:'pointer',
-                  border:`1.5px solid ${form.emoji===e?'rgba(16,185,129,0.5)':'rgba(255,255,255,0.07)'}`,
-                  background: form.emoji===e?'rgba(16,185,129,0.12)':'rgba(255,255,255,0.03)' }}>
+                  border:`1.5px solid ${form.emoji===e?`${T.success}80`:T.cardBorder}`,
+                  background: form.emoji===e?T.successSoft:T.card }}>
                 {e}
               </button>
             ))}
@@ -392,9 +393,9 @@ export default function ActivitiesManager() {
             {(Object.entries(CAT) as [Category, typeof CAT[Category]][]).map(([k,c]) => (
               <button key={k} onClick={() => setForm(p=>({...p,category:k}))}
                 style={{ padding:'6px 11px', borderRadius:7, fontSize:11, fontWeight:700, cursor:'pointer',
-                  background: form.category===k ? c.bg : 'rgba(255,255,255,0.03)',
-                  border:`1.5px solid ${form.category===k ? c.color+'55' : 'rgba(255,255,255,0.07)'}`,
-                  color: form.category===k ? c.color : 'rgba(238,238,255,0.4)' }}>
+                  background: form.category===k ? c.bg : T.card,
+                  border:`1.5px solid ${form.category===k ? c.color+'55' : T.cardBorder}`,
+                  color: form.category===k ? c.color : T.muted }}>
                 {c.label}
               </button>
             ))}
@@ -405,9 +406,9 @@ export default function ActivitiesManager() {
             {(Object.entries(TRACK) as [TrackingType, typeof TRACK[TrackingType]][]).map(([k,c]) => (
               <button key={k} onClick={() => setForm(p=>({...p,trackingType:k}))}
                 style={{ padding:'9px 11px', borderRadius:9, textAlign:'left', cursor:'pointer',
-                  background: form.trackingType===k ? 'rgba(108,92,231,0.14)' : 'rgba(255,255,255,0.03)',
-                  border:`1.5px solid ${form.trackingType===k ? 'rgba(108,92,231,0.45)' : 'rgba(255,255,255,0.07)'}`,
-                  color: form.trackingType===k ? '#c4baff' : 'rgba(238,238,255,0.4)' }}>
+                  background: form.trackingType===k ? T.indigoSoft : T.card,
+                  border:`1.5px solid ${form.trackingType===k ? `${T.indigo}73` : T.cardBorder}`,
+                  color: form.trackingType===k ? T.indigoHi : T.muted }}>
                 <div style={{ fontSize:15, marginBottom:2 }}>{c.icon}</div>
                 <div style={{ fontSize:11, fontWeight:700 }}>{c.label}</div>
                 <div style={{ fontSize:10, opacity:0.55, marginTop:1, lineHeight:1.3 }}>{c.desc}</div>
@@ -416,14 +417,14 @@ export default function ActivitiesManager() {
           </div>
 
           {form.trackingType === 'pages' && (
-            <div style={{ marginBottom:14, padding:11, background:'rgba(96,165,250,0.06)', border:'1px solid rgba(96,165,250,0.15)', borderRadius:9 }}>
-              <div style={{ fontSize:11, fontWeight:700, color:'#60a5fa', marginBottom:8 }}>📖 Режим чтения</div>
+            <div style={{ marginBottom:14, padding:11, background:T.indigoSoft, border:`1px solid ${T.cardBorderHi}`, borderRadius:9 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:T.indigo, marginBottom:8 }}>📖 Режим чтения</div>
               <div>
-                <div style={{ fontSize:10, color:'rgba(255,255,255,0.4)', marginBottom:3 }}>Цель страниц в день</div>
+                <div style={{ fontSize:10, color:T.muted, marginBottom:3 }}>Цель страниц в день</div>
                 <input type="number" min="1" value={form.quantityGoal} placeholder="20"
                   onChange={e=>setForm(p=>({...p,quantityGoal:e.target.value,quantityUnit:'стр'}))} style={inp} />
               </div>
-              <div style={{ fontSize:10, color:'rgba(255,255,255,0.35)', lineHeight:1.5 }}>В форме: страниц • минут • закладка</div>
+              <div style={{ fontSize:10, color:T.muted, lineHeight:1.5 }}>В форме: страниц • минут • закладка</div>
             </div>
           )}
 
@@ -442,9 +443,9 @@ export default function ActivitiesManager() {
               return (
                 <button key={i} onClick={() => toggleFormDay(i)}
                   style={{ flex:1, padding:'7px 0', borderRadius:7, fontSize:10, fontWeight:700, cursor:'pointer',
-                    background: on ? (wknd?'rgba(251,191,36,0.15)':'rgba(16,185,129,0.15)') : 'rgba(255,255,255,0.04)',
-                    border:`1.5px solid ${on ? (wknd?'rgba(251,191,36,0.4)':'rgba(16,185,129,0.4)') : 'rgba(255,255,255,0.07)'}`,
-                    color: on ? (wknd?'#fbbf24':'#34d399') : 'rgba(238,238,255,0.28)' }}>
+                    background: on ? (wknd?T.warningSoft:T.successSoft) : T.card,
+                    border:`1.5px solid ${on ? (wknd?`${T.warning}66`:`${T.success}66`) : T.cardBorder}`,
+                    color: on ? (wknd?T.warning:T.success) : T.faint }}>
                   {d}
                 </button>
               )
@@ -456,9 +457,9 @@ export default function ActivitiesManager() {
             {DAY_TYPE_OPTS.map(o => (
               <button key={o.value} onClick={() => setForm(p=>({...p,dayType:o.value}))}
                 style={{ padding:'6px 12px', borderRadius:7, fontSize:11, fontWeight:700, cursor:'pointer',
-                  background: form.dayType===o.value ? 'rgba(167,139,250,0.14)' : 'rgba(255,255,255,0.03)',
-                  border:`1.5px solid ${form.dayType===o.value ? 'rgba(167,139,250,0.45)' : 'rgba(255,255,255,0.07)'}`,
-                  color: form.dayType===o.value ? '#c4baff' : 'rgba(238,238,255,0.4)' }}>
+                  background: form.dayType===o.value ? T.indigoSoft : T.card,
+                  border:`1.5px solid ${form.dayType===o.value ? `${T.indigoHi}73` : T.cardBorder}`,
+                  color: form.dayType===o.value ? T.indigoHi : T.muted }}>
                 {o.label}
               </button>
             ))}
@@ -469,38 +470,38 @@ export default function ActivitiesManager() {
             {COINS_OPTIONS.map(c => (
               <button key={c} onClick={() => setForm(p=>({...p,coins:c}))}
                 style={{ flex:1, padding:'7px 0', borderRadius:7, fontSize:10, fontWeight:800, cursor:'pointer',
-                  background: form.coins===c ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.04)',
-                  border:`1.5px solid ${form.coins===c ? 'rgba(245,158,11,0.45)' : 'rgba(255,255,255,0.07)'}`,
-                  color: form.coins===c ? '#fbbf24' : 'rgba(238,238,255,0.3)' }}>
+                  background: form.coins===c ? T.warningSoft : T.card,
+                  border:`1.5px solid ${form.coins===c ? `${T.warning}73` : T.cardBorder}`,
+                  color: form.coins===c ? T.warning : T.faint }}>
                 +{c}
               </button>
             ))}
           </div>
 
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'9px 11px', background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:9, marginBottom:18 }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'9px 11px', background:T.card, border:`1px solid ${T.cardBorder}`, borderRadius:9, marginBottom:18 }}>
             <div>
-              <div style={{ fontSize:12, fontWeight:700, color:'#e8e8f0' }}>Активна</div>
-              <div style={{ fontSize:10, color:'rgba(255,255,255,0.3)', marginTop:1 }}>Показывать в ежедневной форме</div>
+              <div style={{ fontSize:12, fontWeight:700, color:T.text }}>Активна</div>
+              <div style={{ fontSize:10, color:T.faint, marginTop:1 }}>Показывать в ежедневной форме</div>
             </div>
             <button onClick={() => setForm(p=>({...p,isActive:!p.isActive}))}
               style={{ width:42, height:23, borderRadius:12, border:'none', cursor:'pointer', flexShrink:0, position:'relative',
-                background: form.isActive ? 'rgba(16,185,129,0.85)' : 'rgba(255,255,255,0.1)', transition:'background 0.2s' }}>
-              <div style={{ position:'absolute', top:2, left: form.isActive ? 21 : 2, width:19, height:19, borderRadius:'50%', background:'#fff', transition:'left 0.18s', boxShadow:'0 1px 3px rgba(0,0,0,0.35)' }} />
+                background: form.isActive ? T.success : T.cardBorderHi, transition:'background 0.2s' }}>
+              <div style={{ position:'absolute', top:2, left: form.isActive ? 21 : 2, width:19, height:19, borderRadius:'50%', background:T.text, transition:'left 0.18s', boxShadow:'0 1px 3px rgba(0,0,0,0.35)' }} />
             </button>
           </div>
 
-          {error && <div style={{ padding:'7px 10px', background:'rgba(244,63,94,0.1)', border:'1px solid rgba(244,63,94,0.3)', borderRadius:7, color:'#F43F5E', fontSize:11, marginBottom:12 }}>{error}</div>}
+          {error && <div style={{ padding:'7px 10px', background:T.dangerSoft, border:`1px solid ${T.danger}55`, borderRadius:7, color:T.danger, fontSize:11, marginBottom:12 }}>{error}</div>}
 
           <div style={{ display:'flex', gap:7 }}>
             <button onClick={handleSave} disabled={saving || !form.name.trim()}
               style={{ flex:1, padding:'11px 0', borderRadius:10, border:'none',
-                background: form.name.trim() ? 'rgba(16,185,129,0.9)' : 'rgba(255,255,255,0.07)',
-                color: form.name.trim() ? '#051a10' : 'rgba(255,255,255,0.25)',
+                background: form.name.trim() ? T.success : T.card,
+                color: form.name.trim() ? T.bg1 : T.faint,
                 fontSize:13, fontWeight:800, cursor: form.name.trim() ? 'pointer' : 'not-allowed' }}>
               {saving ? '…' : '💾 Сохранить'}
             </button>
             <button onClick={() => { setShowModal(false); setEditingId(null) }}
-              style={{ padding:'11px 16px', borderRadius:10, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.09)', color:'rgba(238,238,255,0.45)', fontSize:13, fontWeight:600, cursor:'pointer' }}>
+              style={{ padding:'11px 16px', borderRadius:10, background:T.card, border:`1px solid ${T.cardBorderHi}`, color:T.textDim, fontSize:13, fontWeight:600, cursor:'pointer' }}>
               Отмена
             </button>
           </div>
@@ -512,12 +513,12 @@ export default function ActivitiesManager() {
 
 // ─── Tiny helpers ─────────────────────────────────────────────────────────────
 
-const hdr: React.CSSProperties = { fontSize:10, fontWeight:600, color:'rgba(255,255,255,0.28)', textTransform:'uppercase', letterSpacing:'0.06em' }
-const actionBtn: React.CSSProperties = { width:21, height:21, fontSize:11, borderRadius:5, cursor:'pointer', border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.04)', color:'rgba(238,238,255,0.45)', display:'flex', alignItems:'center', justifyContent:'center' }
-const inp: React.CSSProperties = { width:'100%', padding:'9px 11px', borderRadius:9, marginBottom:14, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'#e8e8f0', fontSize:13, boxSizing:'border-box', outline:'none' }
+const hdr: React.CSSProperties = { fontSize:10, fontWeight:600, color:T.faint, textTransform:'uppercase', letterSpacing:'0.06em' }
+const actionBtn: React.CSSProperties = { width:21, height:21, fontSize:11, borderRadius:5, cursor:'pointer', border:`1px solid ${T.cardBorder}`, background:T.card, color:T.textDim, display:'flex', alignItems:'center', justifyContent:'center' }
+const inp: React.CSSProperties = { width:'100%', padding:'9px 11px', borderRadius:9, marginBottom:14, background:T.card, border:`1px solid ${T.cardBorderHi}`, color:T.text, fontSize:13, boxSizing:'border-box', outline:'none' }
 
 function FL({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:7 }}>{children}</div>
+  return <div style={{ fontSize:10, fontWeight:700, color:T.muted, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:7 }}>{children}</div>
 }
 function LegDot({ color, label }: { color: string; label: string }) {
   return <span style={{ display:'flex', alignItems:'center', gap:4 }}><span style={{ width:9, height:9, borderRadius:'50%', background:color, display:'inline-block' }}/>{label}</span>
@@ -525,8 +526,8 @@ function LegDot({ color, label }: { color: string; label: string }) {
 function Overlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
     <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', zIndex:50, display:'flex', alignItems:'flex-end', justifyContent:'center', backdropFilter:'blur(4px)' }}>
-      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:580, background:'linear-gradient(to bottom,#141419,#111116)', border:'1px solid rgba(255,255,255,0.09)', borderRadius:'18px 18px 0 0', padding:'18px 18px 42px', maxHeight:'92dvh', overflowY:'auto' }}>
-        <div style={{ width:34, height:4, background:'rgba(255,255,255,0.14)', borderRadius:2, margin:'0 auto 20px' }}/>
+      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:580, background:T.bg1, border:`1px solid ${T.cardBorderHi}`, borderRadius:'18px 18px 0 0', padding:'18px 18px 42px', maxHeight:'92dvh', overflowY:'auto' }}>
+        <div style={{ width:34, height:4, background:T.faint, borderRadius:2, margin:'0 auto 20px' }}/>
         {children}
       </div>
     </div>
