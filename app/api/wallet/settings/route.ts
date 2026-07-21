@@ -34,6 +34,34 @@ function clampStreakFields(safe: Record<string, unknown>): void {
   }
 }
 
+// grade_coin_map (JSONB, phase 5.9 D-06/D-08) is a new shape-injection surface
+// on the ...safe spread below — it has no per-field validation otherwise.
+// Defense-in-depth, same idiom as clampStreakFields: reject the whole map on
+// any invalid value rather than storing a partially-garbage shape. The award
+// route's `grade_coin_map[grade] ?? 0` lookup is the authoritative backstop
+// regardless (T-059-02), but validating here keeps the Settings UI from ever
+// rendering NaN/absurd numbers back to the parent.
+function clampGradeCoinMap(safe: Record<string, unknown>): void {
+  if (!('grade_coin_map' in safe)) return
+  const map = safe.grade_coin_map
+  if (typeof map !== 'object' || map === null || Array.isArray(map)) {
+    delete safe.grade_coin_map
+    return
+  }
+  const entries = Object.entries(map as Record<string, unknown>)
+  const clamped: Record<string, number> = {}
+  for (const [key, rawValue] of entries) {
+    const n = Number(rawValue)
+    if (!Number.isFinite(n)) {
+      // Reject the entire map rather than storing a partial/garbage shape.
+      delete safe.grade_coin_map
+      return
+    }
+    clamped[key] = Math.min(100000, Math.max(-100000, Math.floor(n)))
+  }
+  safe.grade_coin_map = clamped
+}
+
 export async function PATCH(req: NextRequest) {
   try {
     const updates = await req.json()
@@ -44,6 +72,7 @@ export async function PATCH(req: NextRequest) {
     const { id, family_id, updated_at, ...safe } = updates ?? {}
     void id; void family_id; void updated_at
     clampStreakFields(safe)
+    clampGradeCoinMap(safe)
 
     const { data, error } = await admin
       .from('wallet_settings')

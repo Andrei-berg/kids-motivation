@@ -174,6 +174,25 @@ async function getCurrentFamilyId(): Promise<string | null> {
   return data?.family_id ?? null
 }
 
+// grade_coin_map (JSONB, phase 5.9 D-06/D-08) has no scalar default below — when
+// absent (legacy row, or a family that never populated it) it is derived at
+// read time from the row's own coins_per_grade_1..5 values, mirroring the
+// server-side fallback in app/api/wallet/_lib.ts loadSettings (read-time
+// fallback, no migration backfill — resolved Open Question 4).
+function withGradeCoinMapFallback(settings: WalletSettings): WalletSettings {
+  if (settings.grade_coin_map) return settings
+  return {
+    ...settings,
+    grade_coin_map: {
+      '5': settings.coins_per_grade_5,
+      '4': settings.coins_per_grade_4,
+      '3': settings.coins_per_grade_3,
+      '2': settings.coins_per_grade_2,
+      '1': settings.coins_per_grade_1,
+    },
+  }
+}
+
 export async function getWalletSettings(): Promise<WalletSettings> {
   const familyId = await getCurrentFamilyId()
 
@@ -183,7 +202,7 @@ export async function getWalletSettings(): Promise<WalletSettings> {
     : query.eq('id', 'default').maybeSingle())
 
   if (error || !data) {
-    return {
+    return withGradeCoinMapFallback({
       id: 'default',
       base_exchange_rate: 10,
       bonus_100_coins: 10,
@@ -214,10 +233,10 @@ export async function getWalletSettings(): Promise<WalletSettings> {
       streak_sport_days: 7,
       streak_sport_bonus: 100,
       updated_at: new Date().toISOString()
-    }
+    })
   }
 
-  return data
+  return withGradeCoinMapFallback(data)
 }
 
 export async function updateWalletSettings(

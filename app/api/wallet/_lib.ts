@@ -62,18 +62,46 @@ const SETTINGS_DEFAULTS = {
   streak_study_bonus: 100,
   streak_sport_days: 7,
   streak_sport_bonus: 100,
-} as Record<string, number>
+  grade_scale: 'five_point',
+} as Record<string, number | string>
 
-export type WalletSettingsRow = Record<string, number> & { id: string; family_id: string }
+export type WalletSettingsRow = Record<string, number> & {
+  id: string
+  family_id: string
+  grade_scale?: string
+  grade_coin_map?: Record<string, number>
+}
 
-/** Load a family's wallet settings via the service client, falling back to defaults. */
+/**
+ * Load a family's wallet settings via the service client, falling back to
+ * defaults. grade_coin_map (JSONB, phase 5.9 D-06/D-08) has no scalar default
+ * in SETTINGS_DEFAULTS above — when the column is null/absent (legacy row or
+ * a family that never populated it), derive it here at read time from the
+ * family's own coins_per_grade_1..5 values (read-time fallback, no migration
+ * backfill — resolved Open Question 4).
+ */
 export async function loadSettings(admin: Admin, familyId: string): Promise<WalletSettingsRow> {
   const { data } = await admin
     .from('wallet_settings')
     .select('*')
     .eq('family_id', familyId)
     .maybeSingle()
-  return { id: 'default', family_id: familyId, ...SETTINGS_DEFAULTS, ...(data ?? {}) }
+  const merged = {
+    id: 'default',
+    family_id: familyId,
+    ...SETTINGS_DEFAULTS,
+    ...(data ?? {}),
+  } as WalletSettingsRow
+  if (!merged.grade_coin_map) {
+    merged.grade_coin_map = {
+      '5': merged.coins_per_grade_5,
+      '4': merged.coins_per_grade_4,
+      '3': merged.coins_per_grade_3,
+      '2': merged.coins_per_grade_2,
+      '1': merged.coins_per_grade_1,
+    }
+  }
+  return merged
 }
 
 /**
