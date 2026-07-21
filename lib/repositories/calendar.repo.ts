@@ -24,6 +24,24 @@ export async function getFamilyCalendar(familyId: string): Promise<FamilyCalenda
   return (data ?? null) as FamilyCalendar | null
 }
 
+/**
+ * Returns a child's `days` rows across an arbitrary date range, mirroring
+ * children.repo.ts getWeekData's days query shape (same filters/order) so
+ * the calendar grid can request a full month/year instead of a single week.
+ */
+export async function getDaysInRange(childId: string, startDate: string, endDate: string) {
+  const { data, error } = await supabase
+    .from('days')
+    .select('*')
+    .eq('child_id', childId)
+    .gte('date', startDate)
+    .lte('date', endDate)
+    .order('date')
+
+  if (error) throw error
+  return data ?? []
+}
+
 // ============================================================================
 // WRITE
 // ============================================================================
