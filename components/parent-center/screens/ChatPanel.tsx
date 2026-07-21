@@ -46,11 +46,11 @@ function classifySystemMessage(content: string | null): ActivityInfo {
 }
 
 const DARK_ACT: Record<ActivityType, { bg: string; border: string; text: string; glow?: string }> = {
-  coins_gain: { bg: 'rgba(0,230,118,.08)', border: 'rgba(0,230,118,.25)', text: '#00E676' },
-  coins_loss: { bg: 'rgba(255,107,107,.08)', border: 'rgba(255,107,107,.25)', text: '#FF8A80' },
-  streak:     { bg: 'rgba(255,217,61,.08)', border: 'rgba(255,217,61,.3)', text: '#FFD93D', glow: '0 0 16px rgba(255,217,61,.18)' },
-  badge:      { bg: 'rgba(255,193,7,.08)', border: 'rgba(255,193,7,.4)', text: '#FFC107', glow: '0 0 20px rgba(255,193,7,.2)' },
-  generic:    { bg: 'rgba(108,92,231,.08)', border: 'rgba(108,92,231,.25)', text: '#8B7BF5' },
+  coins_gain: { bg: T.successSoft, border: T.successSoft, text: T.success },
+  coins_loss: { bg: T.dangerSoft, border: T.dangerSoft, text: T.danger },
+  streak:     { bg: T.warningSoft, border: T.warningSoft, text: T.warning, glow: '0 0 16px rgba(232,147,74,.18)' },
+  badge:      { bg: T.warningSoft, border: T.warningSoft, text: T.warning, glow: '0 0 20px rgba(232,147,74,.2)' },
+  generic:    { bg: T.indigoSoft, border: T.indigoSoft, text: T.indigoHi },
 }
 
 function stripLeadingEmoji(s: string): string {
@@ -133,7 +133,7 @@ function DarkChatTabBar({ active, onChange, desktop }: { active: ChatTab; onChan
     <div style={{ display: 'flex', gap: 5, padding: desktop ? '6px 0 10px' : '6px 0 12px', borderBottom: `1px solid ${T.cardBorder}`, flexShrink: 0 }}>
       {([
         ['messages', '💬 Сообщения', T.indigo],
-        ['activity', '✨ Активность', '#F59E0B'],
+        ['activity', '✨ Активность', T.indigoHi],
       ] as [ChatTab, string, string][]).map(([tab, label, color]) => (
         <button key={tab} onClick={() => onChange(tab)} style={{
           padding: desktop ? '4px 12px' : '5px 14px', borderRadius: T.rPill, cursor: 'pointer',
@@ -236,7 +236,7 @@ function DarkSingleActivity({ msg, desktop }: { msg: ChatMessage; desktop?: bool
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: desktop ? 16 : 18,
           }}>{icon}</div>
           <div>
-            <div style={{ fontFamily: T.fBody, fontSize: 9, fontWeight: 700, color: '#FFC107', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 1 }}>Значок!</div>
+            <div style={{ fontFamily: T.fBody, fontSize: 9, fontWeight: 700, color: T.warning, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 1 }}>Значок!</div>
             <div style={{ fontFamily: T.fHead, fontSize: desktop ? 11 : 12, fontWeight: 600, color: c.text, lineHeight: 1.3 }}>
               {stripLeadingEmoji(label)}
             </div>
