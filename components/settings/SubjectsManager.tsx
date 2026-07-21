@@ -9,6 +9,7 @@ import {
 } from '@/lib/repositories/schedule.repo'
 import type { Subject } from '@/lib/models/flexible.types'
 import { useT } from '@/lib/i18n'
+import { T } from '@/components/parent-center/tokens'
 
 interface Props {
   children: { id: string; name: string }[]
@@ -88,11 +89,11 @@ export default function SubjectsManager({ children }: Props) {
             <button
               key={c.id}
               onClick={() => setChildId(c.id)}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                childId === c.id
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
+              className="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors"
+              style={{
+                background: childId === c.id ? T.indigo : T.card,
+                color: childId === c.id ? T.text : T.muted,
+              }}
             >
               {c.name}
             </button>
@@ -108,23 +109,25 @@ export default function SubjectsManager({ children }: Props) {
           onChange={e => setNewName(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleAdd()}
           placeholder={t('settings.subjectsManager.name')}
-          className="flex-1 bg-gray-700 text-white rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-500"
+          className="flex-1 rounded-lg px-3 py-2 text-sm outline-none"
+          style={{ background: T.card, color: T.text, border: `1px solid ${T.cardBorder}` }}
         />
         <button
           onClick={handleAdd}
           disabled={adding || !newName.trim()}
-          className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-900 text-white font-medium rounded-lg px-4 py-2 text-sm transition-colors"
+          className="font-medium rounded-lg px-4 py-2 text-sm transition-colors"
+          style={{ background: T.indigo, color: T.text }}
         >
           {adding ? '...' : t('settings.subjectsManager.addSubject')}
         </button>
       </div>
 
-      {error && <p className="text-red-400 text-sm mb-3">{error}</p>}
+      {error && <p className="text-sm mb-3" style={{ color: T.danger }}>{error}</p>}
 
-      {loading && <p className="text-gray-500 text-sm py-4 text-center">{t('common.loading')}</p>}
+      {loading && <p className="text-sm py-4 text-center" style={{ color: T.muted }}>{t('common.loading')}</p>}
 
       {!loading && subjects.length === 0 && (
-        <p className="text-gray-500 text-sm py-4 text-center">
+        <p className="text-sm py-4 text-center" style={{ color: T.muted }}>
           {t('settings.subjectsManager.addSubject')}
         </p>
       )}
@@ -132,20 +135,22 @@ export default function SubjectsManager({ children }: Props) {
       {/* Active subjects */}
       {active.length > 0 && (
         <div className="mb-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">{t('settings.categoryManager.active')}</p>
+          <p className="text-xs uppercase tracking-wide mb-2" style={{ color: T.muted }}>{t('settings.categoryManager.active')}</p>
           <div className="space-y-1">
             {active.map(s => (
-              <div key={s.id} className="flex items-center gap-2 py-2 px-3 bg-gray-750 rounded-lg group">
-                <span className="flex-1 text-sm text-gray-200">{s.name}</span>
+              <div key={s.id} className="flex items-center gap-2 py-2 px-3 rounded-lg group" style={{ background: T.cardHi }}>
+                <span className="flex-1 text-sm" style={{ color: T.text }}>{s.name}</span>
                 <button
                   onClick={() => handleToggle(s)}
-                  className="text-xs text-yellow-400 hover:text-yellow-300 opacity-0 group-hover:opacity-100 transition-opacity px-2"
+                  className="text-xs opacity-0 group-hover:opacity-100 transition-opacity px-2"
+                  style={{ color: T.warning }}
                 >
                   {t('settings.categoryManager.inactive')}
                 </button>
                 <button
                   onClick={() => handleArchive(s.id)}
-                  className="text-xs text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity px-2"
+                  className="text-xs opacity-0 group-hover:opacity-100 transition-opacity px-2"
+                  style={{ color: T.danger }}
                 >
                   {t('common.delete')}
                 </button>
@@ -158,20 +163,22 @@ export default function SubjectsManager({ children }: Props) {
       {/* Inactive subjects */}
       {inactive.length > 0 && (
         <div>
-          <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">{t('settings.categoryManager.inactive')}</p>
+          <p className="text-xs uppercase tracking-wide mb-2" style={{ color: T.muted }}>{t('settings.categoryManager.inactive')}</p>
           <div className="space-y-1">
             {inactive.map(s => (
-              <div key={s.id} className="flex items-center gap-2 py-2 px-3 bg-gray-800 rounded-lg group opacity-60">
-                <span className="flex-1 text-sm text-gray-400">{s.name}</span>
+              <div key={s.id} className="flex items-center gap-2 py-2 px-3 rounded-lg group opacity-60" style={{ background: T.card }}>
+                <span className="flex-1 text-sm" style={{ color: T.muted }}>{s.name}</span>
                 <button
                   onClick={() => handleToggle(s)}
-                  className="text-xs text-green-400 hover:text-green-300 opacity-0 group-hover:opacity-100 transition-opacity px-2"
+                  className="text-xs opacity-0 group-hover:opacity-100 transition-opacity px-2"
+                  style={{ color: T.success }}
                 >
                   {t('settings.categoryManager.active')}
                 </button>
                 <button
                   onClick={() => handleArchive(s.id)}
-                  className="text-xs text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-opacity px-2"
+                  className="text-xs opacity-0 group-hover:opacity-100 transition-opacity px-2"
+                  style={{ color: T.danger }}
                 >
                   {t('common.delete')}
                 </button>

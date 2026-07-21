@@ -12,6 +12,7 @@ import {
 } from '@/lib/repositories/room.repo'
 import type { RoomTask } from '@/lib/models/room.types'
 import { useT } from '@/lib/i18n'
+import { T } from '@/components/parent-center/tokens'
 
 const EMOJIS = ['🛏️', '🧹', '🧺', '📚', '🚪', '🗑️', '🧸', '🪟', '🧦', '👕', '🧼', '✨']
 
@@ -126,22 +127,22 @@ export default function RoomTasksManager() {
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
+        <div style={{ fontSize: 16, fontWeight: 800, color: T.text, marginBottom: 4 }}>
           🏠 {t('settings.roomTasksManager.title')}
         </div>
-        <div style={{ fontSize: 13, color: 'rgba(238,238,255,0.5)' }}>
+        <div style={{ fontSize: 13, color: T.textDim }}>
           {t('settings.roomTasksManager.subtitle')}
         </div>
       </div>
 
       {error && (
-        <div style={{ padding: '10px 12px', background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.3)', borderRadius: 8, color: '#F43F5E', fontSize: 13, marginBottom: 12 }}>
+        <div style={{ padding: '10px 12px', background: T.dangerSoft, border: `1px solid ${T.danger}55`, borderRadius: 8, color: T.danger, fontSize: 13, marginBottom: 12 }}>
           {error}
         </div>
       )}
 
       {/* Add form */}
-      <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 12, padding: 14, marginBottom: 16 }}>
+      <div style={{ background: T.indigoSoft, border: `1px solid ${T.cardBorderHi}`, borderRadius: 12, padding: 14, marginBottom: 16 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
           {EMOJIS.map(e => (
             <button
@@ -149,8 +150,8 @@ export default function RoomTasksManager() {
               onClick={() => setIcon(e)}
               style={{
                 width: 32, height: 32, fontSize: 16, borderRadius: 7, cursor: 'pointer',
-                border: `1.5px solid ${icon === e ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.08)'}`,
-                background: icon === e ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.03)',
+                border: `1.5px solid ${icon === e ? `${T.indigo}80` : T.cardBorder}`,
+                background: icon === e ? T.indigoSoft : T.card,
               }}
             >
               {e}
@@ -171,8 +172,8 @@ export default function RoomTasksManager() {
             style={{
               padding: '10px 16px', fontSize: 13, fontWeight: 800, borderRadius: 10, border: 'none',
               cursor: name.trim() ? 'pointer' : 'not-allowed',
-              background: name.trim() ? 'rgba(99,102,241,0.8)' : 'rgba(255,255,255,0.07)',
-              color: name.trim() ? '#fff' : 'rgba(255,255,255,0.3)',
+              background: name.trim() ? T.indigo : T.card,
+              color: name.trim() ? T.text : T.faint,
             }}
           >
             {adding ? '…' : `+ ${t('common.add')}`}
@@ -181,11 +182,11 @@ export default function RoomTasksManager() {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 20, color: 'rgba(238,238,255,0.4)', fontSize: 13 }}>
+        <div style={{ textAlign: 'center', padding: 20, color: T.textDim, fontSize: 13 }}>
           {t('common.loading')}
         </div>
       ) : tasks.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(238,238,255,0.3)', fontSize: 13 }}>
+        <div style={{ textAlign: 'center', padding: 24, color: T.faint, fontSize: 13 }}>
           {t('settings.roomTasksManager.empty')}
         </div>
       ) : (
@@ -197,8 +198,8 @@ export default function RoomTasksManager() {
                 key={task.id}
                 style={{
                   padding: '10px 12px',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: T.card,
+                  border: `1px solid ${T.cardBorderHi}`,
                   borderRadius: 10,
                   opacity: task.is_active ? 1 : 0.45,
                   display: 'flex', alignItems: 'center', gap: 10,
@@ -223,14 +224,14 @@ export default function RoomTasksManager() {
                   ) : (
                     <div
                       onClick={() => startEdit(task)}
-                      style={{ fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer' }}
+                      style={{ fontSize: 14, fontWeight: 700, color: T.text, cursor: 'pointer' }}
                       title={t('common.edit')}
                     >
                       {task.name}
                     </div>
                   )}
                   {isLegacy && (
-                    <div style={{ fontSize: 11, color: 'rgba(238,238,255,0.35)', marginTop: 2 }}>
+                    <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
                       🔒 {t('settings.roomTasksManager.systemTask')}
                     </div>
                   )}
@@ -258,8 +259,8 @@ export default function RoomTasksManager() {
                     title={task.is_active ? t('common.disable') : t('common.enable')}
                     style={{
                       ...iconBtn,
-                      borderColor: task.is_active ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.1)',
-                      color: task.is_active ? '#34d399' : 'rgba(238,238,255,0.35)',
+                      borderColor: task.is_active ? T.success : T.cardBorder,
+                      color: task.is_active ? T.success : T.muted,
                     }}
                   >
                     {task.is_active ? '●' : '○'}
@@ -268,7 +269,7 @@ export default function RoomTasksManager() {
                     <button
                       onClick={() => handleDelete(task)}
                       title={t('common.delete')}
-                      style={{ ...iconBtn, borderColor: 'rgba(244,63,94,0.25)', color: '#f43f5e' }}
+                      style={{ ...iconBtn, borderColor: T.dangerSoft, color: T.danger }}
                     >
                       🗑️
                     </button>
@@ -285,6 +286,6 @@ export default function RoomTasksManager() {
 
 const iconBtn: React.CSSProperties = {
   width: 26, height: 26, fontSize: 12, borderRadius: 6, cursor: 'pointer',
-  border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)',
-  color: 'rgba(238,238,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+  border: `1px solid ${T.cardBorderHi}`, background: T.card,
+  color: T.textDim, display: 'flex', alignItems: 'center', justifyContent: 'center',
 }
