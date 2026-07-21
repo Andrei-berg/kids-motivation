@@ -12,9 +12,10 @@ interface BulkModalProps {
   childId: string
 }
 
+// Legacy 5-point-only surface (A1/D-07, Phase 5.9): TEXT grade compile-fix only, not scale-generalized.
 interface SubjectRow {
   subject: string
-  grades: { [date: string]: number }
+  grades: { [date: string]: string }
 }
 
 export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) {
@@ -47,7 +48,7 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
       const data = await api.getWeekData(childId, weekStart)
       
       // Сгруппировать по предметам
-      const subjectsMap: { [subject: string]: { [date: string]: number } } = {}
+      const subjectsMap: { [subject: string]: { [date: string]: string } } = {}
       
       data.grades.forEach(g => {
         if (!subjectsMap[g.subject]) {
@@ -90,9 +91,9 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
     setSubjects(subjects.filter((_, i) => i !== index))
   }
 
-  function updateGrade(subjectIndex: number, date: string, grade: number) {
+  function updateGrade(subjectIndex: number, date: string, grade: string) {
     const newSubjects = [...subjects]
-    if (grade >= 2 && grade <= 5) {
+    if (['2', '3', '4', '5'].includes(grade)) {
       newSubjects[subjectIndex].grades[date] = grade
     } else {
       delete newSubjects[subjectIndex].grades[date]
@@ -112,7 +113,12 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
             childId,
             date,
             subject: subject.subject,
-            grade
+            // subject_grades.grade is TEXT (05.9-02 migration); grade is the
+            // literal '2'..'5' string. grades.repo.ts's saveSubjectGrade param
+            // type still says `number` (out of this plan's file scope — see
+            // KidDayFillForm.tsx for the same cast) — this preserves the
+            // literal string at runtime without a lossy Number() conversion.
+            grade: grade as unknown as number
           })
         }
       }
@@ -128,7 +134,7 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
     }
   }
 
-  function fillAll(subjectIndex: number, grade: number) {
+  function fillAll(subjectIndex: number, grade: string) {
     const newSubjects = [...subjects]
     weekDays.forEach(date => {
       newSubjects[subjectIndex].grades[date] = grade
@@ -208,10 +214,7 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
                         <input
                           type="number"
                           value={grade || ''}
-                          onChange={(e) => {
-                            const val = e.target.value
-                            updateGrade(subIndex, date, val ? Number(val) : 0)
-                          }}
+                          onChange={(e) => updateGrade(subIndex, date, e.target.value)}
                           min="2"
                           max="5"
                           placeholder="—"
@@ -220,9 +223,9 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
                             textAlign: 'center',
                             padding: '6px',
                             border: `2px solid ${grade ? (
-                              grade === 5 ? '#10b981' :
-                              grade === 4 ? '#3b82f6' :
-                              grade === 3 ? '#f59e0b' : '#ef4444'
+                              grade === '5' ? '#10b981' :
+                              grade === '4' ? '#3b82f6' :
+                              grade === '3' ? '#f59e0b' : '#ef4444'
                             ) : 'var(--line)'}`
                           }}
                         />
@@ -233,14 +236,14 @@ export default function BulkModal({ isOpen, onClose, childId }: BulkModalProps) 
                     <div className="row" style={{ gap: '4px', justifyContent: 'center' }}>
                       <button
                         className="pill"
-                        onClick={() => fillAll(subIndex, 5)}
+                        onClick={() => fillAll(subIndex, '5')}
                         style={{ padding: '4px 8px', fontSize: '12px' }}
                       >
                         5️⃣
                       </button>
                       <button
                         className="pill"
-                        onClick={() => fillAll(subIndex, 4)}
+                        onClick={() => fillAll(subIndex, '4')}
                         style={{ padding: '4px 8px', fontSize: '12px' }}
                       >
                         4️⃣

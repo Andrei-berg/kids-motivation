@@ -13,6 +13,8 @@ import { getSubjectGradesForDate, saveSubjectGrade } from '@/lib/repositories/gr
 import { getWalletSettings } from '@/lib/repositories/wallet.repo'
 import { getRoomTasks, getRoomChecks, saveRoomChecks } from '@/lib/repositories/room.repo'
 import type { RoomTask, RoomLegacyKey } from '@/lib/models/room.types'
+import { getBehaviorTags, getBehaviorMarks, proposeMark } from '@/lib/repositories/behavior.repo'
+import type { BehaviorTag, BehaviorMark } from '@/lib/models/behavior.types'
 import { assembleDayBlocks } from '@/lib/day-blocks'
 import { getDayBlockEntries, saveDayBlockEntries } from '@/lib/repositories/day-blocks.repo'
 import type { DayBlock } from '@/lib/models/day-block.types'
@@ -24,6 +26,7 @@ import { supabase } from '@/lib/supabase'
 import { getReadingLog, saveReadingLog } from '@/lib/vacation-api'
 import { T } from '@/components/kid/design/tokens'
 import { AnimatedNum } from '@/components/kid/design/atoms'
+import { Tick, StatusChip, Amount } from '@/components/design/atoms'
 import { base, paper } from '@/lib/design/tokens'
 import { GRADE_SCALE_VALUES, defaultGradeCoinMap } from '@/lib/presets'
 import BlockCard from '@/components/kid/day-blocks/BlockCard'
@@ -34,6 +37,7 @@ import CustomBlock from '@/components/kid/day-blocks/CustomBlock'
 import { useT } from '@/lib/i18n'
 import { localDateString } from '@/utils/helpers'
 import { track } from '@/lib/analytics'
+import { useAppStore } from '@/lib/store'
 
 // Grade input is now data-driven (05.9, D-06): the active scale's option list
 // (GRADE_SCALE_VALUES) and its coin lookup (grade_coin_map, falling back to
@@ -155,6 +159,20 @@ export function KidDayFillForm({
   const gradeCoinMap = settings?.grade_coin_map ?? defaultGradeCoinMap(gradeScale)
   const gradeValues = GRADE_SCALE_VALUES[gradeScale] ?? GRADE_SCALE_VALUES.five_point
 
+  // ── Behavior tags (05.9) — child-proposes-a-tag picker. D-09 SCOPE NOTE
+  // (deliberate, documented divergence — see 05.9-08-SUMMARY.md): this form
+  // NEVER writes days.good_behavior. Behavior coin credit is parent-gated —
+  // proposed marks are always status='pending' (RLS-enforced, plan 01) and
+  // carry zero coins until a parent approves them (plan 07 approval action +
+  // plan 06 award-route summation). The legacy days.good_behavior dual-write/
+  // fallback lives entirely on the parent's DailyModal (plan 07) and the
+  // award-route's no-approved-mark fallback (plan 06) — NOT here.
+  const [behaviorTags, setBehaviorTags] = useState<BehaviorTag[]>([])
+  const [behaviorMarks, setBehaviorMarks] = useState<BehaviorMark[]>([])
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
+  const [proposingTags, setProposingTags] = useState(false)
+  const activeMemberId = useAppStore(s => s.activeMemberId)
+
   // ── Reading state ────────────────────────────────────────────────────────
   const [reading, setReading] = useState({
     bookTitle: '',
@@ -245,6 +263,25 @@ export function KidDayFillForm({
           checks.forEach(c => { initialChecked[c.task_id] = c.done })
         }
         setRoomChecked(initialChecked)
+
+        // Behavior tags (05.9) — the family's active tag set, for the
+        // "Propose a tag" picker. Non-fatal: an empty list just hides the
+        // section (behaviorTags.length > 0 gate at render time).
+        try {
+          const tags = await getBehaviorTags(familyId)
+          setBehaviorTags(tags)
+        } catch (e) {
+          console.warn('[KidDayFillForm] could not load behavior tags:', e)
+        }
+      }
+
+      // This day's behavior_marks (all statuses) — drives the pending
+      // "Waiting for parent" chip state per tag.
+      try {
+        const marks = await getBehaviorMarks(childId, date)
+        setBehaviorMarks(marks)
+      } catch (e) {
+        console.warn('[KidDayFillForm] could not load behavior marks:', e)
       }
 
       // Pre-fill reading log
@@ -377,6 +414,35 @@ export function KidDayFillForm({
   function toggleRoomTask(taskId: string) {
     if (isLocked) return
     setRoomChecked(prev => ({ ...prev, [taskId]: !prev[taskId] }))
+  }
+
+  // Behavior tag propose picker (05.9) — toggle-to-select, then a dedicated
+  // "Propose a tag" button inserts pending marks directly (client-writable,
+  // not money yet — RLS forces status='pending'; see behavior.repo.ts).
+  function toggleTagSelection(tagId: string) {
+    if (isLocked) return
+    setSelectedTagIds(prev => prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId])
+  }
+
+  async function handleProposeTags() {
+    if (selectedTagIds.length === 0 || proposingTags) return
+    setProposingTags(true)
+    try {
+      // activeMemberId is this child's own family_members.id (set at kid
+      // login — KidInitializer); childId is children.id, a different id.
+      const proposedBy = activeMemberId ?? childId
+      const newMarks: BehaviorMark[] = []
+      for (const tagId of selectedTagIds) {
+        const mark = await proposeMark({ childId, date, tagId, proposedBy })
+        newMarks.push(mark)
+      }
+      setBehaviorMarks(prev => [...prev, ...newMarks])
+      setSelectedTagIds([])
+    } catch (e) {
+      console.warn('[KidDayFillForm] propose tag failed:', e)
+    } finally {
+      setProposingTags(false)
+    }
   }
 
   function handleProofCapture(e: React.ChangeEvent<HTMLInputElement>) {
@@ -939,6 +1005,67 @@ export function KidDayFillForm({
     />
   )
 
+  // ─── Behavior tag propose picker (05.9) ──────────────────────────────────
+  // D-09 SCOPE NOTE (deliberate, documented divergence — see
+  // 05.9-08-SUMMARY.md): this body only ever INSERTs status='pending' marks
+  // (proposeMark, RLS-enforced) — it never writes days.good_behavior. Behavior
+  // coin credit is parent-gated; the legacy days.good_behavior dual-write/
+  // fallback lives entirely on the parent's DailyModal (plan 07) and the
+  // award-route's no-approved-mark fallback (plan 06), not here. No coins are
+  // shown as "earned" here — a pending mark renders "Waiting for parent" and
+  // is never added to coinsPreview.
+  const behaviorBody = (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {behaviorTags.map(tag => {
+          const pendingMark = behaviorMarks.find(m => m.tag_id === tag.id && m.status === 'pending')
+          if (pendingMark) {
+            return (
+              <div key={tag.id} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px',
+                borderRadius: 999, background: '#fff', border: `1px solid ${T.line}`,
+              }}>
+                <span style={{ fontSize: 14 }}>{tag.icon ?? '⭐'}</span>
+                <span style={{ fontFamily: T.fBody, fontSize: 12, fontWeight: 600, color: T.ink }}>{tag.name}</span>
+                <StatusChip tone="warning" theme="paper">{t('kidDay.behavior.waitingForParent')}</StatusChip>
+              </div>
+            )
+          }
+          const on = selectedTagIds.includes(tag.id)
+          return (
+            <button key={tag.id} disabled={isLocked} onClick={() => toggleTagSelection(tag.id)} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 999,
+              border: on ? `1.5px solid ${paper.accent}` : `1px solid ${T.line}`,
+              background: on ? `${paper.accent}1F` : '#fff', cursor: isLocked ? 'not-allowed' : 'pointer',
+            }}>
+              <Tick on={on} theme="paper" size={16}/>
+              <span style={{ fontSize: 14 }}>{tag.icon ?? '⭐'}</span>
+              <span style={{ fontFamily: T.fBody, fontSize: 12, fontWeight: 600, color: T.ink }}>{tag.name}</span>
+              {/* UI-SPEC: a negative-price tag's value renders via Amount with
+                  money={false} in dangerText — never gold, since it previews
+                  a penalty, not an earned reward. Positive prices use the
+                  normal gold-money path. */}
+              {tag.price !== 0 && (
+                tag.price > 0
+                  ? <Amount value={tag.price} theme="paper" money size="sm" signed/>
+                  : <Amount value={tag.price} theme="paper" money={false} color={paper.dangerText} size="sm"/>
+              )}
+            </button>
+          )
+        })}
+      </div>
+      {selectedTagIds.length > 0 && !isLocked && (
+        <button onClick={handleProposeTags} disabled={proposingTags} style={{
+          alignSelf: 'flex-start', height: 36, padding: '0 16px', borderRadius: 18, border: 'none',
+          background: paper.accent, color: '#fff', fontFamily: T.fDisp, fontSize: 13, fontWeight: 800,
+          cursor: proposingTags ? 'not-allowed' : 'pointer', opacity: proposingTags ? 0.7 : 1,
+        }}>
+          {proposingTags ? t('kidFillForm.saving') : t('kidDay.behavior.proposeBtn')}
+        </button>
+      )}
+    </div>
+  )
+
   // Flag-on: one BlockCard per assembled block, titled/iconed from the
   // block's own config (parent-editable — Plan 05). Built-in blocks
   // (legacy_key non-null) reuse the exact bodies above; 'behavior' has no
@@ -1056,6 +1183,17 @@ export function KidDayFillForm({
           })}
         </div>
       </BlockCard>
+
+      {/* ─── Behavior tags (05.9) — always shown, like Mood: proposing a
+           tag is not a day-blocks credit source (D-09), so it isn't gated
+           by dayBlocksEnabled/visibleBlocks. Hidden entirely when the family
+           has no active tags (should not happen — the default "Good behavior"
+           tag is seeded for every family, plan 01/03). ─── */}
+      {behaviorTags.length > 0 && (
+        <BlockCard title={t('kidFillForm.behaviorSection')} icon="🌟">
+          {behaviorBody}
+        </BlockCard>
+      )}
 
       {dayBlocksEnabled ? (
         // WR-02: flag-on is AUTHORITATIVE — even with zero visible blocks the
