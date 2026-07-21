@@ -420,6 +420,33 @@ export default function DayBlocksManager() {
     await writeChildOverride(childId, row.legacy_key, { who_fills: whoFills })
   }
 
+  // CR-01 fix — D-02 schedule-link picker, wired into the D-03 per-child
+  // resolved view (renderChildResolvedList) instead of renderFamilyDefaultList,
+  // whose `blocks` always have child_id === null (getDayBlocks without a
+  // childId only ever returns family-default rows, so the picker there was
+  // unreachable dead code). Goes through the shared writeChildOverride
+  // copy-on-write path — same as handleChildPriceEdit/handleChildWhoFillsEdit
+  // above — so picking a link creates the per-child override row on first
+  // use, and updates it thereafter.
+  async function pickChildScheduleLink(childId: string, row: DayBlock, item: ScheduleItem | null) {
+    if (!row.legacy_key) return
+    setOpenScheduleLinkFor(null)
+    await writeChildOverride(childId, row.legacy_key, {
+      schedule_link: item ? item.id : null,
+      days_of_week: item ? scheduleDowToBlockDow(item.day_of_week) : [],
+    })
+  }
+
+  // Manual re-copy (not a live join) — re-runs the same denormalize write in
+  // case the linked schedule_items row's days changed since the last sync.
+  async function resyncChildScheduleLink(childId: string, row: DayBlock, item: ScheduleItem) {
+    if (!row.legacy_key) return
+    await writeChildOverride(childId, row.legacy_key, {
+      schedule_link: item.id,
+      days_of_week: scheduleDowToBlockDow(item.day_of_week),
+    })
+  }
+
   function confirmRemoveOverride(childId: string, overrideRow: DayBlock) {
     if (!confirm(t('settings.dayBlocksManager.removeOverrideConfirm', { name: childName(childId) }))) return
     removeOverride(overrideRow.id)
@@ -732,11 +759,15 @@ export default function DayBlocksManager() {
   // this child's active overrides merged in by legacy_key. Custom rows
   // (legacy_key null) render read-only, no override affordance.
   function renderChildResolvedList(childId: string, rows: DayBlock[]) {
+    const childMemberId = children.find(c => c.id === childId)?.memberId
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {rows.map(row => {
           const isBuiltIn = row.legacy_key !== null
           const isOverride = row.child_id === childId
+          const linkedItem = childMemberId
+            ? (scheduleItemsByMember[childMemberId] ?? []).find(i => i.id === row.schedule_link)
+            : undefined
           return (
             <div
               key={row.id}
@@ -746,35 +777,95 @@ export default function DayBlocksManager() {
                 border: `1px solid ${T.cardBorder}`,
                 borderRadius: 10,
                 opacity: row.is_active ? 1 : 0.45,
-                display: 'flex', alignItems: 'center', gap: 10,
+                display: 'flex', flexDirection: 'column', gap: 8,
               }}
             >
-              <span style={{ fontSize: 18, flexShrink: 0 }}>{row.icon || '🧩'}</span>
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: T.text }}>{row.name}</span>
-                {isOverride && (
-                  <button
-                    onClick={() => confirmRemoveOverride(childId, row)}
-                    aria-label={t('settings.dayBlocksManager.ariaRemoveOverride', { name: childName(childId) })}
-                    style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
-                  >
-                    <StatusChip tone="success" theme="ink">{t('settings.dayBlocksManager.custom')}</StatusChip>
-                  </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 18, flexShrink: 0 }}>{row.icon || '🧩'}</span>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: T.text }}>{row.name}</span>
+                  {isOverride && (
+                    <button
+                      onClick={() => confirmRemoveOverride(childId, row)}
+                      aria-label={t('settings.dayBlocksManager.ariaRemoveOverride', { name: childName(childId) })}
+                      style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
+                    >
+                      <StatusChip tone="success" theme="ink">{t('settings.dayBlocksManager.custom')}</StatusChip>
+                    </button>
+                  )}
+                </div>
+                {isBuiltIn ? (
+                  <input
+                    className="premium-input"
+                    type="number"
+                    defaultValue={row.price ?? ''}
+                    placeholder={t('settings.dayBlocksManager.pricePlaceholder')}
+                    onBlur={e => handleChildPriceEdit(childId, row, e.target.value)}
+                    style={{ width: 80, flexShrink: 0 }}
+                  />
+                ) : (
+                  <span style={{ fontSize: 13, color: T.muted, fontFamily: T.fMono, flexShrink: 0 }}>
+                    {row.price != null ? `${row.price}🪙` : '—'}
+                  </span>
                 )}
               </div>
-              {isBuiltIn ? (
-                <input
-                  className="premium-input"
-                  type="number"
-                  defaultValue={row.price ?? ''}
-                  placeholder={t('settings.dayBlocksManager.pricePlaceholder')}
-                  onBlur={e => handleChildPriceEdit(childId, row, e.target.value)}
-                  style={{ width: 80, flexShrink: 0 }}
-                />
-              ) : (
-                <span style={{ fontSize: 13, color: T.muted, fontFamily: T.fMono, flexShrink: 0 }}>
-                  {row.price != null ? `${row.price}🪙` : '—'}
-                </span>
+
+              {/* CR-01 fix — D-02 schedule-link picker, reachable here (not
+                  renderFamilyDefaultList) because this resolved row is the
+                  first place a built-in block is actually associated with a
+                  real child. Picking a link creates/updates this child's
+                  override via writeChildOverride (pickChildScheduleLink). */}
+              {isBuiltIn && childMemberId && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingLeft: 28 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <Btn
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setOpenScheduleLinkFor(openScheduleLinkFor === row.id ? null : row.id)}
+                      style={{ color: linkedItem ? T.text : T.indigo }}
+                    >
+                      🔗 {linkedItem
+                        ? t('settings.dayBlocksManager.scheduleLink.synced', { title: linkedItem.title })
+                        : t('settings.dayBlocksManager.scheduleLink.none')}
+                      <Icon name="chevD" size={14} />
+                    </Btn>
+                    {linkedItem && (
+                      <>
+                        <StatusChip tone="success" theme="ink">
+                          {t('settings.dayBlocksManager.scheduleLink.synced', { title: linkedItem.title })}
+                        </StatusChip>
+                        <button
+                          onClick={() => resyncChildScheduleLink(childId, row, linkedItem)}
+                          aria-label={t('settings.dayBlocksManager.resync')}
+                          title={t('settings.dayBlocksManager.resync')}
+                          style={iconBtn}
+                        >
+                          ↻
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {openScheduleLinkFor === row.id && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8, background: T.cardHi, border: `1px solid ${T.cardBorderHi}`, borderRadius: 8 }}>
+                      <button
+                        onClick={() => pickChildScheduleLink(childId, row, null)}
+                        style={{ textAlign: 'left', padding: '6px 8px', borderRadius: 6, border: 'none', background: 'transparent', color: T.muted, fontSize: 12, cursor: 'pointer' }}
+                      >
+                        {t('settings.dayBlocksManager.scheduleLink.none')}
+                      </button>
+                      {(scheduleItemsByMember[childMemberId] ?? []).map(item => (
+                        <button
+                          key={item.id}
+                          onClick={() => pickChildScheduleLink(childId, row, item)}
+                          style={{ textAlign: 'left', padding: '6px 8px', borderRadius: 6, border: 'none', background: 'transparent', color: T.text, fontSize: 12, cursor: 'pointer' }}
+                        >
+                          {item.title} — {abbreviateDays(item.day_of_week)}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )
