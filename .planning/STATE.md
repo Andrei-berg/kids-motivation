@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: ready_to_plan
-stopped_at: Phase 05.8 context gathered
-last_updated: "2026-07-20T17:05:03.772Z"
-last_activity: 2026-07-19
+stopped_at: Phase 5.8 UI-SPEC approved
+last_updated: "2026-07-21T02:41:37.602Z"
+last_activity: 2026-07-21
 progress:
   total_phases: 16
   completed_phases: 11
-  total_plans: 67
+  total_plans: 76
   completed_plans: 66
   percent: 69
 ---
@@ -57,7 +57,7 @@ Phase 05.4 (streak-settings): COMPLETE 2026-07-07 — verification passed 3/3.
 Phase 05.5 (year-calendar): COMPLETE 2026-07-13 — 7/7 plans executed (waves 1-4, worktree orchestrator); code review found 3 Critical + 8 Warning, ALL 11 fixed same day (commits 0dd4e91..1679b84, 05.5-REVIEW-FIX.md); migrations 05.5-01..05 applied to prod (incl. WR-01 parent-only calendar writes + WR-03 child_filter backfill); verification PASSED 4/4 (05.5-VERIFICATION.md, 3 non-blocking visual checks listed for operator). Key deliveries: family_calendar table, RU/KZ/BY vacation presets → vacation_periods materialization, data-driven getDayType, server-side updateStreaks + streaks RLS SELECT-only (closes 05.4 CR-01), anchored-run streak calculators (current_count = full run length; transparent today freezes, not breaks).
 Phase 05.6 (day-blocks): discussion in progress (2026-07-14).
 Phase 05.3 (design-tokens): 05.3-03 CODE-COMPLETE — app/kid/wallet/page.tsx TxnRow and components/parent-center/screens/Dashboard.tsx ActivityRow both adopted the shared LedgerRow/Amount atoms (paper + ink themes respectively); credits/earn_coins/bonus render gold, debits/penalty render neutral/danger. Full build green (tsc/lint/test/next build, 55/55 pages). Surgical diffs confirmed via git diff per file. Consolidated checkpoint:human-verify (recolor + fonts + both pilots + unmigrated/legacy screens + gold-only-on-money rule) is queued for operator sign-off — phase 05.3 not yet marked closed pending that approval. 05.3-01 (tokens+fonts) and 05.3-02 (atoms module) done earlier.
-Last activity: 2026-07-19
+Last activity: 2026-07-21
 Prior GSD activity: 2026-07-07 — executed 05.3-02 (shared atoms module in components/design/atoms.tsx)
 ```
 
@@ -151,9 +151,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-07-20T17:05:03.730Z
-Stopped at: Phase 05.8 context gathered
-Resume file: .planning/phases/05.8-parent-redesign/05.8-CONTEXT.md
+Last session: 2026-07-20T17:44:14.353Z
+Stopped at: Phase 5.8 UI-SPEC approved
+Resume file: .planning/phases/05.8-parent-redesign/05.8-UI-SPEC.md
 
 ---
 

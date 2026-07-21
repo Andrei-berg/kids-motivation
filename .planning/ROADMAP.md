@@ -313,6 +313,18 @@ Plans:
   1. Parent Center screens use the unified ink theme; no Sora/cyan/neon-green remnants
   2. Day Constructor screen manages `day_blocks` per child (toggle, who fills, price, day types)
   3. Year Calendar screen manages 5.5 data; Analytics shows the Weekly Summary card (static text for now)
+**Plans:** 9 plans (4 waves)
+Plans:
+- [ ] 05.8-01-PLAN.md — Foundation logic (scheduleDowToBlockDow, getDaysInRange, weekly-summary helpers) + all i18n keys + Wave-0 tests
+- [ ] 05.8-02-PLAN.md — Recolor CalendarSettingsManager + PeriodsManager (D-07; amber→indigo)
+- [ ] 05.8-03-PLAN.md — Recolor Activities/Sections/Subjects/RoomTasks managers (D-09)
+- [ ] 05.8-04-PLAN.md — Recolor ChatPanel DARK_ACT map + ui.tsx cyan Btn variant (D-09)
+- [ ] 05.8-05-PLAN.md — DayBlocksManager recolor (D-04) + schedule-link picker (D-02)
+- [ ] 05.8-06-PLAN.md — Year Calendar visual month grid + sick-day overlay (D-05/D-06); no new nav (D-01)
+- [ ] 05.8-07-PLAN.md — Analytics Weekly Summary card (D-08)
+- [ ] 05.8-08-PLAN.md — DayBlocksManager per-child override, both candidates behind a toggle (D-03)
+- [ ] 05.8-09-PLAN.md — Consolidated human-verify checkpoint (recolor bar + D-03 decision + grid + card)
+
 
 ### Phase 5.9: rules-presets
 **Goal**: Families pick a rule philosophy in one tap and international grading is possible
