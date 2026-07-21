@@ -13,7 +13,13 @@ import { createClient } from '@/lib/supabase/client'
 import { useAppStore } from '@/lib/store'
 import { useT, useLanguage } from '@/lib/i18n'
 import { T, CHILD_ACCENTS } from '@/components/parent-center/tokens'
-import { Icon, Tabs, Card, Btn } from '@/components/parent-center/ui'
+import { Icon, Card, Btn } from '@/components/parent-center/ui'
+// WR-03 fix: use design/atoms.tsx's theme-aware Tabs (indigo active-state,
+// per 05.8-UI-SPEC.md's Color table) instead of parent-center/ui.tsx's Tabs,
+// whose active-tab highlight is a neutral T.cardHi — matching the convention
+// this phase's other new tab-like control (DayBlocksManager.tsx's layout
+// toggle / child-selector tabs) already follows.
+import { Tabs } from '@/components/design/atoms'
 import { getFamilyCalendar, getDaysInRange } from '@/lib/repositories/calendar.repo'
 import { getVacationPeriods, type VacationPeriod } from '@/lib/vacation-api'
 import { getDayType } from '@/lib/day-type'
@@ -177,7 +183,7 @@ export default function CalendarGrid() {
   return (
     <div>
       <div style={{ marginBottom: 12 }}>
-        <Tabs tabs={tabs} value={childFilter} onChange={id => { setChildFilter(id); setPopover(null) }} scroll />
+        <Tabs theme="ink" tabs={tabs} value={childFilter} onChange={id => { setChildFilter(id); setPopover(null) }} scroll />
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 8, flexWrap: 'wrap' }}>
