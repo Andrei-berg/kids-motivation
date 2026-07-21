@@ -1,8 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { useT } from '@/lib/i18n'
 import { T } from '../tokens'
 import { Card, Btn, Pill, Avatar, Tabs } from '../ui'
+import { Amount, StatusChip } from '@/components/design/atoms'
+import { completionTone } from '@/lib/weekly-summary'
 import type { ParentChild, ActivityEntry } from '../types'
 
 function BarChart({ data, max: maxProp, color = T.indigo, h = 120 }: {
@@ -92,9 +95,83 @@ function LineChart({ series, w = 320, h = 160, labels }: {
   )
 }
 
-export default function AnalyticsScreen({ children, activity }: {
+// D-08: the one truly-real content block on this screen — coins/tasks/streak
+// computed in ParentCenter.tsx's loadAll() from correct sources (wallet_transactions
+// via sumWeeklyCoins, NOT getWeekScore.total) and passed down as props.
+function WeeklySummaryCard({ coinsThisWeek, taskRate, streakHighlight, weeklyError }: {
+  coinsThisWeek: number
+  taskRate: number
+  streakHighlight: { name: string; days: number } | null
+  weeklyError?: boolean
+}) {
+  const t = useT()
+
+  if (weeklyError) {
+    return (
+      <Card pad={16}>
+        <div style={{
+          fontSize: 13, color: T.danger, background: T.dangerSoft,
+          borderRadius: 10, padding: '10px 12px',
+        }}>
+          {t('analytics.weeklySummary.loadError')}
+        </div>
+      </Card>
+    )
+  }
+
+  const isEmpty = coinsThisWeek === 0 && taskRate === 0
+
+  return (
+    <Card pad={16}>
+      <div style={{ fontFamily: T.fHead, fontSize: 17, fontWeight: 700, color: T.text, marginBottom: isEmpty ? 0 : 14 }}>
+        {t('analytics.weeklySummary.title')}
+      </div>
+      {isEmpty ? (
+        <div style={{ fontSize: 13, color: T.muted, textAlign: 'center', padding: '12px 0' }}>
+          {t('analytics.weeklySummary.empty')}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ flex: '1 1 0', minWidth: 100 }}>
+            <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              {t('analytics.weeklySummary.coinsEarned')}
+            </div>
+            <div style={{ marginTop: 4 }}>
+              <Amount value={coinsThisWeek} theme="ink" money={true} size="lg"/>
+            </div>
+          </div>
+          <div style={{ flex: '1 1 0', minWidth: 100 }}>
+            <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              {t('analytics.weeklySummary.tasksDone')}
+            </div>
+            <div style={{ marginTop: 4 }}>
+              <StatusChip theme="ink" tone={completionTone(taskRate)}>{taskRate}%</StatusChip>
+            </div>
+          </div>
+          <div style={{ flex: '1 1 0', minWidth: 100 }}>
+            {streakHighlight ? (
+              <div style={{ fontSize: 13, fontWeight: 600, color: T.warning, marginTop: 4 }}>
+                {t('analytics.weeklySummary.streakHighlight', { name: streakHighlight.name, days: String(streakHighlight.days) })}
+              </div>
+            ) : (
+              <div style={{ fontSize: 13, color: T.muted, marginTop: 4 }}>
+                {t('analytics.weeklySummary.noStreak')}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </Card>
+  )
+}
+
+export default function AnalyticsScreen({ children, activity, coinsThisWeek, taskRate: weeklyTaskRate, streakHighlight, weeklyError }: {
   children: ParentChild[]
   activity: ActivityEntry[]
+  coinsThisWeek: number
+  taskRate: number
+  streakHighlight: { name: string; days: number } | null
+  weeklyError?: boolean
 }) {
   const [range, setRange] = useState('week')
 
@@ -135,6 +212,11 @@ export default function AnalyticsScreen({ children, activity }: {
         { id: 'month', label: 'Month' },
         { id: 'quarter', label: 'Quarter' },
       ]}/>
+
+      <WeeklySummaryCard
+        coinsThisWeek={coinsThisWeek} taskRate={weeklyTaskRate}
+        streakHighlight={streakHighlight} weeklyError={weeklyError}
+      />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
         {kpis.map(k => (
