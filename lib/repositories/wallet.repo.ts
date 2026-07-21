@@ -910,6 +910,31 @@ export async function getTransactions(
   return data
 }
 
+// WR-01 fix: identical query to getTransactions, but REJECTS on a Supabase
+// error instead of swallowing it and resolving with []. getTransactions
+// itself can never throw (see above), which makes a `.catch()` after it
+// unreachable — used by the D-08 Weekly Summary card's week-scoped fetch,
+// where a genuine fetch failure needs to be distinguishable from an
+// empty/first-week-of-use result so the dedicated error banner can show.
+export async function getTransactionsStrict(
+  childId?: string,
+  limit: number = 50,
+  since?: string // ISO timestamp — only rows with created_at >= since
+): Promise<WalletTransaction[]> {
+  let query = supabase
+    .from('wallet_transactions')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (childId) query = query.eq('child_id', childId)
+  if (since) query = query.gte('created_at', since)
+
+  const { data, error } = await query
+  if (error) throw error
+  return data
+}
+
 // ============================================================================
 // COIN AWARDS
 // ============================================================================

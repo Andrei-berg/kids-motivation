@@ -18,7 +18,7 @@ import DailyModal from '@/components/DailyModal'
 import type { ParentChild, ActivityEntry, ActionType, ToastState, ModalState, Route } from './types'
 import type { RewardPurchase } from '@/lib/models/wallet.types'
 import { getChildren, getDay } from '@/lib/repositories/children.repo'
-import { getWallet, getPendingPurchases, getTransactions } from '@/lib/repositories/wallet.repo'
+import { getWallet, getPendingPurchases, getTransactions, getTransactionsStrict } from '@/lib/repositories/wallet.repo'
 import { approvePurchaseAction, rejectPurchaseAction } from '@/app/parent/shop/actions'
 import { getPendingReadingChecks, type PendingReadingCheck } from '@/lib/vacation-api'
 import { approveReadingAction, rejectReadingAction } from '@/app/parent/reading/actions'
@@ -121,7 +121,11 @@ export default function ParentCenter() {
           getPendingPurchases().catch(() => [] as RewardPurchase[]),
           getTransactions(undefined, 30).catch(() => []),
           getPendingReadingChecks(rawChildren.map(c => c.id)).catch(() => [] as PendingReadingCheck[]),
-          getTransactions(undefined, 500, weekStartISO).catch(() => { weeklyError = true; return [] }),
+          // WR-01 fix: getTransactions can never reject (it swallows its own
+          // errors and resolves []), so this .catch() was unreachable dead
+          // code and weeklyError could never become true. getTransactionsStrict
+          // is the same query but rethrows on a Supabase error.
+          getTransactionsStrict(undefined, 500, weekStartISO).catch(() => { weeklyError = true; return [] }),
         ])
 
         const perChildResults = await Promise.all(
