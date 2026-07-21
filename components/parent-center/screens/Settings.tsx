@@ -22,6 +22,7 @@ import RoomTasksManager from '@/components/settings/RoomTasksManager'
 import DayBlocksManager from '@/components/settings/DayBlocksManager'
 import CalendarSettingsManager from '@/components/settings/CalendarSettingsManager'
 import CalendarGrid from '@/components/settings/CalendarGrid'
+import type { PeriodOpenRequest } from '@/components/settings/PeriodsManager'
 
 // ───── Language card ─────
 function LanguageCard() {
@@ -390,8 +391,20 @@ function ChildrenTab({ allChildren, notify }: { allChildren: ParentChild[]; noti
 // ───── Collapsed accordion (D-05: Year Calendar's settings form + vacation
 // list demote below the CalendarGrid hero — a simple T-token disclosure
 // toggle, default collapsed) ─────
-function AccordionSection({ title, icon, children }: { title: string; icon?: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(false)
+function AccordionSection({ title, icon, children, open: openProp, onOpenChange }: {
+  title: string; icon?: string; children: React.ReactNode
+  // WR-04 fix: optionally controlled, so ScheduleTab can auto-expand the
+  // vacations accordion when a calendar cell tap opens PeriodsManager's
+  // form inside it. Uncontrolled (internal state) when omitted — unchanged
+  // default behavior for every other AccordionSection consumer.
+  open?: boolean; onOpenChange?: (open: boolean) => void
+}) {
+  const [internalOpen, setInternalOpen] = useState(false)
+  const open = openProp ?? internalOpen
+  const setOpen = (next: boolean | ((o: boolean) => boolean)) => {
+    const resolved = typeof next === 'function' ? (next as (o: boolean) => boolean)(open) : next
+    onOpenChange ? onOpenChange(resolved) : setInternalOpen(resolved)
+  }
   return (
     <div style={{ border: `1px solid ${T.cardBorder}`, borderRadius: T.rL, marginBottom: 12, overflow: 'hidden' }}>
       <button
@@ -434,6 +447,13 @@ function ScheduleTab({ allChildren }: { allChildren: ParentChild[] }) {
   type SubTab = typeof SUB_TABS[number]['id']
   const [sub, setSub] = useState<SubTab>('subjects')
 
+  // WR-04 fix: D-05's locked "tap cell to add/edit vacation period"
+  // contract — CalendarGrid reports the tapped date (+ covering period, if
+  // any) here; PeriodsManager consumes it to open its add/edit form, and
+  // the vacations AccordionSection auto-expands so the form is visible.
+  const [calendarCellRequest, setCalendarCellRequest] = useState<PeriodOpenRequest>(null)
+  const [vacationsAccordionOpen, setVacationsAccordionOpen] = useState(false)
+
   return (
     <div>
       {/* Sub-tab pills */}
@@ -460,13 +480,24 @@ function ScheduleTab({ allChildren }: { allChildren: ParentChild[] }) {
       {sub === 'calendar'   && (
         <div>
           <Card pad={16} style={{ marginBottom: 16 }}>
-            <CalendarGrid/>
+            <CalendarGrid
+              onCellClick={(dateStr, period) => {
+                setCalendarCellRequest({ dateStr, period })
+                setVacationsAccordionOpen(true)
+              }}
+            />
           </Card>
           <AccordionSection title={t('settings.calendarSettingsManager.title')} icon="📅">
             <CalendarSettingsManager/>
           </AccordionSection>
-          <AccordionSection title={t('settings.periodsManager.title')} icon="🌴">
-            <PeriodsManager/>
+          <AccordionSection
+            title={t('settings.periodsManager.title')} icon="🌴"
+            open={vacationsAccordionOpen} onOpenChange={setVacationsAccordionOpen}
+          >
+            <PeriodsManager
+              openRequest={calendarCellRequest}
+              onOpenRequestHandled={() => setCalendarCellRequest(null)}
+            />
           </AccordionSection>
         </div>
       )}

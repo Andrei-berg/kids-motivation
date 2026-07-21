@@ -18,7 +18,17 @@ interface ChildOption {
   name: string
 }
 
-export default function PeriodsManager() {
+// WR-04 fix: D-05's locked "tap cell to add/edit vacation period" contract.
+// CalendarGrid reports a tapped date (+ whichever period, if any, covers
+// it) via this consumable request; ScheduleTab wires the two together.
+// `onOpenRequestHandled` clears the request after consuming it so the
+// effect below doesn't refire on unrelated re-renders.
+export type PeriodOpenRequest = { dateStr: string; period: VacationPeriod | null } | null
+
+export default function PeriodsManager({ openRequest, onOpenRequestHandled }: {
+  openRequest?: PeriodOpenRequest
+  onOpenRequestHandled?: () => void
+} = {}) {
   const t = useT()
   const { familyId, setFamilyId, activeMemberId } = useAppStore()
   const [children, setChildren] = useState<ChildOption[]>([])
@@ -108,6 +118,24 @@ export default function PeriodsManager() {
     setSaveError('')
     setName(''); setStartDate(''); setEndDate(''); setEmoji('🌸'); setChildFilter('all')
   }
+
+  // WR-04 fix: consume a tap-cell request from CalendarGrid (via ScheduleTab)
+  // — open the edit form pre-filled if the tapped date falls inside an
+  // existing period, else open the add form pre-filled with that date as
+  // both start/end (UI-SPEC: "pre-filled with that date as startDate").
+  useEffect(() => {
+    if (!openRequest) return
+    if (openRequest.period) {
+      openEdit(openRequest.period)
+    } else {
+      resetForm()
+      setStartDate(openRequest.dateStr)
+      setEndDate(openRequest.dateStr)
+      setShowForm(true)
+    }
+    onOpenRequestHandled?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openRequest])
 
   async function handleSave() {
     setSaveError('')

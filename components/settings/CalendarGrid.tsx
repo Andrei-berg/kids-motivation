@@ -69,7 +69,15 @@ function ensureGridKeyframes() {
   document.head.appendChild(el)
 }
 
-export default function CalendarGrid() {
+// WR-04 fix: D-05's locked "tap cell to add/edit vacation period" contract.
+// Cells with no sick dots had no interaction at all; this callback lets the
+// host (Settings.tsx's ScheduleTab) open PeriodsManager's add form
+// pre-filled with the tapped date, or its edit form if the date falls
+// inside an existing period. CalendarGrid itself still never writes to any
+// table — it only reports the tap + whichever period (if any) covers it.
+export default function CalendarGrid({ onCellClick }: {
+  onCellClick?: (dateStr: string, period: VacationPeriod | null) => void
+} = {}) {
   const t = useT()
   const { language } = useLanguage()
   const { familyId } = useAppStore()
@@ -261,10 +269,16 @@ export default function CalendarGrid() {
             <button
               key={dateStr}
               type="button"
-              onClick={e => hasDots && openPopover(e, dateStr, sickChildren.map(c => c.name))}
+              onClick={e => {
+                if (hasDots) { openPopover(e, dateStr, sickChildren.map(c => c.name)); return }
+                if (onCellClick) {
+                  const period = vacationPeriods.find(p => dateStr >= p.start_date && dateStr <= p.end_date) ?? null
+                  onCellClick(dateStr, period)
+                }
+              }}
               style={{
                 position: 'relative', minHeight: 44, borderRadius: T.r, border: 'none',
-                background: bg, color: fg, cursor: hasDots ? 'pointer' : 'default',
+                background: bg, color: fg, cursor: (hasDots || onCellClick) ? 'pointer' : 'default',
                 boxShadow: isToday ? `0 0 0 2px ${T.indigo} inset` : 'none',
                 display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start', padding: 4,
               }}
