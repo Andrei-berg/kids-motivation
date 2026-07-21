@@ -25,6 +25,7 @@ import { approveReadingAction, rejectReadingAction } from '@/app/parent/reading/
 import { getStreaks } from '@/lib/repositories/children.repo'
 import { getWeekScore } from '@/lib/services/coins.service'
 import { getWeekRange, localDateString } from '@/utils/helpers'
+import { sumWeeklyCoins, topStreak } from '@/lib/weekly-summary'
 import { getSubjects } from '@/lib/flexible-api'
 import { insertAuditEvent } from '@/lib/repositories/audit.repo'
 import { useAppStore } from '@/lib/store'
@@ -86,6 +87,12 @@ export default function ParentCenter() {
   const [loading, setLoading] = useState(true)
   const [dailyModal, setDailyModal] = useState<{ open: boolean; childId: string }>({ open: false, childId: '' })
   const [refreshKey, setRefreshKey] = useState(0)
+  const [weeklySummary, setWeeklySummary] = useState<{
+    coinsThisWeek: number
+    taskRate: number
+    streakHighlight: { name: string; days: number } | null
+    error: boolean
+  }>({ coinsThisWeek: 0, taskRate: 0, streakHighlight: null, error: false })
   const isDesktop = useDesktop()
 
   const openFillDay = () => {
@@ -104,12 +111,17 @@ export default function ParentCenter() {
       try {
         const today = localDateString()
         const weekStart = getWeekRange(new Date()).start
+        // D-08: week-start ISO timestamp for the Weekly Summary card's own
+        // week-scoped transaction fetch — separate from the 30-row activity-feed cap.
+        const weekStartISO = new Date(weekStart + 'T00:00:00').toISOString()
 
+        let weeklyError = false
         const rawChildren = await getChildren()
-        const [pendingData, txData, readingData] = await Promise.all([
+        const [pendingData, txData, readingData, weekTxData] = await Promise.all([
           getPendingPurchases().catch(() => [] as RewardPurchase[]),
           getTransactions(undefined, 30).catch(() => []),
           getPendingReadingChecks(rawChildren.map(c => c.id)).catch(() => [] as PendingReadingCheck[]),
+          getTransactions(undefined, 500, weekStartISO).catch(() => { weeklyError = true; return [] }),
         ])
 
         const parentChildren = await Promise.all(
@@ -174,10 +186,19 @@ export default function ParentCenter() {
           })
           .filter(a => parentChildren.some(c => c.id === a.who))
 
+        // D-08 Weekly Summary facts — coins from correct-source getTransactions
+        // (NOT getWeekScore.total, which mixes in negative debits/penalties).
+        const coinsThisWeek = sumWeeklyCoins(weekTxData)
+        const totalToday = parentChildren.reduce((s, c) => s + c.todayTotal, 0)
+        const doneToday = parentChildren.reduce((s, c) => s + c.todayDone, 0)
+        const taskRate = totalToday > 0 ? Math.round((doneToday / totalToday) * 100) : 0
+        const streakHighlight = topStreak(parentChildren.map(c => ({ name: c.name, current_count: c.streak })), 5)
+
         setChildren(parentChildren)
         setPending(pendingData)
         setReadingChecks(readingData)
         setActivity(acts)
+        setWeeklySummary({ coinsThisWeek, taskRate, streakHighlight, error: weeklyError })
       } catch (e) {
         console.error('[ParentCenter] load error', e)
       } finally {
@@ -297,7 +318,9 @@ export default function ParentCenter() {
       case 'shop':
         return <ShopScreen pending={pending} onApprove={handleApprove} onDecline={handleDecline} children={children}/>
       case 'analytics':
-        return <AnalyticsScreen children={children} activity={activity}/>
+        return <AnalyticsScreen children={children} activity={activity}
+          coinsThisWeek={weeklySummary.coinsThisWeek} taskRate={weeklySummary.taskRate}
+          streakHighlight={weeklySummary.streakHighlight} weeklyError={weeklySummary.error}/>
       case 'settings':
         return <SettingsScreen allChildren={children} notify={(msg, tone) => notify(msg, tone as any)} onNavigate={setRoute}/>
       case 'child':
