@@ -31,15 +31,13 @@ import type { DayBlock } from '@/lib/models/day-block.types'
 import type { VacationPeriod } from '@/lib/vacation-api'
 import type { FamilyCalendar } from '@/lib/models/calendar.types'
 
-function gradeCoins(s: Record<string, number>, grade: number): number {
-  switch (grade) {
-    case 5: return s.coins_per_grade_5
-    case 4: return s.coins_per_grade_4
-    case 3: return s.coins_per_grade_3
-    case 2: return s.coins_per_grade_2
-    case 1: return s.coins_per_grade_1
-    default: return 0
-  }
+// Phase 5.9: grade is now a per-family-configurable scale (five_point/
+// twelve_point/a_f) stored as a TEXT literal on subject_grades.grade — the
+// numeric switch is replaced by a direct lookup into wallet_settings'
+// grade_coin_map (always populated by loadSettings, plan 04). Unknown keys
+// (e.g. a grade value outside the family's configured scale) credit 0.
+function gradeCoins(s: { grade_coin_map?: Record<string, number> }, grade: string): number {
+  return s.grade_coin_map?.[grade] ?? 0
 }
 
 function coachCoins(s: Record<string, number>, rating: number): number {
@@ -60,6 +58,62 @@ function coachCoins(s: Record<string, number>, rating: number): number {
 // backstop regardless.
 function clampBlockCoins(value: number): number {
   return Math.max(-100000, Math.min(100000, Math.round(value)))
+}
+
+// Phase 5.9 (D-09/D-11, resolved OQ1): behavior coins are now a sum over that
+// day's APPROVED behavior_marks (one AwardIntent per mark, tag price can be
+// signed), shared verbatim by the flag-OFF and flag-ON paths — no per-mark
+// day-type multiplier, and block visibility never gates creditability (a
+// mark is an explicit signed assessment, not a schedule-derived work slot).
+// Behavior stays parent-only: a child's own day-fill trigger never pushes
+// mark intents (mirrors the pre-existing day.good_behavior guard).
+//
+// Returns whether an APPROVED mark exists for (childId, date) — regardless
+// of role — so the caller can decide whether to fall back to the legacy
+// day.good_behavior credit. CRITICAL: this must key off "an approved row
+// exists", NOT "a row exists" — a date whose only marks are pending/rejected
+// must still fall back (D-09), so a child's still-pending proposal or a
+// parent's rejection never silently suppresses the family's default
+// good-behavior credit.
+async function pushBehaviorMarkIntents(
+  admin: ReturnType<typeof createAdminClient>,
+  childId: string,
+  date: string,
+  member: { role: 'parent' | 'child' | 'extended' },
+  intents: AwardIntent[],
+): Promise<boolean> {
+  const { data: marks } = await admin
+    .from('behavior_marks')
+    .select('id, tag_id, status')
+    .eq('child_id', childId)
+    .eq('date', date)
+  const approvedMarks = (marks ?? []).filter((m) => m.status === 'approved')
+  const hasApproved = approvedMarks.length > 0
+
+  if (hasApproved && member.role !== 'child') {
+    const tagIds = Array.from(new Set(approvedMarks.map((m) => m.tag_id)))
+    const { data: tags } = await admin
+      .from('behavior_tags')
+      .select('id, name, icon, price')
+      .in('id', tagIds)
+    const tagById = new Map((tags ?? []).map((t) => [t.id, t]))
+    for (const m of approvedMarks) {
+      const tag = tagById.get(m.tag_id)
+      if (!tag || tag.price === 0) continue
+      intents.push({
+        coins: tag.price,
+        description: tag.name,
+        icon: tag.icon ?? '⭐',
+        sourceType: 'behavior',
+        // Mark's own id (NOT day.id) — each approved mark is its own
+        // idempotent creditAwards source, so multiple marks per day each
+        // get credited exactly once and independently.
+        sourceId: m.id,
+      })
+    }
+  }
+
+  return hasApproved
 }
 
 // Deduplicates day_blocks rows for a specific child: when both a family-
@@ -133,6 +187,14 @@ export async function POST(req: NextRequest) {
       // Do NOT refactor, reorder, or alter any coin value in this branch.
       // ======================================================================
 
+      // Behavior: prefer the sum over this date's APPROVED behavior_marks
+      // (independent of whether a `days` row exists — a parent can mark a
+      // tag without the child having filled a day). Phase 5.9 (D-09): only
+      // when NO approved mark exists (zero rows, OR only pending/rejected
+      // rows) do we fall back to the legacy day.good_behavior boolean below
+      // (which DOES require a `days` row), UNCHANGED.
+      const hasApprovedMark = await pushBehaviorMarkIntents(admin, childId, date, member, intents)
+
       // 1. Day-level: room + behavior (keyed by the day's PK, distinct source_type).
       if (day) {
         // Room completeness: prefer the flexible per-family room_checks
@@ -179,6 +241,7 @@ export async function POST(req: NextRequest) {
         // This preserves the pre-refactor behaviour (KidDayFillForm never awarded
         // behaviour; only the parent DailyModal did).
         if (
+          !hasApprovedMark &&
           member.role !== 'child' &&
           day.good_behavior &&
           settings.coins_per_good_behavior !== 0
@@ -334,6 +397,14 @@ export async function POST(req: NextRequest) {
       )
       const customBlocks = visibleBlocks.filter((b) => !b.legacy_key)
 
+      // Behavior — same uniform approved-mark sum as flag-off (resolved OQ1:
+      // the 'behavior' block's visibility does NOT gate mark creditability,
+      // and NO per-mark day-type multiplier is applied — a mark is an
+      // explicit signed assessment, not a schedule-derived work slot). Only
+      // when NO approved mark exists do we fall back to the existing
+      // block-priced day.good_behavior legacy branch below, UNCHANGED.
+      const hasApprovedMark = await pushBehaviorMarkIntents(admin, childId, date, member, intents)
+
       // Room — same completeness computation as flag-off, but only credited
       // if the 'room' block is visible today (D-08), priced via
       // resolveBlockPrice and scaled by the day-type multiplier.
@@ -374,10 +445,11 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Behavior — same parent-only guard as flag-off, priced via
-      // resolveBlockPrice, only credited if the 'behavior' block is visible.
+      // Behavior legacy fallback — same parent-only guard as flag-off, priced
+      // via resolveBlockPrice, only credited if the 'behavior' block is
+      // visible AND no approved behavior_marks row exists for this date.
       const behaviorBlock = blockByLegacyKey.get('behavior')
-      if (day && behaviorBlock && member.role !== 'child' && day.good_behavior) {
+      if (!hasApprovedMark && day && behaviorBlock && member.role !== 'child' && day.good_behavior) {
         const base = resolveBlockPrice(behaviorBlock, settings) ?? settings.coins_per_good_behavior
         const final = clampBlockCoins(base * resolveMultiplier(behaviorBlock, dayType))
         if (final !== 0) {

@@ -63,6 +63,10 @@ export function assembleDayBlocks(blocks: DayBlock[], dayType: string, date: str
 // returning null so the caller falls back to its existing per-row computation.
 const LEGACY_PRICE_SETTINGS_KEY: Partial<Record<DayBlockLegacyKey, string>> = {
   room: 'coins_per_room_task',
+  // Phase 5.9 (resolved OQ1): behavior is now primarily an approved-sum over
+  // behavior_marks (each mark priced by its own behavior_tags.price) — this
+  // 'behavior' entry now prices ONLY the no-approved-mark legacy fallback
+  // (day.good_behavior) in the flag-ON award path, not the marks-sum path.
   behavior: 'coins_per_good_behavior',
   book: 'coins_per_book',
   exercise: 'coins_per_exercise',
