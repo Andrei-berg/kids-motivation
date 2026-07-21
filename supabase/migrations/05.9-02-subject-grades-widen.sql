@@ -17,9 +17,15 @@
 --
 -- Idempotent: safe to re-run (USING-cast on an already-TEXT column is a no-op cast;
 -- DROP CONSTRAINT IF EXISTS is idempotent).
-
-ALTER TABLE public.subject_grades
-  ALTER COLUMN grade TYPE TEXT USING grade::text;
+--
+-- Order matters: the CHECK constraint must be dropped BEFORE the column type change.
+-- Postgres validates a column's existing CHECK constraints against the NEW type as
+-- part of ALTER COLUMN TYPE (even though the constraint is dropped in a later
+-- statement in this same batch) — `grade >= 2` has no `text >= integer` operator,
+-- so widening first throws `42883: operator does not exist: text >= integer`.
 
 ALTER TABLE public.subject_grades
   DROP CONSTRAINT IF EXISTS subject_grades_grade_check;
+
+ALTER TABLE public.subject_grades
+  ALTER COLUMN grade TYPE TEXT USING grade::text;
