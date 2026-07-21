@@ -16,6 +16,7 @@ export async function getWeekScore(childId: string, weekStart: string): Promise<
   total: number
   gradedDays: number
   roomOkDays: number
+  behaviorDays: number
   filledDays: number
 }> {
   const week = getWeekRange(weekStart)
@@ -40,6 +41,7 @@ export async function getWeekScore(childId: string, weekStart: string): Promise<
     total: coinsFromGrades + coinsFromRoom + coinsFromBehavior,
     gradedDays: Array.from(new Set((grades || []).map((g: any) => g.date))).length,
     roomOkDays,
+    behaviorDays,
     filledDays: (days || []).length
   }
 }

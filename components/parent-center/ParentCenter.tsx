@@ -124,12 +124,12 @@ export default function ParentCenter() {
           getTransactions(undefined, 500, weekStartISO).catch(() => { weeklyError = true; return [] }),
         ])
 
-        const parentChildren = await Promise.all(
+        const perChildResults = await Promise.all(
           rawChildren.map(async (c, idx) => {
             const [wallet, dayData, weekScore, streaks, subjects] = await Promise.all([
               getWallet(c.id).catch(() => null),
               getDay(c.id, today).catch(() => null),
-              getWeekScore(c.id, weekStart).catch(() => ({ total: 0, coinsFromGrades: 0, coinsFromRoom: 0, coinsFromBehavior: 0, gradedDays: 0, roomOkDays: 0, filledDays: 0 })),
+              getWeekScore(c.id, weekStart).catch(() => ({ total: 0, coinsFromGrades: 0, coinsFromRoom: 0, coinsFromBehavior: 0, gradedDays: 0, roomOkDays: 0, behaviorDays: 0, filledDays: 0 })),
               getStreaks(c.id).catch(() => []),
               getSubjects(c.id).catch(() => []),
             ])
@@ -140,6 +140,17 @@ export default function ParentCenter() {
             const behaviorOk = !!(dayData?.good_behavior)
             const todayDone = [roomOk, behaviorOk].filter(Boolean).length
             const todayTotal = 5
+
+            // CR-02 fix: genuinely week-scoped completion facts for the D-08
+            // Weekly Summary card — the two real per-day facts (room_ok,
+            // good_behavior) actually completed across the week's filled
+            // days, over the true 2-per-filled-day total. Unlike the
+            // `todayDone`/`todayTotal` pair above (kept as-is for the
+            // pre-existing per-child "Today" cards), this is not capped by a
+            // fictitious placeholder and is scoped to the week, matching the
+            // "This week" card framing.
+            const weekTasksDone = weekScore.roomOkDays + weekScore.behaviorDays
+            const weekTasksTotal = weekScore.filledDays * 2
 
             // Build week sparkline: use daily total from weekScore or simple approximation
             const weekCoins = [
@@ -166,9 +177,10 @@ export default function ParentCenter() {
               badges: 0,
               goal: { title: 'Big reward', saved: wallet?.coins ?? 0, target: 5000 },
             }
-            return pc
+            return { pc, weekTasksDone, weekTasksTotal }
           })
         )
+        const parentChildren = perChildResults.map(r => r.pc)
 
         // Build activity from recent transactions
         const acts: ActivityEntry[] = txData
@@ -189,9 +201,12 @@ export default function ParentCenter() {
         // D-08 Weekly Summary facts — coins from correct-source getTransactions
         // (NOT getWeekScore.total, which mixes in negative debits/penalties).
         const coinsThisWeek = sumWeeklyCoins(weekTxData)
-        const totalToday = parentChildren.reduce((s, c) => s + c.todayTotal, 0)
-        const doneToday = parentChildren.reduce((s, c) => s + c.todayDone, 0)
-        const taskRate = totalToday > 0 ? Math.round((doneToday / totalToday) * 100) : 0
+        // CR-02 fix: aggregate the genuine week-scoped completion facts
+        // (see weekTasksDone/weekTasksTotal above) instead of the
+        // structurally-capped todayDone/todayTotal (2-of-hardcoded-5) pair.
+        const totalWeekTasks = perChildResults.reduce((s, r) => s + r.weekTasksTotal, 0)
+        const doneWeekTasks = perChildResults.reduce((s, r) => s + r.weekTasksDone, 0)
+        const taskRate = totalWeekTasks > 0 ? Math.round((doneWeekTasks / totalWeekTasks) * 100) : 0
         const streakHighlight = topStreak(parentChildren.map(c => ({ name: c.name, current_count: c.streak })), 5)
 
         setChildren(parentChildren)
