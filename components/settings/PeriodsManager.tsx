@@ -7,6 +7,7 @@ import { getVacationPeriods, createVacationPeriod, updateVacationPeriod, deleteV
 import { listPresets, applyPreset, type ApplyPresetMode } from '@/lib/vacation-presets'
 import { upsertFamilyCalendar } from '@/lib/repositories/calendar.repo'
 import { useT } from '@/lib/i18n'
+import { T } from '@/components/parent-center/tokens'
 
 
 
@@ -180,11 +181,11 @@ export default function PeriodsManager() {
     return child ? child.name : filter
   }
 
-  if (loading) return <div className="text-gray-400 text-sm">{t('common.loading')}</div>
+  if (loading) return <div style={{ color: T.muted, fontSize: 13 }}>{t('common.loading')}</div>
 
   return (
     <div>
-      <p className="text-gray-400 text-sm mb-4">
+      <p style={{ color: T.muted, fontSize: 13, marginBottom: 16 }}>
         {t('settings.periodsManager.title')}
       </p>
 
@@ -194,35 +195,39 @@ export default function PeriodsManager() {
           per-family wallet_settings. */}
 
       {/* Period list */}
-      <div className="space-y-3 mb-4">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
         {periods.length === 0 && !showForm && (
-          <div className="text-gray-500 text-sm text-center py-6 border border-gray-700 rounded-xl border-dashed">
+          <div style={{ color: T.muted, fontSize: 13, textAlign: 'center', padding: '24px 0', border: `1px dashed ${T.cardBorder}`, borderRadius: 12 }}>
             {t('settings.periodsManager.addPeriod')}
           </div>
         )}
         {periods.map(p => (
-          <div key={p.id} className="flex items-center gap-3 bg-gray-700/50 rounded-xl p-4 border border-gray-600">
-            <div className="text-2xl">{p.emoji}</div>
-            <div className="flex-1 min-w-0">
-              <div className="font-bold text-white text-sm flex items-center gap-1.5 flex-wrap">
+          <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: T.card, borderRadius: 12, padding: 16, border: `1px solid ${T.cardBorder}` }}>
+            <div style={{ fontSize: 24 }}>{p.emoji}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 800, color: T.text, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                 {p.name}
                 {p.preset_id != null && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/25 rounded-full px-2 py-0.5">
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 800, color: T.indigoHi, background: T.indigoSoft, border: `1px solid ${T.cardBorderHi}`, borderRadius: 999, padding: '2px 8px' }}>
                     📅 {t('settings.periodsManager.presetBadge')}
                   </span>
                 )}
               </div>
-              <div className="text-gray-400 text-xs mt-0.5">{formatDateRange(p.start_date, p.end_date)}</div>
-              <div className="text-xs text-gray-500 mt-0.5">{childFilterLabel(p.child_filter)}</div>
+              <div style={{ color: T.muted, fontSize: 12, marginTop: 2 }}>{formatDateRange(p.start_date, p.end_date)}</div>
+              <div style={{ color: T.muted, fontSize: 12, marginTop: 2 }}>{childFilterLabel(p.child_filter)}</div>
             </div>
             <button
               onClick={() => openEdit(p)}
-              className="text-gray-500 hover:text-amber-400 transition-colors p-1 text-sm"
+              style={{ color: T.muted, background: 'none', border: 'none', padding: 4, fontSize: 13, cursor: 'pointer', transition: 'color 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.color = T.indigoHi }}
+              onMouseLeave={e => { e.currentTarget.style.color = T.muted }}
               title={t('common.edit')}
             >✏️</button>
             <button
               onClick={() => handleDelete(p.id)}
-              className="text-gray-500 hover:text-red-400 transition-colors p-1 text-sm"
+              style={{ color: T.muted, background: 'none', border: 'none', padding: 4, fontSize: 13, cursor: 'pointer', transition: 'color 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.color = T.danger }}
+              onMouseLeave={e => { e.currentTarget.style.color = T.muted }}
               title={t('settings.periodsManager.deleteConfirm')}
             >🗑</button>
           </div>
@@ -231,65 +236,90 @@ export default function PeriodsManager() {
 
       {/* Add form */}
       {showForm && (
-        <div className="bg-gray-700/40 border border-gray-600 rounded-xl p-4 mb-4">
-          <div className="font-bold text-white mb-4">{editingId ? t('common.edit') : t('settings.periodsManager.addPeriod')}</div>
+        <div style={{ background: T.card, border: `1px solid ${T.cardBorder}`, borderRadius: 12, padding: 16, marginBottom: 16 }}>
+          <div style={{ fontWeight: 800, color: T.text, marginBottom: 16 }}>{editingId ? t('common.edit') : t('settings.periodsManager.addPeriod')}</div>
 
-          <div className="mb-3">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">{t('settings.periodsManager.name')}</label>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>{t('settings.periodsManager.name')}</label>
             <input
-              className="w-full bg-gray-800 border border-gray-600 rounded-lg text-white text-sm px-3 py-2.5 outline-none focus:border-amber-500"
+              style={{ width: '100%', background: T.bg1, border: `1px solid ${T.cardBorder}`, borderRadius: 8, color: T.text, fontSize: 13, padding: '10px 12px', outline: 'none' }}
               placeholder={t('settings.periodsManager.name')}
               value={name}
               onChange={e => setName(e.target.value)}
+              onFocus={e => { e.currentTarget.style.borderColor = T.indigo }}
+              onBlur={e => { e.currentTarget.style.borderColor = T.cardBorder }}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             <div>
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">{t('settings.periodsManager.start')}</label>
-              <input type="date" className="w-full bg-gray-800 border border-gray-600 rounded-lg text-white text-sm px-3 py-2.5 outline-none focus:border-amber-500" value={startDate} onChange={e => setStartDate(e.target.value)} />
+              <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>{t('settings.periodsManager.start')}</label>
+              <input
+                type="date"
+                style={{ width: '100%', background: T.bg1, border: `1px solid ${T.cardBorder}`, borderRadius: 8, color: T.text, fontSize: 13, padding: '10px 12px', outline: 'none' }}
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                onFocus={e => { e.currentTarget.style.borderColor = T.indigo }}
+                onBlur={e => { e.currentTarget.style.borderColor = T.cardBorder }}
+              />
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">{t('settings.periodsManager.end')}</label>
-              <input type="date" className="w-full bg-gray-800 border border-gray-600 rounded-lg text-white text-sm px-3 py-2.5 outline-none focus:border-amber-500" value={endDate} onChange={e => setEndDate(e.target.value)} />
+              <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>{t('settings.periodsManager.end')}</label>
+              <input
+                type="date"
+                style={{ width: '100%', background: T.bg1, border: `1px solid ${T.cardBorder}`, borderRadius: 8, color: T.text, fontSize: 13, padding: '10px 12px', outline: 'none' }}
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+                onFocus={e => { e.currentTarget.style.borderColor = T.indigo }}
+                onBlur={e => { e.currentTarget.style.borderColor = T.cardBorder }}
+              />
             </div>
           </div>
 
-          <div className="mb-3">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">{t('settings.categoryManager.emoji')}</label>
-            <div className="flex gap-2 flex-wrap">
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>{t('settings.categoryManager.emoji')}</label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {EMOJIS.map(e => (
                 <button key={e} onClick={() => setEmoji(e)}
-                  className={`w-10 h-10 rounded-lg text-lg flex items-center justify-center border-2 transition-all ${emoji === e ? 'border-amber-500 bg-amber-500/15' : 'border-gray-600 bg-gray-800'}`}
+                  style={{
+                    width: 40, height: 40, borderRadius: 8, fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    border: `2px solid ${emoji === e ? T.indigo : T.cardBorder}`,
+                    background: emoji === e ? T.indigoSoft : T.bg1,
+                    cursor: 'pointer', transition: 'all 0.15s',
+                  }}
                 >{e}</button>
               ))}
             </div>
           </div>
 
-          <div className="mb-4">
-            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide block mb-1.5">{t('settings.periodsManager.type')}</label>
-            <div className="flex bg-gray-800 rounded-lg p-1 gap-1 border border-gray-600 flex-wrap">
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>{t('settings.periodsManager.type')}</label>
+            <div style={{ display: 'flex', background: T.bg1, borderRadius: 8, padding: 4, gap: 4, border: `1px solid ${T.cardBorder}`, flexWrap: 'wrap' }}>
               {[{ val: 'all', label: 'All children' }, ...children.map(c => ({ val: c.id, label: c.name }))].map(opt => (
                 <button key={opt.val} onClick={() => setChildFilter(opt.val)}
-                  className={`flex-1 py-2 text-xs font-bold rounded-md transition-all min-w-[60px] ${childFilter === opt.val ? 'bg-amber-500 text-black' : 'text-gray-400'}`}
+                  style={{
+                    flex: 1, minWidth: 60, padding: '8px 0', fontSize: 12, fontWeight: 800, borderRadius: 6, border: 'none', cursor: 'pointer', transition: 'all 0.15s',
+                    background: childFilter === opt.val ? T.indigo : 'transparent',
+                    color: childFilter === opt.val ? '#fff' : T.muted,
+                  }}
                 >{opt.label}</button>
               ))}
             </div>
           </div>
 
           {saveError && (
-            <div className="bg-red-500/15 border border-red-500/30 rounded-lg px-3 py-2 text-red-400 text-sm mb-3">
+            <div style={{ background: T.dangerSoft, border: `1px solid ${T.danger}55`, borderRadius: 8, color: T.danger, fontSize: 13, padding: '8px 12px', marginBottom: 12 }}>
               {saveError}
             </div>
           )}
 
-          <div className="flex gap-2">
+          <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={handleSave} disabled={saving}
-              className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold text-sm rounded-lg transition-colors">
+              style={{ flex: 1, padding: '10px 0', background: T.indigo, color: '#fff', fontWeight: 800, fontSize: 13, borderRadius: 8, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.5 : 1, transition: 'opacity 0.15s' }}>
               {saving ? '...' : t('settings.periodsManager.save')}
             </button>
             <button onClick={resetForm}
-              className="px-4 py-2.5 bg-gray-700 text-gray-400 text-sm font-medium rounded-lg">
+              style={{ padding: '10px 16px', background: T.card, color: T.muted, fontSize: 13, fontWeight: 600, borderRadius: 8, border: `1px solid ${T.cardBorder}`, cursor: 'pointer' }}>
               {t('settings.periodsManager.cancel')}
             </button>
           </div>
@@ -299,18 +329,20 @@ export default function PeriodsManager() {
       {!showForm && (
         <>
           {/* Region preset picker */}
-          <div className="mb-4 bg-gray-700/40 border border-gray-600 rounded-xl p-4">
-            <div className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">
+          <div style={{ marginBottom: 16, background: T.card, border: `1px solid ${T.cardBorder}`, borderRadius: 12, padding: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
               {t('settings.periodsManager.presetPicker.title')}
             </div>
-            <div className="text-gray-500 text-xs mb-3">
+            <div style={{ color: T.muted, fontSize: 12, marginBottom: 12 }}>
               {t('settings.periodsManager.presetPicker.hint')}
             </div>
-            <div className="flex gap-2">
+            <div style={{ display: 'flex', gap: 8 }}>
               <select
-                className="flex-1 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm px-3 py-2.5 outline-none focus:border-amber-500"
+                style={{ flex: 1, background: T.bg1, border: `1px solid ${T.cardBorder}`, borderRadius: 8, color: T.text, fontSize: 13, padding: '10px 12px', outline: 'none' }}
                 value={selectedPresetId}
                 onChange={e => { setSelectedPresetId(e.target.value); setApplyStatus('') }}
+                onFocus={e => { e.currentTarget.style.borderColor = T.indigo }}
+                onBlur={e => { e.currentTarget.style.borderColor = T.cardBorder }}
               >
                 {presets.map(preset => (
                   <option key={preset.id} value={preset.id}>{preset.label}</option>
@@ -319,18 +351,24 @@ export default function PeriodsManager() {
               <button
                 onClick={handleApplyPreset}
                 disabled={!selectedPresetId || applyingPreset}
-                className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold text-sm rounded-lg transition-colors whitespace-nowrap"
+                style={{ padding: '10px 16px', background: T.indigo, color: '#fff', fontWeight: 800, fontSize: 13, borderRadius: 8, border: 'none', cursor: (!selectedPresetId || applyingPreset) ? 'not-allowed' : 'pointer', opacity: (!selectedPresetId || applyingPreset) ? 0.5 : 1, whiteSpace: 'nowrap', transition: 'opacity 0.15s' }}
               >
                 {applyingPreset ? '...' : t('settings.periodsManager.presetPicker.apply')}
               </button>
             </div>
             {applyStatus && (
-              <div className="text-amber-400 text-xs mt-2">{applyStatus}</div>
+              <div style={{ color: T.indigoHi, fontSize: 12, marginTop: 8 }}>{applyStatus}</div>
             )}
           </div>
 
           <button onClick={() => setShowForm(true)}
-            className="w-full py-3 border-2 border-dashed border-gray-600 hover:border-amber-500 hover:text-amber-500 text-gray-500 font-bold text-sm rounded-xl transition-all">
+            style={{
+              width: '100%', padding: 12, border: `2px dashed ${T.cardBorder}`, color: T.muted, fontWeight: 800, fontSize: 13, borderRadius: 12,
+              background: 'transparent', cursor: 'pointer', transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = T.indigo; e.currentTarget.style.color = T.indigo }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = T.cardBorder; e.currentTarget.style.color = T.muted }}
+          >
             + {t('settings.periodsManager.addPeriod')}
           </button>
         </>
