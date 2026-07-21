@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
+import { createClient } from '@/lib/supabase/client'
 import {
   getDayBlocks,
   addDayBlock,
@@ -10,13 +11,25 @@ import {
   reorderDayBlocks,
   deleteDayBlock,
 } from '@/lib/repositories/day-blocks.repo'
+import { getScheduleItems } from '@/lib/repositories/schedule.repo'
+import { scheduleDowToBlockDow } from '@/lib/day-blocks'
 import type { DayBlock } from '@/lib/models/day-block.types'
+import type { ScheduleItem } from '@/lib/models/schedule.types'
 import { useT } from '@/lib/i18n'
 import { T } from '@/components/parent-center/tokens'
+import { Btn, Icon } from '@/components/parent-center/ui'
+import { StatusChip } from '@/components/design/atoms'
 
 const EMOJIS = ['🧩', '🛏️', '🧹', '📖', '🏃', '🎯', '⭐', '📅', '🎒', '🧸', '✨', '🎨']
 
 const DAY_TYPE_OPTS = ['school', 'weekend', 'vacation'] as const
+
+// schedule_items.day_of_week: 1=Mon..7=Sun — reuse the existing calendar-settings
+// abbreviated-day i18n keys (settings.calendarSettingsManager.days.*) rather than
+// inventing a parallel set for the schedule-link picker.
+const DOW_ABBR_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+
+type ChildOption = { id: string; memberId: string; name: string }
 
 export default function DayBlocksManager() {
   const t = useT()
@@ -34,8 +47,16 @@ export default function DayBlocksManager() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
 
+  // D-02 schedule-link picker state.
+  const [children, setChildren] = useState<ChildOption[]>([])
+  const [scheduleItemsByMember, setScheduleItemsByMember] = useState<Record<string, ScheduleItem[]>>({})
+  const [openScheduleLinkFor, setOpenScheduleLinkFor] = useState<string | null>(null)
+
   useEffect(() => {
-    if (familyId) load()
+    if (familyId) {
+      load()
+      loadChildrenAndSchedule(familyId)
+    }
   }, [familyId])
 
   async function load() {
@@ -48,6 +69,47 @@ export default function DayBlocksManager() {
       setError(e.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Child-id resolution — reused verbatim from PeriodsManager.tsx:71-83 (the
+  // onboarding-api helper that filters to unclaimed profiles only is the
+  // wrong tool here). Both children.id (matches block.child_id / days.child_id)
+  // and family_members.id (the childMemberId getScheduleItems needs) are kept
+  // so the schedule-link picker can resolve either direction.
+  async function loadChildrenAndSchedule(fid: string) {
+    try {
+      const db = createClient()
+      const { data: childRows } = await db
+        .from('family_members')
+        .select('id, child_id, display_name')
+        .eq('family_id', fid)
+        .eq('role', 'child')
+        .order('created_at')
+
+      const resolved: ChildOption[] = (childRows || [])
+        .filter((c: any) => c.child_id)
+        .map((c: any) => ({
+          id: c.child_id as string,
+          memberId: c.id as string,
+          name: c.display_name || 'Child',
+        }))
+      setChildren(resolved)
+
+      const entries = await Promise.all(
+        resolved.map(async (c) => {
+          try {
+            const items = await getScheduleItems(fid, c.memberId)
+            return [c.memberId, items] as const
+          } catch {
+            return [c.memberId, [] as ScheduleItem[]] as const
+          }
+        })
+      )
+      setScheduleItemsByMember(Object.fromEntries(entries))
+    } catch {
+      // Non-fatal: the schedule-link picker simply has no items to offer if
+      // this fails — the rest of the manager (recolor, CRUD) still works.
     }
   }
 
@@ -185,6 +247,50 @@ export default function DayBlocksManager() {
     }
   }
 
+  // D-02 — denormalize-on-write: copy the picked schedule_item's weekdays
+  // straight into the block's days_of_week (converted 1..7 to 0..6) so
+  // assembleDayBlocks/`/api/wallet/award` need zero changes. item === null
+  // clears the link.
+  async function pickScheduleLink(block: DayBlock, item: ScheduleItem | null) {
+    setOpenScheduleLinkFor(null)
+    try {
+      if (item) {
+        await updateDayBlock(block.id, {
+          schedule_link: item.id,
+          days_of_week: scheduleDowToBlockDow(item.day_of_week),
+        })
+      } else {
+        await updateDayBlock(block.id, { schedule_link: null, days_of_week: [] })
+      }
+      await load()
+    } catch (e: any) {
+      setError(e.message)
+    }
+  }
+
+  // Manual re-copy (not a live join) — re-runs the same denormalize write in
+  // case the linked schedule_items row's days changed since the last sync.
+  async function resyncScheduleLink(block: DayBlock, item: ScheduleItem) {
+    try {
+      await updateDayBlock(block.id, {
+        schedule_link: item.id,
+        days_of_week: scheduleDowToBlockDow(item.day_of_week),
+      })
+      await load()
+    } catch (e: any) {
+      setError(e.message)
+    }
+  }
+
+  function abbreviateDays(days: number[]): string {
+    return days
+      .slice()
+      .sort((a, b) => a - b)
+      .map(d => t(`settings.calendarSettingsManager.days.${DOW_ABBR_KEYS[d - 1]}`))
+      .filter(Boolean)
+      .join(', ')
+  }
+
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
@@ -262,6 +368,12 @@ export default function DayBlocksManager() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {blocks.map((block, idx) => {
             const isBuiltin = block.legacy_key !== null
+            const childMemberId = block.child_id
+              ? children.find(c => c.id === block.child_id)?.memberId
+              : undefined
+            const linkedItem = childMemberId
+              ? (scheduleItemsByMember[childMemberId] ?? []).find(i => i.id === block.schedule_link)
+              : undefined
             return (
               <div
                 key={block.id}
@@ -375,37 +487,97 @@ export default function DayBlocksManager() {
                     />
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, paddingLeft: 28 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 11, color: T.muted }}>
-                        {t('settings.dayBlocksManager.whoFills.label')}
-                      </span>
-                      <select
-                        className="premium-input"
-                        value={block.who_fills}
-                        onChange={e => saveWhoFills(block, e.target.value as 'kid' | 'parent' | 'both')}
-                        style={{ fontSize: 12, padding: '4px 6px' }}
-                      >
-                        <option value="kid">{t('settings.dayBlocksManager.whoFills.kid')}</option>
-                        <option value="parent">{t('settings.dayBlocksManager.whoFills.parent')}</option>
-                        <option value="both">{t('settings.dayBlocksManager.whoFills.both')}</option>
-                      </select>
+                  <>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, paddingLeft: 28 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 11, color: T.muted }}>
+                          {t('settings.dayBlocksManager.whoFills.label')}
+                        </span>
+                        <select
+                          className="premium-input"
+                          value={block.who_fills}
+                          onChange={e => saveWhoFills(block, e.target.value as 'kid' | 'parent' | 'both')}
+                          style={{ fontSize: 12, padding: '4px 6px' }}
+                        >
+                          <option value="kid">{t('settings.dayBlocksManager.whoFills.kid')}</option>
+                          <option value="parent">{t('settings.dayBlocksManager.whoFills.parent')}</option>
+                          <option value="both">{t('settings.dayBlocksManager.whoFills.both')}</option>
+                        </select>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 11, color: T.muted }}>
+                          {t('settings.dayBlocksManager.dayTypes.label')}
+                        </span>
+                        {DAY_TYPE_OPTS.map(dt => {
+                          const checked = (block.day_types ?? []).includes(dt)
+                          return (
+                            <label key={dt} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: T.textDim, cursor: 'pointer' }}>
+                              <input type="checkbox" checked={checked} onChange={() => toggleDayType(block, dt)} />
+                              {t(`settings.dayBlocksManager.dayTypes.${dt}`)}
+                            </label>
+                          )
+                        })}
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 11, color: T.muted }}>
-                        {t('settings.dayBlocksManager.dayTypes.label')}
-                      </span>
-                      {DAY_TYPE_OPTS.map(dt => {
-                        const checked = (block.day_types ?? []).includes(dt)
-                        return (
-                          <label key={dt} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: T.textDim, cursor: 'pointer' }}>
-                            <input type="checkbox" checked={checked} onChange={() => toggleDayType(block, dt)} />
-                            {t(`settings.dayBlocksManager.dayTypes.${dt}`)}
-                          </label>
-                        )
-                      })}
-                    </div>
-                  </div>
+
+                    {/* D-02 schedule-link picker — only for a per-child block whose
+                        child_id resolves to a family_members id. Family-default
+                        rows (child_id null) have no single schedule to link to;
+                        a later plan wires the per-child editing context that
+                        makes this render in practice. */}
+                    {childMemberId && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingLeft: 28 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <Btn
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setOpenScheduleLinkFor(openScheduleLinkFor === block.id ? null : block.id)}
+                            style={{ color: linkedItem ? T.text : T.indigo }}
+                          >
+                            🔗 {linkedItem
+                              ? t('settings.dayBlocksManager.scheduleLink.synced', { title: linkedItem.title })
+                              : t('settings.dayBlocksManager.scheduleLink.none')}
+                            <Icon name="chevD" size={14} />
+                          </Btn>
+                          {linkedItem && (
+                            <>
+                              <StatusChip tone="success" theme="ink">
+                                {t('settings.dayBlocksManager.scheduleLink.synced', { title: linkedItem.title })}
+                              </StatusChip>
+                              <button
+                                onClick={() => resyncScheduleLink(block, linkedItem)}
+                                aria-label={t('settings.dayBlocksManager.resync')}
+                                title={t('settings.dayBlocksManager.resync')}
+                                style={iconBtn}
+                              >
+                                ↻
+                              </button>
+                            </>
+                          )}
+                        </div>
+
+                        {openScheduleLinkFor === block.id && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: 8, background: T.cardHi, border: `1px solid ${T.cardBorderHi}`, borderRadius: 8 }}>
+                            <button
+                              onClick={() => pickScheduleLink(block, null)}
+                              style={{ textAlign: 'left', padding: '6px 8px', borderRadius: 6, border: 'none', background: 'transparent', color: T.muted, fontSize: 12, cursor: 'pointer' }}
+                            >
+                              {t('settings.dayBlocksManager.scheduleLink.none')}
+                            </button>
+                            {(scheduleItemsByMember[childMemberId] ?? []).map(item => (
+                              <button
+                                key={item.id}
+                                onClick={() => pickScheduleLink(block, item)}
+                                style={{ textAlign: 'left', padding: '6px 8px', borderRadius: 6, border: 'none', background: 'transparent', color: T.text, fontSize: 12, cursor: 'pointer' }}
+                              >
+                                {item.title} — {abbreviateDays(item.day_of_week)}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )
