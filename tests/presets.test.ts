@@ -99,18 +99,26 @@ describe('GRADE_SCALE_VALUES', () => {
   })
 })
 
+// NOTE: JS engines always iterate integer-index-like string keys ("1".."12")
+// in ascending numeric order via Object.keys(), regardless of insertion
+// order — this is ECMA-262 [[OwnPropertyKeys]] ordinary object ordering, not
+// implementation-controllable. Set-equality (sorted) is the correct
+// assertion for the numeric scales; a_f keys are non-numeric so insertion
+// order IS preserved and checked exactly.
 describe('defaultGradeCoinMap', () => {
-  it('five_point keys are exactly 5,4,3,2,1', () => {
-    expect(Object.keys(defaultGradeCoinMap('five_point'))).toEqual(['5', '4', '3', '2', '1'])
+  it('five_point keys are exactly {5,4,3,2,1} (set equality — see note above)', () => {
+    expect(Object.keys(defaultGradeCoinMap('five_point')).sort()).toEqual(
+      ['1', '2', '3', '4', '5'].sort()
+    )
   })
 
-  it('twelve_point keys are exactly 12..1', () => {
-    expect(Object.keys(defaultGradeCoinMap('twelve_point'))).toEqual([
-      '12', '11', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1',
-    ])
+  it('twelve_point keys are exactly {12..1} (set equality — see note above)', () => {
+    expect(Object.keys(defaultGradeCoinMap('twelve_point')).sort()).toEqual(
+      ['12', '11', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1'].sort()
+    )
   })
 
-  it('a_f keys are exactly A,B,C,D,F', () => {
+  it('a_f keys are exactly A,B,C,D,F in insertion order', () => {
     expect(Object.keys(defaultGradeCoinMap('a_f'))).toEqual(['A', 'B', 'C', 'D', 'F'])
   })
 })

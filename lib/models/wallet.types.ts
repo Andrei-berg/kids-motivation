@@ -124,6 +124,11 @@ export interface WalletSettings {
   streak_sport_days: number
   streak_sport_bonus: number
   updated_at: string
+  // Phase 5.9: grade scale + per-grade coin map (D-06/D-08). coins_per_grade_1..5
+  // remain the five-point default/fallback source — grade_coin_map is the
+  // scale-aware lookup consulted first when present.
+  grade_scale?: 'five_point' | 'twelve_point' | 'a_f'
+  grade_coin_map?: Record<string, number>
 }
 
 export interface MonthlyPotential {
