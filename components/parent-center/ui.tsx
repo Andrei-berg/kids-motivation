@@ -94,7 +94,7 @@ export function Btn({ variant = 'ghost', size = 'md', children, icon, onClick, s
   const [hover, setHover] = useState(false)
   const palettes: Record<BtnVariant, { bg: string; fg: string; bd: string; hBg: string }> = {
     primary: { bg: T.indigo, fg: '#fff', bd: T.indigo, hBg: T.indigoHi },
-    cyan: { bg: T.cyan, fg: '#04131A', bd: T.cyan, hBg: '#4DDCFF' },
+    cyan: { bg: T.cyan, fg: '#04131A', bd: T.cyan, hBg: T.indigoHi },
     success: { bg: T.successSoft, fg: T.success, bd: 'rgba(0,230,118,0.25)', hBg: 'rgba(0,230,118,0.18)' },
     warn: { bg: T.warningSoft, fg: T.warning, bd: 'rgba(255,217,61,0.25)', hBg: 'rgba(255,217,61,0.18)' },
     danger: { bg: T.dangerSoft, fg: T.danger, bd: 'rgba(255,107,107,0.25)', hBg: 'rgba(255,107,107,0.18)' },
