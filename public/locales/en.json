@@ -768,6 +768,7 @@
     "dayBlocksManager": {
       "title": "Day blocks",
       "subtitle": "Toggle, price and manage the blocks that make up a child's day",
+      "addBlock": "+ Add block",
       "addPlaceholder": "New block name",
       "namePlaceholder": "New block name",
       "pricePlaceholder": "Coin price",
@@ -787,7 +788,24 @@
         "school": "School days",
         "weekend": "Weekend",
         "vacation": "Vacation"
-      }
+      },
+      "scheduleLink": {
+        "none": "Not linked to a schedule item",
+        "synced": "Synced: {{title}}"
+      },
+      "removeOverrideConfirm": "Remove {{name}}'s override? It'll fall back to the family default.",
+      "overrideFor": "Override for…",
+      "byChild": "By child",
+      "byBlock": "By block",
+      "familyDefault": "Family default",
+      "custom": "Custom",
+      "resync": "Re-sync",
+      "ariaMoveUp": "Move block up",
+      "ariaMoveDown": "Move block down",
+      "ariaEnable": "Enable block",
+      "ariaDisable": "Disable block",
+      "ariaDelete": "Delete block",
+      "ariaRemoveOverride": "Remove {{name}}'s override"
     },
     "calendarSettingsManager": {
       "title": "School Year & Weekends",
@@ -813,10 +831,16 @@
       "regionRuMoscowTrimesters": "Russia — Moscow trimesters",
       "regionKz": "Kazakhstan",
       "regionBy": "Belarus",
-      "save": "Save",
+      "save": "Save calendar settings",
       "saveSuccess": "Calendar settings saved",
       "dateOrderError": "Year start must be before year end",
-      "datesRequiredError": "Set both year start and year end"
+      "datesRequiredError": "Set both year start and year end",
+      "ariaPrevMonth": "Previous month",
+      "ariaNextMonth": "Next month",
+      "today": "Today",
+      "filterFamily": "Family",
+      "sickOne": "{{name}} was marked sick",
+      "sickMany": "Marked sick today"
     },
     "streakSettings": {
       "title": "Streaks & Bonuses",
@@ -1615,5 +1639,16 @@
   "dashboard": {
     "pending": "pending",
     "familyCount": "Family · {{count}} children"
+  },
+  "analytics": {
+    "weeklySummary": {
+      "title": "This week",
+      "coinsEarned": "Coins earned",
+      "tasksDone": "Tasks done",
+      "streakHighlight": "{{name}} — {{days}}-day streak",
+      "noStreak": "No one's on a streak yet.",
+      "empty": "Your weekly summary will show up here once there's a bit of data.",
+      "loadError": "Couldn't load this week's summary. Refresh the page."
+    }
   }
 }

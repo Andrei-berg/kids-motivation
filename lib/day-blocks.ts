@@ -10,6 +10,15 @@
 import type { DayBlock, DayBlockLegacyKey } from './models/day-block.types'
 
 /**
+ * Converts a schedule_items.day_of_week array (1=Mon..7=Sun) to the
+ * day_blocks.days_of_week convention used throughout this file (0=Mon..6=Sun).
+ * Pure, no off-by-one: subtracts 1 from every entry.
+ */
+export function scheduleDowToBlockDow(days: number[]): number[] {
+  return days.map(d => d - 1)
+}
+
+/**
  * Returns the blocks visible on a given day, filtered and ordered:
  *  - only is_active blocks are considered;
  *  - day_types: an empty array OR an array containing 'always' shows the
