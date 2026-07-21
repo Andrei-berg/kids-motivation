@@ -87,6 +87,9 @@ When planning a new v5.0 phase, add its SC-IDs here.
 | 05.5-SC3 | 5.5 year-calendar | Configurable weekend days + sick day pauses streaks | Planned |
 | 05.5-SC4 | 5.5 year-calendar | getDayType fully data-driven; kid day screen reflects it | Planned |
 | 05.5-SC5 | 5.5 year-calendar | CR-01 fix: streak writes server-side + streaks SELECT-only lock | Planned |
+| 05.9-SC1 | 5.9 rules-presets | Presets Classic/No-penalties/Bonuses-only apply predefined wallet_settings; onboarding + Settings | Planned |
+| 05.9-SC2 | 5.9 rules-presets | grade_scale per family (5pt/12pt/A-F) drives grade input + award mapping | Planned |
+| 05.9-SC3 | 5.9 rules-presets | Behavior is a configurable tag set with per-tag prices + propose/approve | Planned |
 
 ## Traceability
 

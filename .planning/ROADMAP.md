@@ -333,6 +333,18 @@ Plans:
   1. Presets Classic / No-penalties / Bonuses-only apply predefined `wallet_settings` values; offered during onboarding and in Settings
   2. `grade_scale` per family (5-point / 12-point / A–F) drives grade input and award mapping
   3. Behavior is a configurable tag set with per-tag prices instead of a single binary flag
+**Plans**: 10 plans
+Plans:
+- [ ] 05.9-01-PLAN.md — Migrations: grade_scale/grade_coin_map cols, subject_grades TEXT widen, behavior_tags/behavior_marks (authoring only)
+- [ ] 05.9-02-PLAN.md — Foundation: lib/presets.ts + WalletSettings/behavior types + all i18n keys + presets unit test
+- [ ] 05.9-03-PLAN.md — [BLOCKING] apply the 3 migrations to the live DB in order + schema readback
+- [ ] 05.9-04-PLAN.md — grade_coin_map read-time fallback (server+client) + clampGradeCoinMap PATCH validator
+- [ ] 05.9-05-PLAN.md — behavior.repo.ts (CRUD + propose) + BehaviorTagsManager settings editor
+- [ ] 05.9-06-PLAN.md — Award route: grade_coin_map lookup + behavior approved-mark sum (both flag paths) + badges/streaks type-fix + tests
+- [ ] 05.9-07-PLAN.md — Behavior approve/reject server actions + approval queue + DailyModal behavior section + approval test
+- [ ] 05.9-08-PLAN.md — Kid day-fill: data-driven grade input (string) + propose-a-tag picker; BulkModal type-only fix
+- [ ] 05.9-09-PLAN.md — Settings CoinsRulesTab: preset cards + diff-preview + grade-scale editor + mount managers/queue
+- [ ] 05.9-10-PLAN.md — Onboarding preset picker (replaces StepCoinRules) + server-side completeOnboarding (RLS fix)
 
 ### Phase 5.10: automation
 **Goal**: The routine runs itself — allowance, small approvals and reminders need no parent action
