@@ -10,6 +10,19 @@ import { getMessages, sendMessage, subscribeToMessages } from '@/lib/repositorie
 import { supabase } from '@/lib/supabase'
 import { useT } from '@/lib/i18n'
 
+// WR-02 fix: hexAlpha lives in components/design/atoms.tsx but is PRIVATE
+// (not exported) — copied verbatim here (same pattern as CalendarGrid.tsx)
+// so the day-delta indicator colors below can derive from T.success/T.danger
+// instead of hardcoded decimal-RGB literals that duplicate the banned neon
+// hex values (0,230,118 === #00E676; 255,107,107 === #FF6B6B).
+function hexAlpha(hex: string, alpha: number): string {
+  const h = hex.replace('#', '')
+  const r = parseInt(h.slice(0, 2), 16)
+  const g = parseInt(h.slice(2, 4), 16)
+  const b = parseInt(h.slice(4, 6), 16)
+  return `rgba(${r},${g},${b},${alpha})`
+}
+
 type Props = {
   open: boolean
   onClose: () => void
@@ -177,7 +190,7 @@ function DarkActivityFeedFull({ messages, desktop }: { messages: ChatMessage[]; 
             <span style={{ fontFamily: T.fBody, fontSize: desktop ? 10 : 11, fontWeight: 700, color: T.textDim, flexShrink: 0 }}>{day.label}</span>
             <div style={{ flex: 1, height: 1, background: T.cardBorder }} />
             {day.delta !== 0 && (
-              <span style={{ fontFamily: T.fMono, fontSize: desktop ? 9 : 10, fontWeight: 700, color: day.delta > 0 ? T.success : T.danger, padding: '1px 7px', borderRadius: T.rPill, background: day.delta > 0 ? 'rgba(0,230,118,.1)' : 'rgba(255,107,107,.1)', border: `1px solid ${day.delta > 0 ? 'rgba(0,230,118,.3)' : 'rgba(255,107,107,.3)'}`, flexShrink: 0 }}>
+              <span style={{ fontFamily: T.fMono, fontSize: desktop ? 9 : 10, fontWeight: 700, color: day.delta > 0 ? T.success : T.danger, padding: '1px 7px', borderRadius: T.rPill, background: hexAlpha(day.delta > 0 ? T.success : T.danger, 0.1), border: `1px solid ${hexAlpha(day.delta > 0 ? T.success : T.danger, 0.3)}`, flexShrink: 0 }}>
                 {day.delta > 0 ? '+' : ''}{day.delta} 🪙
               </span>
             )}
