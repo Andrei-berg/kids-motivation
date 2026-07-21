@@ -772,6 +772,7 @@
       "addPlaceholder": "New block name",
       "namePlaceholder": "New block name",
       "pricePlaceholder": "Coin price",
+      "invalidPrice": "Price must be a number",
       "empty": "No blocks yet",
       "systemBlock": "built-in block",
       "cannotDeleteBuiltin": "Built-in blocks can't be deleted — deactivate instead",

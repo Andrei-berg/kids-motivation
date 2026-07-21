@@ -772,6 +772,7 @@
       "addPlaceholder": "Название нового блока",
       "namePlaceholder": "Название нового блока",
       "pricePlaceholder": "Цена в монетах",
+      "invalidPrice": "Цена должна быть числом",
       "empty": "Пока нет блоков",
       "systemBlock": "встроенный блок",
       "cannotDeleteBuiltin": "Встроенные блоки нельзя удалить — только отключить",

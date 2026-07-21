@@ -411,6 +411,17 @@ export default function DayBlocksManager() {
     if (!row.legacy_key) return
     const trimmed = value.trim()
     const nextPrice = trimmed === '' ? null : Number(trimmed)
+    // WR-06 fix: Number('abc') is NaN, and `NaN === row.price` is always
+    // false (NaN never equals anything), so the guard below never
+    // short-circuited on bad input — {price: NaN} was sent to
+    // writeChildOverride, and Supabase-js's JSON.stringify(NaN) silently
+    // serializes to null, clearing the override's price. Reject non-numeric
+    // input with an inline error instead (Number.isFinite convention
+    // already used by saveVacationMultiplier above).
+    if (nextPrice !== null && !Number.isFinite(nextPrice)) {
+      setError(t('settings.dayBlocksManager.invalidPrice'))
+      return
+    }
     if (nextPrice === row.price) return
     await writeChildOverride(childId, row.legacy_key, { price: nextPrice })
   }
