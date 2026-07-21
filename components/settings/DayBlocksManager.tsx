@@ -12,6 +12,7 @@ import {
 } from '@/lib/repositories/day-blocks.repo'
 import type { DayBlock } from '@/lib/models/day-block.types'
 import { useT } from '@/lib/i18n'
+import { T } from '@/components/parent-center/tokens'
 
 const EMOJIS = ['🧩', '🛏️', '🧹', '📖', '🏃', '🎯', '⭐', '📅', '🎒', '🧸', '✨', '🎨']
 
@@ -187,22 +188,22 @@ export default function DayBlocksManager() {
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
+        <div style={{ fontSize: 16, fontWeight: 800, color: T.text, marginBottom: 4 }}>
           🧩 {t('settings.dayBlocksManager.title')}
         </div>
-        <div style={{ fontSize: 13, color: 'rgba(238,238,255,0.5)' }}>
+        <div style={{ fontSize: 13, color: T.muted }}>
           {t('settings.dayBlocksManager.subtitle')}
         </div>
       </div>
 
       {error && (
-        <div style={{ padding: '10px 12px', background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.3)', borderRadius: 8, color: '#F43F5E', fontSize: 13, marginBottom: 12 }}>
+        <div style={{ padding: '10px 12px', background: T.dangerSoft, border: `1px solid ${T.danger}55`, borderRadius: 8, color: T.danger, fontSize: 13, marginBottom: 12 }}>
           {error}
         </div>
       )}
 
       {/* Add form */}
-      <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 12, padding: 14, marginBottom: 16 }}>
+      <div style={{ background: T.indigoSoft, border: `1px solid ${T.cardBorderHi}`, borderRadius: 12, padding: 14, marginBottom: 16 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
           {EMOJIS.map(e => (
             <button
@@ -210,8 +211,8 @@ export default function DayBlocksManager() {
               onClick={() => setIcon(e)}
               style={{
                 width: 32, height: 32, fontSize: 16, borderRadius: 7, cursor: 'pointer',
-                border: `1.5px solid ${icon === e ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.08)'}`,
-                background: icon === e ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.03)',
+                border: `1.5px solid ${icon === e ? T.indigo : T.cardBorder}`,
+                background: icon === e ? T.indigoSoft : T.card,
               }}
             >
               {e}
@@ -240,21 +241,21 @@ export default function DayBlocksManager() {
             style={{
               padding: '10px 16px', fontSize: 13, fontWeight: 800, borderRadius: 10, border: 'none',
               cursor: name.trim() ? 'pointer' : 'not-allowed',
-              background: name.trim() ? 'rgba(99,102,241,0.8)' : 'rgba(255,255,255,0.07)',
-              color: name.trim() ? '#fff' : 'rgba(255,255,255,0.3)',
+              background: name.trim() ? T.indigo : T.card,
+              color: name.trim() ? T.text : T.muted,
             }}
           >
-            {adding ? '…' : `+ ${t('common.add')}`}
+            {adding ? '…' : t('settings.dayBlocksManager.addBlock')}
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 20, color: 'rgba(238,238,255,0.4)', fontSize: 13 }}>
+        <div style={{ textAlign: 'center', padding: 20, color: T.muted, fontSize: 13 }}>
           {t('common.loading')}
         </div>
       ) : blocks.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(238,238,255,0.3)', fontSize: 13 }}>
+        <div style={{ textAlign: 'center', padding: 24, color: T.faint, fontSize: 13 }}>
           {t('settings.dayBlocksManager.empty')}
         </div>
       ) : (
@@ -265,9 +266,9 @@ export default function DayBlocksManager() {
               <div
                 key={block.id}
                 style={{
-                  padding: '10px 12px',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  padding: '12px 12px',
+                  background: T.card,
+                  border: `1px solid ${T.cardBorder}`,
                   borderRadius: 10,
                   opacity: block.is_active ? 1 : 0.45,
                   display: 'flex', flexDirection: 'column', gap: 8,
@@ -293,14 +294,14 @@ export default function DayBlocksManager() {
                     ) : (
                       <div
                         onClick={() => !isBuiltin && startEdit(block)}
-                        style={{ fontSize: 14, fontWeight: 700, color: '#fff', cursor: isBuiltin ? 'default' : 'pointer' }}
+                        style={{ fontSize: 14, fontWeight: 700, color: T.text, cursor: isBuiltin ? 'default' : 'pointer' }}
                         title={isBuiltin ? undefined : t('common.edit')}
                       >
                         {block.name}
                       </div>
                     )}
                     {isBuiltin && (
-                      <div style={{ fontSize: 11, color: 'rgba(238,238,255,0.35)', marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
                         🔒 {t('settings.dayBlocksManager.systemBlock')}
                       </div>
                     )}
@@ -320,6 +321,7 @@ export default function DayBlocksManager() {
                       onClick={() => move(idx, -1)}
                       disabled={idx === 0}
                       title={t('common.moveUp')}
+                      aria-label={t('settings.dayBlocksManager.ariaMoveUp')}
                       style={{ ...iconBtn, opacity: idx === 0 ? 0.3 : 1, cursor: idx === 0 ? 'not-allowed' : 'pointer' }}
                     >
                       ↑
@@ -328,6 +330,7 @@ export default function DayBlocksManager() {
                       onClick={() => move(idx, 1)}
                       disabled={idx === blocks.length - 1}
                       title={t('common.moveDown')}
+                      aria-label={t('settings.dayBlocksManager.ariaMoveDown')}
                       style={{ ...iconBtn, opacity: idx === blocks.length - 1 ? 0.3 : 1, cursor: idx === blocks.length - 1 ? 'not-allowed' : 'pointer' }}
                     >
                       ↓
@@ -335,10 +338,11 @@ export default function DayBlocksManager() {
                     <button
                       onClick={() => toggleActive(block)}
                       title={block.is_active ? t('common.disable') : t('common.enable')}
+                      aria-label={t(block.is_active ? 'settings.dayBlocksManager.ariaDisable' : 'settings.dayBlocksManager.ariaEnable')}
                       style={{
                         ...iconBtn,
-                        borderColor: block.is_active ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.1)',
-                        color: block.is_active ? '#34d399' : 'rgba(238,238,255,0.35)',
+                        borderColor: block.is_active ? T.success : T.cardBorder,
+                        color: block.is_active ? T.success : T.muted,
                       }}
                     >
                       {block.is_active ? '●' : '○'}
@@ -347,7 +351,8 @@ export default function DayBlocksManager() {
                       <button
                         onClick={() => handleDelete(block)}
                         title={t('common.delete')}
-                        style={{ ...iconBtn, borderColor: 'rgba(244,63,94,0.25)', color: '#f43f5e' }}
+                        aria-label={t('settings.dayBlocksManager.ariaDelete')}
+                        style={{ ...iconBtn, borderColor: `${T.danger}55`, color: T.danger }}
                       >
                         🗑️
                       </button>
@@ -357,7 +362,7 @@ export default function DayBlocksManager() {
 
                 {isBuiltin ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingLeft: 28 }}>
-                    <span style={{ fontSize: 11, color: 'rgba(238,238,255,0.4)' }}>
+                    <span style={{ fontSize: 11, color: T.muted }}>
                       {t('settings.dayBlocksManager.vacationMultiplier')}
                     </span>
                     <input
@@ -372,7 +377,7 @@ export default function DayBlocksManager() {
                 ) : (
                   <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, paddingLeft: 28 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 11, color: 'rgba(238,238,255,0.4)' }}>
+                      <span style={{ fontSize: 11, color: T.muted }}>
                         {t('settings.dayBlocksManager.whoFills.label')}
                       </span>
                       <select
@@ -387,13 +392,13 @@ export default function DayBlocksManager() {
                       </select>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 11, color: 'rgba(238,238,255,0.4)' }}>
+                      <span style={{ fontSize: 11, color: T.muted }}>
                         {t('settings.dayBlocksManager.dayTypes.label')}
                       </span>
                       {DAY_TYPE_OPTS.map(dt => {
                         const checked = (block.day_types ?? []).includes(dt)
                         return (
-                          <label key={dt} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: 'rgba(238,238,255,0.6)', cursor: 'pointer' }}>
+                          <label key={dt} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 11, color: T.textDim, cursor: 'pointer' }}>
                             <input type="checkbox" checked={checked} onChange={() => toggleDayType(block, dt)} />
                             {t(`settings.dayBlocksManager.dayTypes.${dt}`)}
                           </label>
@@ -413,6 +418,6 @@ export default function DayBlocksManager() {
 
 const iconBtn: React.CSSProperties = {
   width: 26, height: 26, fontSize: 12, borderRadius: 6, cursor: 'pointer',
-  border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)',
-  color: 'rgba(238,238,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+  border: `1px solid ${T.cardBorder}`, background: T.card,
+  color: T.muted, display: 'flex', alignItems: 'center', justifyContent: 'center',
 }
