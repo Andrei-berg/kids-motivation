@@ -4,7 +4,7 @@ milestone: v4.0
 milestone_name: — PWA Polish
 status: ready_to_plan
 stopped_at: Phase 05.9 UI-SPEC approved
-last_updated: "2026-07-21T18:32:41.469Z"
+last_updated: "2026-07-21T18:42:09.881Z"
 last_activity: 2026-07-21
 progress:
   total_phases: 16
@@ -70,7 +70,7 @@ Progress: [██████████] 97%
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Any family can register and use the app — children earn coins for real effort, spend them on real rewards
-**Current focus:** Phase 05.9 — rules presets
+**Current focus:** Phase 05.9 — rules-presets
 
 ---
 
