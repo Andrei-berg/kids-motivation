@@ -25,7 +25,8 @@
     "month": "Month",
     "yes": "Yes",
     "no": "No",
-    "or": "or"
+    "or": "or",
+    "saveError": "Couldn't save — check your connection and try again."
   },
   "auth": {
     "loading": "Loading...",
@@ -238,28 +239,13 @@
     "forMoney": "For money"
   },
   "kidDay": {
-    "fillDay": "Fill in the day",
-    "loading": "Loading...",
-    "sickDay": "Sick day",
-    "sickDayNote": "Room and behavior — grace period, no penalties. Light reading counts.",
-    "noSchedule": "No schedule for this day",
-    "reading": "Reading",
-    "book": "Book",
-    "bookPlaceholder": "Book title...",
-    "pages": "Pages",
-    "pagesUnit": "PAGES",
-    "minutes": "Minutes",
-    "minutesUnit": "MINUTES",
-    "bookFinished": "🎉 Book finished! +10💰",
-    "readingNote": "What did you remember?",
-    "saving": "Saving...",
-    "saved": "✅ Saved!",
-    "savedBadge": "🎉 Done! Badge earned!",
-    "schoolDay": "School",
-    "vacationDay": "Vacation",
-    "weekendDay": "Weekend",
-    "saveDay": "Save day",
-    "saveError": "Couldn't save today. Check your connection and try again."
+    "saveError": "Couldn't credit coins. Please try again.",
+    "retryBtn": "Retry",
+    "awardedHeading": "Credited today",
+    "behavior": {
+      "proposeBtn": "Propose a tag",
+      "waitingForParent": "Waiting for parent"
+    }
   },
   "kidLeaderboard": {
     "title": "Leaderboard",
@@ -944,7 +930,41 @@
     "auditBtn": "Audit log",
     "walletsBtn": "Wallets",
     "pinInfo": "Set PINs in the full settings page so children can log in to their accounts.",
-    "managePins": "Manage PINs & Settings"
+    "managePins": "Manage PINs & Settings",
+    "rulePresets": {
+      "applyBtn": "Apply preset",
+      "presetClassicTitle": "Classic",
+      "presetClassicSubhead": "Grades and behavior both have consequences — good effort earns coins, poor effort costs them.",
+      "presetNoPenaltiesTitle": "No Penalties",
+      "presetNoPenaltiesSubhead": "Only good effort earns coins. Nothing is ever taken away.",
+      "presetBonusesOnlyTitle": "Bonuses Only",
+      "presetBonusesOnlySubhead": "Same as No Penalties — coins are always a reward, never a deduction.",
+      "diffHeading": "Review changes before applying",
+      "diffConfirm": "Apply these changes",
+      "diffCancel": "Keep current rules"
+    },
+    "gradeScale": {
+      "label": "Grading scale",
+      "fivePoint": "5-point",
+      "twelvePoint": "12-point",
+      "aToF": "A–F",
+      "switchNotice": "Past grades keep their original value. New grades will use the {{scale}} scale."
+    },
+    "behaviorTags": {
+      "title": "Behavior Tags",
+      "subtitle": "Add tags for things worth rewarding or correcting — each has its own coin value.",
+      "addBtn": "+ Add tag",
+      "emptyTitle": "No behavior tags yet",
+      "emptyBody": "Add your first tag — e.g. \"Helped a sibling\" (+5) or \"Rude to a parent\" (−10).",
+      "deleteConfirm": "Delete tag \"{{tagName}}\"? Past marks using this tag keep their recorded coins — only future use of this tag is removed.",
+      "systemTag": "🔒 Default tag"
+    },
+    "behaviorApproval": {
+      "emptyTitle": "No tags waiting for review",
+      "emptyBody": "When {{childName}} proposes a behavior tag, it'll show up here.",
+      "approveBtn": "Approve tag",
+      "rejectBtn": "Reject tag"
+    }
   },
   "onboarding": {
     "title": "Welcome to FamilyCoins",
@@ -1021,7 +1041,10 @@
     "roleParent": "Parent",
     "roleParentDesc": "Full access: manage children, coins, and settings",
     "roleExtended": "Family Member",
-    "roleExtendedDesc": "View progress: grandparent or other relative"
+    "roleExtendedDesc": "View progress: grandparent or other relative",
+    "presetStep": {
+      "continueBtn": "Continue with this preset"
+    }
   },
   "celebration": {
     "congrats": "Congratulations!",
@@ -1123,11 +1146,6 @@
     "moodLabel": "Mood noted",
     "moodNote": "Great job filling in the day!",
     "noData": "No data"
-  },
-  "kidDay": {
-    "saveError": "Couldn't credit coins. Please try again.",
-    "retryBtn": "Retry",
-    "awardedHeading": "Credited today"
   },
   "kidLeaderboardPage": {
     "familyRating": "FAMILY RATING",
