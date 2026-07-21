@@ -768,6 +768,7 @@
     "dayBlocksManager": {
       "title": "Блоки дня",
       "subtitle": "Включайте, задавайте цену и управляйте блоками, из которых состоит день ребёнка",
+      "addBlock": "+ Добавить блок",
       "addPlaceholder": "Название нового блока",
       "namePlaceholder": "Название нового блока",
       "pricePlaceholder": "Цена в монетах",
@@ -787,7 +788,24 @@
         "school": "Учебные дни",
         "weekend": "Выходные",
         "vacation": "Каникулы"
-      }
+      },
+      "scheduleLink": {
+        "none": "Не привязано к расписанию",
+        "synced": "Синхронизировано: {{title}}"
+      },
+      "removeOverrideConfirm": "Удалить персональную настройку для {{name}}? Значение вернётся к общему для семьи.",
+      "overrideFor": "Настроить для…",
+      "byChild": "По ребёнку",
+      "byBlock": "По блоку",
+      "familyDefault": "Общее для семьи",
+      "custom": "Своё",
+      "resync": "Обновить синхронизацию",
+      "ariaMoveUp": "Переместить блок вверх",
+      "ariaMoveDown": "Переместить блок вниз",
+      "ariaEnable": "Включить блок",
+      "ariaDisable": "Отключить блок",
+      "ariaDelete": "Удалить блок",
+      "ariaRemoveOverride": "Удалить персональную настройку для {{name}}"
     },
     "calendarSettingsManager": {
       "title": "Учебный год и выходные",
@@ -813,10 +831,16 @@
       "regionRuMoscowTrimesters": "Россия — Москва, триместры",
       "regionKz": "Казахстан",
       "regionBy": "Беларусь",
-      "save": "Сохранить",
+      "save": "Сохранить настройки календаря",
       "saveSuccess": "Настройки календаря сохранены",
       "dateOrderError": "Начало года должно быть раньше конца",
-      "datesRequiredError": "Укажите обе даты — начало и конец года"
+      "datesRequiredError": "Укажите обе даты — начало и конец года",
+      "ariaPrevMonth": "Предыдущий месяц",
+      "ariaNextMonth": "Следующий месяц",
+      "today": "Сегодня",
+      "filterFamily": "Семья",
+      "sickOne": "{{name}}: день болезни",
+      "sickMany": "Отмечены больными сегодня"
     },
     "streakSettings": {
       "title": "Стрики и бонусы",
@@ -1615,5 +1639,16 @@
   "dashboard": {
     "pending": "ожидают",
     "familyCount": "Семья · {{count}} детей"
+  },
+  "analytics": {
+    "weeklySummary": {
+      "title": "На этой неделе",
+      "coinsEarned": "Заработано монет",
+      "tasksDone": "Дела сделаны",
+      "streakHighlight": "{{name}} — серия {{days}} дней подряд",
+      "noStreak": "Пока никто не набрал серию.",
+      "empty": "Здесь появится сводка недели, когда наберётся немного данных.",
+      "loadError": "Не удалось загрузить сводку недели. Обновите страницу."
+    }
   }
 }
