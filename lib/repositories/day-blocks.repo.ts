@@ -133,6 +133,7 @@ export async function saveDayBlockEntries(
 export async function addDayBlock(params: {
   familyId: string
   childId?: string | null
+  legacyKey?: string | null
   name: string
   icon?: string | null
   price?: number | null
@@ -140,14 +141,16 @@ export async function addDayBlock(params: {
   whoFills?: 'kid' | 'parent' | 'both'
   sortOrder?: number
 }): Promise<DayBlock> {
-  // Custom blocks always have legacy_key NULL — only the seed function
-  // creates legacy-mapped blocks.
+  // Custom blocks always have legacy_key NULL — only the seed function and
+  // built-in per-child override copy-on-write (Phase 5.8 D-03, which passes
+  // legacyKey: familyDefault.legacy_key so the override dedupes against its
+  // family default in getDayBlocks) create legacy-mapped blocks.
   const { data, error } = await supabase
     .from('day_blocks')
     .insert({
       family_id: params.familyId,
       child_id: params.childId ?? null,
-      legacy_key: null,
+      legacy_key: params.legacyKey ?? null,
       name: params.name,
       icon: params.icon ?? null,
       price: params.price ?? null,
