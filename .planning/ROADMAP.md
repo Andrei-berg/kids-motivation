@@ -354,6 +354,13 @@ Plans:
   2. Purchases under a per-child trust limit auto-approve; the parent sees them in the journal
   3. Reminders derive from the schedule (upcoming section training, day not filled by evening, streak about to expire)
 
+**Plans:** 4 plans
+Plans:
+- [ ] 05.10-01-PLAN.md — Migration (trust_limit + allowance columns) [BLOCKING] + trust-limit auto-approve engine & journal label (SC2)
+- [ ] 05.10-02-PLAN.md — Smart reminders daily cron route (3 types, child-targeted) + forward-looking streak-at-risk helper (SC3)
+- [ ] 05.10-03-PLAN.md — Allowance crediting folded into daily cron (idempotent per period) + isoWeekKey + vercel.json schedule (SC1)
+- [ ] 05.10-04-PLAN.md — Per-child trust-limit + allowance settings cards + clamped parent server actions + en/ru i18n (SC1/SC2)
+
 ### Phase 5.11: legacy-cleanup
 **Goal**: One UI remains; the brand is consistent everywhere
 **Depends on**: Phases 5.7, 5.8
