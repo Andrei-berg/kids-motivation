@@ -14,7 +14,7 @@ import { useLanguage, SUPPORTED_LANGUAGES, useT } from '@/lib/i18n'
 import { insertAuditEvent } from '@/lib/repositories/audit.repo'
 import { useAppStore } from '@/lib/store'
 import { repairAchievements } from '@/app/actions/repair-achievements'
-import { PRESET_IDS, getPresetValues, type PresetId } from '@/lib/presets'
+import { PRESET_IDS, getPresetValues, GRADE_SCALE_VALUES, defaultGradeCoinMap, type PresetId, type GradeScale } from '@/lib/presets'
 import { Amount } from '@/components/design/atoms'
 import PeriodsManager from '@/components/settings/PeriodsManager'
 import SectionsManager from '@/components/settings/SectionsManager'
@@ -172,6 +172,11 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
   const [showPresetDiff, setShowPresetDiff] = useState(false)
   const [applyingPreset, setApplyingPreset] = useState(false)
 
+  // ── Grade-scale editor (D-08): click-to-edit state for the data-driven
+  // grade_coin_map row list.
+  const [editingGradeKey, setEditingGradeKey] = useState<string | null>(null)
+  const [editGradeValue, setEditGradeValue] = useState('')
+
   useEffect(() => {
     getWalletSettings().then(s => s && setSettings(s)).catch(() => {})
   }, [])
@@ -265,6 +270,45 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
     } finally { setSaving(false) }
   }
 
+  // ── Grade-scale editor (D-08): switching scale is forward-looking only —
+  // no lock on old grade history. If the new scale's keys are missing from
+  // grade_coin_map, seed it from defaultGradeCoinMap(scale).
+  const gradeScale: GradeScale = settings.grade_scale ?? 'five_point'
+  const gradeMap = settings.grade_coin_map ?? defaultGradeCoinMap(gradeScale)
+  const gradeValues = GRADE_SCALE_VALUES[gradeScale]
+
+  function handleGradeScaleChange(scale: GradeScale) {
+    setSettings(s => {
+      if (!s) return s
+      const currentMap = s.grade_coin_map ?? {}
+      const keys = GRADE_SCALE_VALUES[scale]
+      const hasAllKeys = keys.every(k => k in currentMap)
+      const nextMap = hasAllKeys ? currentMap : defaultGradeCoinMap(scale)
+      return { ...s, grade_scale: scale, grade_coin_map: nextMap }
+    })
+    const scaleLabel = scale === 'five_point' ? t('settings.gradeScale.fivePoint')
+      : scale === 'twelve_point' ? t('settings.gradeScale.twelvePoint')
+      : t('settings.gradeScale.aToF')
+    notify(t('settings.gradeScale.switchNotice', { scale: scaleLabel }))
+  }
+
+  function startEditGrade(key: string, value: number) {
+    setEditingGradeKey(key)
+    setEditGradeValue(String(value))
+  }
+
+  function saveEditGrade(key: string) {
+    const v = Number(editGradeValue)
+    setEditingGradeKey(null)
+    if (!Number.isFinite(v)) return
+    setSettings(s => {
+      if (!s) return s
+      const scale = s.grade_scale ?? 'five_point'
+      const currentMap = s.grade_coin_map ?? defaultGradeCoinMap(scale)
+      return { ...s, grade_coin_map: { ...currentMap, [key]: v } }
+    })
+  }
+
   const RuleRow = ({ icon, label, value, rkey }: { icon: string; label: string; value: number; rkey: keyof WalletSettings }) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderTop: `1px solid ${T.cardBorder}` }}>
       <span style={{ fontSize: 16 }}>{icon}</span>
@@ -349,14 +393,45 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
         )}
       </Card>
       <Card pad={16}>
-        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
           {t('parentCenter.settings.coinsRules.schoolGrades')}
         </div>
-        <RuleRow icon="🏆" label={t('settings.coinRules.grade5')} value={settings.coins_per_grade_5} rkey="coins_per_grade_5"/>
-        <RuleRow icon="👍" label={t('settings.coinRules.grade4')} value={settings.coins_per_grade_4} rkey="coins_per_grade_4"/>
-        <RuleRow icon="📉" label={t('settings.coinRules.grade3')} value={settings.coins_per_grade_3} rkey="coins_per_grade_3"/>
-        <RuleRow icon="⚠️" label={t('settings.coinRules.grade2')} value={settings.coins_per_grade_2} rkey="coins_per_grade_2"/>
-        <RuleRow icon="🚫" label={t('settings.coinRules.grade1')} value={settings.coins_per_grade_1} rkey="coins_per_grade_1"/>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, marginBottom: 8 }}>{t('settings.gradeScale.label')}</div>
+          <Tabs
+            value={gradeScale}
+            onChange={id => handleGradeScaleChange(id as GradeScale)}
+            tabs={[
+              { id: 'five_point', label: t('settings.gradeScale.fivePoint') },
+              { id: 'twelve_point', label: t('settings.gradeScale.twelvePoint') },
+              { id: 'a_f', label: t('settings.gradeScale.aToF') },
+            ]}
+          />
+        </div>
+        {gradeValues.map(gKey => {
+          const val = gradeMap[gKey] ?? 0
+          const editing = editingGradeKey === gKey
+          return (
+            <div key={gKey} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', borderTop: `1px solid ${T.cardBorder}` }}>
+              <span style={{ flex: 1, fontSize: 13, color: T.text, fontWeight: 500 }}>
+                {t('settings.gradeScale.rowLabel', { grade: gKey })}
+              </span>
+              {editing ? (
+                <input
+                  type="number" autoFocus value={editGradeValue}
+                  onChange={e => setEditGradeValue(e.target.value)}
+                  onBlur={() => saveEditGrade(gKey)}
+                  onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditingGradeKey(null) }}
+                  style={{ width: 64, background: T.bg1, border: `1px solid ${T.indigo}`, borderRadius: T.rM, color: T.text, fontFamily: T.fMono, fontSize: 14, fontWeight: 700, textAlign: 'right', padding: '4px 8px', outline: 'none' }}
+                />
+              ) : (
+                <div onClick={() => startEditGrade(gKey, val)} style={{ cursor: 'pointer', padding: '4px 8px' }} title={t('common.edit')}>
+                  <Amount value={val} theme="ink" size="md" signed/>
+                </div>
+              )}
+            </div>
+          )
+        })}
       </Card>
       <Card pad={16}>
         <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
