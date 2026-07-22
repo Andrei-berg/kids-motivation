@@ -963,6 +963,8 @@
       "systemTag": "🔒 Default tag"
     },
     "behaviorApproval": {
+      "title": "Approval Queue",
+      "subtitle": "Review behavior tags your kids have proposed.",
       "emptyTitle": "No tags waiting for review",
       "emptyBody": "When {{childName}} proposes a behavior tag, it'll show up here.",
       "approveBtn": "Approve tag",

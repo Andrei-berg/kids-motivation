@@ -28,10 +28,14 @@ import { getFamilyCalendar } from '@/lib/repositories/calendar.repo'
 import { getWalletSettings } from '@/lib/repositories/wallet.repo'
 import { assembleDayBlocks } from '@/lib/day-blocks'
 import { getFamilyDayBlocksEnabled, getDayBlocks, getDayBlockEntries, saveDayBlockEntries } from '@/lib/repositories/day-blocks.repo'
+import { getBehaviorTags, getBehaviorMarks } from '@/lib/repositories/behavior.repo'
+import { applyTagDirect } from '@/app/parent/behavior/actions'
+import { StatusChip } from '@/components/design/atoms'
 import type { DayBlock } from '@/lib/models/day-block.types'
 import type { WalletSettings } from '@/lib/models/wallet.types'
 import type { RoomTask, RoomLegacyKey } from '@/lib/models/room.types'
 import type { FamilyCalendar } from '@/lib/models/calendar.types'
+import type { BehaviorTag, BehaviorMark } from '@/lib/models/behavior.types'
 
 // ─── Local Types ──────────────────────────────────────────────────────────────
 
@@ -154,6 +158,13 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   const [goodBehavior, setGoodBehavior] = useState(true)
   const [diaryNotDone, setDiaryNotDone] = useState(false)
   const [dayNote, setDayNote] = useState('')
+
+  // Behavior tags (Phase 5.9, D-09/D-12): active family tags + this
+  // child+date's existing marks (any status), for the D-09 default-tag
+  // dual-write reconciliation and the parent-direct custom-tag chips.
+  const [behaviorTags, setBehaviorTags] = useState<BehaviorTag[]>([])
+  const [behaviorMarks, setBehaviorMarks] = useState<BehaviorMark[]>([])
+  const [applyingTagId, setApplyingTagId] = useState<string | null>(null)
 
   // СПОРТ
   const [exercises, setExercises] = useState<ExerciseEntry[]>([])
@@ -332,6 +343,26 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
         }
       } catch {}
 
+      // Behavior tags (Phase 5.9) — active family tags + this child+date's
+      // existing marks (any status), used by the D-09 dual-write
+      // reconciliation and the parent-direct custom-tag chips below.
+      try {
+        const { data: childRow } = await supabase
+          .from('children')
+          .select('family_id')
+          .eq('id', childId)
+          .maybeSingle()
+        const behaviorFamilyId = (childRow?.family_id as string | undefined) ?? familyId ?? undefined
+        if (behaviorFamilyId) {
+          const [tags, marks] = await Promise.all([
+            getBehaviorTags(behaviorFamilyId),
+            getBehaviorMarks(childId, date),
+          ])
+          setBehaviorTags(tags)
+          setBehaviorMarks(marks)
+        }
+      } catch { setBehaviorTags([]); setBehaviorMarks([]) }
+
       // Grades
       try {
         const existingGrades = await api.getSubjectGradesForDate(childId, date)
@@ -425,6 +456,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
     setQuickAddGrade(5)
     setRoomTasks([]); setRoomChecked({})
     setGoodBehavior(true); setDiaryNotDone(false); setDayNote('')
+    setBehaviorTags([]); setBehaviorMarks([]); setApplyingTagId(null)
     setExercises([]); setSportNote('')
     setSections([]); setSectionNotes({})
     setIsSick(false); setHomeHelp(false); setHomeHelpNote(''); setHomeworkDone(false)
@@ -506,6 +538,23 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
     setSectionNotes(prev => ({ ...prev, [sectionId]: { ...prev[sectionId], coachRating: rating } }))
   }
 
+  // ─── Behavior tag handlers (Phase 5.9) ─────────────────────────────────────
+  // Parent-direct tag apply is immediate/ungated (D-12) — unlike the default
+  // tag (deferred to handleSave's dual-write reconciliation below), clicking
+  // a custom tag chip applies it right away via the service-role action.
+  async function handleApplyBehaviorTag(tagId: string) {
+    setApplyingTagId(tagId)
+    try {
+      await applyTagDirect(childId, date, tagId)
+      const marks = await getBehaviorMarks(childId, date)
+      setBehaviorMarks(marks)
+    } catch (e) {
+      console.warn('[DailyModal] applyTagDirect failed:', e)
+    } finally {
+      setApplyingTagId(null)
+    }
+  }
+
   // ─── Save ─────────────────────────────────────────────────────────────────
 
   async function handleSave() {
@@ -549,6 +598,36 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
         grades.map(grade => api.saveSubjectGrade({ childId, date, subject: grade.subject, subjectId: grade.subject_id || undefined, grade: grade.grade, note: grade.note }))
       )
 
+      // D-09 dual-write (b): reconcile the default tag's approved-mark state
+      // to match the just-saved goodBehavior value (sick days force true,
+      // mirroring legacyDone.* above). The default tag is a persistent
+      // toggle (unlike custom tags, which are event-like/immediate-apply via
+      // handleApplyBehaviorTag) — "ensure it exists"/"ensure it's removed"
+      // rather than always inserting a fresh mark on every save.
+      const defaultBehaviorTag = behaviorTags.find(bt => bt.legacy_key === 'good_behavior')
+      const effectiveGoodBehavior = isSickDay ? true : goodBehavior
+      const existingApprovedDefaultMark = defaultBehaviorTag
+        ? behaviorMarks.find(m => m.tag_id === defaultBehaviorTag.id && m.status === 'approved')
+        : undefined
+      const saveBehaviorReconcile = (async () => {
+        if (!defaultBehaviorTag) return
+        try {
+          if (effectiveGoodBehavior && !existingApprovedDefaultMark) {
+            await applyTagDirect(childId, date, defaultBehaviorTag.id)
+          } else if (!effectiveGoodBehavior && existingApprovedDefaultMark) {
+            // Approved marks can only be reached via the pending→approved
+            // transition server-side (approveBehaviorMark), which requires a
+            // 'pending' precondition — so un-applying an already-approved
+            // default-tag mark is a plain client delete (behavior_marks is
+            // NOT a money table; family-isolation RLS permits it, and this
+            // path only runs from the parent-only DailyModal surface).
+            await supabase.from('behavior_marks').delete().eq('id', existingApprovedDefaultMark.id)
+          }
+        } catch (e) {
+          console.warn('[DailyModal] behavior tag reconcile failed:', e)
+        }
+      })()
+
       const saveExercises = Promise.all(
         exercises.map(exercise => flexibleApi.saveHomeExercise(childId, date, exercise.exercise_type_id, exercise.quantity, sportNote))
       )
@@ -587,7 +666,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
           })))
         : Promise.resolve()
 
-      await Promise.all([saveDay, saveGrades, saveExercises, saveSections, saveReading, saveActivities, saveRoom])
+      await Promise.all([saveDay, saveGrades, saveExercises, saveSections, saveReading, saveActivities, saveRoom, saveBehaviorReconcile])
 
       // Save custom-block completions (Phase 5.6, flag-on only). Built-in
       // blocks already persist through the saves above — this covers ONLY
@@ -669,16 +748,14 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
 
   // Fallbacks mirror SETTINGS_DEFAULTS in app/api/wallet/_lib.ts (pre-load only).
   const GRADE_COINS: Record<number, number> = { 5: 10, 4: 5, 3: -3, 2: -5, 1: -10 }
+  // Phase 5.9: mirrors the award route's gradeCoins() — a grade_coin_map[grade]
+  // lookup (grade is now a string key, any scale) instead of a numeric switch,
+  // so this preview never diverges once a family's grade_scale is non-default.
   const gradeCoinsFor = (grade: number): number => {
-    if (!walletSettings) return GRADE_COINS[grade] ?? 0
-    switch (grade) {
-      case 5: return walletSettings.coins_per_grade_5
-      case 4: return walletSettings.coins_per_grade_4
-      case 3: return walletSettings.coins_per_grade_3
-      case 2: return walletSettings.coins_per_grade_2
-      case 1: return walletSettings.coins_per_grade_1
-      default: return 0
+    if (walletSettings?.grade_coin_map) {
+      return walletSettings.grade_coin_map[String(grade)] ?? 0
     }
+    return GRADE_COINS[grade] ?? 0
   }
   const gradeCoins = grades.reduce((sum, g) => sum + gradeCoinsFor(g.grade), 0)
 
@@ -1053,21 +1130,82 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   // section so it can be wrapped in an assembled BlockSection flag-on; the
   // diary/day-note pieces stay outside the block system (see dayNoteSection
   // below), same as Mood stays outside the block system in KidDayFillForm.
+  //
+  // Phase 5.9 (D-09/D-12): the default tag checkbox is unchanged (still
+  // drives goodBehavior, dual-written to days.good_behavior AND reconciled
+  // to an approved default-tag mark on save — see handleSave). Non-legacy
+  // (custom) tags render as chips a parent can apply directly and
+  // immediately (ungated — D-12's last bullet), each click its own
+  // event-like mark (no per-day cap, mirrors "Helped a sibling twice").
+  // Pending child-proposed marks show a warning chip for visibility; the
+  // canonical review action lives in the dedicated approval queue.
+  const customBehaviorTags = behaviorTags.filter(bt => !bt.legacy_key)
+  const pendingBehaviorMarks = behaviorMarks.filter(m => m.status === 'pending')
+  const approvedMarkCountForTag = (tagId: string) =>
+    behaviorMarks.filter(m => m.tag_id === tagId && m.status === 'approved').length
+
   const behaviorBody = (
-    <label className="premium-checkbox">
-      <input
-        type="checkbox"
-        checked={dayType === 'sick' ? true : goodBehavior}
-        disabled={dayType === 'sick'}
-        onChange={(e) => setGoodBehavior(e.target.checked)}
-      />
-      <span className="premium-checkbox-icon">✅</span>
-      <span className="premium-checkbox-label">
-        {t('dailyModal.goodBehaviorLabel')}
-        {dayType === 'sick' && <span style={{ color: 'rgba(238,238,255,0.4)', fontSize: '12px', marginLeft: '6px' }}>{t('dailyModal.goodBehaviorAuto')}</span>}
-      </span>
-      <span className="premium-checkbox-check">✓</span>
-    </label>
+    <>
+      <label className="premium-checkbox">
+        <input
+          type="checkbox"
+          checked={dayType === 'sick' ? true : goodBehavior}
+          disabled={dayType === 'sick'}
+          onChange={(e) => setGoodBehavior(e.target.checked)}
+        />
+        <span className="premium-checkbox-icon">✅</span>
+        <span className="premium-checkbox-label">
+          {t('dailyModal.goodBehaviorLabel')}
+          {dayType === 'sick' && <span style={{ color: 'rgba(238,238,255,0.4)', fontSize: '12px', marginLeft: '6px' }}>{t('dailyModal.goodBehaviorAuto')}</span>}
+        </span>
+        <span className="premium-checkbox-check">✓</span>
+      </label>
+
+      {customBehaviorTags.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+          {customBehaviorTags.map(tag => {
+            const count = approvedMarkCountForTag(tag.id)
+            const positive = tag.price >= 0
+            return (
+              <button
+                key={tag.id}
+                type="button"
+                onClick={() => handleApplyBehaviorTag(tag.id)}
+                disabled={applyingTagId === tag.id}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '8px 12px', borderRadius: '20px', cursor: 'pointer',
+                  border: `1.5px solid ${positive ? 'rgba(16,185,129,0.3)' : 'rgba(244,63,94,0.3)'}`,
+                  background: positive ? 'rgba(16,185,129,0.07)' : 'rgba(244,63,94,0.06)',
+                  fontSize: '12px', fontWeight: 800,
+                  color: positive ? '#059669' : '#F43F5E',
+                  opacity: applyingTagId === tag.id ? 0.6 : 1,
+                }}
+              >
+                <span>{tag.icon ?? '⭐'}</span>
+                <span>{tag.name}</span>
+                <span>{positive ? '+' : ''}{tag.price}💰</span>
+                {count > 0 && <span style={{ opacity: 0.7 }}>×{count}</span>}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {pendingBehaviorMarks.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+          {pendingBehaviorMarks.map(mark => {
+            const tag = behaviorTags.find(bt => bt.id === mark.tag_id)
+            return (
+              <div key={mark.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '12px' }}>{tag?.icon ?? '⭐'} {tag?.name ?? ''}</span>
+                <StatusChip tone="warning" theme="paper">{t('kidDay.behavior.waitingForParent')}</StatusChip>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </>
   )
 
   const exerciseBody = exerciseTypes.length === 0 ? (
