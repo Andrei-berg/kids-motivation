@@ -344,6 +344,122 @@ async function updateStreak(
   return event
 }
 
+// ---------------------------------------------------------------------------
+// Forward-looking "streak at risk" helper (05.10-02, SC3 "streak about to
+// expire"). The four calculators above walk BACKWARD from today to compute
+// current/best run lengths; this section answers a different, forward-
+// looking question: "has today's contribution for streak type X landed yet?"
+// Read-only — never writes to the `streaks` table (D-12: streaks is RLS
+// SELECT-only for clients; updateStreaks() remains the only writer).
+// ---------------------------------------------------------------------------
+
+/**
+ * Pure predicate: has today's contribution for a given streak type already
+ * landed, based on the same source signals the backward calculators use
+ * (days.room_ok, a subject_grades row existing, a sport-active day, and
+ * days.good_behavior)?
+ */
+export function streakContributionPresent(
+  type: 'room' | 'study' | 'sport' | 'strong_week',
+  ctx: {
+    day?: { room_ok?: boolean; good_behavior?: boolean } | null
+    hasGrade?: boolean
+    hasSport?: boolean
+  }
+): boolean {
+  switch (type) {
+    case 'room':
+      return !!ctx.day?.room_ok
+    case 'strong_week':
+      return !!ctx.day?.good_behavior
+    case 'study':
+      return !!ctx.hasGrade
+    case 'sport':
+      return !!ctx.hasSport
+  }
+}
+
+/**
+ * Active streaks (current_count > 0) with no contribution logged yet today,
+ * for a day that is NOT transparent for that streak type (a transparent
+ * today — e.g. study on a weekend, or sick for room/sport/strong_week — does
+ * not put the streak at risk; the backward calculators carry it through
+ * unchanged). Read-only: loads `streaks`, `days`, `subject_grades`, sport
+ * activity, and calendar/vacation context via the admin client — never
+ * writes.
+ */
+export async function getStreaksAtRisk(
+  admin: Admin,
+  childId: string,
+  today: string
+): Promise<{ type: 'room' | 'study' | 'sport' | 'strong_week'; current_count: number }[]> {
+  const { data: streaks } = await admin
+    .from('streaks')
+    .select('streak_type, current_count, active')
+    .eq('child_id', childId)
+    .eq('active', true)
+    .gt('current_count', 0)
+
+  if (!streaks || streaks.length === 0) return []
+
+  const { data: child } = await admin
+    .from('children')
+    .select('family_id')
+    .eq('id', childId)
+    .maybeSingle()
+  const familyId = child?.family_id ?? null
+
+  const { data: dayRow } = await admin
+    .from('days')
+    .select('room_ok, good_behavior, is_sick')
+    .eq('child_id', childId)
+    .eq('date', today)
+    .maybeSingle()
+
+  const { data: gradeRows } = await admin
+    .from('subject_grades')
+    .select('id')
+    .eq('child_id', childId)
+    .eq('date', today)
+    .limit(1)
+  const hasGrade = (gradeRows?.length ?? 0) > 0
+
+  const sportDays = await getSportActiveDays(childId, today, today, admin)
+  const hasSport = sportDays.has(today)
+
+  let familyCalendar: FamilyCalendar | null = null
+  let vacationPeriods: VacationPeriod[] = []
+  if (familyId) {
+    const [{ data: calendarRow }, { data: vacationRows }] = await Promise.all([
+      admin.from('family_calendar').select('*').eq('family_id', familyId).maybeSingle(),
+      admin.from('vacation_periods').select('*').eq('family_id', familyId),
+    ])
+    familyCalendar = (calendarRow as FamilyCalendar | null) ?? null
+    vacationPeriods = (vacationRows as VacationPeriod[] | null) ?? []
+  }
+
+  const todayType = getDayType(today, !!dayRow?.is_sick, vacationPeriods, childId, undefined, familyCalendar).type
+  const sickTransparentToday = todayType === 'sick'
+  const studyTransparentToday = todayType === 'weekend' || todayType === 'vacation' || todayType === 'sick'
+
+  const atRisk: { type: 'room' | 'study' | 'sport' | 'strong_week'; current_count: number }[] = []
+
+  for (const s of streaks) {
+    const type = s.streak_type as 'room' | 'study' | 'sport' | 'strong_week'
+    const transparentToday = type === 'study' ? studyTransparentToday : sickTransparentToday
+    if (transparentToday) continue
+
+    const present = streakContributionPresent(type, {
+      day: dayRow ? { room_ok: !!dayRow.room_ok, good_behavior: !!dayRow.good_behavior } : null,
+      hasGrade,
+      hasSport,
+    })
+    if (!present) atRisk.push({ type, current_count: s.current_count })
+  }
+
+  return atRisk
+}
+
 export async function getStreakBonuses(childId: string) {
   const { data: streaks } = await supabase
     .from('streaks')

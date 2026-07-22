@@ -8,6 +8,7 @@ import {
   calculateStudyStreak,
   calculateSportStreak,
   calculateBehaviorStreak,
+  streakContributionPresent,
 } from '../lib/services/streaks.service'
 import type { DayType } from '../lib/day-type'
 
@@ -261,5 +262,35 @@ describe('day-type transparency', () => {
     const result = calculateRoomStreak(days, today, dayType)
     expect(result.current).toBe(1)
     expect(result.best).toBe(1) // 04-01 breaks the run; only today (04-02) is a fresh run of 1
+  })
+})
+
+// Forward-looking "streak at risk" helper (05.10-02, SC3): pure predicate
+// covering all four streak types' contribution-present mapping.
+describe('streakContributionPresent', () => {
+  it('room: true when day.room_ok, false otherwise', () => {
+    expect(streakContributionPresent('room', { day: { room_ok: true } })).toBe(true)
+    expect(streakContributionPresent('room', { day: { room_ok: false } })).toBe(false)
+    expect(streakContributionPresent('room', { day: null })).toBe(false)
+    expect(streakContributionPresent('room', {})).toBe(false)
+  })
+
+  it('study: true when hasGrade, false otherwise', () => {
+    expect(streakContributionPresent('study', { hasGrade: true })).toBe(true)
+    expect(streakContributionPresent('study', { hasGrade: false })).toBe(false)
+    expect(streakContributionPresent('study', {})).toBe(false)
+  })
+
+  it('sport: true when hasSport, false otherwise', () => {
+    expect(streakContributionPresent('sport', { hasSport: true })).toBe(true)
+    expect(streakContributionPresent('sport', { hasSport: false })).toBe(false)
+    expect(streakContributionPresent('sport', {})).toBe(false)
+  })
+
+  it('strong_week: true when day.good_behavior, false otherwise', () => {
+    expect(streakContributionPresent('strong_week', { day: { good_behavior: true } })).toBe(true)
+    expect(streakContributionPresent('strong_week', { day: { good_behavior: false } })).toBe(false)
+    expect(streakContributionPresent('strong_week', { day: null })).toBe(false)
+    expect(streakContributionPresent('strong_week', {})).toBe(false)
   })
 })
