@@ -23,6 +23,8 @@ export interface AuditEvent {
     | 'account_delete_request'
     | 'withdraw_approve'
     | 'withdraw_reject'
+    | 'behavior_approve'
+    | 'behavior_reject'
   description: string
   coins_delta: number | null
   actor_user_id: string | null
