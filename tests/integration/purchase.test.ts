@@ -287,3 +287,131 @@ describe.skipIf(!hasIntegrationEnv)('Purchase flow — request/approve/reject �
     expect(remainingTxs?.length ?? 0).toBe(0)
   })
 })
+
+// Phase 05.10 Plan 01 — trust-limit auto-approve (SC2, D-01..D-04). Isolated
+// test family (own beforeAll/afterAll) so this suite's balance/trust-limit
+// mutations never interact with the request/approve/reject flow above.
+describe.skipIf(!hasIntegrationEnv)('Trust-limit auto-approve — processPurchase — integration', () => {
+  let family: TestFamily
+  const db = hasIntegrationEnv ? serviceClient() : null!
+
+  beforeAll(async () => {
+    family = await createTestFamily()
+    // Ample balance — this suite only checks status/processed_by, not
+    // exact balances, so an oversized starting balance keeps every case
+    // affordable regardless of test order.
+    const { error } = await db.from('wallet').update({ coins: 1000 }).eq('child_id', family.childId)
+    expect(error).toBeNull()
+  })
+
+  afterAll(async () => {
+    await db.from('rewards').delete().eq('family_id', family.familyId)
+    await destroyTestFamily(family.familyId, family.childId)
+  })
+
+  async function makeReward(priceCoins: number, autoApprove: boolean, title: string): Promise<string> {
+    const { data, error } = await db
+      .from('rewards')
+      .insert({
+        family_id: family.familyId,
+        title,
+        icon: '🎁',
+        reward_type: 'coins',
+        price_coins: priceCoins,
+        is_active: true,
+        auto_approve: autoApprove,
+      })
+      .select('id')
+      .single()
+    expect(error).toBeNull()
+    return data!.id as string
+  }
+
+  async function setTrustLimit(limit: number): Promise<void> {
+    const { error } = await db.from('children').update({ trust_limit_coins: limit }).eq('id', family.childId)
+    expect(error).toBeNull()
+  }
+
+  it('purchase priced at or below the trust limit auto-approves with processed_by=auto_trust', async () => {
+    mockRequireFamilyMember.mockResolvedValue({
+      userId: 'test-user-child',
+      familyId: family.familyId,
+      role: 'child',
+      childId: family.childId,
+    })
+    await setTrustLimit(50)
+    const rewardId = await makeReward(30, false, '__test__ trust sub-limit')
+
+    const res = await postPurchase(family.childId, rewardId)
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.purchase.status).toBe('approved')
+    expect(body.purchase.processed_by).toBe('auto_trust')
+
+    const { data: txs, error } = await db
+      .from('wallet_transactions')
+      .select('description')
+      .eq('child_id', family.childId)
+      .eq('related_id', body.purchase.id)
+    expect(error).toBeNull()
+    expect(txs?.[0]?.description).toContain('лимит доверия')
+  })
+
+  it('purchase priced above the trust limit stays pending when reward.auto_approve is false', async () => {
+    mockRequireFamilyMember.mockResolvedValue({
+      userId: 'test-user-child',
+      familyId: family.familyId,
+      role: 'child',
+      childId: family.childId,
+    })
+    await setTrustLimit(50)
+    const rewardId = await makeReward(100, false, '__test__ trust over-limit')
+
+    const res = await postPurchase(family.childId, rewardId)
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.purchase.status).toBe('pending')
+    expect(body.purchase.processed_by).toBeFalsy()
+  })
+
+  it('default trust_limit_coins=0 never auto-approves via the trust limit', async () => {
+    mockRequireFamilyMember.mockResolvedValue({
+      userId: 'test-user-child',
+      familyId: family.familyId,
+      role: 'child',
+      childId: family.childId,
+    })
+    await setTrustLimit(0)
+    const rewardId = await makeReward(10, false, '__test__ trust zero-default')
+
+    const res = await postPurchase(family.childId, rewardId)
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.purchase.status).toBe('pending')
+  })
+
+  it('reward.auto_approve still auto-approves with processed_by=auto (existing behavior unchanged)', async () => {
+    mockRequireFamilyMember.mockResolvedValue({
+      userId: 'test-user-child',
+      familyId: family.familyId,
+      role: 'child',
+      childId: family.childId,
+    })
+    await setTrustLimit(0)
+    const rewardId = await makeReward(20, true, '__test__ reward auto-approve')
+
+    const res = await postPurchase(family.childId, rewardId)
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.purchase.status).toBe('approved')
+    expect(body.purchase.processed_by).toBe('auto')
+
+    const { data: txs, error } = await db
+      .from('wallet_transactions')
+      .select('description')
+      .eq('child_id', family.childId)
+      .eq('related_id', body.purchase.id)
+    expect(error).toBeNull()
+    expect(txs?.[0]?.description).toContain('мгновенная награда')
+  })
+})
