@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: ready_to_plan
-stopped_at: Completed 05.9-07-PLAN.md
-last_updated: "2026-07-22T09:59:40.983Z"
+stopped_at: Phase 05.10 context gathered
+last_updated: "2026-07-22T14:11:31.618Z"
 last_activity: 2026-07-21
 progress:
   total_phases: 16
-  completed_phases: 12
+  completed_phases: 13
   total_plans: 86
-  completed_plans: 84
-  percent: 75
+  completed_plans: 85
+  percent: 81
 ---
 
 # STATE.md — Текущее состояние проекта
@@ -151,9 +151,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-07-22T09:59:40.963Z
-Stopped at: Completed 05.9-07-PLAN.md
-Resume file: None
+Last session: 2026-07-22T14:11:31.571Z
+Stopped at: Phase 05.10 context gathered
+Resume file: .planning/phases/05.10-automation/05.10-CONTEXT.md
 
 ---
 
@@ -209,6 +209,7 @@ Resume file: None
 - [Phase 05.3-03]: LedgerRow has no `signed` prop (05.3-02 as-built interface) — credit amounts show no explicit '+' prefix; coins_change already carries its own sign so no information is lost
 - [Phase 05.3-03]: Parent dashboard ActivityRow dropped the redundant tone Pill + separate Coin amount in favor of a single LedgerRow (plan explicitly permitted this simplification)
 - [Phase 05.9]: Plan 07: behavior-mark approval is status-only (no coin mutation); crediting happens on the next /api/wallet/award POST
+- [Phase 05.9]: Plan 09: CoinsRulesTab preset diff-preview only writes wallet_settings on explicit confirm; grade-scale switch seeds grade_coin_map from defaults only for missing keys of the newly selected scale (forward-only, D-08); BehaviorTagsManager + BehaviorApprovalQueue mounted below "Save rules"
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 
