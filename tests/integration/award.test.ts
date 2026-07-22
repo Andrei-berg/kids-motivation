@@ -368,6 +368,110 @@ describe.skipIf(!hasIntegrationEnv)('POST /api/wallet/award — integration', ()
     expect(behaviorTxs?.length ?? 0).toBe(0)
   })
 
+  it('grade scales (SC2a/SC2b): grade_coin_map[grade] drives the award across five_point/twelve_point/a_f, literal round-trips without lossy conversion', async () => {
+    mockRequireFamilyMember.mockResolvedValue({
+      userId: 'test-user-parent',
+      familyId: family.familyId,
+      role: 'parent',
+      childId: null,
+    })
+
+    const TWELVE_DATE = '2020-04-01'
+    const A_F_DATE = '2020-04-02'
+    let twelveGradeId: string | undefined
+    let afGradeId: string | undefined
+
+    try {
+      // Twelve-point scale: family's grade_coin_map has no default for '11' —
+      // configure one explicitly, then assert the award equals map['11']
+      // exactly (not a numeric-switch fallback value).
+      const { error: settingsErr } = await db.from('wallet_settings').upsert({
+        id: family.familyId,
+        family_id: family.familyId,
+        grade_scale: 'twelve_point',
+        grade_coin_map: { '11': 42, '12': 50 },
+      })
+      expect(settingsErr).toBeNull()
+
+      const { data: twelveGradeRow, error: twelveGradeErr } = await db
+        .from('subject_grades')
+        .insert({ child_id: family.childId, date: TWELVE_DATE, subject: 'Physics', grade: '11' })
+        .select('id, grade')
+        .single()
+      expect(twelveGradeErr).toBeNull()
+      twelveGradeId = twelveGradeRow!.id
+      // SC2b: the literal round-trips through insert→read without lossy
+      // numeric conversion (a bare Number('11') would still equal 11, but a
+      // non-numeric literal like 'B+' below proves the column is genuinely
+      // TEXT, not coerced).
+      expect(twelveGradeRow?.grade).toBe('11')
+
+      const twelveRes = await postAward(family.childId, TWELVE_DATE)
+      expect(twelveRes.status).toBe(200)
+
+      const { data: twelveTx, error: twelveTxErr } = await db
+        .from('wallet_transactions')
+        .select('coins_change')
+        .eq('child_id', family.childId)
+        .eq('source_type', 'grade')
+        .eq('source_id', twelveGradeRow!.id)
+        .single()
+      expect(twelveTxErr).toBeNull()
+      expect(twelveTx?.coins_change).toBe(42)
+
+      // A-F scale: a non-numeric literal grade value ('B+') — proves the
+      // lookup is a string-keyed map, not a coerced numeric comparison, and
+      // that subject_grades.grade stores/reads it byte-for-byte.
+      const { error: afSettingsErr } = await db.from('wallet_settings').upsert({
+        id: family.familyId,
+        family_id: family.familyId,
+        grade_scale: 'a_f',
+        grade_coin_map: { 'A': 15, 'B+': 9, 'B': 6, 'C': -2, 'F': -12 },
+      })
+      expect(afSettingsErr).toBeNull()
+
+      const { data: afGradeRow, error: afGradeErr } = await db
+        .from('subject_grades')
+        .insert({ child_id: family.childId, date: A_F_DATE, subject: 'History', grade: 'B+' })
+        .select('id, grade')
+        .single()
+      expect(afGradeErr).toBeNull()
+      afGradeId = afGradeRow!.id
+      expect(afGradeRow?.grade).toBe('B+')
+
+      const afRes = await postAward(family.childId, A_F_DATE)
+      expect(afRes.status).toBe(200)
+
+      const { data: afTx, error: afTxErr } = await db
+        .from('wallet_transactions')
+        .select('coins_change')
+        .eq('child_id', family.childId)
+        .eq('source_type', 'grade')
+        .eq('source_id', afGradeRow!.id)
+        .single()
+      expect(afTxErr).toBeNull()
+      expect(afTx?.coins_change).toBe(9)
+    } finally {
+      // Inline cleanup — this test's own wallet_transactions/subject_grades/
+      // wallet_settings rows must not leak into later tests in this
+      // shared-family suite (destroyTestFamily's final teardown would catch
+      // these too, but this test isn't guaranteed to be the last to run).
+      const gradeIds = [twelveGradeId, afGradeId].filter((id): id is string => Boolean(id))
+      if (gradeIds.length > 0) {
+        await db.from('wallet_transactions')
+          .delete()
+          .eq('child_id', family.childId)
+          .eq('source_type', 'grade')
+          .in('source_id', gradeIds)
+      }
+      await db.from('subject_grades')
+        .delete()
+        .eq('child_id', family.childId)
+        .in('date', [TWELVE_DATE, A_F_DATE])
+      await db.from('wallet_settings').delete().eq('family_id', family.familyId)
+    }
+  })
+
   it('teardown removes all wallet_transactions for the test child', async () => {
     await destroyTestFamily(family.familyId, family.childId)
 

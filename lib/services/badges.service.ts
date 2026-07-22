@@ -166,7 +166,11 @@ async function checkPerfectWeekAuto(childId: string, date: string): Promise<bool
     .lte('date', week.end)
 
   if (!grades || grades.length === 0) return false
-  if (grades.some(g => g.grade != null && g.grade <= 2)) return false
+  // 5-point-only (D-07, Phase 5.9): grade is now TEXT; behavior intentionally
+  // unchanged for non-five-point scales. '1'/'2' are the penalty grades on
+  // the five-point scale — compared as string literals now that
+  // subject_grades.grade is TEXT.
+  if (grades.some(g => g.grade != null && ['1', '2'].includes(g.grade))) return false
 
   const { data: existing } = await supabase
     .from('badges')
@@ -229,7 +233,9 @@ async function checkWeekExcellent(childId: string, date: string): Promise<boolea
 
   if (!grades || grades.length === 0) return false
 
-  const allFives = grades.every(g => g.grade === 5)
+  // 5-point-only (D-07, Phase 5.9): grade is now TEXT; behavior intentionally
+  // unchanged for non-five-point scales.
+  const allFives = grades.every(g => g.grade === '5')
 
   if (allFives && grades.length >= 5) {
     const { data: existing } = await supabase
@@ -363,8 +369,10 @@ export async function getBadgeProgress(childId: string): Promise<Record<string, 
   ] = await Promise.all([
     supabase.from('streaks').select('streak_type, current_count, best_count').eq('child_id', childId),
     getSportActiveDayCount(childId),
+    // 5-point-only (D-07, Phase 5.9): grade is now TEXT; behavior
+    // intentionally unchanged for non-five-point scales.
     supabase.from('subject_grades').select('*', { count: 'exact', head: true })
-      .eq('child_id', childId).eq('grade', 5).gte('date', week.start).lte('date', week.end),
+      .eq('child_id', childId).eq('grade', '5').gte('date', week.start).lte('date', week.end),
     supabase.from('subject_grades').select('date').eq('child_id', childId).gte('date', last14).lte('date', today),
     supabase.from('subject_grades').select('date').eq('child_id', childId).gte('date', week.start).lte('date', week.end),
     supabase.from('wallet').select('total_earned_coins, total_spent_coins').eq('child_id', childId).maybeSingle(),

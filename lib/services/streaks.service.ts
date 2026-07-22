@@ -243,6 +243,11 @@ export function calculateBehaviorStreak(days: any[], today: string, dayType?: Da
 
     const day = days.find(d => d.date === checkDate)
 
+    // Known gap (Phase 5.9): day.good_behavior tracks ONLY the seeded default
+    // behavior tag (kept in sync by Plan 07's dual-write) — a family using
+    // custom (non-default) behavior tags will see this streak diverge from
+    // the tag-level behavior_marks truth. Documented known gap, not fixed
+    // here (see 05.9-06-SUMMARY.md Known Gaps).
     if (day && day.good_behavior) {
       streak++
       if (anchored) current = streak
