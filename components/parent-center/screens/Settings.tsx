@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { T } from '../tokens'
 import { Card, Btn, Pill, Icon, Tabs } from '../ui'
+import { AutomationCards } from '../AutomationCards'
 import type { ParentChild, Route } from '../types'
 import { createClient } from '@/lib/supabase/client'
 import AuthHelpModal from '@/components/AuthHelpModal'
@@ -615,6 +616,7 @@ function ChildrenTab({ allChildren, notify }: { allChildren: ParentChild[]; noti
       </Card>
 
       {child && <PinCard child={child} notify={notify}/>}
+      {child && <AutomationCards child={child} notify={notify}/>}
     </div>
   )
 }
