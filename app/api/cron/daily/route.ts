@@ -1,9 +1,13 @@
 // app/api/cron/daily/route.ts
-// Vercel Cron: runs once/day (schedule wired in Plan 03) — three schedule-driven
-// child reminder checks (SC3, D-10 daily cadence, Vercel Hobby budget):
+// Vercel Cron: runs once/day (scheduled in vercel.json, Plan 03) — three
+// schedule-driven child reminder checks (SC3, D-10 daily cadence, Vercel
+// Hobby budget) plus scheduled allowance crediting (SC1):
 //   1. Upcoming section training today
 //   2. Day not filled yet today
 //   3. An active streak with no contribution today (not transparent)
+//   4. Scheduled allowance credit for children whose weekly/monthly anchor
+//      matches today (D-06/D-07/D-08), idempotent per period via creditAwards
+//      (D-09)
 // Auth: CRON_SECRET header (assertCronAuth, fail-closed — T-0510-05).
 // Recipients: the CHILD only — missed-tasks already nudges parents at 23:00 MSK
 // about unfilled days; these child nudges run earlier so the child can still act.
@@ -15,8 +19,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendPushToSubscription } from '@/app/actions/push'
 import { assertCronAuth } from '@/lib/cron-auth'
-import { localDateString } from '@/utils/helpers'
+import { localDateString, isoWeekKey } from '@/utils/helpers'
 import { getStreaksAtRisk } from '@/lib/services/streaks.service'
+import { creditAwards } from '@/app/api/wallet/_lib'
 
 type PushItem = { memberId: string; title: string; body: string; url: string }
 
@@ -45,7 +50,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     .eq('role', 'child')
 
   if (!childMembers || childMembers.length === 0) {
-    return NextResponse.json({ sent: 0, failed: 0, sections: 0, unfilled: 0, streaksAtRisk: 0 })
+    return NextResponse.json({
+      sent: 0,
+      failed: 0,
+      sections: 0,
+      unfilled: 0,
+      streaksAtRisk: 0,
+      allowanceCredited: 0,
+    })
   }
 
   const memberIds = childMembers.map((m) => m.id)
@@ -55,6 +67,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   let sections = 0
   let unfilled = 0
   let streaksAtRisk = 0
+  let allowanceCredited = 0
 
   // (1) Upcoming section training today.
   const { data: sectionItems } = await admin
@@ -113,6 +126,85 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
   }
 
+  // (4) Scheduled allowance credit (SC1). A child with no allowance_period
+  // configured is never credited — the query below only selects children
+  // with allowance_period IS NOT NULL and a positive allowance_amount
+  // (D-08: on/off only, no pause control). Idempotency (re-run safety,
+  // overlapping cron invocations) is fully handled by creditAwards' own
+  // (child_id, 'allowance', periodKey) pre-check + unique-index backstop
+  // (D-09, T-0510-09) — no bespoke idempotency query is added here.
+  const { data: allowanceChildren } =
+    childIds.length > 0
+      ? await admin
+          .from('children')
+          .select('id, allowance_amount, allowance_period, allowance_anchor')
+          .in('id', childIds)
+          .not('allowance_period', 'is', null)
+          .gt('allowance_amount', 0)
+      : {
+          data: [] as {
+            id: string
+            allowance_amount: number
+            allowance_period: string
+            allowance_anchor: number | null
+          }[],
+        }
+
+  // Derive today's day-of-month + the current month's length from the
+  // family-local `today` string (avoids re-deriving local-time components
+  // from a raw Date, which is what the pre-existing todayDow above already
+  // does for the section-reminder check).
+  const [todayYearStr, todayMonthStr, todayDayStr] = today.split('-')
+  const todayYear = Number(todayYearStr)
+  const todayMonth = Number(todayMonthStr)
+  const todayDay = Number(todayDayStr)
+  // Date.UTC(year, month, 0) rolls back to the last day of the PRIOR month
+  // when `month` is 0-indexed — passing the 1-indexed todayMonth here lands
+  // on the last day of the CURRENT month.
+  const daysInTodayMonth = new Date(Date.UTC(todayYear, todayMonth, 0)).getUTCDate()
+
+  for (const ac of allowanceChildren ?? []) {
+    if (ac.allowance_anchor == null) continue
+
+    let eligible = false
+    let periodKey = ''
+    if (ac.allowance_period === 'weekly') {
+      // No proration for a mid-period-added child (D-07): eligibility is
+      // purely today's anchor match, nothing else.
+      eligible = ac.allowance_anchor === todayDow
+      periodKey = isoWeekKey(now)
+    } else if (ac.allowance_period === 'monthly') {
+      // Clamp: an anchor beyond the current month's length (e.g. 31 in a
+      // 30-day month) fires on the month's LAST day instead of never firing.
+      const effectiveAnchorDay = Math.min(ac.allowance_anchor, daysInTodayMonth)
+      eligible = todayDay === effectiveAnchorDay
+      periodKey = today.slice(0, 7) // YYYY-MM
+    }
+    if (!eligible) continue
+
+    const { creditedCoins } = await creditAwards(admin, ac.id, [
+      {
+        coins: ac.allowance_amount,
+        description: 'Пособие',
+        icon: '💰',
+        sourceType: 'allowance',
+        sourceId: periodKey,
+      },
+    ])
+    if (creditedCoins > 0) {
+      allowanceCredited++
+      const member = childMembers.find((m) => m.child_id === ac.id)
+      if (member) {
+        pushItems.push({
+          memberId: member.id,
+          title: 'Пособие зачислено',
+          body: `+${creditedCoins} 🪙`,
+          url: '/kid/wallet',
+        })
+      }
+    }
+  }
+
   // Resolve child push subscriptions and send — one Promise.allSettled batch
   // across all three checks. NEVER notifyChild/notifyParent here: those use a
   // session-bound client that returns 0 rows in cron context (T-0510-06).
@@ -141,5 +233,5 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const sent = results.filter((r) => r.status === 'fulfilled').length
   const failed = results.filter((r) => r.status === 'rejected').length
 
-  return NextResponse.json({ sent, failed, sections, unfilled, streaksAtRisk })
+  return NextResponse.json({ sent, failed, sections, unfilled, streaksAtRisk, allowanceCredited })
 }

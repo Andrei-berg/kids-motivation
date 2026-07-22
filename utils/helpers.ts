@@ -26,6 +26,29 @@ export function localDateString(date: Date = new Date()): string {
 }
 
 /**
+ * ISO-8601 week key for a date, e.g. '2026-W29'. Weeks start Monday; week 1
+ * is the week containing the year's first Thursday (standard ISO-8601 rule).
+ * The returned year is the ISO week-year, which can differ from the
+ * calendar year for dates near Jan 1 (e.g. Dec 31 can fall in week 1 of the
+ * following ISO year, and Jan 1-3 can fall in the last week of the prior
+ * ISO year). Used as the weekly allowance period key (D-09).
+ */
+export function isoWeekKey(date: Date): string {
+  // Copy and normalize to midnight UTC so day-of-month arithmetic below is
+  // unaffected by the local time-of-day component.
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+  // ISO day-of-week: Monday=1 ... Sunday=7 (JS getUTCDay(): Sunday=0).
+  const isoDow = d.getUTCDay() === 0 ? 7 : d.getUTCDay()
+  // Shift to the Thursday of this ISO week — the Thursday's calendar year
+  // is always the correct ISO week-year.
+  d.setUTCDate(d.getUTCDate() + (4 - isoDow))
+  const isoWeekYear = d.getUTCFullYear()
+  const yearStart = new Date(Date.UTC(isoWeekYear, 0, 1))
+  const weekNumber = Math.ceil(((d.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7)
+  return `${isoWeekYear}-W${String(weekNumber).padStart(2, '0')}`
+}
+
+/**
  * Получить понедельник текущей недели
  */
 export function getMonday(date: Date | string): string {
