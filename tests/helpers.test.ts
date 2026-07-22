@@ -5,6 +5,7 @@ import {
   getWeekRange,
   addDays,
   calculatePercentage,
+  isoWeekKey,
 } from '../utils/helpers'
 
 describe('getLevelFromXP', () => {
@@ -88,5 +89,18 @@ describe('calculatePercentage', () => {
 
   it('calculates correctly at 50%', () => {
     expect(calculatePercentage(50, 100)).toBe(50)
+  })
+})
+
+describe('isoWeekKey', () => {
+  it('returns the ISO-8601 week for a mid-year date', () => {
+    // 2026-07-13 is a Monday in ISO week 29 of 2026.
+    expect(isoWeekKey(new Date('2026-07-13'))).toBe('2026-W29')
+  })
+
+  it('resolves the correct ISO week-year at a Jan 1 boundary', () => {
+    // 2027-01-01 is a Friday that belongs to ISO week 53 of 2026 (the ISO
+    // week-year differs from the calendar year of the date itself).
+    expect(isoWeekKey(new Date('2027-01-01'))).toBe('2026-W53')
   })
 })
