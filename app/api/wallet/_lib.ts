@@ -234,7 +234,22 @@ export async function processPurchase(
   const isCoins = reward.reward_type === 'coins'
   const priceCoins = isCoins ? reward.price_coins || 0 : 0
 
-  const autoApprove = reward.auto_approve === true
+  // Trust-limit auto-approve (phase 05.10 SC2, D-01/D-02/D-04). Read the
+  // child's trust limit server-side only — NEVER accept it or priceCoins
+  // from the request body (T-0510-01): a client cannot inflate its own
+  // ceiling. Default 0 = disabled; a family that never opts in gets zero
+  // trust-limit auto-approvals (D-04, T-0510-02).
+  const { data: childRow } = await admin
+    .from('children')
+    .select('trust_limit_coins')
+    .eq('id', childId)
+    .maybeSingle()
+  const trustLimit = (childRow as { trust_limit_coins?: number } | null)?.trust_limit_coins ?? 0
+
+  const rewardAutoApprove = reward.auto_approve === true
+  const trustAutoApprove = trustLimit > 0 && priceCoins > 0 && priceCoins <= trustLimit
+  // D-02: additive OR-combine — nothing existing changes behavior.
+  const autoApprove = rewardAutoApprove || trustAutoApprove
   // Debit atomically with a 0 floor so a concurrent op can't let the child
   // overspend into the red. newCoins is the authoritative post-balance.
   let newCoins = wallet.coins
@@ -261,7 +276,16 @@ export async function processPurchase(
       status: autoApprove ? 'approved' : 'pending',
       frozen_coins: 0,
       fulfilled: false,
-      ...(autoApprove ? { processed_by: 'auto', processed_at: new Date().toISOString() } : {}),
+      // D-03: distinct provenance marker so the parent journal can show WHY
+      // a purchase skipped review — trust limit vs. the existing instant-
+      // reward flag (T-0510-03). 'auto' still wins when the reward itself
+      // is flagged, matching pre-existing behavior byte-for-byte.
+      ...(autoApprove
+        ? {
+            processed_by: trustAutoApprove && !rewardAutoApprove ? 'auto_trust' : 'auto',
+            processed_at: new Date().toISOString(),
+          }
+        : {}),
       balance_after_coins: newCoins,
       balance_after_money: Number(wallet.money),
       family_id: familyId,
@@ -276,12 +300,22 @@ export async function processPurchase(
     .eq('id', rewardId)
 
   if (priceCoins > 0) {
+    // D-03: journal description carries WHY a purchase auto-approved (or
+    // stayed pending) — no new join/UI needed, this surfaces in the
+    // existing parent Dashboard Activity feed (built from
+    // wallet_transactions) as-is.
+    const autoApproveSuffix =
+      trustAutoApprove && !rewardAutoApprove
+        ? ' · авто (лимит доверия)'
+        : rewardAutoApprove
+          ? ' · авто (мгновенная награда)'
+          : ''
     await insertTx(admin, childId, {
       family_id: familyId,
       transaction_type: 'spend_coins',
       coins_change: -priceCoins,
       money_change: 0,
-      description: `Куплено: ${reward.title}`,
+      description: `Куплено: ${reward.title}${autoApproveSuffix}`,
       icon: reward.icon,
       related_id: created.id,
       related_type: 'reward',
