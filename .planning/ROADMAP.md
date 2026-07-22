@@ -340,11 +340,11 @@ Plans:
 - [x] 05.9-03-PLAN.md — [BLOCKING] apply the 3 migrations to the live DB in order + schema readback
 - [x] 05.9-04-PLAN.md — grade_coin_map read-time fallback (server+client) + clampGradeCoinMap PATCH validator
 - [x] 05.9-05-PLAN.md — behavior.repo.ts (CRUD + propose) + BehaviorTagsManager settings editor
-- [ ] 05.9-06-PLAN.md — Award route: grade_coin_map lookup + behavior approved-mark sum (both flag paths) + badges/streaks type-fix + tests
+- [x] 05.9-06-PLAN.md — Award route: grade_coin_map lookup + behavior approved-mark sum (both flag paths) + badges/streaks type-fix + tests
 - [ ] 05.9-07-PLAN.md — Behavior approve/reject server actions + approval queue + DailyModal behavior section + approval test
-- [ ] 05.9-08-PLAN.md — Kid day-fill: data-driven grade input (string) + propose-a-tag picker; BulkModal type-only fix
+- [x] 05.9-08-PLAN.md — Kid day-fill: data-driven grade input (string) + propose-a-tag picker; BulkModal type-only fix
 - [ ] 05.9-09-PLAN.md — Settings CoinsRulesTab: preset cards + diff-preview + grade-scale editor + mount managers/queue
-- [ ] 05.9-10-PLAN.md — Onboarding preset picker (replaces StepCoinRules) + server-side completeOnboarding (RLS fix)
+- [x] 05.9-10-PLAN.md — Onboarding preset picker (replaces StepCoinRules) + server-side completeOnboarding (RLS fix)
 
 ### Phase 5.10: automation
 **Goal**: The routine runs itself — allowance, small approvals and reminders need no parent action
