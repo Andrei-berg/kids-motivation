@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: ready_to_plan
-stopped_at: Phase 05.9 UI-SPEC approved
-last_updated: "2026-07-21T18:42:09.881Z"
+stopped_at: Completed 05.9-07-PLAN.md
+last_updated: "2026-07-22T09:59:40.983Z"
 last_activity: 2026-07-21
 progress:
   total_phases: 16
   completed_phases: 12
   total_plans: 86
-  completed_plans: 75
+  completed_plans: 84
   percent: 75
 ---
 
@@ -61,7 +61,7 @@ Last activity: 2026-07-21
 Prior GSD activity: 2026-07-07 — executed 05.3-02 (shared atoms module in components/design/atoms.tsx)
 ```
 
-Progress: [██████████] 97%
+Progress: [██████████] 98%
 
 ---
 
@@ -151,9 +151,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-07-21T14:00:52.455Z
-Stopped at: Phase 05.9 UI-SPEC approved
-Resume file: .planning/phases/05.9-rules-presets/05.9-UI-SPEC.md
+Last session: 2026-07-22T09:59:40.963Z
+Stopped at: Completed 05.9-07-PLAN.md
+Resume file: None
 
 ---
 
@@ -208,6 +208,7 @@ Resume file: .planning/phases/05.9-rules-presets/05.9-UI-SPEC.md
 - [Phase 05.3-02]: Stamp reduced-motion double-guarded: keyframes inside a no-preference media query (hydration-safe) plus a post-mount JS check dropping the animation property
 - [Phase 05.3-03]: LedgerRow has no `signed` prop (05.3-02 as-built interface) — credit amounts show no explicit '+' prefix; coins_change already carries its own sign so no information is lost
 - [Phase 05.3-03]: Parent dashboard ActivityRow dropped the redundant tone Pill + separate Coin amount in favor of a single LedgerRow (plan explicitly permitted this simplification)
+- [Phase 05.9]: Plan 07: behavior-mark approval is status-only (no coin mutation); crediting happens on the next /api/wallet/award POST
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 
