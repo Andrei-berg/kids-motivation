@@ -16,6 +16,8 @@ import { useAppStore } from '@/lib/store'
 import { repairAchievements } from '@/app/actions/repair-achievements'
 import { PRESET_IDS, getPresetValues, GRADE_SCALE_VALUES, defaultGradeCoinMap, type PresetId, type GradeScale } from '@/lib/presets'
 import { Amount } from '@/components/design/atoms'
+import BehaviorTagsManager from '@/components/settings/BehaviorTagsManager'
+import BehaviorApprovalQueue from '@/components/parent-center/screens/BehaviorApprovalQueue'
 import PeriodsManager from '@/components/settings/PeriodsManager'
 import SectionsManager from '@/components/settings/SectionsManager'
 import SubjectsManager from '@/components/settings/SubjectsManager'
@@ -480,6 +482,17 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
       <Btn variant="primary" size="lg" onClick={save} disabled={saving} full>
         {saving ? t('parentCenter.settings.coinsRules.saving') : t('parentCenter.settings.coinsRules.saveBtn')}
       </Btn>
+
+      {/* Behavior tags manager + approval queue — 24px (lg) vertical rhythm
+          separates this from the coin-rules cards above (UI-SPEC Spacing Scale). */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 24 }}>
+        <Card pad={16}>
+          <BehaviorTagsManager/>
+        </Card>
+        <Card pad={16}>
+          <BehaviorApprovalQueue/>
+        </Card>
+      </div>
     </div>
   )
 }
