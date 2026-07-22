@@ -14,6 +14,8 @@ import { useLanguage, SUPPORTED_LANGUAGES, useT } from '@/lib/i18n'
 import { insertAuditEvent } from '@/lib/repositories/audit.repo'
 import { useAppStore } from '@/lib/store'
 import { repairAchievements } from '@/app/actions/repair-achievements'
+import { PRESET_IDS, getPresetValues, type PresetId } from '@/lib/presets'
+import { Amount } from '@/components/design/atoms'
 import PeriodsManager from '@/components/settings/PeriodsManager'
 import SectionsManager from '@/components/settings/SectionsManager'
 import SubjectsManager from '@/components/settings/SubjectsManager'
@@ -163,6 +165,13 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
   const [settings, setSettings] = useState<WalletSettings | null>(null)
   const [saving, setSaving] = useState(false)
 
+  // ── Rule presets (D-03): pick a card -> diff-preview -> confirm/cancel.
+  // The confirm write goes through updateWalletSettingsApi (server PATCH) —
+  // never a direct client wallet_settings write.
+  const [selectedPresetId, setSelectedPresetId] = useState<PresetId | null>(null)
+  const [showPresetDiff, setShowPresetDiff] = useState(false)
+  const [applyingPreset, setApplyingPreset] = useState(false)
+
   useEffect(() => {
     getWalletSettings().then(s => s && setSettings(s)).catch(() => {})
   }, [])
@@ -170,6 +179,74 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
   if (!settings) return <div style={{ color: T.muted, padding: 20, textAlign: 'center' }}>{t('common.loading')}</div>
 
   const up = (k: keyof WalletSettings, v: string) => setSettings(s => s ? { ...s, [k]: Number(v) || 0 } : s)
+
+  // D-02's exact preset field scope (see lib/presets.ts) — icon + label per field,
+  // reused for the diff-preview rows below.
+  const PRESET_FIELD_LABELS: Record<string, { icon: string; label: string }> = {
+    coins_per_grade_5: { icon: '🏆', label: t('settings.coinRules.grade5') },
+    coins_per_grade_4: { icon: '👍', label: t('settings.coinRules.grade4') },
+    coins_per_grade_3: { icon: '📉', label: t('settings.coinRules.grade3') },
+    coins_per_grade_2: { icon: '⚠️', label: t('settings.coinRules.grade2') },
+    coins_per_grade_1: { icon: '🚫', label: t('settings.coinRules.grade1') },
+    coins_per_room_task: { icon: '🧹', label: t('settings.coinRules.roomCleaned') },
+    coins_per_good_behavior: { icon: '⭐', label: t('settings.coinRules.goodBehavior') },
+    coins_per_exercise: { icon: '🏃', label: t('settings.coinRules.exercise') },
+    coins_per_coach_5: { icon: '🥇', label: t('settings.coinRules.coachGrade5') },
+    coins_per_coach_4: { icon: '🥈', label: t('settings.coinRules.coachGrade4') },
+    coins_per_coach_3: { icon: '🥉', label: t('settings.coinRules.coachGrade3') },
+    coins_per_coach_2: { icon: '🥉', label: t('settings.coinRules.coachGrade2') },
+    coins_per_coach_1: { icon: '🥉', label: t('settings.coinRules.coachGrade1') },
+    coins_per_book: { icon: '📚', label: t('settings.coinRules.book') },
+  }
+
+  const PRESET_COPY: Record<PresetId, { title: string; subhead: string }> = {
+    classic: { title: t('settings.rulePresets.presetClassicTitle'), subhead: t('settings.rulePresets.presetClassicSubhead') },
+    no_penalties: { title: t('settings.rulePresets.presetNoPenaltiesTitle'), subhead: t('settings.rulePresets.presetNoPenaltiesSubhead') },
+    bonuses_only: { title: t('settings.rulePresets.presetBonusesOnlyTitle'), subhead: t('settings.rulePresets.presetBonusesOnlySubhead') },
+  }
+
+  const selectedPatch = selectedPresetId ? getPresetValues(selectedPresetId) : null
+  const presetDiffRows = selectedPatch
+    ? Object.entries(selectedPatch).filter(([key, newVal]) => (settings as unknown as Record<string, number>)[key] !== newVal)
+    : []
+
+  function pickPreset(id: PresetId) {
+    setSelectedPresetId(id)
+    setShowPresetDiff(false)
+  }
+
+  function openPresetDiff() {
+    if (!selectedPresetId) return
+    setShowPresetDiff(true)
+  }
+
+  function cancelPresetDiff() {
+    setShowPresetDiff(false)
+  }
+
+  async function confirmApplyPreset() {
+    if (!selectedPresetId || !settings) return
+    setApplyingPreset(true)
+    try {
+      const patch = getPresetValues(selectedPresetId)
+      const updated = await updateWalletSettingsApi({ ...settings, ...patch })
+      setSettings(updated)
+      notify(t('parentCenter.settings.coinsRules.saved'))
+      void insertAuditEvent({
+        family_id: familyId ?? '', child_id: null,
+        action_type: 'settings_change',
+        description: `Settings updated: rule preset applied (${selectedPresetId})`,
+        coins_delta: null, actor_user_id: null,
+        metadata: { tab: 'coins', preset: selectedPresetId },
+      })
+      setShowPresetDiff(false)
+      setSelectedPresetId(null)
+    } catch {
+      notify(t('parentCenter.settings.coinsRules.saveFailed'), 'danger')
+    } finally {
+      setApplyingPreset(false)
+    }
+  }
 
   const save = async () => {
     setSaving(true)
@@ -205,6 +282,72 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <Card pad={16}>
+        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+          {t('settings.rulePresets.title')}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {PRESET_IDS.map(id => {
+            const active = selectedPresetId === id
+            const copy = PRESET_COPY[id]
+            return (
+              <button key={id} onClick={() => pickPreset(id)} style={{
+                textAlign: 'left', padding: 14,
+                background: active ? T.indigoSoft : T.bg1,
+                border: `1px solid ${active ? 'rgba(108,92,231,0.5)' : T.cardBorder}`,
+                borderRadius: T.rM,
+                boxShadow: active ? `0 0 20px ${T.indigo}22` : 'none',
+                cursor: 'pointer', transition: 'all .15s',
+                display: 'flex', flexDirection: 'column', gap: 4,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: T.text }}>{copy.title}</span>
+                  {active && <span style={{ width: 8, height: 8, borderRadius: '50%', background: T.indigo, flexShrink: 0 }}/>}
+                </div>
+                <span style={{ fontSize: 12, color: T.muted, lineHeight: 1.4 }}>{copy.subhead}</span>
+              </button>
+            )
+          })}
+        </div>
+        <Btn variant="primary" size="lg" onClick={openPresetDiff} disabled={!selectedPresetId || applyingPreset} full style={{ marginTop: 12 }}>
+          {t('settings.rulePresets.applyBtn')}
+        </Btn>
+
+        {showPresetDiff && selectedPresetId && (
+          <div style={{ marginTop: 14, padding: 14, background: T.bg1, border: `1px solid ${T.cardBorder}`, borderRadius: T.rM }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 10 }}>
+              {t('settings.rulePresets.diffHeading')}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {presetDiffRows.length === 0 && (
+                <div style={{ fontSize: 12, color: T.muted }}>{t('settings.rulePresets.diffNoChanges')}</div>
+              )}
+              {presetDiffRows.map(([key, newVal]) => {
+                const field = PRESET_FIELD_LABELS[key]
+                const oldVal = (settings as unknown as Record<string, number>)[key] ?? 0
+                const nv = newVal as number
+                return (
+                  <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderTop: `1px solid ${T.cardBorder}` }}>
+                    <span style={{ fontSize: 14 }}>{field?.icon ?? '🪙'}</span>
+                    <span style={{ flex: 1, fontSize: 13, color: T.textDim }}>{field?.label ?? key}</span>
+                    <Amount value={oldVal} theme="ink" size="md" money={false} color={T.muted}/>
+                    <span style={{ color: T.muted, fontSize: 12 }}>→</span>
+                    <Amount value={nv} theme="ink" size="lg" money={nv >= 0} signed color={nv < 0 ? T.danger : undefined}/>
+                  </div>
+                )
+              })}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+              <Btn variant="ghost" size="md" onClick={cancelPresetDiff} style={{ flex: 1 }}>
+                {t('settings.rulePresets.diffCancel')}
+              </Btn>
+              <Btn variant="primary" size="md" onClick={confirmApplyPreset} disabled={applyingPreset} style={{ flex: 1 }}>
+                {applyingPreset ? t('parentCenter.settings.coinsRules.saving') : t('settings.rulePresets.diffConfirm')}
+              </Btn>
+            </div>
+          </div>
+        )}
+      </Card>
       <Card pad={16}>
         <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
           {t('parentCenter.settings.coinsRules.schoolGrades')}

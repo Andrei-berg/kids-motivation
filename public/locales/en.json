@@ -857,6 +857,9 @@
       "coachGrade5": "Coach grade 5",
       "coachGrade4": "Coach grade 4",
       "coachGrade3": "Coach grade 3",
+      "coachGrade2": "Coach grade 2",
+      "coachGrade1": "Coach grade 1",
+      "book": "Book finished",
       "monthlyLimit": "Monthly Coin Limit",
       "enableLimit": "Enable limit",
       "maxCoinsPerTask": "Max coins per task per month",
@@ -932,6 +935,7 @@
     "pinInfo": "Set PINs in the full settings page so children can log in to their accounts.",
     "managePins": "Manage PINs & Settings",
     "rulePresets": {
+      "title": "Rule Presets",
       "applyBtn": "Apply preset",
       "presetClassicTitle": "Classic",
       "presetClassicSubhead": "Grades and behavior both have consequences — good effort earns coins, poor effort costs them.",
@@ -940,6 +944,7 @@
       "presetBonusesOnlyTitle": "Bonuses Only",
       "presetBonusesOnlySubhead": "Same as No Penalties — coins are always a reward, never a deduction.",
       "diffHeading": "Review changes before applying",
+      "diffNoChanges": "No changes for this preset.",
       "diffConfirm": "Apply these changes",
       "diffCancel": "Keep current rules"
     },
@@ -948,7 +953,8 @@
       "fivePoint": "5-point",
       "twelvePoint": "12-point",
       "aToF": "A–F",
-      "switchNotice": "Past grades keep their original value. New grades will use the {{scale}} scale."
+      "switchNotice": "Past grades keep their original value. New grades will use the {{scale}} scale.",
+      "rowLabel": "Grade {{grade}}"
     },
     "behaviorTags": {
       "title": "Behavior Tags",
