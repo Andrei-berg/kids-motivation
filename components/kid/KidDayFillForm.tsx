@@ -13,6 +13,8 @@ import { getSubjectGradesForDate, saveSubjectGrade } from '@/lib/repositories/gr
 import { getWalletSettings } from '@/lib/repositories/wallet.repo'
 import { getRoomTasks, getRoomChecks, saveRoomChecks } from '@/lib/repositories/room.repo'
 import type { RoomTask, RoomLegacyKey } from '@/lib/models/room.types'
+import { getBehaviorTags, getBehaviorMarks, proposeMark } from '@/lib/repositories/behavior.repo'
+import type { BehaviorTag, BehaviorMark } from '@/lib/models/behavior.types'
 import { assembleDayBlocks } from '@/lib/day-blocks'
 import { getDayBlockEntries, saveDayBlockEntries } from '@/lib/repositories/day-blocks.repo'
 import type { DayBlock } from '@/lib/models/day-block.types'
@@ -24,7 +26,9 @@ import { supabase } from '@/lib/supabase'
 import { getReadingLog, saveReadingLog } from '@/lib/vacation-api'
 import { T } from '@/components/kid/design/tokens'
 import { AnimatedNum } from '@/components/kid/design/atoms'
+import { Tick, StatusChip, Amount } from '@/components/design/atoms'
 import { base, paper } from '@/lib/design/tokens'
+import { GRADE_SCALE_VALUES, defaultGradeCoinMap } from '@/lib/presets'
 import BlockCard from '@/components/kid/day-blocks/BlockCard'
 import RoomBlock from '@/components/kid/day-blocks/RoomBlock'
 import ActivitiesBlock from '@/components/kid/day-blocks/ActivitiesBlock'
@@ -33,10 +37,13 @@ import CustomBlock from '@/components/kid/day-blocks/CustomBlock'
 import { useT } from '@/lib/i18n'
 import { localDateString } from '@/utils/helpers'
 import { track } from '@/lib/analytics'
+import { useAppStore } from '@/lib/store'
 
-// Pre-load fallback only — mirrors SETTINGS_DEFAULTS in app/api/wallet/_lib.ts.
-// The live preview uses the loaded per-family wallet_settings (WR-05).
-const GRADE_COINS: Record<number, number> = { 5: 10, 4: 5, 3: -3, 2: -5, 1: -10 }
+// Grade input is now data-driven (05.9, D-06): the active scale's option list
+// (GRADE_SCALE_VALUES) and its coin lookup (grade_coin_map, falling back to
+// defaultGradeCoinMap) replace the old hardcoded 5-point switch/GRADE_COINS
+// table. Grades are stored as literal string values ('11', 'B', '5'), never
+// Number()-cast.
 
 // ============================================================================
 // TYPES
@@ -139,9 +146,32 @@ export function KidDayFillForm({
   const [noteChild, setNoteChild] = useState<string>(existingDay?.note_child ?? '')
   // Grades
   // saved=true means already in DB — skip on submit to avoid duplicates
-  type GradeEntry = { grade: number | null; isDigital: boolean; saved: boolean }
+  // grade is a literal string value (e.g. '11', 'B', '5') per the active
+  // grade_scale (D-06) — never a number.
+  type GradeEntry = { grade: string | null; isDigital: boolean; saved: boolean }
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [kidGrades, setKidGrades] = useState<Record<string, GradeEntry[]>>({})
+
+  // ── Grade scale (05.9, D-06) — data-driven from the family's wallet_settings.
+  // grade_coin_map/grade_scale are always populated by getWalletSettings' fallback
+  // (05.9 Plan 04), so this never needs a null-check beyond the ?? default.
+  const gradeScale = settings?.grade_scale ?? 'five_point'
+  const gradeCoinMap = settings?.grade_coin_map ?? defaultGradeCoinMap(gradeScale)
+  const gradeValues = GRADE_SCALE_VALUES[gradeScale] ?? GRADE_SCALE_VALUES.five_point
+
+  // ── Behavior tags (05.9) — child-proposes-a-tag picker. D-09 SCOPE NOTE
+  // (deliberate, documented divergence — see 05.9-08-SUMMARY.md): this form
+  // NEVER writes days.good_behavior. Behavior coin credit is parent-gated —
+  // proposed marks are always status='pending' (RLS-enforced, plan 01) and
+  // carry zero coins until a parent approves them (plan 07 approval action +
+  // plan 06 award-route summation). The legacy days.good_behavior dual-write/
+  // fallback lives entirely on the parent's DailyModal (plan 07) and the
+  // award-route's no-approved-mark fallback (plan 06) — NOT here.
+  const [behaviorTags, setBehaviorTags] = useState<BehaviorTag[]>([])
+  const [behaviorMarks, setBehaviorMarks] = useState<BehaviorMark[]>([])
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
+  const [proposingTags, setProposingTags] = useState(false)
+  const activeMemberId = useAppStore(s => s.activeMemberId)
 
   // ── Reading state ────────────────────────────────────────────────────────
   const [reading, setReading] = useState({
@@ -233,6 +263,25 @@ export function KidDayFillForm({
           checks.forEach(c => { initialChecked[c.task_id] = c.done })
         }
         setRoomChecked(initialChecked)
+
+        // Behavior tags (05.9) — the family's active tag set, for the
+        // "Propose a tag" picker. Non-fatal: an empty list just hides the
+        // section (behaviorTags.length > 0 gate at render time).
+        try {
+          const tags = await getBehaviorTags(familyId)
+          setBehaviorTags(tags)
+        } catch (e) {
+          console.warn('[KidDayFillForm] could not load behavior tags:', e)
+        }
+      }
+
+      // This day's behavior_marks (all statuses) — drives the pending
+      // "Waiting for parent" chip state per tag.
+      try {
+        const marks = await getBehaviorMarks(childId, date)
+        setBehaviorMarks(marks)
+      } catch (e) {
+        console.warn('[KidDayFillForm] could not load behavior marks:', e)
       }
 
       // Pre-fill reading log
@@ -277,11 +326,17 @@ export function KidDayFillForm({
       if (subs) {
         setSubjects(subs)
         const grades: SubjectGrade[] = gradesData ?? []
-        // Group existing grades by subject — pre-fill as saved entries
-        const bySubject: Record<string, Array<{ grade: number | null; isDigital: boolean; saved: boolean }>> = {}
+        // Group existing grades by subject — pre-fill as saved entries.
+        // subject_grades.grade is TEXT in the DB (05.9-02 migration); the
+        // shared SubjectGrade/saveSubjectGrade types (lib/models/child.types.ts,
+        // lib/repositories/grades.repo.ts) still declare `number` — that
+        // widening is out of this plan's file scope (grep for their exact
+        // files if generalizing further). String() here just preserves the
+        // literal value either way, without a lossy Number() round-trip.
+        const bySubject: Record<string, GradeEntry[]> = {}
         grades.forEach((g: SubjectGrade) => {
           if (!bySubject[g.subject]) bySubject[g.subject] = []
-          bySubject[g.subject].push({ grade: g.grade, isDigital: g.note === 'цифровое задание', saved: true })
+          bySubject[g.subject].push({ grade: String(g.grade), isDigital: g.note === 'цифровое задание', saved: true })
         })
         // Ensure every active subject has at least one empty entry for new input
         ;(subs as Subject[]).forEach((s: Subject) => {
@@ -316,22 +371,13 @@ export function KidDayFillForm({
         if (act) total += act.coins
       })
     }
-    // Grade coins — only unsaved (new) entries. Use wallet_settings so
-    // the preview matches what /api/wallet/award credits server-side; GRADE_COINS
-    // is only a fallback before settings load.
+    // Grade coins — only unsaved (new) entries. grade_coin_map[grade] mirrors
+    // the award route's lookup exactly (05.9, D-06/D-08) — no numeric switch,
+    // works for all three scales.
     if (legacyVisible('grade')) {
       Object.values(kidGrades).flat().forEach(e => {
         if (e.saved || e.grade === null) return
-        const g = e.grade
-        if (settings) {
-          if (g === 5) total += settings.coins_per_grade_5
-          else if (g === 4) total += settings.coins_per_grade_4
-          else if (g === 3) total += settings.coins_per_grade_3
-          else if (g === 2) total += settings.coins_per_grade_2
-          else if (g === 1) total += settings.coins_per_grade_1
-        } else {
-          total += GRADE_COINS[g] ?? 0
-        }
+        total += gradeCoinMap[e.grade] ?? 0
       })
     }
     // Coach rating coins for attended sections. coins_per_coach_2/_1 are already
@@ -362,12 +408,41 @@ export function KidDayFillForm({
       })
     }
     return total
-  }, [roomTasks, roomChecked, checkedActivities, activities, settings, kidGrades, sections, sectionNotes, reading, readingActive, requireReadingCheck, dayBlocksEnabled, visibleBlocks, customBlockDone])
+  }, [roomTasks, roomChecked, checkedActivities, activities, settings, gradeCoinMap, kidGrades, sections, sectionNotes, reading, readingActive, requireReadingCheck, dayBlocksEnabled, visibleBlocks, customBlockDone])
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   function toggleRoomTask(taskId: string) {
     if (isLocked) return
     setRoomChecked(prev => ({ ...prev, [taskId]: !prev[taskId] }))
+  }
+
+  // Behavior tag propose picker (05.9) — toggle-to-select, then a dedicated
+  // "Propose a tag" button inserts pending marks directly (client-writable,
+  // not money yet — RLS forces status='pending'; see behavior.repo.ts).
+  function toggleTagSelection(tagId: string) {
+    if (isLocked) return
+    setSelectedTagIds(prev => prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId])
+  }
+
+  async function handleProposeTags() {
+    if (selectedTagIds.length === 0 || proposingTags) return
+    setProposingTags(true)
+    try {
+      // activeMemberId is this child's own family_members.id (set at kid
+      // login — KidInitializer); childId is children.id, a different id.
+      const proposedBy = activeMemberId ?? childId
+      const newMarks: BehaviorMark[] = []
+      for (const tagId of selectedTagIds) {
+        const mark = await proposeMark({ childId, date, tagId, proposedBy })
+        newMarks.push(mark)
+      }
+      setBehaviorMarks(prev => [...prev, ...newMarks])
+      setSelectedTagIds([])
+    } catch (e) {
+      console.warn('[KidDayFillForm] propose tag failed:', e)
+    } finally {
+      setProposingTags(false)
+    }
   }
 
   function handleProofCapture(e: React.ChangeEvent<HTMLInputElement>) {
@@ -618,7 +693,13 @@ export function KidDayFillForm({
               date,
               subject,
               subjectId: sub?.id,
-              grade: entry.grade,
+              // subject_grades.grade is TEXT (05.9-02 migration) — entry.grade
+              // is the literal scale value ('11', 'B', '5'), never Number()-cast.
+              // saveSubjectGrade's own param type still says `number` (that
+              // repo function's signature is out of this plan's file scope —
+              // DailyModal.tsx also still calls it with a number); this cast
+              // preserves the literal string at runtime without lossy conversion.
+              grade: entry.grade as unknown as number,
               note: entry.isDigital ? 'цифровое задание' : undefined,
             })
           }
@@ -744,15 +825,19 @@ export function KidDayFillForm({
                 <div key={idx}>
                   {!entry.saved && (
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
-                      {[2, 3, 4, 5].map(g => {
-                        const colors: Record<number, string> = { 5: T.teal, 4: '#95E1B4', 3: T.sunDeep, 2: '#FF8FB1' }
-                        const c = colors[g]
+                      {/* Data-driven from the active grade_scale (05.9, D-06/D-08) —
+                          one button per scale value, colored by the previewed
+                          coin sign (grade_coin_map[g]) rather than a numeric
+                          threshold, so this works for five_point/twelve_point/a_f alike. */}
+                      {gradeValues.map(g => {
+                        const coinVal = gradeCoinMap[g] ?? 0
+                        const c = coinVal > 0 ? T.tealDeep : coinVal < 0 ? paper.dangerText : T.ink3
                         const on = entry.grade === g
                         return (
                           <button key={g} disabled={isLocked} onClick={() => setKidGrades(prev => ({ ...prev, [sub.name]: prev[sub.name].map((e, i) => i === idx ? { ...e, grade: e.grade === g ? null : g } : e) }))} style={{
-                            width: 38, height: 38, borderRadius: 19, cursor: isLocked ? 'not-allowed' : 'pointer',
+                            minWidth: 38, height: 38, padding: '0 6px', borderRadius: 19, cursor: isLocked ? 'not-allowed' : 'pointer',
                             background: on ? c : '#fff', border: on ? `2px solid ${c}` : `1.5px solid ${T.line}`,
-                            fontFamily: T.fDisp, fontSize: 16, fontWeight: 900, color: on ? '#fff' : T.ink, padding: 0,
+                            fontFamily: T.fDisp, fontSize: 16, fontWeight: 900, color: on ? '#fff' : T.ink,
                             boxShadow: on ? `0 3px 10px ${c}55` : 'none', transition: 'all 0.15s',
                           }}>{g}</button>
                         )
@@ -771,13 +856,19 @@ export function KidDayFillForm({
                       )}
                     </div>
                   )}
-                  {entry.saved && entry.grade !== null && (
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 999, background: T.lineSoft, marginRight: 6, marginBottom: 4 }}>
-                      <span style={{ fontFamily: T.fDisp, fontSize: 13, fontWeight: 900, color: entry.grade >= 4 ? T.tealDeep : entry.grade === 3 ? T.sunDeep : T.coral }}>{entry.grade}</span>
-                      {entry.isDigital && <span style={{ fontFamily: T.fBody, fontSize: 10, color: T.ink3 }}>📱</span>}
-                      <span style={{ fontFamily: T.fBody, fontSize: 10, color: T.teal, fontWeight: 700 }}>✓</span>
-                    </div>
-                  )}
+                  {entry.saved && entry.grade !== null && (() => {
+                    // Sign-based (grade_coin_map), not a numeric threshold —
+                    // works for every scale, not just five_point (05.9, D-06).
+                    const coinVal = gradeCoinMap[entry.grade] ?? 0
+                    const c = coinVal > 0 ? T.tealDeep : coinVal < 0 ? paper.dangerText : T.ink3
+                    return (
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 999, background: T.lineSoft, marginRight: 6, marginBottom: 4 }}>
+                        <span style={{ fontFamily: T.fDisp, fontSize: 13, fontWeight: 900, color: c }}>{entry.grade}</span>
+                        {entry.isDigital && <span style={{ fontFamily: T.fBody, fontSize: 10, color: T.ink3 }}>📱</span>}
+                        <span style={{ fontFamily: T.fBody, fontSize: 10, color: T.teal, fontWeight: 700 }}>✓</span>
+                      </div>
+                    )
+                  })()}
                 </div>
               ))}
               {!isLocked && (
@@ -914,6 +1005,67 @@ export function KidDayFillForm({
     />
   )
 
+  // ─── Behavior tag propose picker (05.9) ──────────────────────────────────
+  // D-09 SCOPE NOTE (deliberate, documented divergence — see
+  // 05.9-08-SUMMARY.md): this body only ever INSERTs status='pending' marks
+  // (proposeMark, RLS-enforced) — it never writes days.good_behavior. Behavior
+  // coin credit is parent-gated; the legacy days.good_behavior dual-write/
+  // fallback lives entirely on the parent's DailyModal (plan 07) and the
+  // award-route's no-approved-mark fallback (plan 06), not here. No coins are
+  // shown as "earned" here — a pending mark renders "Waiting for parent" and
+  // is never added to coinsPreview.
+  const behaviorBody = (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {behaviorTags.map(tag => {
+          const pendingMark = behaviorMarks.find(m => m.tag_id === tag.id && m.status === 'pending')
+          if (pendingMark) {
+            return (
+              <div key={tag.id} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px',
+                borderRadius: 999, background: '#fff', border: `1px solid ${T.line}`,
+              }}>
+                <span style={{ fontSize: 14 }}>{tag.icon ?? '⭐'}</span>
+                <span style={{ fontFamily: T.fBody, fontSize: 12, fontWeight: 600, color: T.ink }}>{tag.name}</span>
+                <StatusChip tone="warning" theme="paper">{t('kidDay.behavior.waitingForParent')}</StatusChip>
+              </div>
+            )
+          }
+          const on = selectedTagIds.includes(tag.id)
+          return (
+            <button key={tag.id} disabled={isLocked} onClick={() => toggleTagSelection(tag.id)} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 999,
+              border: on ? `1.5px solid ${paper.accent}` : `1px solid ${T.line}`,
+              background: on ? `${paper.accent}1F` : '#fff', cursor: isLocked ? 'not-allowed' : 'pointer',
+            }}>
+              <Tick on={on} theme="paper" size={16}/>
+              <span style={{ fontSize: 14 }}>{tag.icon ?? '⭐'}</span>
+              <span style={{ fontFamily: T.fBody, fontSize: 12, fontWeight: 600, color: T.ink }}>{tag.name}</span>
+              {/* UI-SPEC: a negative-price tag's value renders via Amount with
+                  money={false} in dangerText — never gold, since it previews
+                  a penalty, not an earned reward. Positive prices use the
+                  normal gold-money path. */}
+              {tag.price !== 0 && (
+                tag.price > 0
+                  ? <Amount value={tag.price} theme="paper" money size="sm" signed/>
+                  : <Amount value={tag.price} theme="paper" money={false} color={paper.dangerText} size="sm"/>
+              )}
+            </button>
+          )
+        })}
+      </div>
+      {selectedTagIds.length > 0 && !isLocked && (
+        <button onClick={handleProposeTags} disabled={proposingTags} style={{
+          alignSelf: 'flex-start', height: 36, padding: '0 16px', borderRadius: 18, border: 'none',
+          background: paper.accent, color: '#fff', fontFamily: T.fDisp, fontSize: 13, fontWeight: 800,
+          cursor: proposingTags ? 'not-allowed' : 'pointer', opacity: proposingTags ? 0.7 : 1,
+        }}>
+          {proposingTags ? t('kidFillForm.saving') : t('kidDay.behavior.proposeBtn')}
+        </button>
+      )}
+    </div>
+  )
+
   // Flag-on: one BlockCard per assembled block, titled/iconed from the
   // block's own config (parent-editable — Plan 05). Built-in blocks
   // (legacy_key non-null) reuse the exact bodies above; 'behavior' has no
@@ -1031,6 +1183,17 @@ export function KidDayFillForm({
           })}
         </div>
       </BlockCard>
+
+      {/* ─── Behavior tags (05.9) — always shown, like Mood: proposing a
+           tag is not a day-blocks credit source (D-09), so it isn't gated
+           by dayBlocksEnabled/visibleBlocks. Hidden entirely when the family
+           has no active tags (should not happen — the default "Good behavior"
+           tag is seeded for every family, plan 01/03). ─── */}
+      {behaviorTags.length > 0 && (
+        <BlockCard title={t('kidFillForm.behaviorSection')} icon="🌟">
+          {behaviorBody}
+        </BlockCard>
+      )}
 
       {dayBlocksEnabled ? (
         // WR-02: flag-on is AUTHORITATIVE — even with zero visible blocks the
