@@ -11,7 +11,7 @@
 - ✅ **v2.0 Role-Based UI** — Phases 2.1–2.6 (shipped 2026-04-13)
 - ✅ **v3.0 Communication** — Phases 3.1–3.3 (shipped 2026-04-26)
 - 📋 **v4.0 PWA Polish** — Phases 4.1–4.5 (planned)
-- 📋 **v5.0 Flexibility & Design** — Phases 5.1–5.11 (planned 2026-07-05)
+- ✅ **v5.0 Flexibility & Design** — Phases 5.1–5.11 (shipped 2026-07-23)
 - 📋 **v6.0 Monetization** — Phases 6.1–6.3 (planned)
 - 📋 **v7.0 Social** — Phases 7.1–7.3 (planned)
 - 📋 **v8.0 Native Apps** — Phases 8.1–8.3 (planned)
@@ -178,7 +178,7 @@ Plans:
 - [x] **Phase 5.6: day-blocks** — Day assembly engine: day type × schedule × block rules; per-child `day_blocks` config; block-list renderer replaces hardcoded form sections; award computes from blocks; per-family feature flag (5/5 plans executed 2026-07-14; verification: gaps_found 2/4 — see 05.6-VERIFICATION.md) (completed 2026-07-14)
 - [x] **Phase 5.7: kid-redesign** — Kid screens on unified tokens, nav 6→5 (leaderboard becomes a tab inside awards), motion discipline (single signature gesture) (completed 2026-07-18)
 - [x] **Phase 5.8: parent-redesign** — Parent Center on unified tokens + Day Constructor UI + Year Calendar screen + Weekly Summary card (completed 2026-07-21)
-- [ ] **Phase 5.9: rules-presets** — Rule presets (Classic / No-penalties / Bonuses-only), `grade_scale` per family, configurable behavior tags
+- [x] **Phase 5.9: rules-presets** — Rule presets (Classic / No-penalties / Bonuses-only), `grade_scale` per family, configurable behavior tags (completed 2026-07-23)
 - [x] **Phase 5.10: automation** — Scheduled allowance, auto-approve under trust limit, schedule-driven smart reminders (completed 2026-07-22)
 - [x] **Phase 5.11: legacy-cleanup** — Redirect + delete legacy pages, purge globals.css, FamilyCoins app icon/splash/manifest (completed 2026-07-23)
 
@@ -333,7 +333,7 @@ Plans:
   1. Presets Classic / No-penalties / Bonuses-only apply predefined `wallet_settings` values; offered during onboarding and in Settings
   2. `grade_scale` per family (5-point / 12-point / A–F) drives grade input and award mapping
   3. Behavior is a configurable tag set with per-tag prices instead of a single binary flag
-**Plans**: 10 plans
+**Plans:** 10/10 plans complete
 Plans:
 - [x] 05.9-01-PLAN.md — Migrations: grade_scale/grade_coin_map cols, subject_grades TEXT widen, behavior_tags/behavior_marks (authoring only)
 - [x] 05.9-02-PLAN.md — Foundation: lib/presets.ts + WalletSettings/behavior types + all i18n keys + presets unit test
@@ -343,7 +343,7 @@ Plans:
 - [x] 05.9-06-PLAN.md — Award route: grade_coin_map lookup + behavior approved-mark sum (both flag paths) + badges/streaks type-fix + tests
 - [x] 05.9-07-PLAN.md — Behavior approve/reject server actions + approval queue + DailyModal behavior section + approval test
 - [x] 05.9-08-PLAN.md — Kid day-fill: data-driven grade input (string) + propose-a-tag picker; BulkModal type-only fix
-- [ ] 05.9-09-PLAN.md — Settings CoinsRulesTab: preset cards + diff-preview + grade-scale editor + mount managers/queue
+- [x] 05.9-09-PLAN.md — Settings CoinsRulesTab: preset cards + diff-preview + grade-scale editor + mount managers/queue
 - [x] 05.9-10-PLAN.md — Onboarding preset picker (replaces StepCoinRules) + server-side completeOnboarding (RLS fix)
 
 ### Phase 5.10: automation

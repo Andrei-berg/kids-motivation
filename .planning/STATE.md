@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v4.0
-milestone_name: — PWA Polish
-status: Phase 05.11 complete
-stopped_at: Phase 05.11 UI-SPEC approved
-last_updated: "2026-07-23T16:39:01.039Z"
+milestone: v5.0
+milestone_name: Flexibility & Design Unification
+status: Milestone complete — all 11 phases (5.1-5.11) done
+stopped_at: Phase 05.9 Plan 09 human-verify checkpoint approved by operator
+last_updated: "2026-07-23T18:00:00.000Z"
 last_activity: 2026-07-23
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 22
-  completed_plans: 23
+  total_phases: 11
+  completed_phases: 11
+  total_plans: 71
+  completed_plans: 71
   percent: 100
 ---
 
@@ -49,7 +49,8 @@ progress:
 ## Текущая позиция
 
 ```
-Milestone v4.0 PWA Polish — In Progress
+Milestone v5.0 Flexibility & Design Unification — COMPLETE (all 11 phases, 5.1-5.11)
+Phase 05.9 (rules-presets): COMPLETE 2026-07-23 — last plan 05.9-09 (Settings CoinsRulesTab: preset cards + diff-preview, 3-way grade-scale editor with data-driven rows, BehaviorTagsManager + BehaviorApprovalQueue mounted) code-complete since 2026-07-22; its checkpoint:human-verify (5 interactions: preset apply/diff/confirm, grade-scale switch, behavior tag CRUD, approval queue render) approved by operator 2026-07-23. All 10/10 plans done. Closes v5.0 — no open phases remain in the milestone.
 Phase 4.5 (desktop): COMPLETE — all 4 plans executed. 04.5-02 (Parent Center screen layouts) executed 2026-07-23: Dashboard, Analytics, ChildrenTasksShop (Children + Shop), and Settings all gained a `useDesktop` (>=1024px) 2-column/grid layout — Dashboard splits children (left) / pending+activity (right); Analytics splits bar+line charts with KPI cards widened to 4-col; Children and Shop screens grid their card/list content 2-up; Settings swaps the horizontal pill tabs for a 200px vertical nav + content column on desktop. Mobile JSX left byte-for-byte unchanged in every file (verified via isDesktop-gated branches only). tsc/build/lint all green. Commits 1a6420d, 9016b58. Closes DSK-02.
 Phase 05.1 (launch-prep): COMPLETE — full SC3 money suite (award + purchase + exchange + withdraw, 18 tests) green against live DB
 Phase 05.2 (room-tasks): 05.2-06 COMPLETE (code) — RoomTasksManager settings editor (add/rename/toggle/reorder/delete, legacy tasks locked from deletion) mounted as Parent Center → Settings → Schedule → Room; settings.tabs.room + roomTasksManager.* i18n added to en/ru. All 6 plans (01-06) code-complete; SC1-SC3 verified in earlier plans; SC4 (rename visible on kid screen) queued as a checkpoint:human-verify for the operator at phase end — phase 05.2 not yet marked closed pending that approval.
@@ -71,7 +72,7 @@ Progress: [██████████] 100%
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Any family can register and use the app — children earn coins for real effort, spend them on real rewards
-**Current focus:** Phase 05.11 — legacy-cleanup
+**Current focus:** v5.0 complete — ready for `/gsd:complete-milestone`
 
 ---
 
@@ -152,9 +153,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-07-23T15:20:33.958Z
-Stopped at: Phase 05.11 UI-SPEC approved
-Resume file: .planning/phases/05.11-legacy-cleanup/05.11-UI-SPEC.md
+Last session: 2026-07-23T18:00:00.000Z
+Stopped at: Phase 05.9 Plan 09 human-verify checkpoint approved — v5.0 milestone complete
+Resume file: none — next step is /gsd:complete-milestone
 
 ---
 
