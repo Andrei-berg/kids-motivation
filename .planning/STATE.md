@@ -4,7 +4,7 @@ milestone: v4.0
 milestone_name: — PWA Polish
 status: human_verify_pending
 stopped_at: Phase 05.11 UI-SPEC approved
-last_updated: "2026-07-23T15:43:38.842Z"
+last_updated: "2026-07-23T15:47:45.376Z"
 last_activity: 2026-07-23
 progress:
   total_phases: 16
@@ -71,7 +71,7 @@ Progress: [██████████] 100%
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Any family can register and use the app — children earn coins for real effort, spend them on real rewards
-**Current focus:** Phase 05.10 — automation
+**Current focus:** Phase 05.11 — legacy-cleanup
 
 ---
 

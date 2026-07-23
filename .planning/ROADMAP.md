@@ -370,9 +370,9 @@ Plans:
   3. App icon, splash and manifest carry FamilyCoins branding
 **Plans**: 3 plans
 Plans:
-- [ ] 05.11-01-PLAN.md — Redirect + delete 10 legacy routes (next.config.js redirects, delete pages + NavBar, repoint /dashboard landings)
+- [x] 05.11-01-PLAN.md — Redirect + delete 10 legacy routes (next.config.js redirects, delete pages + NavBar, repoint /dashboard landings)
 - [ ] 05.11-02-PLAN.md — Purge dead legacy-only classes from globals.css (NAVIGATION section, grep-verified)
-- [ ] 05.11-03-PLAN.md — FamilyCoins coin-mark app icon (3 PNGs) + manifest/viewport brand-color & start_url refresh
+- [x] 05.11-03-PLAN.md — FamilyCoins coin-mark app icon (3 PNGs) + manifest/viewport brand-color & start_url refresh
 
 ---
 
