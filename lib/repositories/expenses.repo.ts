@@ -560,14 +560,16 @@ export async function getSectionsForDate(childId: string, date: string): Promise
 // EXTRA ACTIVITIES (catalog)
 // ============================================================================
 
-export async function getExtraActivities(childId: string, dayType?: string): Promise<ExtraActivity[]> {
-  const { data, error } = await supabase
+export async function getExtraActivities(childId: string, dayType?: string, includeInactive = false): Promise<ExtraActivity[]> {
+  let query = supabase
     .from('extra_activities')
     .select('*')
     .eq('child_id', childId)
-    .eq('is_active', true)
     .order('sort_order')
     .order('created_at')
+  if (!includeInactive) query = query.eq('is_active', true)
+
+  const { data, error } = await query
 
   if (error) throw error
   const activities = (data || []) as ExtraActivity[]

@@ -112,7 +112,7 @@ export default function ActivitiesManager() {
 
   async function load() {
     setLoading(true)
-    try { setActivities(await getExtraActivities(childId)) }
+    try { setActivities(await getExtraActivities(childId, undefined, true)) }
     catch (e: any) { setError(e.message) }
     finally { setLoading(false) }
   }
