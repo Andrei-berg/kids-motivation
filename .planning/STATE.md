@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
-status: ready_to_plan
-stopped_at: Phase 05.10 context gathered
-last_updated: "2026-07-22T14:42:20.705Z"
-last_activity: 2026-07-22
+status: human_verify_pending
+stopped_at: "Phase 05.10 executed (4/4 plans), gaps closed, verification re-run 12/14 passed; 4/5 HUMAN-UAT items closed via automated-equivalent tests; item 5 (real device push receipt) awaits the operator"
+last_updated: "2026-07-23T05:32:09.000Z"
+last_activity: 2026-07-23
 progress:
   total_phases: 16
   completed_phases: 13
-  total_plans: 90
-  completed_plans: 85
-  percent: 81
+  total_plans: 94
+  completed_plans: 89
+  percent: 82
 ---
 
 # STATE.md — Текущее состояние проекта
@@ -57,8 +57,9 @@ Phase 05.4 (streak-settings): COMPLETE 2026-07-07 — verification passed 3/3.
 Phase 05.5 (year-calendar): COMPLETE 2026-07-13 — 7/7 plans executed (waves 1-4, worktree orchestrator); code review found 3 Critical + 8 Warning, ALL 11 fixed same day (commits 0dd4e91..1679b84, 05.5-REVIEW-FIX.md); migrations 05.5-01..05 applied to prod (incl. WR-01 parent-only calendar writes + WR-03 child_filter backfill); verification PASSED 4/4 (05.5-VERIFICATION.md, 3 non-blocking visual checks listed for operator). Key deliveries: family_calendar table, RU/KZ/BY vacation presets → vacation_periods materialization, data-driven getDayType, server-side updateStreaks + streaks RLS SELECT-only (closes 05.4 CR-01), anchored-run streak calculators (current_count = full run length; transparent today freezes, not breaks).
 Phase 05.6 (day-blocks): discussion in progress (2026-07-14).
 Phase 05.3 (design-tokens): 05.3-03 CODE-COMPLETE — app/kid/wallet/page.tsx TxnRow and components/parent-center/screens/Dashboard.tsx ActivityRow both adopted the shared LedgerRow/Amount atoms (paper + ink themes respectively); credits/earn_coins/bonus render gold, debits/penalty render neutral/danger. Full build green (tsc/lint/test/next build, 55/55 pages). Surgical diffs confirmed via git diff per file. Consolidated checkpoint:human-verify (recolor + fonts + both pilots + unmigrated/legacy screens + gold-only-on-money rule) is queued for operator sign-off — phase 05.3 not yet marked closed pending that approval. 05.3-01 (tokens+fonts) and 05.3-02 (atoms module) done earlier.
-Last activity: 2026-07-22
-Prior GSD activity: 2026-07-07 — executed 05.3-02 (shared atoms module in components/design/atoms.tsx)
+Phase 05.10 (automation): 4/4 plans executed 2026-07-22/23 (wave 1: 05.10-01 trust-limit engine + schema migration, 05.10-02 smart reminders cron; wave 2: 05.10-03 allowance cron, 05.10-04 parent settings UI). First verification pass found SC3 (reminders) non-functional in prod — supabase/migrations/01.3-categories-schedule.sql (categories/tasks/schedule_items/push_subscriptions) had never actually been applied to the live DB despite Phase 1.3 being marked "Complete", silently breaking every push-notification path app-wide, not just this phase. Applied the migration to prod (idempotent); this surfaced a second independent bug (day_of_week `cs` array filter used JSON syntax instead of Postgres array-literal syntax, silently swallowed since only `data` was destructured) — fixed in both app/api/cron/daily/route.ts and app/api/cron/missed-tasks/route.ts, plus added per-child try/catch isolation around getStreaksAtRisk/creditAwards. Re-verification: 12/14 truths, 0 gaps, 0 regressions — commit 2071ca6. Plan 04's Task 3 human-verify checkpoint had been explicitly bypassed (user decision) without real browser testing; wrote tests/integration/automation-settings-persistence.test.ts exercising the REAL setTrustLimitAction/setAllowanceAction server actions (not raw DB writes, unlike the pre-existing tests) to close 4/5 05.10-HUMAN-UAT.md items via automated-equivalent live-DB proof — commit 6b968d8. Item 5 (real device push receipt via VAPID) remains genuinely pending, needs the operator with a real device. Phase not yet marked complete in ROADMAP pending that final item.
+Last activity: 2026-07-23
+Prior GSD activity: 2026-07-22 — executed phase 05.10 (automation) waves 1-2
 ```
 
 Progress: [██████████] 98%
