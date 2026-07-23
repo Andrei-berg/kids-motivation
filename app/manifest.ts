@@ -5,11 +5,11 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'FamilyCoins',
     short_name: 'FamilyCoins',
     description: 'Family motivation app for children',
-    start_url: '/dashboard',
+    start_url: '/',
     display: 'standalone',
     orientation: 'portrait',
-    background_color: '#0f0f23',
-    theme_color: '#6366f1',
+    background_color: '#141021',
+    theme_color: '#6C5CE7',
     icons: [
       {
         src: '/icon-192x192.png',
