@@ -41,6 +41,17 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: 'easeOut' as const } },
 }
 
+function useDesktop() {
+  const [isDesktop, setIsDesktop] = useState(false)
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return isDesktop
+}
+
 type ReadingCheck = { id: string; child_id: string; date: string; book_title: string; pages_read: number; minutes_read: number }
 
 type Props = {
@@ -148,12 +159,13 @@ export default function Dashboard({ children, activity, pending, readingChecks =
   const filledCount = children.filter(c => c.todayPct > 50).length
   const t = useT()
   const { language } = useLanguage()
+  const isDesktop = useDesktop()
   const hour = new Date().getHours()
   const greeting = hour < 12 ? t('parentCenter.dashboard.goodMorning') : hour < 18 ? t('parentCenter.dashboard.goodAfternoon') : t('parentCenter.dashboard.goodEvening')
   const locale = language === 'ru' ? 'ru-RU' : 'en-US'
 
   return (
-    <div style={{ padding: '20px 16px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div style={{ padding: isDesktop ? '24px' : '20px 16px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div>
         <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
           {new Date().toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' })}
@@ -201,78 +213,89 @@ export default function Dashboard({ children, activity, pending, readingChecks =
         </div>
       )}
 
-      <div>
-        <SectionH title={t('parentCenter.dashboard.children')} sub={t('parentCenter.dashboard.tapToOpen')}/>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {children.map(c => (
-            <div key={c.id} onClick={() => onOpenChild(c.id)} style={{ cursor: 'pointer' }}>
-              <ChildCard child={c} onAction={onAction}/>
-            </div>
-          ))}
-          {children.length === 0 && (
-            <Card pad={24} style={{ textAlign: 'center' }}>
-              <div style={{ color: T.muted, fontSize: 13 }}>{t('parentCenter.dashboard.noChildren')}</div>
-            </Card>
-          )}
-        </div>
-      </div>
-
-      {pending.length > 0 && (
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isDesktop ? '1fr 1fr' : '1fr',
+        gap: isDesktop ? 20 : 18,
+        alignItems: 'start',
+      }}>
+        {/* Left column: children */}
         <div>
-          <SectionH title={t('parentCenter.dashboard.pendingApprovals')}
-            sub={pending.length > 1
-              ? t('parentCenter.dashboard.shopRequestsPlural').replace('{count}', String(pending.length))
-              : t('parentCenter.dashboard.shopRequests').replace('{count}', String(pending.length))}
-            action={<Pill tone="warn" icon="bell">!</Pill>}/>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {pending.map(p => {
-              const child = children.find(c => c.id === p.child_id)
-              if (!child) return null
-              return (
-                <Card key={p.id} pad={14} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <Avatar child={child} size={36}/>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>
-                      {child.name} {t('parentCenter.dashboard.wants')} <span style={{ color: T.cyan }}>{p.reward_title}</span>
-                    </div>
-                    <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
-                      <span style={{ fontFamily: T.fMono, fontWeight: 600 }}>{p.frozen_coins}🪙</span>
-                    </div>
-                  </div>
-                  <Btn variant="ghost" size="sm" icon="x" onClick={() => onDecline(p)}>{t('parentCenter.dashboard.decline')}</Btn>
-                  <Btn variant="primary" size="sm" icon="check" onClick={() => onApprove(p)}>{t('parentCenter.dashboard.approve')}</Btn>
-                </Card>
-              )
-            })}
+          <SectionH title={t('parentCenter.dashboard.children')} sub={t('parentCenter.dashboard.tapToOpen')}/>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {children.map(c => (
+              <div key={c.id} onClick={() => onOpenChild(c.id)} style={{ cursor: 'pointer' }}>
+                <ChildCard child={c} onAction={onAction}/>
+              </div>
+            ))}
+            {children.length === 0 && (
+              <Card pad={24} style={{ textAlign: 'center' }}>
+                <div style={{ color: T.muted, fontSize: 13 }}>{t('parentCenter.dashboard.noChildren')}</div>
+              </Card>
+            )}
           </div>
         </div>
-      )}
 
-      <div>
-        <SectionH title={t('parentCenter.dashboard.activity')} sub={t('parentCenter.dashboard.recentActions')}
-          action={<Btn variant="outline" size="sm" icon="filter">{t('parentCenter.dashboard.allFilter')}</Btn>}/>
-        <Card pad={0} style={{ overflow: 'hidden' }}>
-          <motion.div variants={listVariants} initial="hidden" animate="show">
-            {activity.slice(0, 8).map((a, i) => (
-              <motion.div key={i} variants={itemVariants}>
-                <ActivityRow a={a} allChildren={children}/>
+        {/* Right column: pending approvals + activity feed */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          {pending.length > 0 && (
+            <div>
+              <SectionH title={t('parentCenter.dashboard.pendingApprovals')}
+                sub={pending.length > 1
+                  ? t('parentCenter.dashboard.shopRequestsPlural').replace('{count}', String(pending.length))
+                  : t('parentCenter.dashboard.shopRequests').replace('{count}', String(pending.length))}
+                action={<Pill tone="warn" icon="bell">!</Pill>}/>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {pending.map(p => {
+                  const child = children.find(c => c.id === p.child_id)
+                  if (!child) return null
+                  return (
+                    <Card key={p.id} pad={14} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <Avatar child={child} size={36}/>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>
+                          {child.name} {t('parentCenter.dashboard.wants')} <span style={{ color: T.cyan }}>{p.reward_title}</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
+                          <span style={{ fontFamily: T.fMono, fontWeight: 600 }}>{p.frozen_coins}🪙</span>
+                        </div>
+                      </div>
+                      <Btn variant="ghost" size="sm" icon="x" onClick={() => onDecline(p)}>{t('parentCenter.dashboard.decline')}</Btn>
+                      <Btn variant="primary" size="sm" icon="check" onClick={() => onApprove(p)}>{t('parentCenter.dashboard.approve')}</Btn>
+                    </Card>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <SectionH title={t('parentCenter.dashboard.activity')} sub={t('parentCenter.dashboard.recentActions')}
+              action={<Btn variant="outline" size="sm" icon="filter">{t('parentCenter.dashboard.allFilter')}</Btn>}/>
+            <Card pad={0} style={{ overflow: 'hidden' }}>
+              <motion.div variants={listVariants} initial="hidden" animate="show">
+                {activity.slice(0, 8).map((a, i) => (
+                  <motion.div key={i} variants={itemVariants}>
+                    <ActivityRow a={a} allChildren={children}/>
+                  </motion.div>
+                ))}
               </motion.div>
-            ))}
-          </motion.div>
-          {activity.length === 0 && (
-            <div style={{ padding: '20px', textAlign: 'center', color: T.muted, fontSize: 13 }}>{t('parentCenter.dashboard.noActivity')}</div>
-          )}
-          {activity.length > 0 && (
-            <button
-              onClick={() => window.location.href = '/parent/wallets'}
-              style={{
-                width: '100%', padding: 12, background: 'transparent', border: 'none',
-                color: T.muted, fontFamily: T.fBody, fontSize: 12, fontWeight: 600, cursor: 'pointer',
-              }}>
-              {t('parentCenter.dashboard.viewAll')}
-            </button>
-          )}
-        </Card>
+              {activity.length === 0 && (
+                <div style={{ padding: '20px', textAlign: 'center', color: T.muted, fontSize: 13 }}>{t('parentCenter.dashboard.noActivity')}</div>
+              )}
+              {activity.length > 0 && (
+                <button
+                  onClick={() => window.location.href = '/parent/wallets'}
+                  style={{
+                    width: '100%', padding: 12, background: 'transparent', border: 'none',
+                    color: T.muted, fontFamily: T.fBody, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  }}>
+                  {t('parentCenter.dashboard.viewAll')}
+                </button>
+              )}
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   )
