@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: — PWA Polish
 status: human_verify_pending
-stopped_at: "Phase 05.10 executed (4/4 plans), gaps closed, verification re-run 12/14 passed; 4/5 HUMAN-UAT items closed via automated-equivalent tests; item 5 (real device push receipt) awaits the operator"
-last_updated: "2026-07-23T05:32:09.000Z"
+stopped_at: Executed 04.5-02-PLAN.md (Parent Center desktop grids)
+last_updated: "2026-07-23T06:13:46.800Z"
 last_activity: 2026-07-23
 progress:
   total_phases: 16
-  completed_phases: 13
-  total_plans: 94
-  completed_plans: 89
-  percent: 82
+  completed_phases: 15
+  total_plans: 90
+  completed_plans: 91
+  percent: 94
 ---
 
 # STATE.md — Текущее состояние проекта
@@ -50,7 +50,7 @@ progress:
 
 ```
 Milestone v4.0 PWA Polish — In Progress
-Phase 4.5 (desktop): COMPLETE — all 4 plans executed
+Phase 4.5 (desktop): COMPLETE — all 4 plans executed. 04.5-02 (Parent Center screen layouts) executed 2026-07-23: Dashboard, Analytics, ChildrenTasksShop (Children + Shop), and Settings all gained a `useDesktop` (>=1024px) 2-column/grid layout — Dashboard splits children (left) / pending+activity (right); Analytics splits bar+line charts with KPI cards widened to 4-col; Children and Shop screens grid their card/list content 2-up; Settings swaps the horizontal pill tabs for a 200px vertical nav + content column on desktop. Mobile JSX left byte-for-byte unchanged in every file (verified via isDesktop-gated branches only). tsc/build/lint all green. Commits 1a6420d, 9016b58. Closes DSK-02.
 Phase 05.1 (launch-prep): COMPLETE — full SC3 money suite (award + purchase + exchange + withdraw, 18 tests) green against live DB
 Phase 05.2 (room-tasks): 05.2-06 COMPLETE (code) — RoomTasksManager settings editor (add/rename/toggle/reorder/delete, legacy tasks locked from deletion) mounted as Parent Center → Settings → Schedule → Room; settings.tabs.room + roomTasksManager.* i18n added to en/ru. All 6 plans (01-06) code-complete; SC1-SC3 verified in earlier plans; SC4 (rename visible on kid screen) queued as a checkpoint:human-verify for the operator at phase end — phase 05.2 not yet marked closed pending that approval.
 Phase 05.4 (streak-settings): COMPLETE 2026-07-07 — verification passed 3/3.
@@ -62,7 +62,7 @@ Last activity: 2026-07-23
 Prior GSD activity: 2026-07-22 — executed phase 05.10 (automation) waves 1-2
 ```
 
-Progress: [██████████] 98%
+Progress: [██████████] 100%
 
 ---
 
@@ -152,9 +152,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-07-22T14:11:31.571Z
-Stopped at: Phase 05.10 context gathered
-Resume file: .planning/phases/05.10-automation/05.10-CONTEXT.md
+Last session: 2026-07-23T06:13:46.779Z
+Stopped at: Executed 04.5-02-PLAN.md (Parent Center desktop grids)
+Resume file: None
 
 ---
 
@@ -211,6 +211,7 @@ Resume file: .planning/phases/05.10-automation/05.10-CONTEXT.md
 - [Phase 05.3-03]: Parent dashboard ActivityRow dropped the redundant tone Pill + separate Coin amount in favor of a single LedgerRow (plan explicitly permitted this simplification)
 - [Phase 05.9]: Plan 07: behavior-mark approval is status-only (no coin mutation); crediting happens on the next /api/wallet/award POST
 - [Phase 05.9]: Plan 09: CoinsRulesTab preset diff-preview only writes wallet_settings on explicit confirm; grade-scale switch seeds grade_coin_map from defaults only for missing keys of the newly selected scale (forward-only, D-08); BehaviorTagsManager + BehaviorApprovalQueue mounted below "Save rules"
+- [Phase 04.5-02]: Settings desktop layout uses 200px vertical tab nav + content grid (plan's literal interface pattern) instead of per-tab-body 2-col card grids
 
 ### Phase 4.1 — Plan 02 (2026-04-26)
 

@@ -156,7 +156,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [ ] 04.5-01-PLAN.md — ParentCenter desktop shell: sidebar nav (220px) + persistent chat panel (320px)
-- [ ] 04.5-02-PLAN.md — Parent Center screen layouts: 2-column grids for Dashboard, Analytics, Children, Shop, Settings
+- [x] 04.5-02-PLAN.md — Parent Center screen layouts: 2-column grids for Dashboard, Analytics, Children, Shop, Settings
 - [ ] 04.5-03-PLAN.md — Kid Screen desktop layouts: 2-column pages for Day, Wallet, Achievements, Shop
 
 ---

@@ -30,7 +30,7 @@ Requirements for v4.0 PWA Polish milestone. Each maps to roadmap phases.
 ### Desktop
 
 - [ ] **DSK-01**: App has a dedicated desktop layout (≥1024px): sidebar navigation, multi-column content areas, full-width chat
-- [ ] **DSK-02**: Parent Center pages are fully designed for wide screen — no stretched mobile cards
+- [x] **DSK-02**: Parent Center pages are fully designed for wide screen — no stretched mobile cards
 - [x] **DSK-03**: Kid Screen pages are fully designed for wide screen — no stretched mobile cards
 
 ## Future Requirements
@@ -106,7 +106,7 @@ Updated during roadmap creation.
 | SEC-01 | Phase 4.4 (security-compliance) | Complete |
 | SEC-02 | Phase 4.4 (security-compliance) | Complete |
 | DSK-01 | Phase 4.5 (desktop) | Pending |
-| DSK-02 | Phase 4.5 (desktop) | Pending |
+| DSK-02 | Phase 4.5 (desktop) | Complete |
 | DSK-03 | Phase 4.5 (desktop) | Complete |
 
 **Coverage:**
