@@ -71,7 +71,7 @@ export async function middleware(request: NextRequest) {
         url.pathname = '/kid/day'
       } else {
         // extended or unknown role — safe fallback
-        url.pathname = '/dashboard'
+        url.pathname = '/parent-center'
       }
       return NextResponse.redirect(url)
     }

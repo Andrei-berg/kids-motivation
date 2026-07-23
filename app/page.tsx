@@ -34,14 +34,14 @@ function AuthPageInner() {
   const joinCode = searchParams.get('next') === 'join' ? searchParams.get('code') : null
   const postAuthPath = (hasFamily: boolean) => {
     if (joinCode) return `/onboarding/join?code=${encodeURIComponent(joinCode)}`
-    return hasFamily ? '/dashboard' : '/onboarding'
+    return hasFamily ? '/parent-center' : '/onboarding'
   }
 
   // Auto-redirect if already logged in
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace(joinCode ? `/onboarding/join?code=${encodeURIComponent(joinCode)}` : '/dashboard')
+      if (session) router.replace(joinCode ? `/onboarding/join?code=${encodeURIComponent(joinCode)}` : '/parent-center')
       else setChecking(false)
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
