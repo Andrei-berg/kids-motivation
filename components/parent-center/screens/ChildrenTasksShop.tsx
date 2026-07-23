@@ -314,7 +314,9 @@ export function ShopScreen({ pending, onApprove, onDecline, children = [] }: {
 
   async function loadTemplates(list: typeof REWARD_TEMPLATES, onDone: () => void, setLoading: (v: boolean) => void) {
     setLoading(true); setError(null)
-    for (const item of list) {
+    const existingTitles = new Set(rewards.map(r => r.title.trim().toLowerCase()))
+    const toAdd = list.filter(item => !existingTitles.has(item.title.trim().toLowerCase()))
+    for (const item of toAdd) {
       try { await addRewardApi({ ...item, reward_type: 'coins', is_active: true, for_child: null }) }
       catch { /* skip duplicates */ }
     }
