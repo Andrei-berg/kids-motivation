@@ -1,7 +1,7 @@
 import { base, ink } from '@/lib/design/tokens'
 
 export const T = {
-  bg0: '#0E0B18',
+  bg0: '#211A38',
   bg1: ink.bg,
   bg2: ink.bg2,
   card: ink.card,

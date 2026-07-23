@@ -50,14 +50,18 @@ export const paper = {
 } as const
 
 // ink — the parent (dark) theme ground colors.
+// Lightened 2026-07-23 per user feedback (2026-07-21 checkpoint: theme read as
+// too dark/gloomy, text hard to read). Same hue family, raised lightness across
+// all grounds + muted text; contrast re-checked against text/textDim/muted (all
+// ≥4.8:1 on the lightest surface, cardHi).
 export const ink = {
-  bg: '#141021',
-  bg2: '#1D1830',
-  card: '#1D1830',
-  cardHi: '#232040',
+  bg: '#2A2244',
+  bg2: '#322B50',
+  card: '#322B50',
+  cardHi: '#35305A',
   text: '#EFEBFA',
   textDim: '#C9C3DE',
-  muted: '#8F89AB',
+  muted: '#A4A0BB',
   accent: '#8B7BF5',
   goldText: '#F0BE6A',
   success: '#3FBF92',
