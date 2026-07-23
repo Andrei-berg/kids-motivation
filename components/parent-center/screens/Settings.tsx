@@ -682,7 +682,6 @@ function ScheduleTab({ allChildren }: { allChildren: ParentChild[] }) {
     { id: 'subjects',   icon: '📚', label: t('parentCenter.settings.more.subjects') },
     { id: 'sections',   icon: '🏃', label: t('parentCenter.settings.more.sections') },
     { id: 'calendar',   icon: '📅', label: t('settings.tabs.calendar') },
-    { id: 'vacations',  icon: '🌴', label: t('parentCenter.settings.more.vacations') },
     { id: 'activities', icon: '🎯', label: t('settings.tabs.activities') },
     { id: 'room',       icon: '🏠', label: t('settings.tabs.room') },
     { id: 'blocks',     icon: '🧩', label: t('settings.tabs.blocks') },
@@ -692,10 +691,10 @@ function ScheduleTab({ allChildren }: { allChildren: ParentChild[] }) {
 
   // WR-04 fix: D-05's locked "tap cell to add/edit vacation period"
   // contract — CalendarGrid reports the tapped date (+ covering period, if
-  // any) here; tapping a cell switches to the "vacations" sub-tab, whose
-  // single PeriodsManager mount consumes the request to open its add/edit
-  // form pre-filled.
+  // any) here; tapping a cell opens the vacations accordion below with its
+  // add/edit form pre-filled.
   const [calendarCellRequest, setCalendarCellRequest] = useState<PeriodOpenRequest>(null)
+  const [vacationsAccordionOpen, setVacationsAccordionOpen] = useState(false)
 
   return (
     <div>
@@ -726,20 +725,23 @@ function ScheduleTab({ allChildren }: { allChildren: ParentChild[] }) {
             <CalendarGrid
               onCellClick={(dateStr, period) => {
                 setCalendarCellRequest({ dateStr, period })
-                setSub('vacations')
+                setVacationsAccordionOpen(true)
               }}
             />
           </Card>
           <AccordionSection title={t('settings.calendarSettingsManager.title')} icon="📅">
             <CalendarSettingsManager/>
           </AccordionSection>
+          <AccordionSection
+            title={t('parentCenter.settings.more.vacations')} icon="🌴"
+            open={vacationsAccordionOpen} onOpenChange={setVacationsAccordionOpen}
+          >
+            <PeriodsManager
+              openRequest={calendarCellRequest}
+              onOpenRequestHandled={() => setCalendarCellRequest(null)}
+            />
+          </AccordionSection>
         </div>
-      )}
-      {sub === 'vacations'  && (
-        <PeriodsManager
-          openRequest={calendarCellRequest}
-          onOpenRequestHandled={() => setCalendarCellRequest(null)}
-        />
       )}
       {sub === 'activities' && <ActivitiesManager/>}
       {sub === 'room'       && <RoomTasksManager/>}
