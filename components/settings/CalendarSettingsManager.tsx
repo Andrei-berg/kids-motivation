@@ -11,20 +11,6 @@ import { T } from '@/components/parent-center/tokens'
 const WEEKDAY_ORDER = [0, 1, 2, 3, 4, 5, 6] as const
 const WEEKDAY_I18N_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const
 
-// Static region-preset options. Values mirror the preset ids Plan 05.5-03/05.5-05
-// materialize into data/vacation-presets/*.json (ru-quarters, ru-moscow-trimesters,
-// kz, by) so this select and PeriodsManager's preset-apply picker read/write the
-// SAME family_calendar.region_preset values (WARNING-1 resolution) even though
-// lib/vacation-presets.ts — built by a sibling wave-2 plan — is not importable here
-// (see SUMMARY.md deviation note).
-const REGION_OPTIONS = [
-  { value: '', labelKey: 'regionNone' },
-  { value: 'ru-quarters', labelKey: 'regionRuQuarters' },
-  { value: 'ru-moscow-trimesters', labelKey: 'regionRuMoscowTrimesters' },
-  { value: 'kz', labelKey: 'regionKz' },
-  { value: 'by', labelKey: 'regionBy' },
-] as const
-
 export default function CalendarSettingsManager() {
   const t = useT()
   const { familyId } = useAppStore()
@@ -38,7 +24,6 @@ export default function CalendarSettingsManager() {
   const [yearEnd, setYearEnd] = useState('')
   const [termMode, setTermMode] = useState<TermMode>('quarters')
   const [weekendDays, setWeekendDays] = useState<number[]>([0, 6])
-  const [regionPreset, setRegionPreset] = useState('')
 
   useEffect(() => {
     if (familyId) load()
@@ -55,14 +40,12 @@ export default function CalendarSettingsManager() {
         setYearEnd(cal.year_end ?? '')
         setTermMode(cal.term_mode ?? 'quarters')
         setWeekendDays(cal.weekend_days && cal.weekend_days.length > 0 ? cal.weekend_days : [0, 6])
-        setRegionPreset(cal.region_preset ?? '')
       } else {
         // D-08: no row yet — legacy defaults (hardcoded sat+sun weekend, no school year).
         setYearStart('')
         setYearEnd('')
         setTermMode('quarters')
         setWeekendDays([0, 6])
-        setRegionPreset('')
       }
     } catch (e: any) {
       setError(e.message)
@@ -97,7 +80,6 @@ export default function CalendarSettingsManager() {
         year_end: yearEnd,
         term_mode: termMode,
         weekend_days: weekendDays,
-        region_preset: regionPreset || null,
       })
       setSuccess(true)
     } catch (e: any) {
@@ -210,25 +192,6 @@ export default function CalendarSettingsManager() {
                 )
               })}
             </div>
-          </div>
-
-          {/* Region preset */}
-          <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>
-              {t('settings.calendarSettingsManager.region')}
-            </label>
-            <select
-              className="premium-select"
-              value={regionPreset}
-              onChange={e => { setRegionPreset(e.target.value); setSuccess(false) }}
-              style={{ width: '100%' }}
-            >
-              {REGION_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>
-                  {t(`settings.calendarSettingsManager.${opt.labelKey}`)}
-                </option>
-              ))}
-            </select>
           </div>
 
           <button

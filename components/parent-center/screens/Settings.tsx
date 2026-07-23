@@ -637,10 +637,9 @@ function ChildrenTab({ allChildren, notify }: { allChildren: ParentChild[]; noti
 // toggle, default collapsed) ─────
 function AccordionSection({ title, icon, children, open: openProp, onOpenChange }: {
   title: string; icon?: string; children: React.ReactNode
-  // WR-04 fix: optionally controlled, so ScheduleTab can auto-expand the
-  // vacations accordion when a calendar cell tap opens PeriodsManager's
-  // form inside it. Uncontrolled (internal state) when omitted — unchanged
-  // default behavior for every other AccordionSection consumer.
+  // Optionally controlled by a parent that needs to drive open/closed state;
+  // uncontrolled (internal state) when omitted — the default for every
+  // AccordionSection consumer.
   open?: boolean; onOpenChange?: (open: boolean) => void
 }) {
   const [internalOpen, setInternalOpen] = useState(false)
@@ -693,10 +692,10 @@ function ScheduleTab({ allChildren }: { allChildren: ParentChild[] }) {
 
   // WR-04 fix: D-05's locked "tap cell to add/edit vacation period"
   // contract — CalendarGrid reports the tapped date (+ covering period, if
-  // any) here; PeriodsManager consumes it to open its add/edit form, and
-  // the vacations AccordionSection auto-expands so the form is visible.
+  // any) here; tapping a cell switches to the "vacations" sub-tab, whose
+  // single PeriodsManager mount consumes the request to open its add/edit
+  // form pre-filled.
   const [calendarCellRequest, setCalendarCellRequest] = useState<PeriodOpenRequest>(null)
-  const [vacationsAccordionOpen, setVacationsAccordionOpen] = useState(false)
 
   return (
     <div>
@@ -727,25 +726,21 @@ function ScheduleTab({ allChildren }: { allChildren: ParentChild[] }) {
             <CalendarGrid
               onCellClick={(dateStr, period) => {
                 setCalendarCellRequest({ dateStr, period })
-                setVacationsAccordionOpen(true)
+                setSub('vacations')
               }}
             />
           </Card>
           <AccordionSection title={t('settings.calendarSettingsManager.title')} icon="📅">
             <CalendarSettingsManager/>
           </AccordionSection>
-          <AccordionSection
-            title={t('settings.periodsManager.title')} icon="🌴"
-            open={vacationsAccordionOpen} onOpenChange={setVacationsAccordionOpen}
-          >
-            <PeriodsManager
-              openRequest={calendarCellRequest}
-              onOpenRequestHandled={() => setCalendarCellRequest(null)}
-            />
-          </AccordionSection>
         </div>
       )}
-      {sub === 'vacations'  && <PeriodsManager/>}
+      {sub === 'vacations'  && (
+        <PeriodsManager
+          openRequest={calendarCellRequest}
+          onOpenRequestHandled={() => setCalendarCellRequest(null)}
+        />
+      )}
       {sub === 'activities' && <ActivitiesManager/>}
       {sub === 'room'       && <RoomTasksManager/>}
       {sub === 'blocks'     && <DayBlocksManager/>}
