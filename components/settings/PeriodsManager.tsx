@@ -84,7 +84,7 @@ export default function PeriodsManager({ openRequest, onOpenRequestHandled }: {
         .select('id, child_id, display_name')
         .eq('family_id', fid)
         .eq('role', 'child')
-        .order('created_at')
+        .order('joined_at')
 
       setChildren((childRows || [])
         .filter(c => c.child_id)

@@ -135,7 +135,7 @@ export default function DayBlocksManager() {
     try {
       const db = createClient()
       const [{ data: memberRows }, { data: childRows }] = await Promise.all([
-        db.from('family_members').select('id, child_id, display_name').eq('family_id', fid).eq('role', 'child').order('created_at'),
+        db.from('family_members').select('id, child_id, display_name').eq('family_id', fid).eq('role', 'child').order('joined_at'),
         db.from('children').select('id, emoji').eq('family_id', fid).order('created_at'),
       ])
 

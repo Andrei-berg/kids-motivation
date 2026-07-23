@@ -111,7 +111,7 @@ export default function CalendarGrid({ onCellClick }: {
         .select('id, child_id, display_name')
         .eq('family_id', familyId as string)
         .eq('role', 'child')
-        .order('created_at')
+        .order('joined_at')
       if (cancelled) return
       setChildren((childRows || [])
         .filter((c: any) => c.child_id)
