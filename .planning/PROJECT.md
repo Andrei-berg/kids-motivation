@@ -209,7 +209,40 @@
 
 ---
 
-## Shipped: v3.0 — Communication (2026-04-26)
+## Shipped: v5.0 — Flexibility & Design Unification (2026-07-23)
+
+Any family, not just the original Adam & Alim family, can now shape the app to its own rules — nothing that used to be a hardcoded constant still is. Design work followed: both Kid Screen and Parent Center were rebuilt on one unified token system.
+
+**What shipped:**
+- Room checklist, streak thresholds/bonuses, school-year calendar (dates, quarters/trimesters, regional vacation presets, configurable weekend days), and a day-assembly engine (day type × schedule × block rules) all moved from code constants into per-family configurable data
+- Rule presets (Classic / No-penalties / Bonuses-only) with a mandatory diff-preview before write; `grade_scale` per family (5-point / 12-point / A–F); behavior is a configurable tag set with per-tag prices instead of one binary flag
+- Automation: scheduled allowance crediting, purchases under a per-child trust limit auto-approve, schedule-driven smart reminders (upcoming training, day not filled, streak at risk) — the daily routine now runs itself
+- Full kid + parent redesign on a unified design system — `lib/design/tokens.ts` (paper/ink themes, Bitter/Golos Text/JetBrains Mono), shared atoms (LedgerRow, Amount, StatusChip); kid nav consolidated 6→5 (leaderboard folded into Awards)
+- Legacy cleanup — old duplicate pages redirected/removed, `globals.css` purged of dead rules, consistent FamilyCoins branding (icon/splash/manifest) as the single remaining UI
+- Along the way: found and fixed a Phase 1.3 migration that had silently never reached prod (breaking every push-notification path app-wide, not just the phase touching it) — a reminder that "ROADMAP complete" isn't proof a migration ran
+
+**Technical state as of v5.0:**
+- ~39,640 LOC TypeScript/TSX (up from ~26,930 at v3.0)
+- New tables: `room_tasks`/`room_checks`, `family_calendar`/`vacation_periods`, `day_blocks`, `grade_scale`/`grade_coin_map`, `behavior_tags`/`behavior_marks`, trust-limit/allowance columns on `children`/`wallet_settings`
+- Money mutations remain 100% server-side (service-role client); money tables stay RLS SELECT-only for clients — the boundary held through the whole de-hardcoding pass
+- Known deferred: real-device VAPID push receipt (05.10) and 2 human-UAT scenarios (05.8) still need an operator with a physical device; ink theme flagged as too dark, parked for a future pass (see STATE.md Deferred Items)
+
+<details>
+<summary>v4.0 — PWA Polish (shipped 2026-07-23, retroactively — built 2026-04-26 to 2026-05-18, formally closed alongside v5.0)</summary>
+
+Made FamilyCoins installable and production-ready for the first families.
+
+- PWA install (Add to Home Screen, iOS/Android), background Web Push via service worker, offline shell caching with graceful degradation
+- Framer Motion page transitions, pixel-accurate skeleton loaders, 44px touch targets throughout
+- Full Russian + English localization, browser auto-detect with manual switcher, zero hardcoded strings
+- Account deletion with full data cascade, data export (ZIP), COPPA/GDPR consent gate for children under 13, parent audit log
+- Dedicated desktop layout (≥1024px): sidebar navigation, multi-column Parent Center + Kid Screen, full-height chat panel
+- Bundled alongside (out-of-band, 2026-06-13…15): closed a critical RLS hole (30 tables had public `USING true` policies), moved all money mutations server-side, rotated leaked credentials
+
+</details>
+
+<details>
+<summary>v3.0 — Communication (shipped 2026-04-26)</summary>
 
 Family experience is now alive with real-time communication. Push notifications fire for every meaningful event; family chat with reactions, stickers, and achievement auto-posts connects all members; photos provide task proof and share moments.
 
@@ -245,9 +278,9 @@ Two fully separate experiences — Parent Center (dark, control-focused) and Kid
 
 ---
 
-## Current Milestone: v4.0 — PWA Polish
+## Current Milestone: none — between milestones
 
-**Goal:** Make FamilyCoins installable and production-ready for the first 1,000 families — PWA install, offline support, UX polish, localization, security/compliance, and a dedicated desktop layout.
+v5.0 shipped 2026-07-23. Next milestone not yet chosen — candidates below (see ROADMAP.md v6.0/v7.0/v8.0). Run `/gsd:new-milestone` to start questioning → research → requirements → roadmap for the next one.
 
 ---
 
@@ -274,28 +307,33 @@ Two fully separate experiences — Parent Center (dark, control-focused) and Kid
 - ✓ Achievement events auto-post to family chat — v3.0
 - ✓ Photo messages in chat — v3.0
 - ✓ Photo proof of task completion — v3.0
+- ✓ PWA install prompt (iOS + Android), background Web Push, offline shell + degradation — v4.0
+- ✓ Skeleton loaders + Framer Motion transitions, 44px touch targets throughout — v4.0
+- ✓ Russian + English localization, browser auto-detect + manual switcher — v4.0
+- ✓ COPPA/GDPR compliance: account deletion cascade, data export, consent gate, parent audit log — v4.0
+- ✓ Desktop UI: sidebar nav, multi-column Parent Center + Kid Screen, full-height chat — v4.0
+- ✓ Room checklist, streak settings, school-year calendar, day-blocks engine — all family-configurable, no hardcoded constants — v5.0
+- ✓ Rule presets (Classic/No-penalties/Bonuses-only) + configurable grade_scale + behavior tag economy — v5.0
+- ✓ Automation: scheduled allowance, trust-limit auto-approve, schedule-driven smart reminders — v5.0
+- ✓ Unified design system (tokens, paper/ink themes) across full kid + parent redesign — v5.0
+- ✓ Legacy pages removed, globals.css purged, single consistent UI/branding — v5.0
 
-### Active (v4.0)
+### Active
 
-- [ ] PWA install prompt (iOS + Android) — manifest, service worker, Add to Home Screen
-- [ ] Web Push when app is closed — service worker handles background push
-- [ ] Basic offline support — cached shell loads when offline; graceful degradation
-- [ ] Skeleton loaders + Framer Motion transitions — no layout shifts
-- [ ] 44px touch targets throughout — mobile-first interaction quality
-- [ ] Russian + English localization — auto-detect from browser, i18n files
-- [ ] COPPA/GDPR compliance — account deletion, data export, consent gate
-- [ ] Audit log for parent actions
-- [ ] Desktop UI redesign — separate layout for wide screens (sidebar nav, multi-column dashboard, full-screen chat); designed with Claude design
+None yet — next milestone not chosen. Candidates carried forward from ROADMAP.md's forward-looking milestones (unvalidated, subject to a real requirements pass via `/gsd:new-milestone`):
+- [ ] v6.0 Monetization — Free/Premium/Family Plus tiers, Stripe billing, freemium limits
+- [ ] v7.0 Social — cross-family friendships, family rating/leaderboard among friends, shared challenges, shop/category template sharing
+- [ ] v8.0 Native Apps — iOS/Android via Expo
 
 ### Out of Scope (current)
 
 - Apple ID login — Google + email sufficient for beta
-- Voice messages in chat — Supabase Pro storage cost; defer to v5.0+
+- Voice messages in chat — Supabase Pro storage cost; defer to v6.0+
 - Video messages — high storage/bandwidth cost
 - Offline mode for Realtime chat — real-time is core; degradation is sufficient
 - B2B teacher/coach accounts — post-product-market-fit
-- Freemium limits + Stripe — v5.0
-- Native mobile (Expo) — v7.0
+- Freemium limits + Stripe — v6.0
+- Native mobile (Expo) — v8.0
 
 ---
 
@@ -306,7 +344,7 @@ Two fully separate experiences — Parent Center (dark, control-focused) and Kid
 | Next.js App Router over Pages Router | Clean auth/layout split per role | ✓ Good |
 | Supabase Auth with synthetic emails for child PIN | No email required; `child_{id}@internal.familycoins.app` pattern | ✓ Good |
 | Separate /parent/* and /kid/* route trees | Middleware enforces roles; no shared layout complexity | ✓ Good |
-| PIN stored as SHA-256 hash in family_members.child_pin_hash | Security without bcrypt overhead | ✓ Good |
+| PIN stored as bcrypt hash in `child_pin_credentials` (RLS deny-all), verified via `verify_child_pin()` with authoritative lockout | Superseded original SHA-256-in-`family_members` design — synthetic account password is a long random secret (never the PIN), so nothing brute-forceable is client-reachable | ✓ Good (rebuilt 2026-07, see `child-pin-auth-broken` history) |
 | Kid fill-mode as integer enum (1/2/3) in children table | Flexible per-child config without extra tables | ✓ Good |
 | Zustand store for familyId + activeMemberId | Replaces legacy childId='adam'/'alim' hardcodes | ✓ Good |
 | Coins calculated on-the-fly from days + subject_grades | No finalization step needed; analytics always current | ✓ Good |
@@ -315,9 +353,22 @@ Two fully separate experiences — Parent Center (dark, control-focused) and Kid
 | sender_id TEXT matches family_members.id convention | Consistent with existing id column type; no UUID conversion needed | ✓ Good |
 | Photo URLs stored as 1h signed URLs in DB | Simple for MVP; long-lived URL management deferred | — Pending revisit |
 | family-photos bucket is private (public=false) | Prevents enumeration; all access via signed URLs | ✓ Good |
+| All money mutations server-side only (service-role client); money tables RLS SELECT-only for clients | Closed the class of bugs where a client write could forge a balance; foundational to all of v5.0's de-hardcoding work | ✓ Good |
+| Custom React context + Zustand for i18n (no next-intl) | Zero deps; dotted-key lookup + {{var}} interpolation, browser-detect default | ✓ Good |
+| Service worker: three-strategy fetch (passthrough API/Supabase, cache-first static, network-first pages) | Never cache API or Supabase requests; safe offline shell without stale data risk | ✓ Good |
+| `useDesktop` hook (`window.innerWidth >= 1024` + resize listener) for all desktop layouts | No new Tailwind breakpoints; mobile JSX left byte-for-byte unchanged everywhere it's used | ✓ Good |
+| `lib/design/tokens.ts` as single design source, re-exported through legacy `T` objects | Zero-risk incremental recolor — components didn't need structural changes to adopt tokens | ✓ Good |
+| Diff-preview-before-write for settings changes (rule presets, coin rules) | Never write on selection alone — an explicit old→new table + confirm step prevents silent bulk overwrites of family-tuned values | ✓ Good |
+| Anchored-run streak calculators (`current_count` = full run length; today freezes rather than breaks) | Matches how families actually think about streaks; server-side only after CR-01 (client could previously mint bonus via arbitrary dates) | ✓ Good |
+| Forward-only grade-scale switch — seeds missing `grade_coin_map` keys only, never rewrites an already-recorded grade's coin value | Switching 5-point→A–F mid-year can't retroactively change history | ✓ Good |
+| Cron routes (allowance, reminders, missed-tasks) run on the service-role client | A cookie client has no session in cron context — RLS would return 0 rows | ✓ Good |
+| Ink theme (Parent Center dark palette) flagged by operator as too dark/low-contrast | Deferred — needs a dedicated design pass, not a quick tweak | — Pending revisit |
 
 ---
 
 *Документ создан: 2026-03-01. Обновлён: 2026-07-19 — Phase 5.7 (kid-redesign) complete: all kid screens on the unified family-bank system (paper theme, tokens/atoms, gold-on-money-only), nav consolidated 6→5 with leaderboard merged into a 3-tab Awards screen, motion discipline (stamp + count-up on server-confirmed award; confetti only on streak/level-up), chat read-marker via SECURITY DEFINER RPC (CR-01 privilege-escalation found in review and fixed); verification 3/3 passed.*
 
 *Обновлён: 2026-07-21 — Phase 5.8 (parent-redesign) complete: Parent Center's remaining Schedule/Settings screens (7 CRUD managers + ChatPanel + Btn hover) recolored onto the ink theme, Day Constructor got a schedule-link picker (D-02) and per-child overrides (D-03, both candidate layouts kept behind a toggle per operator decision), a new Year Calendar visual month grid with sick-day overlay (D-05/D-06) replaced the flat settings-only view, and Analytics gained a real week-scoped Weekly Summary card (D-08). Code review found 2 Critical + 6 Warning issues post-execution (D-02 picker initially unreachable, Weekly Summary "Tasks done" metric structurally capped) — all 9 fixed and re-verified (9/9 must-haves). Two items (picker + card) remain pending live-browser re-confirmation by the operator after next deploy — see 05.8-HUMAN-UAT.md (operator's local session hit a stale PWA service-worker cache, not a code defect). Operator flagged the overall dark "ink" theme brightness/contrast as too dark across all of Parent Center — tracked as a separate future task, not part of 5.8's scope.*
+
+---
+*Milestone v5.0 Flexibility & Design Unification shipped 2026-07-23 (all 11 phases 5.1-5.11 complete, 71/71 plans). v4.0 PWA Polish formally closed at the same time (was code-complete since 2026-05-18 but never run through milestone close). Full requirements/decisions evolution review done as part of `/gsd:complete-milestone`. No milestone currently active — next one starts via `/gsd:new-milestone`.*

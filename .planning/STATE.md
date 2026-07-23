@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Flexibility & Design Unification
-status: Milestone complete — all 11 phases (5.1-5.11) done
-stopped_at: Phase 05.9 Plan 09 human-verify checkpoint approved by operator
-last_updated: "2026-07-23T18:00:00.000Z"
+status: Awaiting next milestone
+stopped_at: Phase 05.9 Plan 09 human-verify checkpoint approved — v5.0 milestone complete
+last_updated: "2026-07-23T17:01:46.391Z"
 last_activity: 2026-07-23
 progress:
   total_phases: 11
@@ -159,6 +159,25 @@ Resume file: none — next step is /gsd:complete-milestone
 
 ---
 
+## Deferred Items
+
+Items acknowledged and deferred at v5.0 milestone close on 2026-07-23:
+
+| Category | Item | Status |
+|----------|------|--------|
+| uat_gaps | 05.10-HUMAN-UAT.md | partial — 1 pending scenario (real-device VAPID push receipt; needs operator with physical device) |
+| uat_gaps | 05.8-HUMAN-UAT.md | partial — 2 pending scenarios |
+| verification_gaps | 01.3-VERIFICATION.md | human_needed |
+| verification_gaps | 02.2-VERIFICATION.md | gaps_found |
+| verification_gaps | 3.2-VERIFICATION.md | human_needed |
+| verification_gaps | 04.4-VERIFICATION.md | human_needed |
+| verification_gaps | 05.1-VERIFICATION.md | human_needed |
+| verification_gaps | 05.10-VERIFICATION.md | human_needed |
+| verification_gaps | 05.8-VERIFICATION.md | human_needed |
+| verification_gaps | 3.1-VERIFICATION.md | human_needed |
+
+---
+
 ## Decisions
 
 ### Phase 4.1 — Plan 01 (2026-04-26)
@@ -246,3 +265,14 @@ Resume file: none — next step is /gsd:complete-milestone
 - Achievements badge grid mobile fallback kept as repeat(3, 1fr) — existing mobile layout used 3 columns, not 2; preserves mobile experience byte-for-byte
 - Shop both real-rewards and virtual-items grids updated together — consistent 3-column desktop layout across both tabs
 - Balance strip in Shop left unchanged — already spans full container width, no inner maxWidth to remove
+
+## Current Position
+
+Phase: Milestone v5.0 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-07-23 — Milestone v5.0 completed and archived
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
