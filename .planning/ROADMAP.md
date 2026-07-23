@@ -180,7 +180,7 @@ Plans:
 - [x] **Phase 5.8: parent-redesign** — Parent Center on unified tokens + Day Constructor UI + Year Calendar screen + Weekly Summary card (completed 2026-07-21)
 - [ ] **Phase 5.9: rules-presets** — Rule presets (Classic / No-penalties / Bonuses-only), `grade_scale` per family, configurable behavior tags
 - [x] **Phase 5.10: automation** — Scheduled allowance, auto-approve under trust limit, schedule-driven smart reminders (completed 2026-07-22)
-- [ ] **Phase 5.11: legacy-cleanup** — Redirect + delete legacy pages, purge globals.css, FamilyCoins app icon/splash/manifest
+- [x] **Phase 5.11: legacy-cleanup** — Redirect + delete legacy pages, purge globals.css, FamilyCoins app icon/splash/manifest (completed 2026-07-23)
 
 ## Phase Details (v5.0)
 
@@ -371,7 +371,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 05.11-01-PLAN.md — Redirect + delete 10 legacy routes (next.config.js redirects, delete pages + NavBar, repoint /dashboard landings)
-- [ ] 05.11-02-PLAN.md — Purge dead legacy-only classes from globals.css (NAVIGATION section, grep-verified)
+- [x] 05.11-02-PLAN.md — Purge dead legacy-only classes from globals.css (NAVIGATION section, grep-verified)
 - [x] 05.11-03-PLAN.md — FamilyCoins coin-mark app icon (3 PNGs) + manifest/viewport brand-color & start_url refresh
 
 ---
