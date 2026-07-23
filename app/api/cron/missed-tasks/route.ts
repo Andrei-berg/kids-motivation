@@ -25,12 +25,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const todayDow = jsDay === 0 ? 7 : jsDay
 
   // 1. Get all active routine schedule items for today
+  // NOTE: the `cs` (contains) operator on a Postgres array column expects
+  // Postgres array literal syntax ("{3}"), not JSON syntax ("[3]").
   const { data: routineItems, error: routineErr } = await supabase
     .from('schedule_items')
     .select('child_member_id, title')
     .eq('type', 'routine')
     .eq('is_active', true)
-    .filter('day_of_week', 'cs', JSON.stringify([todayDow]))
+    .filter('day_of_week', 'cs', `{${todayDow}}`)
 
   if (routineErr || !routineItems || routineItems.length === 0) {
     return NextResponse.json({ sent: 0, reason: 'no routine items today' })

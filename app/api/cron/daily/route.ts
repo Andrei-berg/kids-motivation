@@ -70,14 +70,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   let allowanceCredited = 0
 
   // (1) Upcoming section training today.
-  const { data: sectionItems } = await admin
+  // NOTE: the `cs` (contains) operator on a Postgres array column expects
+  // Postgres array literal syntax ("{3}"), not JSON syntax ("[3]") — passing
+  // JSON.stringify() here causes PostgREST to reject the filter with a
+  // "malformed array literal" error every time.
+  const { data: sectionItems, error: sectionItemsError } = await admin
     .from('schedule_items')
     .select('child_member_id, title, start_time')
     .eq('type', 'section')
     .eq('is_active', true)
     .not('start_time', 'is', null)
-    .filter('day_of_week', 'cs', JSON.stringify([todayDow]))
+    .filter('day_of_week', 'cs', `{${todayDow}}`)
     .in('child_member_id', memberIds)
+  if (sectionItemsError) {
+    console.error('[cron/daily] schedule_items query failed:', sectionItemsError)
+  }
 
   for (const item of sectionItems ?? []) {
     const hhmm = (item.start_time as string).slice(0, 5) // strip seconds "HH:MM:SS" -> "HH:MM"
@@ -112,17 +119,23 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   // (3) Streak about to expire — read-only via getStreaksAtRisk (D-12: streaks
   // is RLS SELECT-only for clients; this never writes).
+  // Per-child try/catch: one child's exception must not drop this check (or
+  // the checks after it, incl. allowance crediting + push send) for everyone.
   for (const m of childMembers) {
     if (!m.child_id) continue
-    const atRisk = await getStreaksAtRisk(admin, m.child_id, today)
-    for (const s of atRisk) {
-      pushItems.push({
-        memberId: m.id,
-        title: 'Серия под угрозой',
-        body: `${s.current_count} дней`,
-        url: '/kid/day',
-      })
-      streaksAtRisk++
+    try {
+      const atRisk = await getStreaksAtRisk(admin, m.child_id, today)
+      for (const s of atRisk) {
+        pushItems.push({
+          memberId: m.id,
+          title: 'Серия под угрозой',
+          body: `${s.current_count} дней`,
+          url: '/kid/day',
+        })
+        streaksAtRisk++
+      }
+    } catch (err) {
+      console.error(`[cron/daily] getStreaksAtRisk failed for child ${m.child_id}:`, err)
     }
   }
 
@@ -182,26 +195,33 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
     if (!eligible) continue
 
-    const { creditedCoins } = await creditAwards(admin, ac.id, [
-      {
-        coins: ac.allowance_amount,
-        description: 'Пособие',
-        icon: '💰',
-        sourceType: 'allowance',
-        sourceId: periodKey,
-      },
-    ])
-    if (creditedCoins > 0) {
-      allowanceCredited++
-      const member = childMembers.find((m) => m.child_id === ac.id)
-      if (member) {
-        pushItems.push({
-          memberId: member.id,
-          title: 'Пособие зачислено',
-          body: `+${creditedCoins} 🪙`,
-          url: '/kid/wallet',
-        })
+    // Per-child try/catch: one child's creditAwards failure (e.g. a missing
+    // wallet row) must not abort allowance crediting for the rest of the
+    // family base, nor skip the push-send step below.
+    try {
+      const { creditedCoins } = await creditAwards(admin, ac.id, [
+        {
+          coins: ac.allowance_amount,
+          description: 'Пособие',
+          icon: '💰',
+          sourceType: 'allowance',
+          sourceId: periodKey,
+        },
+      ])
+      if (creditedCoins > 0) {
+        allowanceCredited++
+        const member = childMembers.find((m) => m.child_id === ac.id)
+        if (member) {
+          pushItems.push({
+            memberId: member.id,
+            title: 'Пособие зачислено',
+            body: `+${creditedCoins} 🪙`,
+            url: '/kid/wallet',
+          })
+        }
       }
+    } catch (err) {
+      console.error(`[cron/daily] creditAwards (allowance) failed for child ${ac.id}:`, err)
     }
   }
 
