@@ -29,6 +29,17 @@ import CalendarSettingsManager from '@/components/settings/CalendarSettingsManag
 import CalendarGrid from '@/components/settings/CalendarGrid'
 import type { PeriodOpenRequest } from '@/components/settings/PeriodsManager'
 
+function useDesktop() {
+  const [isDesktop, setIsDesktop] = useState(false)
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return isDesktop
+}
+
 // ───── Language card ─────
 function LanguageCard() {
   const { language, setLanguage } = useLanguage()
@@ -870,6 +881,7 @@ export default function SettingsScreen({ allChildren, notify, onNavigate }: {
   const [tab, setTab] = useState('family')
   const { familyId } = useAppStore()
   const t = useT()
+  const isDesktop = useDesktop()
 
   const tabs = [
     { id: 'family',   label: t('parentCenter.settings.tabs.family'),     icon: '👨‍👩‍👧' },
@@ -924,13 +936,38 @@ export default function SettingsScreen({ allChildren, notify, onNavigate }: {
         </div>
       </div>
 
-      <div style={{ padding: '0 16px 16px', position: 'sticky', top: 0, background: `linear-gradient(to bottom, ${T.bg0} 80%, transparent)`, zIndex: 10 }}>
-        <Tabs value={tab} onChange={setTab} tabs={tabs} scroll/>
-      </div>
+      {isDesktop ? (
+        <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 20, padding: '0 16px', alignItems: 'start' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2, position: 'sticky', top: 16 }}>
+            {tabs.map(tb => (
+              <button key={tb.id} onClick={() => setTab(tb.id)} style={{
+                display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left',
+                padding: '10px 12px', borderRadius: T.rM,
+                background: tab === tb.id ? T.cardHi : 'transparent',
+                border: `1px solid ${tab === tb.id ? T.cardBorderHi : 'transparent'}`,
+                color: tab === tb.id ? T.text : T.muted,
+                fontFamily: T.fBody, fontSize: 13, fontWeight: tab === tb.id ? 700 : 500,
+                cursor: 'pointer', transition: 'all .15s',
+              }}>
+                <span style={{ fontSize: 15 }}>{tb.icon}</span>{tb.label}
+              </button>
+            ))}
+          </div>
+          <div>
+            {content[tab]}
+          </div>
+        </div>
+      ) : (
+        <>
+          <div style={{ padding: '0 16px 16px', position: 'sticky', top: 0, background: `linear-gradient(to bottom, ${T.bg0} 80%, transparent)`, zIndex: 10 }}>
+            <Tabs value={tab} onChange={setTab} tabs={tabs} scroll/>
+          </div>
 
-      <div style={{ padding: '0 16px' }}>
-        {content[tab]}
-      </div>
+          <div style={{ padding: '0 16px' }}>
+            {content[tab]}
+          </div>
+        </>
+      )}
     </div>
   )
 }

@@ -8,18 +8,35 @@ import type { RewardPurchase, Reward } from '@/lib/models/wallet.types'
 import { getRewards } from '@/lib/repositories/wallet.repo'
 import { addRewardApi, updateRewardApi, deleteRewardApi } from '@/lib/wallet-client'
 
+function useDesktop() {
+  const [isDesktop, setIsDesktop] = useState(false)
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return isDesktop
+}
+
 // ═══════════ CHILDREN ═══════════
 export function ChildrenScreen({ children, onOpenChild }: {
   children: ParentChild[]
   onOpenChild: (id: string) => void
 }) {
+  const isDesktop = useDesktop()
   return (
-    <div style={{ padding: '20px 16px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div style={{ padding: isDesktop ? '24px' : '20px 16px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div>
         <h1 style={{ margin: 0, fontFamily: T.fHead, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Children</h1>
         <p style={{ margin: '4px 0 0', fontSize: 13, color: T.muted }}>Full profiles, stats, and settings per child</p>
       </div>
 
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isDesktop ? '1fr 1fr' : '1fr',
+        gap: 14,
+      }}>
       {children.map(c => (
         <Card key={c.id} pad={16} hover onClick={() => onOpenChild(c.id)}>
           <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 14 }}>
@@ -68,6 +85,7 @@ export function ChildrenScreen({ children, onOpenChild }: {
           </div>
         </Card>
       ))}
+      </div>
 
       <Btn variant="ghost" size="lg" icon="plus" full onClick={() => window.location.href = '/register'}>Add child</Btn>
     </div>
@@ -240,6 +258,7 @@ export function ShopScreen({ pending, onApprove, onDecline, children = [] }: {
   onDecline: (p: RewardPurchase) => void
   children?: ParentChild[]
 }) {
+  const isDesktop = useDesktop()
   const [tab, setTab] = useState('items')
   const [rewards, setRewards] = useState<Reward[]>([])
   const [loadingRewards, setLoadingRewards] = useState(true)
@@ -309,7 +328,7 @@ export function ShopScreen({ pending, onApprove, onDecline, children = [] }: {
   const displayRewards = tab === 'stickers' ? stickerRewards : otherRewards
 
   return (
-    <div style={{ padding: '20px 16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <div style={{ padding: isDesktop ? '24px' : '20px 16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -375,10 +394,14 @@ export function ShopScreen({ pending, onApprove, onDecline, children = [] }: {
       ]}/>
 
       {(tab === 'items' || tab === 'stickers') && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {loadingRewards && <div style={{ color: T.muted, fontSize: 13, textAlign: 'center', padding: 20 }}>Загрузка...</div>}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isDesktop ? '1fr 1fr' : '1fr',
+          gap: 8,
+        }}>
+          {loadingRewards && <div style={{ color: T.muted, fontSize: 13, textAlign: 'center', padding: 20, gridColumn: isDesktop ? 'span 2' : undefined }}>Загрузка...</div>}
           {!loadingRewards && displayRewards.length === 0 && (
-            <Card pad={24} style={{ textAlign: 'center' }}>
+            <Card pad={24} style={{ textAlign: 'center', gridColumn: isDesktop ? 'span 2' : undefined }}>
               <div style={{ fontSize: 32, marginBottom: 6 }}>{tab === 'stickers' ? '🎯' : '🛒'}</div>
               <div style={{ color: T.text, fontSize: 14, fontWeight: 600 }}>
                 {tab === 'stickers' ? 'Нет стикеров — нажми "+ Стикеры" выше' : 'Нет наград'}
@@ -413,7 +436,11 @@ export function ShopScreen({ pending, onApprove, onDecline, children = [] }: {
       )}
 
       {tab === 'queue' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: isDesktop ? '1fr 1fr' : '1fr',
+          gap: 10,
+        }}>
           {pending.map(p => {
             const child = children.find(c => c.id === p.child_id)
             const priceCoins = p.price_coins ?? p.frozen_coins
@@ -445,7 +472,7 @@ export function ShopScreen({ pending, onApprove, onDecline, children = [] }: {
             )
           })}
           {pending.length === 0 && (
-            <Card pad={24} style={{ textAlign: 'center' }}>
+            <Card pad={24} style={{ textAlign: 'center', gridColumn: isDesktop ? 'span 2' : undefined }}>
               <div style={{ fontSize: 32, marginBottom: 6 }}>✨</div>
               <div style={{ color: T.text, fontSize: 14, fontWeight: 600 }}>Нет ожидающих запросов</div>
               <div style={{ color: T.muted, fontSize: 12, marginTop: 4 }}>Запросы детей появятся здесь</div>

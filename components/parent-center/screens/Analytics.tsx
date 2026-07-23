@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useT } from '@/lib/i18n'
 import { T } from '../tokens'
 import { Card, Btn, Pill, Avatar, Tabs } from '../ui'
@@ -165,6 +165,17 @@ function WeeklySummaryCard({ coinsThisWeek, taskRate, streakHighlight, weeklyErr
   )
 }
 
+function useDesktop() {
+  const [isDesktop, setIsDesktop] = useState(false)
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return isDesktop
+}
+
 export default function AnalyticsScreen({ children, activity, coinsThisWeek, taskRate: weeklyTaskRate, streakHighlight, weeklyError }: {
   children: ParentChild[]
   activity: ActivityEntry[]
@@ -174,6 +185,7 @@ export default function AnalyticsScreen({ children, activity, coinsThisWeek, tas
   weeklyError?: boolean
 }) {
   const [range, setRange] = useState('week')
+  const isDesktop = useDesktop()
 
   // Build week bar data from activity
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -196,7 +208,7 @@ export default function AnalyticsScreen({ children, activity, coinsThisWeek, tas
   const labels = ['W-6', 'W-5', 'W-4', 'W-3', 'W-2', 'W-1', 'Now']
 
   return (
-    <div style={{ padding: '20px 16px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ padding: isDesktop ? '24px' : '20px 16px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
           <h1 style={{ margin: 0, fontFamily: T.fHead, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Analytics</h1>
@@ -218,7 +230,7 @@ export default function AnalyticsScreen({ children, activity, coinsThisWeek, tas
         streakHighlight={streakHighlight} weeklyError={weeklyError}
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isDesktop ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)', gap: 10 }}>
         {kpis.map(k => (
           <Card key={k.l} pad={12}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -231,70 +243,76 @@ export default function AnalyticsScreen({ children, activity, coinsThisWeek, tas
         ))}
       </div>
 
-      <Card pad={16}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <div>
-            <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>Coins earned vs spent</div>
-            <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>Last 7 days</div>
-          </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: T.muted }}>
-              <span style={{ width: 8, height: 8, borderRadius: 2, background: T.indigo, display: 'block' }}/> Earned
-            </span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: T.muted }}>
-              <span style={{ width: 8, height: 8, borderRadius: 2, background: T.danger, display: 'block' }}/> Spent
-            </span>
-          </div>
-        </div>
-        <BarChart data={weekData} color={T.indigo} h={140}/>
-      </Card>
-
-      {children.length > 0 && (
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isDesktop ? '1fr 1fr' : '1fr',
+        gap: 16,
+      }}>
         <Card pad={16}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <div>
-              <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>Task completion · children</div>
-              <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>% of daily tasks finished</div>
+              <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>Coins earned vs spent</div>
+              <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>Last 7 days</div>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: T.muted }}>
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: T.indigo, display: 'block' }}/> Earned
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: T.muted }}>
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: T.danger, display: 'block' }}/> Spent
+              </span>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
-            {children.map(c => (
-              <span key={c.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: T.textDim }}>
-                <span style={{ width: 10, height: 10, borderRadius: '50%', background: c.accent, display: 'block' }}/>
-                {c.name} <span style={{ fontFamily: T.fMono, color: T.text, fontWeight: 600 }}>{c.todayPct}%</span>
-              </span>
-            ))}
-          </div>
-          <LineChart
-            series={children.map(c => ({
-              data: c.week.map(v => Math.round(v / Math.max(...c.week, 1) * 100)),
-              color: c.accent,
-            }))}
-            labels={labels} w={320} h={180}
-          />
+          <BarChart data={weekData} color={T.indigo} h={140}/>
         </Card>
-      )}
 
-      <Card pad={16}>
-        <div style={{ fontSize: 13, color: T.text, fontWeight: 600, marginBottom: 10 }}>Children overview</div>
-        {children.map((c, i) => (
-          <div key={c.id} style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            padding: '10px 0', borderTop: i ? `1px solid ${T.cardBorder}` : 'none',
-          }}>
-            <Avatar child={c} size={28} ring={false}/>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>{c.name}</div>
-              <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
-                Balance {c.balance}🪙 · Streak {c.streak}d
+        {children.length > 0 && (
+          <Card pad={16}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div>
+                <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>Task completion · children</div>
+                <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>% of daily tasks finished</div>
               </div>
             </div>
-            <Pill tone={c.todayPct >= 80 ? 'success' : c.todayPct >= 50 ? 'warn' : 'danger'}>
-              {c.todayPct}% today
-            </Pill>
-          </div>
-        ))}
-      </Card>
+            <div style={{ display: 'flex', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
+              {children.map(c => (
+                <span key={c.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: T.textDim }}>
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: c.accent, display: 'block' }}/>
+                  {c.name} <span style={{ fontFamily: T.fMono, color: T.text, fontWeight: 600 }}>{c.todayPct}%</span>
+                </span>
+              ))}
+            </div>
+            <LineChart
+              series={children.map(c => ({
+                data: c.week.map(v => Math.round(v / Math.max(...c.week, 1) * 100)),
+                color: c.accent,
+              }))}
+              labels={labels} w={320} h={180}
+            />
+          </Card>
+        )}
+
+        <Card pad={16} style={{ gridColumn: isDesktop ? 'span 2' : undefined }}>
+          <div style={{ fontSize: 13, color: T.text, fontWeight: 600, marginBottom: 10 }}>Children overview</div>
+          {children.map((c, i) => (
+            <div key={c.id} style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '10px 0', borderTop: i ? `1px solid ${T.cardBorder}` : 'none',
+            }}>
+              <Avatar child={c} size={28} ring={false}/>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>{c.name}</div>
+                <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
+                  Balance {c.balance}🪙 · Streak {c.streak}d
+                </div>
+              </div>
+              <Pill tone={c.todayPct >= 80 ? 'success' : c.todayPct >= 50 ? 'warn' : 'danger'}>
+                {c.todayPct}% today
+              </Pill>
+            </div>
+          ))}
+        </Card>
+      </div>
     </div>
   )
 }
