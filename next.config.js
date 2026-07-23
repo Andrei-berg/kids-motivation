@@ -28,6 +28,22 @@ const nextConfig = {
       },
     ]
   },
+  // Phase 05.11: server-level redirects for the 10 retired legacy routes —
+  // replaces their in-app redirect-stub page.tsx files (now deleted).
+  async redirects() {
+    return [
+      { source: '/dashboard', destination: '/parent-center', permanent: true },
+      { source: '/wallet', destination: '/parent-center', permanent: true },
+      { source: '/analytics', destination: '/parent-center', permanent: true },
+      { source: '/expenses', destination: '/parent-center', permanent: true },
+      { source: '/settings', destination: '/parent/settings', permanent: true },
+      { source: '/streaks', destination: '/parent-center', permanent: true },
+      { source: '/records', destination: '/parent-center', permanent: true },
+      { source: '/audit', destination: '/parent-center', permanent: true },
+      { source: '/coach-rating', destination: '/parent-center', permanent: true },
+      { source: '/wallboard', destination: '/parent-center', permanent: true },
+    ]
+  },
 }
 
 // Sentry build options: source-map upload only fires when SENTRY_AUTH_TOKEN is present
