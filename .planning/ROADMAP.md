@@ -68,9 +68,9 @@ See: `.planning/milestones/v3.0-ROADMAP.md`
 
 - [x] **Phase 4.1: pwa** — Install prompt on iOS/Android, background Web Push via service worker, basic offline shell (completed 2026-04-26)
 - [x] **Phase 4.2: ux-polish** — Skeleton loaders, Framer Motion page transitions, 44px touch targets throughout (completed 2026-05-16)
-- [ ] **Phase 4.3: localization** — Russian + English, browser auto-detect, manual language switcher
+- [x] **Phase 4.3: localization** — Russian + English, browser auto-detect, manual language switcher (completed 2026-05-17)
 - [x] **Phase 4.4: security-compliance** — Account deletion with data cascade, data export, COPPA/GDPR consent gate, parent audit log (completed 2026-05-17)
-- [ ] **Phase 4.5: desktop** — Dedicated wide-screen layout (≥1024px): sidebar nav, multi-column Parent Center, wide-screen Kid Screen
+- [x] **Phase 4.5: desktop** — Dedicated wide-screen layout (≥1024px): sidebar nav, multi-column Parent Center, wide-screen Kid Screen (completed 2026-05-18)
 
 ---
 
@@ -155,9 +155,9 @@ Plans:
   4. The family chat panel occupies full available height on desktop without scroll gaps or dead whitespace
 **Plans**: 3 plans
 Plans:
-- [ ] 04.5-01-PLAN.md — ParentCenter desktop shell: sidebar nav (220px) + persistent chat panel (320px)
+- [x] 04.5-01-PLAN.md — ParentCenter desktop shell: sidebar nav (220px) + persistent chat panel (320px)
 - [x] 04.5-02-PLAN.md — Parent Center screen layouts: 2-column grids for Dashboard, Analytics, Children, Shop, Settings
-- [ ] 04.5-03-PLAN.md — Kid Screen desktop layouts: 2-column pages for Day, Wallet, Achievements, Shop
+- [x] 04.5-03-PLAN.md — Kid Screen desktop layouts: 2-column pages for Day, Wallet, Achievements, Shop
 
 ---
 
@@ -411,9 +411,9 @@ Plans:
 | 3.3 photos | v3.0 | 3/3 | Complete | 2026-04-14 |
 | 4.1 pwa | v4.0 | 3/3 | Complete | 2026-04-26 |
 | 4.2 ux-polish | v4.0 | 4/4 | Complete | 2026-05-16 |
-| 4.3 localization | 4/6 | In Progress|  | - |
-| 4.4 security-compliance | 5/5 | Complete   | 2026-05-17 | - |
-| 4.5 desktop | 2/4 | In Progress|  | - |
+| 4.3 localization | v4.0 | 7/7 | Complete | 2026-05-17 |
+| 4.4 security-compliance | v4.0 | 5/5 | Complete | 2026-05-17 |
+| 4.5 desktop | v4.0 | 3/3 | Complete | 2026-05-18 |
 | 5.1 launch-prep | v5.0 | 6/6 | Complete | 2026-07-06 |
 | 5.2 room-tasks | v5.0 | 6/6 | Complete | 2026-07-07 |
 | 5.3 design-tokens | v5.0 | 3/3 | Complete | 2026-07-07 |
