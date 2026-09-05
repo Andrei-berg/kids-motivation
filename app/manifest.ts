@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'FamilyCoins',
     short_name: 'FamilyCoins',
-    description: 'Family motivation app for children',
+    description: 'Семейное приложение мотивации для детей',
     start_url: '/',
     display: 'standalone',
     orientation: 'portrait',

@@ -10,7 +10,7 @@ import { LanguageProvider } from '@/lib/i18n'
 
 export const metadata: Metadata = {
   title: 'FamilyCoins',
-  description: 'FamilyCoins — a family motivation app where kids earn coins for real effort and spend them on real rewards.',
+  description: 'FamilyCoins — семейное приложение мотивации: дети зарабатывают монеты за реальные усилия и тратят их на реальные награды.',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,

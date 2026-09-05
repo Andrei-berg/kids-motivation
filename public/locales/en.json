@@ -1819,6 +1819,12 @@
     "shopScreen": {
       "title": "Reward Shop",
       "summary": "{{rewards}} rewards · {{stickers}} stickers"
+    },
+    "actionToast": {
+      "reward": "Rewarded {{name}}",
+      "penalty": "Penalty applied to {{name}}",
+      "bonus": "Bonus for {{name}}",
+      "freeze": "Froze streak for {{name}}"
     }
   },
   "wallets": {

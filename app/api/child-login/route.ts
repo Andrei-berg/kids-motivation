@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
         family_id: member.familyId,
         child_id: childId,
         action_type: 'settings_change',
-        description: 'Child login reset — real account unlinked, reverted to PIN-only identity',
+        description: 'Сброс входа ребёнка — реальный аккаунт отвязан, вход только по коду семьи и PIN',
         coins_delta: null,
         actor_user_id: member.userId,
         metadata: { kind: 'child_login_reset', previous_user_id: previousUserId, synthetic_user_id: syntheticId },

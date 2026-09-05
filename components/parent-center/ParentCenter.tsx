@@ -230,14 +230,20 @@ export default function ParentCenter() {
   const openAction = (child: ParentChild, action: ActionType) => setModal({ open: true, child, action })
   const closeAction = () => setModal(m => ({ ...m, open: false }))
   const confirmAction = (data: { child: ParentChild; action: ActionType; amount: number; reason: string }) => {
-    const map: Record<ActionType, string> = { reward: 'Rewarded', penalty: 'Penalty applied to', bonus: 'Bonus for', freeze: 'Froze streak for' }
-    notify(`${map[data.action]} ${data.child.name}${data.action !== 'freeze' ? ' · ' + (data.amount > 0 ? '+' : '') + data.amount + '🪙' : ''}`,
+    const toastMap: Record<ActionType, string> = {
+      reward: t('parentCenter.actionToast.reward', { name: data.child.name }),
+      penalty: t('parentCenter.actionToast.penalty', { name: data.child.name }),
+      bonus: t('parentCenter.actionToast.bonus', { name: data.child.name }),
+      freeze: t('parentCenter.actionToast.freeze', { name: data.child.name }),
+    }
+    notify(`${toastMap[data.action]}${data.action !== 'freeze' ? ' · ' + (data.amount > 0 ? '+' : '') + data.amount + '🪙' : ''}`,
       data.action === 'penalty' ? 'warn' : undefined)
+    const auditVerb = data.action === 'reward' ? 'Начислено' : data.action === 'penalty' ? 'Штраф' : data.action === 'bonus' ? 'Бонус' : 'Заморозка серии'
     void insertAuditEvent({
       family_id: familyId ?? '',
       child_id: data.child.id,
       action_type: 'coin_adjust',
-      description: `${data.action === 'reward' ? 'Rewarded' : data.action === 'penalty' ? 'Penalized' : 'Bonus for'} ${data.child.name}: ${data.amount > 0 ? '+' : ''}${data.amount}💰${data.reason ? ` — ${data.reason}` : ''}`,
+      description: `${auditVerb} — ${data.child.name}: ${data.amount > 0 ? '+' : ''}${data.amount}💰${data.reason ? ` — ${data.reason}` : ''}`,
       coins_delta: data.action === 'freeze' ? null : data.amount,
       actor_user_id: null,
       metadata: { action: data.action, reason: data.reason },

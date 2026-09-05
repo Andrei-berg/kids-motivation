@@ -1819,6 +1819,12 @@
     "shopScreen": {
       "title": "Магазин наград",
       "summary": "{{rewards}} наград · {{stickers}} стикеров"
+    },
+    "actionToast": {
+      "reward": "Начислено — {{name}}",
+      "penalty": "Штраф — {{name}}",
+      "bonus": "Бонус — {{name}}",
+      "freeze": "Серия заморожена — {{name}}"
     }
   },
   "wallets": {

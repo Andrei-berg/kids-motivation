@@ -661,7 +661,7 @@ export async function approvePurchase(
     family_id: '',           // family_id not available in repo context — recorded at ParentCenter call site with real familyId
     child_id: null,          // purchase child_id not passed to this function — ParentCenter call site has it
     action_type: 'shop_approve',
-    description: `Shop purchase approved (id: ${purchaseId})`,
+    description: `Покупка одобрена (id: ${purchaseId})`,
     coins_delta: null,
     actor_user_id: null,
     metadata: { purchase_id: purchaseId, source: 'wallet.repo' },
@@ -707,7 +707,7 @@ export async function rejectPurchase(
     family_id: '',
     child_id: null,
     action_type: 'shop_reject',
-    description: `Shop purchase rejected (id: ${purchaseId})`,
+    description: `Покупка отклонена (id: ${purchaseId})`,
     coins_delta: null,
     actor_user_id: null,
     metadata: { purchase_id: purchaseId, source: 'wallet.repo' },

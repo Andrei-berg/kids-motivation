@@ -254,7 +254,7 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
       void insertAuditEvent({
         family_id: familyId ?? '', child_id: null,
         action_type: 'settings_change',
-        description: `Settings updated: rule preset applied (${selectedPresetId})`,
+        description: `Настройки обновлены: применён пресет правил (${selectedPresetId})`,
         coins_delta: null, actor_user_id: null,
         metadata: { tab: 'coins', preset: selectedPresetId },
       })
@@ -275,7 +275,7 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
       void insertAuditEvent({
         family_id: familyId ?? '', child_id: null,
         action_type: 'settings_change',
-        description: 'Settings updated: coin reward rules',
+        description: 'Настройки обновлены: правила начисления монет',
         coins_delta: null, actor_user_id: null,
         metadata: { tab: 'coins' },
       })
