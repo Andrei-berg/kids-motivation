@@ -31,7 +31,7 @@ export default function ScreenHeader({ title, coins, name, avatarUrl, showLogout
   async function handleLogout() {
     setActiveMemberId(null)
     await supabase.auth.signOut()
-    router.push('/login')
+    router.push('/')
   }
 
   return (

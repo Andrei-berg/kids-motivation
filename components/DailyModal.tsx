@@ -124,7 +124,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
   // Per-family coin settings (WR-05): the coin previews below must mirror what
   // /api/wallet/award actually credits — no hardcoded amounts.
   const [walletSettings, setWalletSettings] = useState<WalletSettings | null>(null)
-  const [dayTypeInfo, setDayTypeInfo] = useState<DayTypeInfo>({ type: 'school', label: 'School', emoji: '📚' })
+  const [dayTypeInfo, setDayTypeInfo] = useState<DayTypeInfo>({ type: 'school', label: t('dayType.school'), emoji: '📚' })
   const [isSick, setIsSick] = useState(false)
 
   // Day-blocks (Phase 5.6, D-06 parity) — family flag + active block config.
@@ -1116,7 +1116,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={roomProofUrl}
-            alt="Room photo"
+            alt={t('dailyModal.roomPhotoAlt')}
             className="w-20 h-20 rounded-xl object-cover cursor-pointer"
             style={{ border: '2px solid rgba(238,238,255,0.15)' }}
             onClick={() => setLightboxProofUrl(roomProofUrl)}

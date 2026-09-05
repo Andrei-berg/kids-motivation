@@ -26,7 +26,9 @@
     "yes": "Yes",
     "no": "No",
     "or": "or",
-    "saveError": "Couldn't save — check your connection and try again."
+    "saveError": "Couldn't save — check your connection and try again.",
+    "quarter": "Quarter",
+    "switchLanguage": "Switch language"
   },
   "auth": {
     "loading": "Loading...",
@@ -41,7 +43,9 @@
     "registerBtn": "Create account",
     "googleBtn": "Log in with Google",
     "joinFamily": "Second parent, or a kid with their own account? Join with an invite code →",
-    "kidLoginLink": "Kid without an account? Log in with the family code + PIN →"
+    "kidLoginLink": "Kid without an account? Log in with the family code + PIN →",
+    "appName": "Kids Motivation",
+    "email": "Email"
   },
   "authHelp": {
     "trigger": "How does family sign-in work? →",
@@ -412,7 +416,8 @@
     "trainerLabel": "Coach: {{name}}",
     "progressPlaceholder": "Progress",
     "feedbackPlaceholder": "Coach feedback",
-    "coachRatingLabel": "Coach rating:"
+    "coachRatingLabel": "Coach rating:",
+    "roomPhotoAlt": "Room photo"
   },
   "coachRating": {
     "title": "Coach Rating",
@@ -652,7 +657,8 @@
       "cancel": "Cancel",
       "deleteConfirm": "Delete this category?",
       "active": "Active",
-      "inactive": "Inactive"
+      "inactive": "Inactive",
+      "default": "Default"
     },
     "taskManager": {
       "title": "Tasks",
@@ -725,7 +731,23 @@
       "name": "Name",
       "save": "Save",
       "cancel": "Cancel",
-      "deleteConfirm": "Delete this section?"
+      "deleteConfirm": "Delete this section?",
+      "trainer": "Trainer",
+      "trainerNamePlaceholder": "Trainer name",
+      "costPerMonth": "Cost / mo.",
+      "addressLocation": "Address / location",
+      "locationPlaceholder": "Location",
+      "scheduleDays": "Schedule days (optional)",
+      "archive": "Archive",
+      "day": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      }
     },
     "subjectsManager": {
       "title": "Subjects",
@@ -1098,7 +1120,8 @@
     "yesterday": "Yesterday",
     "eventsOne": "{{count}} event",
     "eventsFew": "{{count}} events",
-    "eventsMany": "{{count}} events"
+    "eventsMany": "{{count}} events",
+    "photoAlt": "Photo"
   },
   "manifest": {
     "appName": "FamilyCoins",
@@ -1156,7 +1179,8 @@
     "streakDays": "{{count}} d.",
     "moodLabel": "Mood noted",
     "moodNote": "Great job filling in the day!",
-    "noData": "No data"
+    "noData": "No data",
+    "levelWord": "Level"
   },
   "kidLeaderboardPage": {
     "familyRating": "FAMILY RATING",
@@ -1578,7 +1602,8 @@
         "parentPin": "Parent PIN",
         "parentPinDesc": "Required to open this control center",
         "manage": "Manage",
-        "inviteCopied": "Invite code copied"
+        "inviteCopied": "Invite code copied",
+        "parentName": "Parent"
       },
       "coinsRules": {
         "schoolGrades": "School Grades",
@@ -1691,6 +1716,109 @@
       "earn": "EARN",
       "penaltyLabel": "PENALTY",
       "bonusLabel": "BONUS"
+    },
+    "header": {
+      "title": "Parent Center",
+      "synced": "synced"
+    },
+    "defaultGoalTitle": "Big reward",
+    "childrenScreen": {
+      "title": "Children",
+      "subtitle": "Full profiles, stats, and settings per child",
+      "addChild": "Add child",
+      "ageMode": "{{age}} years · Mode {{mode}} independence",
+      "statBalance": "Balance",
+      "statStreak": "Streak",
+      "statBadges": "Badges",
+      "statToday": "Today",
+      "unitDays": "days",
+      "unitEarned": "earned",
+      "unitDone": "done",
+      "goalLabel": "🎯 Goal: {{title}}"
+    },
+    "tasksScreen": {
+      "title": "Tasks",
+      "subtitle": "Daily tasks, weekly & special challenges",
+      "new": "New",
+      "tabDaily": "Daily",
+      "tabChallenges": "Challenges",
+      "tabTemplates": "Templates",
+      "freqDaily": "Daily",
+      "allChildren": "All children",
+      "expires": "Expires {{date}}",
+      "progress": "{{done}} of {{total}}",
+      "newChallenge": "New challenge",
+      "templatesCount": "{{count}} templates",
+      "tplChores": "Chores",
+      "tplHomework": "Homework",
+      "tplSports": "Sports",
+      "tplBehavior": "Behavior",
+      "mockMakeBed": "Make bed",
+      "mockHomeworkDone": "Homework done",
+      "mockRoomCleaned": "Room cleaned",
+      "mockExercise": "30 min exercise",
+      "mockRead": "Read 20 pages",
+      "mockBrushTeeth": "Brush teeth (PM)",
+      "mockCh1": "3 A-grades this week",
+      "mockCh2": "Month without Grade 2",
+      "mockCh3": "5-day exercise streak",
+      "mockExpSun": "Sun",
+      "mockExpFri": "Fri",
+      "mockExpApr30": "Apr 30"
+    },
+    "childProfile": {
+      "backToChildren": "Children",
+      "age": "Age {{age}}",
+      "xpToNext": "LVL {{level}} · {{xp}}% to next",
+      "statBalance": "Balance",
+      "statToday": "Today",
+      "statBadges": "Badges",
+      "actionReward": "Reward",
+      "actionPenalty": "Penalty",
+      "actionFreeze": "Freeze",
+      "tabOverview": "Overview",
+      "tabSubjects": "Subjects",
+      "tabGoals": "Goals",
+      "tabExpenses": "Expenses",
+      "weekCoins": "Last 7 days · coins earned",
+      "savingFor": "Saving for {{title}}",
+      "funded": "{{pct}}% funded",
+      "checklist": "Today's checklist",
+      "grade": "Grade",
+      "noSubjects": "No subjects configured"
+    },
+    "actionModal": {
+      "pickPreset": "Pick a preset or customize",
+      "amount": "Amount",
+      "coinsUnit": "coins",
+      "reasonPlaceholder": "Write a short note…",
+      "reasonLabel": "Reason (optional)",
+      "titleReward": "Reward {{name}}",
+      "titlePenalty": "Penalty for {{name}}",
+      "titleBonus": "Bonus for {{name}}",
+      "titleFreeze": "Freeze {{name}}'s streak",
+      "presetGrade5": "Grade 5",
+      "presetGrade4": "Grade 4",
+      "presetGrade3": "Grade 3",
+      "presetGrade2": "Grade 2",
+      "presetGrade1": "Grade 1",
+      "presetRoom": "Room",
+      "presetExercise": "Exercise",
+      "presetBehavior": "Behavior",
+      "presetExtraHelp": "Extra help",
+      "presetMissedTask": "Missed task",
+      "presetBadBehavior": "Bad behavior",
+      "presetSmall": "Small",
+      "presetMedium": "Medium",
+      "presetLarge": "Large",
+      "presetChallengeWon": "Challenge won",
+      "preset1Day": "1 day",
+      "preset2Days": "2 days",
+      "presetWeekend": "Weekend"
+    },
+    "shopScreen": {
+      "title": "Reward Shop",
+      "summary": "{{rewards}} rewards · {{stickers}} stickers"
     }
   },
   "wallets": {
@@ -1716,6 +1844,35 @@
       "noStreak": "No one's on a streak yet.",
       "empty": "Your weekly summary will show up here once there's a bit of data.",
       "loadError": "Couldn't load this week's summary. Refresh the page."
+    },
+    "screen": {
+      "title": "Analytics",
+      "subtitle": "Behavior trends across the family",
+      "fullReport": "Full report",
+      "tabWeek": "Week",
+      "tabMonth": "Month",
+      "tabQuarter": "Quarter",
+      "kpiCoinsEarned": "Coins earned",
+      "kpiTaskRate": "Task rate",
+      "kpiPenalties": "Penalties",
+      "kpiChildren": "Children",
+      "kpiThisPeriod": "this period",
+      "kpiTasksToday": "tasks done today",
+      "kpiActive": "active",
+      "coinsVsSpent": "Coins earned vs spent",
+      "last7days": "Last 7 days",
+      "legendEarned": "Earned",
+      "legendSpent": "Spent",
+      "taskCompletion": "Task completion · children",
+      "taskCompletionSub": "% of daily tasks finished",
+      "childrenOverview": "Children overview",
+      "balanceStreak": "Balance {{balance}}🪙 · Streak {{streak}}d",
+      "pctToday": "{{pct}}% today"
     }
+  },
+  "family": {
+    "title": "Family",
+    "subtitle": "Shared family space — accessible to all members.",
+    "goToDashboard": "Go to dashboard"
   }
 }

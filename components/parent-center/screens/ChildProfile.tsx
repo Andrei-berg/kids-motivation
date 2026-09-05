@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useT } from '@/lib/i18n'
 import { T } from '../tokens'
 import { Card, Btn, Pill, Avatar, Sparkline, Bar, Coin, Tabs, Icon } from '../ui'
 import type { ParentChild, ActionType } from '../types'
@@ -15,14 +16,15 @@ type Props = {
 }
 
 const TASKS = [
-  { id: 't1', title: 'Make bed', coins: 2 },
-  { id: 't2', title: 'Homework done', coins: 5 },
-  { id: 't3', title: 'Room cleaned', coins: 3 },
-  { id: 't4', title: '30 min exercise', coins: 5 },
-  { id: 't5', title: 'Read 20 pages', coins: 3 },
+  { id: 't1', titleKey: 'parentCenter.tasksScreen.mockMakeBed', coins: 2 },
+  { id: 't2', titleKey: 'parentCenter.tasksScreen.mockHomeworkDone', coins: 5 },
+  { id: 't3', titleKey: 'parentCenter.tasksScreen.mockRoomCleaned', coins: 3 },
+  { id: 't4', titleKey: 'parentCenter.tasksScreen.mockExercise', coins: 5 },
+  { id: 't5', titleKey: 'parentCenter.tasksScreen.mockRead', coins: 3 },
 ]
 
 export default function ChildProfile({ child, onBack, onAction }: Props) {
+  const t = useT()
   const [tab, setTab] = useState('overview')
 
   return (
@@ -42,7 +44,7 @@ export default function ChildProfile({ child, onBack, onAction }: Props) {
           }}>
             <Icon name="chevL" size={16}/>
           </button>
-          <span style={{ fontSize: 13, color: T.muted }}>Children</span>
+          <span style={{ fontSize: 13, color: T.muted }}>{t('parentCenter.childProfile.backToChildren')}</span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -52,14 +54,14 @@ export default function ChildProfile({ child, onBack, onAction }: Props) {
             <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
               <Pill tone="indigo">LVL {child.level}</Pill>
               <Pill tone="warn">🔥 {child.streak}d</Pill>
-              <Pill>Age {child.age}</Pill>
+              <Pill>{t('parentCenter.childProfile.age', { age: child.age })}</Pill>
             </div>
           </div>
         </div>
 
         <div style={{ marginTop: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: T.muted, marginBottom: 5, fontFamily: T.fMono }}>
-            <span>LVL {child.level} · {child.xp}% to next</span>
+            <span>{t('parentCenter.childProfile.xpToNext', { level: child.level, xp: child.xp })}</span>
             <span>{child.xp}/100 XP</span>
           </div>
           <Bar pct={child.xp} color={child.accent}/>
@@ -67,9 +69,9 @@ export default function ChildProfile({ child, onBack, onAction }: Props) {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 14 }}>
           {[
-            { label: 'Balance', value: `${child.balance.toLocaleString()}🪙`, color: T.cyan },
-            { label: 'Today', value: `${child.todayDone}/${child.todayTotal}`, color: T.text },
-            { label: 'Badges', value: String(child.badges), color: T.text },
+            { label: t('parentCenter.childProfile.statBalance'), value: `${child.balance.toLocaleString()}🪙`, color: T.cyan },
+            { label: t('parentCenter.childProfile.statToday'), value: `${child.todayDone}/${child.todayTotal}`, color: T.text },
+            { label: t('parentCenter.childProfile.statBadges'), value: String(child.badges), color: T.text },
           ].map(s => (
             <div key={s.label} style={{ padding: 10, background: T.card, borderRadius: T.r, border: `1px solid ${T.cardBorder}` }}>
               <div style={{ fontSize: 9, color: T.muted, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{s.label}</div>
@@ -79,19 +81,19 @@ export default function ChildProfile({ child, onBack, onAction }: Props) {
         </div>
 
         <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-          <Btn variant="success" size="md" icon="plus" full onClick={() => onAction(child, 'reward')}>Reward</Btn>
-          <Btn variant="warn" size="md" icon="warn" full onClick={() => onAction(child, 'penalty')}>Penalty</Btn>
-          <Btn variant="cyan" size="md" icon="snow" full onClick={() => onAction(child, 'freeze')}>Freeze</Btn>
+          <Btn variant="success" size="md" icon="plus" full onClick={() => onAction(child, 'reward')}>{t('parentCenter.childProfile.actionReward')}</Btn>
+          <Btn variant="warn" size="md" icon="warn" full onClick={() => onAction(child, 'penalty')}>{t('parentCenter.childProfile.actionPenalty')}</Btn>
+          <Btn variant="cyan" size="md" icon="snow" full onClick={() => onAction(child, 'freeze')}>{t('parentCenter.childProfile.actionFreeze')}</Btn>
         </div>
       </div>
 
       {/* Tabs */}
       <div style={{ padding: '16px 16px 0' }}>
         <Tabs value={tab} onChange={setTab} tabs={[
-          { id: 'overview', label: 'Overview' },
-          { id: 'subjects', label: 'Subjects' },
-          { id: 'goals', label: 'Goals' },
-          { id: 'expenses', label: 'Расходы' },
+          { id: 'overview', label: t('parentCenter.childProfile.tabOverview') },
+          { id: 'subjects', label: t('parentCenter.childProfile.tabSubjects') },
+          { id: 'goals', label: t('parentCenter.childProfile.tabGoals') },
+          { id: 'expenses', label: t('parentCenter.childProfile.tabExpenses') },
         ]}/>
       </div>
 
@@ -101,11 +103,11 @@ export default function ChildProfile({ child, onBack, onAction }: Props) {
             <ReadingCheckToggle childId={child.id}/>
             <Card pad={14}>
               <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
-                Last 7 days · coins earned
+                {t('parentCenter.childProfile.weekCoins')}
               </div>
               <Sparkline data={child.week} color={child.accent} w={300} h={60}/>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 10, color: T.muted, fontFamily: T.fMono }}>
-                {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => <span key={d}>{d}</span>)}
+                {['dayMon','dayTue','dayWed','dayThu','dayFri','daySat','daySun'].map(d => <span key={d}>{t(`parentCenter.settings.child.${d}`)}</span>)}
               </div>
             </Card>
 
@@ -113,9 +115,9 @@ export default function ChildProfile({ child, onBack, onAction }: Props) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                 <span style={{ fontSize: 22 }}>🎯</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>Saving for {child.goal.title}</div>
+                  <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>{t('parentCenter.childProfile.savingFor', { title: child.goal.title })}</div>
                   <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
-                    {Math.round((child.goal.saved / child.goal.target) * 100)}% funded
+                    {t('parentCenter.childProfile.funded', { pct: Math.round((child.goal.saved / child.goal.target) * 100) })}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right', fontFamily: T.fMono, fontSize: 13, color: T.text, fontWeight: 700 }}>
@@ -127,12 +129,12 @@ export default function ChildProfile({ child, onBack, onAction }: Props) {
 
             <Card pad={14}>
               <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
-                Today's checklist
+                {t('parentCenter.childProfile.checklist')}
               </div>
-              {TASKS.slice(0, 5).map((t, i) => {
+              {TASKS.slice(0, 5).map((task, i) => {
                 const done = i < child.todayDone
                 return (
-                  <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: i ? `1px solid ${T.cardBorder}` : 'none' }}>
+                  <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: i ? `1px solid ${T.cardBorder}` : 'none' }}>
                     <span style={{
                       width: 20, height: 20, borderRadius: '50%',
                       background: done ? T.success : 'transparent',
@@ -141,8 +143,8 @@ export default function ChildProfile({ child, onBack, onAction }: Props) {
                     }}>
                       {done && <Icon name="check" size={12} color="#fff"/>}
                     </span>
-                    <span style={{ flex: 1, fontSize: 13, color: done ? T.muted : T.text, textDecoration: done ? 'line-through' : 'none' }}>{t.title}</span>
-                    <Coin v={done ? t.coins : 0} neutral={!done}/>
+                    <span style={{ flex: 1, fontSize: 13, color: done ? T.muted : T.text, textDecoration: done ? 'line-through' : 'none' }}>{t(task.titleKey)}</span>
+                    <Coin v={done ? task.coins : 0} neutral={!done}/>
                   </div>
                 )
               })}
@@ -164,13 +166,13 @@ export default function ChildProfile({ child, onBack, onAction }: Props) {
                 </div>
                 <Btn variant="primary" size="sm" icon="plus"
                   onClick={() => window.location.href = `/parent/daily?childId=${child.id}`}>
-                  Grade
+                  {t('parentCenter.childProfile.grade')}
                 </Btn>
               </Card>
             ))}
             {child.subjects.length === 0 && (
               <Card pad={20} style={{ textAlign: 'center', color: T.muted, fontSize: 13 }}>
-                No subjects configured
+                {t('parentCenter.childProfile.noSubjects')}
               </Card>
             )}
           </div>

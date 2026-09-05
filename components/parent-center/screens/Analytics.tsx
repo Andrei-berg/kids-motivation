@@ -184,6 +184,7 @@ export default function AnalyticsScreen({ children, activity, coinsThisWeek, tas
   streakHighlight: { name: string; days: number } | null
   weeklyError?: boolean
 }) {
+  const t = useT()
   const [range, setRange] = useState('week')
   const isDesktop = useDesktop()
 
@@ -199,10 +200,10 @@ export default function AnalyticsScreen({ children, activity, coinsThisWeek, tas
   const taskRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
 
   const kpis = [
-    { l: 'Coins earned', v: String(earned), s: 'this period', tone: 'success', icon: '📈' },
-    { l: 'Task rate', v: taskRate + '%', s: 'tasks done today', tone: 'success', icon: '✅' },
-    { l: 'Penalties', v: String(penalties), s: 'this period', tone: 'default', icon: '⚠️' },
-    { l: 'Children', v: String(children.length), s: 'active', tone: 'default', icon: '👨‍👩‍👧' },
+    { l: t('analytics.screen.kpiCoinsEarned'), v: String(earned), s: t('analytics.screen.kpiThisPeriod'), tone: 'success', icon: '📈' },
+    { l: t('analytics.screen.kpiTaskRate'), v: taskRate + '%', s: t('analytics.screen.kpiTasksToday'), tone: 'success', icon: '✅' },
+    { l: t('analytics.screen.kpiPenalties'), v: String(penalties), s: t('analytics.screen.kpiThisPeriod'), tone: 'default', icon: '⚠️' },
+    { l: t('analytics.screen.kpiChildren'), v: String(children.length), s: t('analytics.screen.kpiActive'), tone: 'default', icon: '👨‍👩‍👧' },
   ]
 
   const labels = ['W-6', 'W-5', 'W-4', 'W-3', 'W-2', 'W-1', 'Now']
@@ -211,18 +212,18 @@ export default function AnalyticsScreen({ children, activity, coinsThisWeek, tas
     <div style={{ padding: isDesktop ? '24px' : '20px 16px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <h1 style={{ margin: 0, fontFamily: T.fHead, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Analytics</h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: T.muted }}>Behavior trends across the family</p>
+          <h1 style={{ margin: 0, fontFamily: T.fHead, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>{t('analytics.screen.title')}</h1>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: T.muted }}>{t('analytics.screen.subtitle')}</p>
         </div>
         <Btn variant="ghost" size="sm" icon="download" onClick={() => window.location.href = '/parent/analytics'}>
-          Full report
+          {t('analytics.screen.fullReport')}
         </Btn>
       </div>
 
       <Tabs value={range} onChange={setRange} tabs={[
-        { id: 'week', label: 'Week' },
-        { id: 'month', label: 'Month' },
-        { id: 'quarter', label: 'Quarter' },
+        { id: 'week', label: t('analytics.screen.tabWeek') },
+        { id: 'month', label: t('analytics.screen.tabMonth') },
+        { id: 'quarter', label: t('analytics.screen.tabQuarter') },
       ]}/>
 
       <WeeklySummaryCard
@@ -251,15 +252,15 @@ export default function AnalyticsScreen({ children, activity, coinsThisWeek, tas
         <Card pad={16}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <div>
-              <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>Coins earned vs spent</div>
-              <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>Last 7 days</div>
+              <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>{t('analytics.screen.coinsVsSpent')}</div>
+              <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{t('analytics.screen.last7days')}</div>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: T.muted }}>
-                <span style={{ width: 8, height: 8, borderRadius: 2, background: T.indigo, display: 'block' }}/> Earned
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: T.indigo, display: 'block' }}/> {t('analytics.screen.legendEarned')}
               </span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: T.muted }}>
-                <span style={{ width: 8, height: 8, borderRadius: 2, background: T.danger, display: 'block' }}/> Spent
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: T.danger, display: 'block' }}/> {t('analytics.screen.legendSpent')}
               </span>
             </div>
           </div>
@@ -270,8 +271,8 @@ export default function AnalyticsScreen({ children, activity, coinsThisWeek, tas
           <Card pad={16}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <div>
-                <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>Task completion · children</div>
-                <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>% of daily tasks finished</div>
+                <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>{t('analytics.screen.taskCompletion')}</div>
+                <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{t('analytics.screen.taskCompletionSub')}</div>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
@@ -293,7 +294,7 @@ export default function AnalyticsScreen({ children, activity, coinsThisWeek, tas
         )}
 
         <Card pad={16} style={{ gridColumn: isDesktop ? 'span 2' : undefined }}>
-          <div style={{ fontSize: 13, color: T.text, fontWeight: 600, marginBottom: 10 }}>Children overview</div>
+          <div style={{ fontSize: 13, color: T.text, fontWeight: 600, marginBottom: 10 }}>{t('analytics.screen.childrenOverview')}</div>
           {children.map((c, i) => (
             <div key={c.id} style={{
               display: 'flex', alignItems: 'center', gap: 12,
@@ -303,11 +304,11 @@ export default function AnalyticsScreen({ children, activity, coinsThisWeek, tas
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>{c.name}</div>
                 <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
-                  Balance {c.balance}🪙 · Streak {c.streak}d
+                  {t('analytics.screen.balanceStreak', { balance: c.balance, streak: c.streak })}
                 </div>
               </div>
               <Pill tone={c.todayPct >= 80 ? 'success' : c.todayPct >= 50 ? 'warn' : 'danger'}>
-                {c.todayPct}% today
+                {t('analytics.screen.pctToday', { pct: c.todayPct })}
               </Pill>
             </div>
           ))}

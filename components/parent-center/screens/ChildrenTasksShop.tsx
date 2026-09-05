@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
+import { useT } from '@/lib/i18n'
 import { T } from '../tokens'
 import { Card, Btn, Pill, Avatar, Bar, Coin, Icon, Tabs, SectionH } from '../ui'
 import type { ParentChild } from '../types'
@@ -24,12 +25,13 @@ export function ChildrenScreen({ children, onOpenChild }: {
   children: ParentChild[]
   onOpenChild: (id: string) => void
 }) {
+  const t = useT()
   const isDesktop = useDesktop()
   return (
     <div style={{ padding: isDesktop ? '24px' : '20px 16px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div>
-        <h1 style={{ margin: 0, fontFamily: T.fHead, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Children</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 13, color: T.muted }}>Full profiles, stats, and settings per child</p>
+        <h1 style={{ margin: 0, fontFamily: T.fHead, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>{t('parentCenter.childrenScreen.title')}</h1>
+        <p style={{ margin: '4px 0 0', fontSize: 13, color: T.muted }}>{t('parentCenter.childrenScreen.subtitle')}</p>
       </div>
 
       <div style={{
@@ -47,7 +49,7 @@ export function ChildrenScreen({ children, onOpenChild }: {
                 <Pill tone="indigo">LVL {c.level}</Pill>
                 <Pill tone="warn">🔥 {c.streak}d</Pill>
               </div>
-              <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>{c.age} years · Mode {c.mode} independence</div>
+              <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>{t('parentCenter.childrenScreen.ageMode', { age: c.age, mode: c.mode })}</div>
             </div>
             <Icon name="chevR" size={18} color={T.muted}/>
           </div>
@@ -61,10 +63,10 @@ export function ChildrenScreen({ children, onOpenChild }: {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
             {[
-              { label: 'Balance', value: c.balance.toLocaleString(), unit: '🪙' },
-              { label: 'Streak', value: c.streak, unit: 'days' },
-              { label: 'Badges', value: c.badges, unit: 'earned' },
-              { label: 'Today', value: c.todayPct + '%', unit: 'done' },
+              { label: t('parentCenter.childrenScreen.statBalance'), value: c.balance.toLocaleString(), unit: '🪙' },
+              { label: t('parentCenter.childrenScreen.statStreak'), value: c.streak, unit: t('parentCenter.childrenScreen.unitDays') },
+              { label: t('parentCenter.childrenScreen.statBadges'), value: c.badges, unit: t('parentCenter.childrenScreen.unitEarned') },
+              { label: t('parentCenter.childrenScreen.statToday'), value: c.todayPct + '%', unit: t('parentCenter.childrenScreen.unitDone') },
             ].map(s => (
               <div key={s.label} style={{ background: T.bg1, borderRadius: T.r, padding: 10, border: `1px solid ${T.cardBorder}` }}>
                 <div style={{ fontSize: 9, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</div>
@@ -76,7 +78,7 @@ export function ChildrenScreen({ children, onOpenChild }: {
 
           <div style={{ marginTop: 14, padding: 12, background: T.bg1, borderRadius: T.r, border: `1px solid ${T.cardBorder}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <div style={{ fontSize: 12, color: T.textDim, fontWeight: 600 }}>🎯 Goal: {c.goal.title}</div>
+              <div style={{ fontSize: 12, color: T.textDim, fontWeight: 600 }}>{t('parentCenter.childrenScreen.goalLabel', { title: c.goal.title })}</div>
               <div style={{ fontFamily: T.fMono, fontSize: 12, color: T.text, fontWeight: 600 }}>
                 {c.goal.saved}<span style={{ color: T.muted }}>/{c.goal.target}</span>
               </div>
@@ -87,27 +89,28 @@ export function ChildrenScreen({ children, onOpenChild }: {
       ))}
       </div>
 
-      <Btn variant="ghost" size="lg" icon="plus" full onClick={() => window.location.href = '/register'}>Add child</Btn>
+      <Btn variant="ghost" size="lg" icon="plus" full onClick={() => window.location.href = '/register'}>{t('parentCenter.childrenScreen.addChild')}</Btn>
     </div>
   )
 }
 
 // ═══════════ TASKS ═══════════
 const MOCK_TASKS = [
-  { id: 't1', title: 'Make bed', coins: 2, cat: 'chore', who: 'both', freq: 'Daily' },
-  { id: 't2', title: 'Homework done', coins: 5, cat: 'study', who: 'both', freq: 'Daily' },
-  { id: 't3', title: 'Room cleaned', coins: 3, cat: 'chore', who: 'both', freq: 'Daily' },
-  { id: 't4', title: '30 min exercise', coins: 5, cat: 'sport', who: 'both', freq: 'Daily' },
-  { id: 't5', title: 'Read 20 pages', coins: 3, cat: 'study', who: 'both', freq: 'Daily' },
-  { id: 't6', title: 'Brush teeth (PM)', coins: 1, cat: 'behavior', who: 'both', freq: 'Daily' },
+  { id: 't1', titleKey: 'parentCenter.tasksScreen.mockMakeBed', coins: 2, cat: 'chore', who: 'both' },
+  { id: 't2', titleKey: 'parentCenter.tasksScreen.mockHomeworkDone', coins: 5, cat: 'study', who: 'both' },
+  { id: 't3', titleKey: 'parentCenter.tasksScreen.mockRoomCleaned', coins: 3, cat: 'chore', who: 'both' },
+  { id: 't4', titleKey: 'parentCenter.tasksScreen.mockExercise', coins: 5, cat: 'sport', who: 'both' },
+  { id: 't5', titleKey: 'parentCenter.tasksScreen.mockRead', coins: 3, cat: 'study', who: 'both' },
+  { id: 't6', titleKey: 'parentCenter.tasksScreen.mockBrushTeeth', coins: 1, cat: 'behavior', who: 'both' },
 ]
 const MOCK_CHALLENGES = [
-  { id: 'c1', title: '3 A-grades this week', reward: 200, progress: 2, total: 3, expires: 'Sun' },
-  { id: 'c2', title: 'Month without Grade 2', reward: 500, progress: 18, total: 30, expires: 'Apr 30' },
-  { id: 'c3', title: '5-day exercise streak', reward: 150, progress: 3, total: 5, expires: 'Fri' },
+  { id: 'c1', titleKey: 'parentCenter.tasksScreen.mockCh1', reward: 200, progress: 2, total: 3, expiresKey: 'parentCenter.tasksScreen.mockExpSun' },
+  { id: 'c2', titleKey: 'parentCenter.tasksScreen.mockCh2', reward: 500, progress: 18, total: 30, expiresKey: 'parentCenter.tasksScreen.mockExpApr30' },
+  { id: 'c3', titleKey: 'parentCenter.tasksScreen.mockCh3', reward: 150, progress: 3, total: 5, expiresKey: 'parentCenter.tasksScreen.mockExpFri' },
 ]
 
 export function TasksScreen() {
+  const t = useT()
   const [tab, setTab] = useState('daily')
   const catColor: Record<string, string> = { chore: T.cyan, study: T.indigo, sport: T.success, behavior: T.warning }
   const catEmoji: Record<string, string> = { chore: '🧹', study: '📚', sport: '🏃', behavior: '⭐' }
@@ -116,35 +119,35 @@ export function TasksScreen() {
     <div style={{ padding: '20px 16px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <h1 style={{ margin: 0, fontFamily: T.fHead, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Tasks</h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: T.muted }}>Daily tasks, weekly & special challenges</p>
+          <h1 style={{ margin: 0, fontFamily: T.fHead, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>{t('parentCenter.tasksScreen.title')}</h1>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: T.muted }}>{t('parentCenter.tasksScreen.subtitle')}</p>
         </div>
-        <Btn variant="primary" size="md" icon="plus">New</Btn>
+        <Btn variant="primary" size="md" icon="plus">{t('parentCenter.tasksScreen.new')}</Btn>
       </div>
 
       <Tabs value={tab} onChange={setTab} tabs={[
-        { id: 'daily', label: 'Daily', icon: '📋' },
-        { id: 'weekly', label: 'Challenges', icon: '🏆' },
-        { id: 'templates', label: 'Templates', icon: '📂' },
+        { id: 'daily', label: t('parentCenter.tasksScreen.tabDaily'), icon: '📋' },
+        { id: 'weekly', label: t('parentCenter.tasksScreen.tabChallenges'), icon: '🏆' },
+        { id: 'templates', label: t('parentCenter.tasksScreen.tabTemplates'), icon: '📂' },
       ]}/>
 
       {tab === 'daily' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {MOCK_TASKS.map(t => (
-            <Card key={t.id} pad={14} hover style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {MOCK_TASKS.map(task => (
+            <Card key={task.id} pad={14} hover style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{
                 width: 40, height: 40, borderRadius: T.r,
-                background: `${catColor[t.cat]}18`, border: `1px solid ${catColor[t.cat]}30`,
+                background: `${catColor[task.cat]}18`, border: `1px solid ${catColor[task.cat]}30`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-              }}>{catEmoji[t.cat]}</div>
+              }}>{catEmoji[task.cat]}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, color: T.text, fontWeight: 600 }}>{t.title}</div>
+                <div style={{ fontSize: 14, color: T.text, fontWeight: 600 }}>{t(task.titleKey)}</div>
                 <div style={{ display: 'flex', gap: 6, marginTop: 5 }}>
-                  <Pill>{t.freq}</Pill>
-                  <Pill tone="indigo">All children</Pill>
+                  <Pill>{t('parentCenter.tasksScreen.freqDaily')}</Pill>
+                  <Pill tone="indigo">{t('parentCenter.tasksScreen.allChildren')}</Pill>
                 </div>
               </div>
-              <Coin v={t.coins}/>
+              <Coin v={task.coins}/>
               <button style={{ background: 'transparent', border: 'none', color: T.muted, cursor: 'pointer', padding: 6 }}>
                 <Icon name="dots" size={18}/>
               </button>
@@ -163,34 +166,34 @@ export function TasksScreen() {
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, color: T.text, fontWeight: 600 }}>{ch.title}</div>
-                    <div style={{ fontSize: 11, color: T.muted, marginTop: 3 }}>Expires {ch.expires}</div>
+                    <div style={{ fontSize: 14, color: T.text, fontWeight: 600 }}>{t(ch.titleKey)}</div>
+                    <div style={{ fontSize: 11, color: T.muted, marginTop: 3 }}>{t('parentCenter.tasksScreen.expires', { date: t(ch.expiresKey) })}</div>
                   </div>
                   <Coin v={ch.reward} big/>
                 </div>
                 <Bar pct={pct} color={pct >= 100 ? T.success : T.indigo}/>
                 <div style={{ fontSize: 11, color: T.muted, marginTop: 6, fontFamily: T.fMono, display: 'flex', justifyContent: 'space-between' }}>
-                  <span>{ch.progress} of {ch.total}</span><span>{Math.round(pct)}%</span>
+                  <span>{t('parentCenter.tasksScreen.progress', { done: ch.progress, total: ch.total })}</span><span>{Math.round(pct)}%</span>
                 </div>
               </Card>
             )
           })}
-          <Btn variant="ghost" size="md" icon="plus" full>New challenge</Btn>
+          <Btn variant="ghost" size="md" icon="plus" full>{t('parentCenter.tasksScreen.newChallenge')}</Btn>
         </div>
       )}
 
       {tab === 'templates' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
           {[
-            { n: 'Chores', icon: '🧹', count: 8, color: T.cyan },
-            { n: 'Homework', icon: '📚', count: 12, color: T.indigo },
-            { n: 'Sports', icon: '🏃', count: 6, color: T.success },
-            { n: 'Behavior', icon: '⭐', count: 5, color: T.warning },
-          ].map(t => (
-            <Card key={t.n} pad={14} hover>
-              <div style={{ fontSize: 24, marginBottom: 8 }}>{t.icon}</div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{t.n}</div>
-              <div style={{ fontSize: 11, color: T.muted, fontFamily: T.fMono, marginTop: 2 }}>{t.count} templates</div>
+            { n: t('parentCenter.tasksScreen.tplChores'), icon: '🧹', count: 8, color: T.cyan },
+            { n: t('parentCenter.tasksScreen.tplHomework'), icon: '📚', count: 12, color: T.indigo },
+            { n: t('parentCenter.tasksScreen.tplSports'), icon: '🏃', count: 6, color: T.success },
+            { n: t('parentCenter.tasksScreen.tplBehavior'), icon: '⭐', count: 5, color: T.warning },
+          ].map(tpl => (
+            <Card key={tpl.n} pad={14} hover>
+              <div style={{ fontSize: 24, marginBottom: 8 }}>{tpl.icon}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{tpl.n}</div>
+              <div style={{ fontSize: 11, color: T.muted, fontFamily: T.fMono, marginTop: 2 }}>{t('parentCenter.tasksScreen.templatesCount', { count: tpl.count })}</div>
             </Card>
           ))}
         </div>
@@ -258,6 +261,7 @@ export function ShopScreen({ pending, onApprove, onDecline, children = [] }: {
   onDecline: (p: RewardPurchase) => void
   children?: ParentChild[]
 }) {
+  const t = useT()
   const isDesktop = useDesktop()
   const [tab, setTab] = useState('items')
   const [rewards, setRewards] = useState<Reward[]>([])
@@ -335,10 +339,10 @@ export function ShopScreen({ pending, onApprove, onDecline, children = [] }: {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <h1 style={{ margin: 0, fontFamily: T.fHead, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Reward Shop</h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: T.muted }}>{rewards.length} rewards · {stickerRewards.length} stickers</p>
+          <h1 style={{ margin: 0, fontFamily: T.fHead, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>{t('parentCenter.shopScreen.title')}</h1>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: T.muted }}>{t('parentCenter.shopScreen.summary', { rewards: rewards.length, stickers: stickerRewards.length })}</p>
         </div>
-        <Btn variant="primary" size="md" icon="plus" onClick={openAdd}>Add</Btn>
+        <Btn variant="primary" size="md" icon="plus" onClick={openAdd}>{t('common.add')}</Btn>
       </div>
 
       {error && (

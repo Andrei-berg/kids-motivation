@@ -1,11 +1,14 @@
 'use client'
 
+import { useT } from '@/lib/i18n'
+
 interface PhotoLightboxProps {
   url: string
   onClose: () => void
 }
 
 export function PhotoLightbox({ url, onClose }: PhotoLightboxProps) {
+  const t = useT()
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
@@ -14,14 +17,14 @@ export function PhotoLightbox({ url, onClose }: PhotoLightboxProps) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={url}
-        alt="Photo"
+        alt={t('chat.photoAlt')}
         className="max-w-full max-h-full object-contain"
         onClick={(e) => e.stopPropagation()}
       />
       <button
         onClick={onClose}
         className="absolute top-4 right-4 text-white bg-black/50 rounded-full w-9 h-9 flex items-center justify-center text-lg hover:bg-black/70"
-        aria-label="Close"
+        aria-label={t('common.close')}
       >
         ✕
       </button>

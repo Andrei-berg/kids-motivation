@@ -179,7 +179,7 @@ export default function ParentCenter() {
               week: weekCoins.length === 7 ? weekCoins : [10, 15, 8, 20, 12, 18, 9],
               subjects: subjects.map((s: any) => s.name ?? s.subject_name ?? String(s)),
               badges: 0,
-              goal: { title: 'Big reward', saved: wallet?.coins ?? 0, target: 5000 },
+              goal: { title: t('parentCenter.defaultGoalTitle'), saved: wallet?.coins ?? 0, target: 5000 },
             }
             return { pc, weekTasksDone, weekTasksTotal }
           })
@@ -395,8 +395,8 @@ export default function ParentCenter() {
               boxShadow: `0 4px 14px ${T.indigo}55`,
             }}>P</div>
             <div>
-              <div style={{ fontFamily: T.fHead, fontSize: 13, fontWeight: 600, color: T.text, letterSpacing: '-0.01em' }}>Parent Center</div>
-              <div style={{ fontSize: 10, color: T.muted, marginTop: 1 }}>{children.length} · synced</div>
+              <div style={{ fontFamily: T.fHead, fontSize: 13, fontWeight: 600, color: T.text, letterSpacing: '-0.01em' }}>{t('parentCenter.header.title')}</div>
+              <div style={{ fontSize: 10, color: T.muted, marginTop: 1 }}>{children.length} · {t('parentCenter.header.synced')}</div>
             </div>
           </div>
 
@@ -467,7 +467,7 @@ export default function ParentCenter() {
             background: T.bg1, borderBottom: `1px solid ${T.cardBorder}`, gap: 12,
           }}>
             <div style={{ flex: 1, fontFamily: T.fHead, fontSize: 15, fontWeight: 600, color: T.text, letterSpacing: '-0.01em' }}>
-              {navItems.find(n => n.id === route || (n.id === 'children' && route === 'child'))?.label ?? 'Parent Center'}
+              {navItems.find(n => n.id === route || (n.id === 'children' && route === 'child'))?.label ?? t('parentCenter.header.title')}
             </div>
             {pendingCount > 0 && (
               <div style={{
@@ -494,7 +494,7 @@ export default function ParentCenter() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 9, fontWeight: 700, color: '#fff',
               }}>P</div>
-              Parent
+              {t('parentCenter.settings.family.parentName')}
             </div>
           </div>
 
@@ -549,7 +549,7 @@ export default function ParentCenter() {
           boxShadow: `0 3px 12px ${T.indigo}55`, flexShrink: 0,
         }}>P</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: T.fHead, fontSize: 14, fontWeight: 600, color: T.text, letterSpacing: '-0.01em' }}>Parent Center</div>
+          <div style={{ fontFamily: T.fHead, fontSize: 14, fontWeight: 600, color: T.text, letterSpacing: '-0.01em' }}>{t('parentCenter.header.title')}</div>
           <div style={{ fontSize: 10, color: T.muted }}>{t('dashboard.familyCount', { count: String(children.length) })}</div>
         </div>
         <LangToggle/>

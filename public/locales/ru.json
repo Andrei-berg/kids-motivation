@@ -26,7 +26,9 @@
     "yes": "Да",
     "no": "Нет",
     "or": "или",
-    "saveError": "Не удалось сохранить — проверьте подключение и попробуйте снова."
+    "saveError": "Не удалось сохранить — проверьте подключение и попробуйте снова.",
+    "quarter": "Квартал",
+    "switchLanguage": "Сменить язык"
   },
   "auth": {
     "loading": "Загрузка...",
@@ -41,7 +43,9 @@
     "registerBtn": "Создать аккаунт",
     "googleBtn": "Войти через Google",
     "joinFamily": "Второй родитель или ребёнок со своим аккаунтом? Есть код приглашения →",
-    "kidLoginLink": "Ребёнок без аккаунта? Войти по коду семьи и PIN →"
+    "kidLoginLink": "Ребёнок без аккаунта? Войти по коду семьи и PIN →",
+    "appName": "Мотивация детей",
+    "email": "Эл. почта"
   },
   "authHelp": {
     "trigger": "Как устроен вход в семью? →",
@@ -412,7 +416,8 @@
     "trainerLabel": "Тренер: {{name}}",
     "progressPlaceholder": "Прогресс",
     "feedbackPlaceholder": "Отзыв тренера",
-    "coachRatingLabel": "Оценка тренера:"
+    "coachRatingLabel": "Оценка тренера:",
+    "roomPhotoAlt": "Фото комнаты"
   },
   "coachRating": {
     "title": "Оценка тренера",
@@ -652,7 +657,8 @@
       "cancel": "Отмена",
       "deleteConfirm": "Удалить эту категорию?",
       "active": "Активна",
-      "inactive": "Неактивна"
+      "inactive": "Неактивна",
+      "default": "По умолчанию"
     },
     "taskManager": {
       "title": "Задачи",
@@ -725,7 +731,23 @@
       "name": "Название",
       "save": "Сохранить",
       "cancel": "Отмена",
-      "deleteConfirm": "Удалить эту секцию?"
+      "deleteConfirm": "Удалить эту секцию?",
+      "trainer": "Тренер",
+      "trainerNamePlaceholder": "Имя тренера",
+      "costPerMonth": "Стоимость / мес.",
+      "addressLocation": "Адрес / место",
+      "locationPlaceholder": "Место",
+      "scheduleDays": "Дни занятий (необязательно)",
+      "archive": "В архив",
+      "day": {
+        "mon": "Пн",
+        "tue": "Вт",
+        "wed": "Ср",
+        "thu": "Чт",
+        "fri": "Пт",
+        "sat": "Сб",
+        "sun": "Вс"
+      }
     },
     "subjectsManager": {
       "title": "Предметы",
@@ -1098,7 +1120,8 @@
     "yesterday": "Вчера",
     "eventsOne": "{{count}} событие",
     "eventsFew": "{{count}} события",
-    "eventsMany": "{{count}} событий"
+    "eventsMany": "{{count}} событий",
+    "photoAlt": "Фото"
   },
   "manifest": {
     "appName": "FamilyCoins",
@@ -1156,7 +1179,8 @@
     "streakDays": "{{count}} дн.",
     "moodLabel": "Настроение отмечено",
     "moodNote": "Молодец что заполнил день!",
-    "noData": "Нет данных"
+    "noData": "Нет данных",
+    "levelWord": "Уровень"
   },
   "kidLeaderboardPage": {
     "familyRating": "СЕМЕЙНЫЙ РЕЙТИНГ",
@@ -1578,7 +1602,8 @@
         "parentPin": "PIN родителя",
         "parentPinDesc": "Требуется для открытия центра управления",
         "manage": "Управление",
-        "inviteCopied": "Код скопирован"
+        "inviteCopied": "Код скопирован",
+        "parentName": "Родитель"
       },
       "coinsRules": {
         "schoolGrades": "Оценки",
@@ -1691,6 +1716,109 @@
       "earn": "ЗАРАБОТОК",
       "penaltyLabel": "ШТРАФ",
       "bonusLabel": "БОНУС"
+    },
+    "header": {
+      "title": "Родительский центр",
+      "synced": "синхронизировано"
+    },
+    "defaultGoalTitle": "Большая награда",
+    "childrenScreen": {
+      "title": "Дети",
+      "subtitle": "Полные профили, статистика и настройки по каждому ребёнку",
+      "addChild": "Добавить ребёнка",
+      "ageMode": "{{age}} лет · режим самостоятельности {{mode}}",
+      "statBalance": "Баланс",
+      "statStreak": "Серия",
+      "statBadges": "Награды",
+      "statToday": "Сегодня",
+      "unitDays": "дней",
+      "unitEarned": "получено",
+      "unitDone": "выполнено",
+      "goalLabel": "🎯 Цель: {{title}}"
+    },
+    "tasksScreen": {
+      "title": "Задачи",
+      "subtitle": "Ежедневные задачи, еженедельные и особые челленджи",
+      "new": "Создать",
+      "tabDaily": "Ежедневно",
+      "tabChallenges": "Челленджи",
+      "tabTemplates": "Шаблоны",
+      "freqDaily": "Ежедневно",
+      "allChildren": "Все дети",
+      "expires": "До {{date}}",
+      "progress": "{{done}} из {{total}}",
+      "newChallenge": "Новый челлендж",
+      "templatesCount": "{{count}} шаблонов",
+      "tplChores": "Дела по дому",
+      "tplHomework": "Домашка",
+      "tplSports": "Спорт",
+      "tplBehavior": "Поведение",
+      "mockMakeBed": "Заправить кровать",
+      "mockHomeworkDone": "Домашка сделана",
+      "mockRoomCleaned": "Комната убрана",
+      "mockExercise": "30 минут зарядки",
+      "mockRead": "Прочитать 20 страниц",
+      "mockBrushTeeth": "Почистить зубы (вечер)",
+      "mockCh1": "3 пятёрки на этой неделе",
+      "mockCh2": "Месяц без двоек",
+      "mockCh3": "5 дней зарядки подряд",
+      "mockExpSun": "Вс",
+      "mockExpFri": "Пт",
+      "mockExpApr30": "30 апр"
+    },
+    "childProfile": {
+      "backToChildren": "Дети",
+      "age": "Возраст {{age}}",
+      "xpToNext": "УР {{level}} · {{xp}}% до следующего уровня",
+      "statBalance": "Баланс",
+      "statToday": "Сегодня",
+      "statBadges": "Награды",
+      "actionReward": "Награда",
+      "actionPenalty": "Штраф",
+      "actionFreeze": "Заморозка",
+      "tabOverview": "Обзор",
+      "tabSubjects": "Предметы",
+      "tabGoals": "Цели",
+      "tabExpenses": "Расходы",
+      "weekCoins": "Последние 7 дней · заработано монет",
+      "savingFor": "Копит на {{title}}",
+      "funded": "{{pct}}% собрано",
+      "checklist": "Список дел на сегодня",
+      "grade": "Оценка",
+      "noSubjects": "Предметы не настроены"
+    },
+    "actionModal": {
+      "pickPreset": "Выберите шаблон или укажите вручную",
+      "amount": "Сумма",
+      "coinsUnit": "монеты",
+      "reasonPlaceholder": "Короткая заметка…",
+      "reasonLabel": "Причина (необязательно)",
+      "titleReward": "Награда — {{name}}",
+      "titlePenalty": "Штраф — {{name}}",
+      "titleBonus": "Бонус — {{name}}",
+      "titleFreeze": "Заморозить серию: {{name}}",
+      "presetGrade5": "Оценка 5",
+      "presetGrade4": "Оценка 4",
+      "presetGrade3": "Оценка 3",
+      "presetGrade2": "Оценка 2",
+      "presetGrade1": "Оценка 1",
+      "presetRoom": "Уборка",
+      "presetExercise": "Зарядка",
+      "presetBehavior": "Поведение",
+      "presetExtraHelp": "Помощь по дому",
+      "presetMissedTask": "Пропущенное дело",
+      "presetBadBehavior": "Плохое поведение",
+      "presetSmall": "Маленький",
+      "presetMedium": "Средний",
+      "presetLarge": "Большой",
+      "presetChallengeWon": "Челлендж пройден",
+      "preset1Day": "1 день",
+      "preset2Days": "2 дня",
+      "presetWeekend": "Выходные"
+    },
+    "shopScreen": {
+      "title": "Магазин наград",
+      "summary": "{{rewards}} наград · {{stickers}} стикеров"
     }
   },
   "wallets": {
@@ -1716,6 +1844,35 @@
       "noStreak": "Пока никто не набрал серию.",
       "empty": "Здесь появится сводка недели, когда наберётся немного данных.",
       "loadError": "Не удалось загрузить сводку недели. Обновите страницу."
+    },
+    "screen": {
+      "title": "Аналитика",
+      "subtitle": "Тренды поведения по всей семье",
+      "fullReport": "Полный отчёт",
+      "tabWeek": "Неделя",
+      "tabMonth": "Месяц",
+      "tabQuarter": "Квартал",
+      "kpiCoinsEarned": "Монет заработано",
+      "kpiTaskRate": "Доля задач",
+      "kpiPenalties": "Штрафы",
+      "kpiChildren": "Дети",
+      "kpiThisPeriod": "за период",
+      "kpiTasksToday": "задач сделано сегодня",
+      "kpiActive": "активны",
+      "coinsVsSpent": "Заработано и потрачено монет",
+      "last7days": "Последние 7 дней",
+      "legendEarned": "Заработано",
+      "legendSpent": "Потрачено",
+      "taskCompletion": "Выполнение задач · дети",
+      "taskCompletionSub": "% дневных задач выполнено",
+      "childrenOverview": "Обзор по детям",
+      "balanceStreak": "Баланс {{balance}}🪙 · серия {{streak}}д",
+      "pctToday": "{{pct}}% сегодня"
     }
+  },
+  "family": {
+    "title": "Семья",
+    "subtitle": "Общее пространство семьи — доступно всем участникам.",
+    "goToDashboard": "Перейти к панели"
   }
 }

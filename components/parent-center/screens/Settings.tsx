@@ -149,7 +149,7 @@ function FamilyTab({ allChildren, notify, familyId }: { allChildren: ParentChild
             <div style={{ width: 40, height: 40, borderRadius: '50%', background: `linear-gradient(135deg, ${T.indigo}, ${T.cyan})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>👤</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, color: T.text, fontWeight: 600 }}>
-                Parent <span style={{ fontSize: 12, color: T.muted, fontWeight: 400 }}>{t('parentCenter.settings.family.you')}</span>
+                {t('parentCenter.settings.family.parentName')} <span style={{ fontSize: 12, color: T.muted, fontWeight: 400 }}>{t('parentCenter.settings.family.you')}</span>
               </div>
             </div>
             <Pill tone="indigo">{t('parentCenter.settings.family.roleParent')}</Pill>

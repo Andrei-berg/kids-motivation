@@ -187,7 +187,7 @@ export default function CategoryManager({ familyId }: Props) {
                 {TYPE_LABELS[cat.type]}
               </span>
               {cat.is_default && (
-                <span className="ml-2 text-xs text-gray-500">Default</span>
+                <span className="ml-2 text-xs text-gray-500">{t('settings.categoryManager.default')}</span>
               )}
             </div>
 

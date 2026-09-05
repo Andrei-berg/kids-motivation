@@ -1,8 +1,9 @@
 'use client'
-import { useLanguage, SUPPORTED_LANGUAGES } from '@/lib/i18n'
+import { useLanguage, useT, SUPPORTED_LANGUAGES } from '@/lib/i18n'
 
 export function LanguageToggle({ className }: { className?: string }) {
   const { language, setLanguage } = useLanguage()
+  const t = useT()
 
   return (
     <select
@@ -19,7 +20,7 @@ export function LanguageToggle({ className }: { className?: string }) {
         cursor: 'pointer',
         color: 'inherit',
       }}
-      aria-label="Switch language"
+      aria-label={t('common.switchLanguage')}
     >
       {SUPPORTED_LANGUAGES.map(lang => (
         <option key={lang.code} value={lang.code} style={{ background: '#111827', color: '#fff' }}>

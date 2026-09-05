@@ -1,9 +1,11 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useT } from '@/lib/i18n'
 
 export default function FamilyPage() {
   const router = useRouter()
+  const t = useT()
 
   return (
     <div
@@ -20,10 +22,10 @@ export default function FamilyPage() {
       }}
     >
       <h1 style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>
-        Family
+        {t('family.title')}
       </h1>
       <p style={{ color: '#666', margin: 0 }}>
-        Shared family space — accessible to all members.
+        {t('family.subtitle')}
       </p>
       <button
         onClick={() => router.push('/dashboard')}
@@ -37,7 +39,7 @@ export default function FamilyPage() {
           background: '#f5f5f5',
         }}
       >
-        Go to dashboard
+        {t('family.goToDashboard')}
       </button>
     </div>
   )

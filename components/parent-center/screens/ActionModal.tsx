@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useT } from '@/lib/i18n'
 import { T } from '../tokens'
 import { Icon, Field, Btn } from '../ui'
 import type { ParentChild, ActionType } from '../types'
@@ -14,6 +15,7 @@ type Props = {
 }
 
 export default function ActionModal({ open, child, action, onClose, onConfirm }: Props) {
+  const t = useT()
   const [amount, setAmount] = useState(5)
   const [reason, setReason] = useState('')
   const [preset, setPreset] = useState<string | null>(null)
@@ -35,30 +37,30 @@ export default function ActionModal({ open, child, action, onClose, onConfirm }:
   }
   const cfgMap: Record<ActionType, ActionCfg> = {
     reward: {
-      title: `Reward ${child.name}`, color: T.success, icon: '🌟',
+      title: t('parentCenter.actionModal.titleReward', { name: child.name }), color: T.success, icon: '🌟',
       presets: [
-        { l: 'Grade 5', v: 5 }, { l: 'Grade 4', v: 3 },
-        { l: 'Room', v: 3 }, { l: 'Exercise', v: 5 },
-        { l: 'Behavior', v: 5 }, { l: 'Extra help', v: 2 },
+        { l: t('parentCenter.actionModal.presetGrade5'), v: 5 }, { l: t('parentCenter.actionModal.presetGrade4'), v: 3 },
+        { l: t('parentCenter.actionModal.presetRoom'), v: 3 }, { l: t('parentCenter.actionModal.presetExercise'), v: 5 },
+        { l: t('parentCenter.actionModal.presetBehavior'), v: 5 }, { l: t('parentCenter.actionModal.presetExtraHelp'), v: 2 },
       ],
     },
     penalty: {
-      title: `Penalty for ${child.name}`, color: T.danger, icon: '⚠️',
+      title: t('parentCenter.actionModal.titlePenalty', { name: child.name }), color: T.danger, icon: '⚠️',
       presets: [
-        { l: 'Grade 3', v: -3 }, { l: 'Grade 2', v: -5 }, { l: 'Grade 1', v: -10 },
-        { l: 'Missed task', v: -3 }, { l: 'Bad behavior', v: -5 },
+        { l: t('parentCenter.actionModal.presetGrade3'), v: -3 }, { l: t('parentCenter.actionModal.presetGrade2'), v: -5 }, { l: t('parentCenter.actionModal.presetGrade1'), v: -10 },
+        { l: t('parentCenter.actionModal.presetMissedTask'), v: -3 }, { l: t('parentCenter.actionModal.presetBadBehavior'), v: -5 },
       ],
     },
     bonus: {
-      title: `Bonus for ${child.name}`, color: T.indigo, icon: '💰',
+      title: t('parentCenter.actionModal.titleBonus', { name: child.name }), color: T.indigo, icon: '💰',
       presets: [
-        { l: 'Small', v: 25 }, { l: 'Medium', v: 50 },
-        { l: 'Large', v: 100 }, { l: 'Challenge won', v: 200 },
+        { l: t('parentCenter.actionModal.presetSmall'), v: 25 }, { l: t('parentCenter.actionModal.presetMedium'), v: 50 },
+        { l: t('parentCenter.actionModal.presetLarge'), v: 100 }, { l: t('parentCenter.actionModal.presetChallengeWon'), v: 200 },
       ],
     },
     freeze: {
-      title: `Freeze ${child.name}'s streak`, color: T.cyan, icon: '❄️',
-      presets: [{ l: '1 day', v: 1 }, { l: '2 days', v: 2 }, { l: 'Weekend', v: 2 }],
+      title: t('parentCenter.actionModal.titleFreeze', { name: child.name }), color: T.cyan, icon: '❄️',
+      presets: [{ l: t('parentCenter.actionModal.preset1Day'), v: 1 }, { l: t('parentCenter.actionModal.preset2Days'), v: 2 }, { l: t('parentCenter.actionModal.presetWeekend'), v: 2 }],
     },
   }
   const cfg = cfgMap[action]
@@ -83,7 +85,7 @@ export default function ActionModal({ open, child, action, onClose, onConfirm }:
           }}>{cfg.icon}</div>
           <div style={{ flex: 1 }}>
             <h3 style={{ margin: 0, fontFamily: T.fHead, fontSize: 18, fontWeight: 600, color: T.text, letterSpacing: '-0.01em' }}>{cfg.title}</h3>
-            <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>Pick a preset or customize</div>
+            <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{t('parentCenter.actionModal.pickPreset')}</div>
           </div>
           <button onClick={onClose} style={{
             width: 32, height: 32, borderRadius: '50%',
@@ -117,7 +119,7 @@ export default function ActionModal({ open, child, action, onClose, onConfirm }:
 
         {action !== 'freeze' && (
           <>
-            <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Amount</div>
+            <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{t('parentCenter.actionModal.amount')}</div>
             <div style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: 14,
               background: T.bg1, border: `1px solid ${T.cardBorder}`,
@@ -133,7 +135,7 @@ export default function ActionModal({ open, child, action, onClose, onConfirm }:
                     width: '100%', textAlign: 'center', background: 'transparent', border: 'none', outline: 'none',
                     color: amount >= 0 ? T.success : T.danger, fontFamily: T.fMono, fontSize: 28, fontWeight: 700,
                   }}/>
-                <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>coins</div>
+                <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{t('parentCenter.actionModal.coinsUnit')}</div>
               </div>
               <button onClick={() => setAmount(a => a + 1)} style={{
                 width: 32, height: 32, borderRadius: '50%', border: 'none',
@@ -143,14 +145,14 @@ export default function ActionModal({ open, child, action, onClose, onConfirm }:
           </>
         )}
 
-        <Field label="Reason (optional)" value={reason} onChange={setReason} placeholder="Write a short note…"/>
+        <Field label={t('parentCenter.actionModal.reasonLabel')} value={reason} onChange={setReason} placeholder={t('parentCenter.actionModal.reasonPlaceholder')}/>
 
         <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-          <Btn variant="ghost" size="lg" onClick={onClose} full>Cancel</Btn>
+          <Btn variant="ghost" size="lg" onClick={onClose} full>{t('common.cancel')}</Btn>
           <Btn variant="primary" size="lg" icon="check" full
             onClick={() => { onConfirm({ child, action, amount, reason }); onClose() }}
             style={{ background: cfg.color, borderColor: cfg.color }}>
-            Confirm
+            {t('common.confirm')}
           </Btn>
         </div>
       </div>

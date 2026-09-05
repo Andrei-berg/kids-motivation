@@ -243,7 +243,7 @@ export default function KidDayPage() {
               <div style={{ fontSize: 32 }}>⭐</div>
               <div>
                 <div style={{ fontFamily: T.fNum, fontSize: 30, fontWeight: 800, color: T.ink, lineHeight: 1 }}>{level}</div>
-                <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 700, marginTop: 2 }}>Level</div>
+                <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 700, marginTop: 2 }}>{t('kidDayPage.levelWord')}</div>
               </div>
             </div>
             <XPBar xp={xpInLevel} max={1000} level={level} compact/>
@@ -312,7 +312,7 @@ export default function KidDayPage() {
             <div style={{ flex: 1, minWidth: 0 }}>
               <XPBar xp={xpInLevel} max={1000} level={level} compact/>
             </div>
-            <StreakFlame days={streakDays}/>
+            <StreakFlame days={streakDays} label={t('common.days')}/>
           </div>
         </div>
       )}

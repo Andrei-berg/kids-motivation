@@ -114,7 +114,7 @@ export default function KidNav() {
   async function handleLogout() {
     setActiveMemberId(null)
     await supabase.auth.signOut()
-    router.push('/login')
+    router.push('/')
   }
 
   const unreadAria = t('kidNav.unreadAria', { count: unreadCount })

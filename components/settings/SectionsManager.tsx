@@ -15,14 +15,9 @@ import { localDateString } from '@/utils/helpers'
 import { T } from '@/components/parent-center/tokens'
 
 const DAYS = [
-  { key: 'mon', label: 'Mon' },
-  { key: 'tue', label: 'Tue' },
-  { key: 'wed', label: 'Wed' },
-  { key: 'thu', label: 'Thu' },
-  { key: 'fri', label: 'Fri' },
-  { key: 'sat', label: 'Sat' },
-  { key: 'sun', label: 'Sun' },
-]
+  { key: 'mon' }, { key: 'tue' }, { key: 'wed' }, { key: 'thu' },
+  { key: 'fri' }, { key: 'sat' }, { key: 'sun' },
+] as const
 
 interface SectionForm {
   name: string
@@ -261,18 +256,18 @@ export default function SectionsManager() {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
             <div>
-              <div className="premium-label">Trainer</div>
-              <input className="premium-input" placeholder="Trainer name" value={form.trainer} onChange={e => setForm(p => ({ ...p, trainer: e.target.value }))} />
+              <div className="premium-label">{t('settings.sectionsManager.trainer')}</div>
+              <input className="premium-input" placeholder={t('settings.sectionsManager.trainerNamePlaceholder')} value={form.trainer} onChange={e => setForm(p => ({ ...p, trainer: e.target.value }))} />
             </div>
             <div>
-              <div className="premium-label">Cost / mo.</div>
+              <div className="premium-label">{t('settings.sectionsManager.costPerMonth')}</div>
               <input className="premium-input" type="number" placeholder="0" value={form.cost} onChange={e => setForm(p => ({ ...p, cost: e.target.value }))} />
             </div>
           </div>
 
           <div style={{ marginBottom: '10px' }}>
-            <div className="premium-label">Address / location</div>
-            <input className="premium-input" placeholder="Location" value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} />
+            <div className="premium-label">{t('settings.sectionsManager.addressLocation')}</div>
+            <input className="premium-input" placeholder={t('settings.sectionsManager.locationPlaceholder')} value={form.address} onChange={e => setForm(p => ({ ...p, address: e.target.value }))} />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
@@ -287,7 +282,7 @@ export default function SectionsManager() {
           </div>
 
           <div style={{ marginBottom: '14px' }}>
-            <div className="premium-label">Schedule days (optional)</div>
+            <div className="premium-label">{t('settings.sectionsManager.scheduleDays')}</div>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
               {DAYS.map(d => (
                 <button
@@ -301,7 +296,7 @@ export default function SectionsManager() {
                     color: form.scheduleDays.includes(d.key) ? T.indigoHi : T.muted,
                   }}
                 >
-                  {d.label}
+                  {t(`settings.sectionsManager.day.${d.key}`)}
                 </button>
               ))}
             </div>
@@ -361,7 +356,7 @@ export default function SectionsManager() {
                     )}
                     {s.schedule_days && s.schedule_days.length > 0 && (
                       <span style={{ fontSize: '11px', fontWeight: 700, color: T.textDim, background: T.card, border: `1px solid ${T.cardBorder}`, padding: '2px 7px', borderRadius: '6px' }}>
-                        {s.schedule_days.map(d => DAYS.find(x => x.key === d)?.label).filter(Boolean).join(', ')}
+                        {s.schedule_days.map(d => DAYS.some(x => x.key === d) ? t(`settings.sectionsManager.day.${d}`) : null).filter(Boolean).join(', ')}
                       </span>
                     )}
                     {s.cost && (
@@ -382,7 +377,7 @@ export default function SectionsManager() {
                       </button>
                       <button
                         onClick={() => handleArchive(s)}
-                        title="Archive"
+                        title={t('settings.sectionsManager.archive')}
                         style={{ padding: '6px 10px', fontSize: '12px', fontWeight: 700, borderRadius: '8px', border: `1px solid ${T.warning}33`, cursor: 'pointer', background: T.warningSoft, color: T.warning }}
                       >
                         📦

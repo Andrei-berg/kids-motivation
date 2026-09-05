@@ -135,7 +135,7 @@ export function XPBar({ xp, max, level, compact = false, onDark = false }: XPBar
 
 // ─── Streak Flame ────────────────────────────────────────────────────────────
 
-export function StreakFlame({ days, size = 'md' }: { days: number; size?: 'md' | 'lg' }) {
+export function StreakFlame({ days, size = 'md', label = 'DAYS' }: { days: number; size?: 'md' | 'lg'; label?: string }) {
   const cfg = size === 'lg'
     ? { box: 64, fs: 22, lab: 11, pad: 10 }
     : { box: 44, fs: 16, lab: 9, pad: 6 }
@@ -154,7 +154,7 @@ export function StreakFlame({ days, size = 'md' }: { days: number; size?: 'md' |
       </svg>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
         <span style={{ fontFamily: T.fNum, fontSize: cfg.fs, fontWeight: 900, lineHeight: 1 }}>{days}</span>
-        <span style={{ fontFamily: T.fDisp, fontSize: cfg.lab, fontWeight: 800, letterSpacing: 1, opacity: 0.9 }}>DAYS</span>
+        <span style={{ fontFamily: T.fDisp, fontSize: cfg.lab, fontWeight: 800, letterSpacing: 1, opacity: 0.9 }}>{label}</span>
       </div>
     </div>
   )

@@ -130,7 +130,7 @@ function AuthPageInner() {
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>⭐</div>
-          <h1 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>Kids Motivation</h1>
+          <h1 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>{t('auth.appName')}</h1>
           <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0.25rem 0 0' }}>{t('auth.subtitle')}</p>
         </div>
 
@@ -156,7 +156,7 @@ function AuthPageInner() {
         <form onSubmit={tab === 'login' ? handleLogin : handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           <input
             type="email"
-            placeholder="Email"
+            placeholder={t('auth.email')}
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
