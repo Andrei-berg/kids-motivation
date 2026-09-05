@@ -8,7 +8,7 @@ import type { ParentChild, Route } from '../types'
 import { createClient } from '@/lib/supabase/client'
 import AuthHelpModal from '@/components/AuthHelpModal'
 import { getWalletSettings } from '@/lib/wallet-api'
-import { setChildPin } from '@/lib/onboarding-api'
+import { setChildPin, getChildLoginStatus, resetChildLogin, type ChildLoginStatus } from '@/lib/onboarding-api'
 import { updateWalletSettingsApi } from '@/lib/wallet-client'
 import type { WalletSettings } from '@/lib/wallet-api'
 import { useLanguage, SUPPORTED_LANGUAGES, useT } from '@/lib/i18n'
@@ -515,6 +515,26 @@ function PinCard({ child, notify }: { child: ParentChild; notify: (msg: string, 
   const [pin, setPin] = useState('')
   const [saving, setSaving] = useState(false)
 
+  // Current login identity for this child (real Google/email account vs. a
+  // synthetic PIN-only one). Drives the "reset login" affordance below.
+  const [status, setStatus] = useState<ChildLoginStatus | null>(null)
+  const [confirming, setConfirming] = useState(false)
+  const [resetting, setResetting] = useState(false)
+
+  async function loadStatus() {
+    try {
+      setStatus(await getChildLoginStatus(child.id))
+    } catch {
+      setStatus(null)
+    }
+  }
+
+  useEffect(() => {
+    setConfirming(false)
+    loadStatus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [child.id])
+
   async function save() {
     if (pin.length < 4 || pin.length > 6) { notify(t('parentCenter.settings.child.pinTooShort'), 'error'); return }
     setSaving(true)
@@ -522,10 +542,29 @@ function PinCard({ child, notify }: { child: ParentChild; notify: (msg: string, 
       await setChildPin(child.id, pin)
       setPin('')
       notify(t('parentCenter.settings.child.pinSaved', { name: child.name }))
+      loadStatus()
     } catch (e) {
       notify(e instanceof Error ? e.message : 'Error', 'error')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function doReset() {
+    setResetting(true)
+    try {
+      const { pinSet } = await resetChildLogin(child.id)
+      setConfirming(false)
+      notify(
+        pinSet
+          ? t('parentCenter.settings.child.loginResetDonePin', { name: child.name })
+          : t('parentCenter.settings.child.loginResetDoneNoPin', { name: child.name }),
+      )
+      loadStatus()
+    } catch (e) {
+      notify(e instanceof Error ? e.message : 'Error', 'error')
+    } finally {
+      setResetting(false)
     }
   }
 
@@ -534,6 +573,21 @@ function PinCard({ child, notify }: { child: ParentChild; notify: (msg: string, 
       <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
         {t('parentCenter.settings.child.childPin')}
       </div>
+
+      {/* Current login identity */}
+      {status && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: T.textDim, marginBottom: 10 }}>
+          <span style={{ fontSize: 14 }}>{status.hasRealAccount ? '📧' : '🔢'}</span>
+          <span>
+            {status.hasRealAccount
+              ? t('parentCenter.settings.child.loginStateAccount', { email: status.email || '—' })
+              : status.pinSet
+                ? t('parentCenter.settings.child.loginStatePinOnly')
+                : t('parentCenter.settings.child.loginStateNone')}
+          </span>
+        </div>
+      )}
+
       <div style={{ padding: 12, background: T.indigoSoft, borderRadius: T.r, border: `1px solid rgba(108,92,231,0.2)`, fontSize: 13, color: T.textDim, lineHeight: 1.5, marginBottom: 10 }}>
         {t('parentCenter.settings.child.pinHint', { name: child.name })}
       </div>
@@ -554,6 +608,42 @@ function PinCard({ child, notify }: { child: ParentChild; notify: (msg: string, 
           {saving ? t('common.loading') : t('parentCenter.settings.child.pinSaveBtn')}
         </Btn>
       </div>
+
+      {/* Reset login — only meaningful when a real account is linked (e.g. the
+          child lost access to the email they signed in with). */}
+      {status?.hasRealAccount && (
+        <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.cardBorder}` }}>
+          <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+            {t('parentCenter.settings.child.loginResetTitle')}
+          </div>
+          {!confirming ? (
+            <>
+              <div style={{ fontSize: 12, color: T.faint, lineHeight: 1.5, marginBottom: 10 }}>
+                {t('parentCenter.settings.child.loginResetHint', { name: child.name })}
+              </div>
+              <Btn variant="outline" size="md" onClick={() => setConfirming(true)} full>
+                {t('parentCenter.settings.child.loginResetBtn')}
+              </Btn>
+            </>
+          ) : (
+            <>
+              <div style={{ padding: 12, background: T.dangerSoft, borderRadius: T.r, border: `1px solid ${T.cardBorder}`, fontSize: 12, color: T.textDim, lineHeight: 1.5, marginBottom: 10 }}>
+                {status.pinSet
+                  ? t('parentCenter.settings.child.loginResetConfirmPin', { name: child.name })
+                  : t('parentCenter.settings.child.loginResetConfirmNoPin', { name: child.name })}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Btn variant="ghost" size="md" onClick={() => setConfirming(false)} disabled={resetting} style={{ flex: 1 }}>
+                  {t('common.cancel')}
+                </Btn>
+                <Btn variant="danger" size="md" onClick={() => doReset()} disabled={resetting} style={{ flex: 1 }}>
+                  {resetting ? t('common.loading') : t('parentCenter.settings.child.loginResetConfirmBtn')}
+                </Btn>
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </Card>
   )
 }

@@ -1630,7 +1630,18 @@
         "dayThu": "Thu",
         "dayFri": "Fri",
         "daySat": "Sat",
-        "daySun": "Sun"
+        "daySun": "Sun",
+        "loginStateAccount": "Signs in with account: {{email}}",
+        "loginStatePinOnly": "Signs in with family code + PIN only",
+        "loginStateNone": "No login method set up",
+        "loginResetTitle": "Reset login",
+        "loginResetHint": "If {{name}} lost access to their email/Google, unlink the account. All history is kept, and the profile can be linked to a new account again at sign-in.",
+        "loginResetBtn": "Unlink login account",
+        "loginResetConfirmPin": "{{name}}'s account will be unlinked. Family code + PIN sign-in keeps working, and the profile can be linked to a new account via “Join a family”. No data is lost.",
+        "loginResetConfirmNoPin": "{{name}}'s account will be unlinked. No PIN is set — after the reset, set a PIN here or let the child link a new account via “Join a family”. No data is lost.",
+        "loginResetConfirmBtn": "Unlink",
+        "loginResetDonePin": "{{name}}'s account unlinked — family code + PIN sign-in works",
+        "loginResetDoneNoPin": "{{name}}'s account unlinked — set a PIN or link a new account"
       },
       "more": {
         "subjects": "Manage subjects",

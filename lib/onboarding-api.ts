@@ -567,6 +567,47 @@ export async function setChildPin(childId: string, pin: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// getChildLoginStatus / resetChildLogin
+// ---------------------------------------------------------------------------
+// Parent-facing management of a child's login identity. `getChildLoginStatus`
+// reports whether the child is signed in with a real Google/email account (and
+// which address) or a synthetic PIN-only one, and whether a PIN is set.
+// `resetChildLogin` unlinks the real account and reverts the child to a
+// synthetic PIN-only identity — for when the child loses access to the email
+// they signed in with. Data and PIN are preserved; the profile becomes
+// claimable again via /onboarding/join. Calls /api/child-login (service-role).
+
+export interface ChildLoginStatus {
+  linked: boolean
+  hasRealAccount: boolean
+  pinSet: boolean
+  isSynthetic: boolean
+  email: string | null
+}
+
+export async function getChildLoginStatus(childId: string): Promise<ChildLoginStatus> {
+  const res = await fetch(`/api/child-login?childId=${encodeURIComponent(childId)}`)
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: 'Unknown error' }))
+    throw new Error(body?.error || 'Failed to load login status')
+  }
+  return res.json()
+}
+
+export async function resetChildLogin(childId: string): Promise<{ pinSet: boolean }> {
+  const res = await fetch('/api/child-login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ childId }),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: 'Unknown error' }))
+    throw new Error(body?.error || 'Failed to reset login')
+  }
+  return res.json()
+}
+
+// ---------------------------------------------------------------------------
 // getUserDisplayName
 // ---------------------------------------------------------------------------
 // Returns the current user's display_name from user_profiles, or null.
