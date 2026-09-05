@@ -13,6 +13,7 @@ import AuditScreen from './screens/AuditScreen'
 import WalletsScreen from './screens/WalletsScreen'
 import ExpensesPanel from './screens/ExpensesPanel'
 import ActionModal from './screens/ActionModal'
+import AddChildModal from './screens/AddChildModal'
 import ChatPanel from './screens/ChatPanel'
 import DailyModal from '@/components/DailyModal'
 import type { ParentChild, ActivityEntry, ActionType, ToastState, ModalState, Route } from './types'
@@ -86,6 +87,7 @@ export default function ParentCenter() {
   const [activity, setActivity] = useState<ActivityEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [dailyModal, setDailyModal] = useState<{ open: boolean; childId: string }>({ open: false, childId: '' })
+  const [addChildOpen, setAddChildOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   const [weeklySummary, setWeeklySummary] = useState<{
     coinsThisWeek: number
@@ -104,6 +106,13 @@ export default function ParentCenter() {
   const notify = (msg: string, tone?: 'warn' | 'danger') => {
     setToast({ msg, tone })
     setTimeout(() => setToast(null), 2400)
+  }
+
+  const openAddChild = () => setAddChildOpen(true)
+  const onChildCreated = (name: string) => {
+    setAddChildOpen(false)
+    setRefreshKey(k => k + 1)
+    notify(t('parentCenter.addChild.toastCreated', { name }))
   }
 
   useEffect(() => {
@@ -337,7 +346,7 @@ export default function ParentCenter() {
           onAction={openAction} onApprove={handleApprove} onDecline={handleDecline} onOpenChild={onOpenChild}
           onFillDay={openFillDay}/>
       case 'children':
-        return <ChildrenScreen children={children} onOpenChild={onOpenChild}/>
+        return <ChildrenScreen children={children} onOpenChild={onOpenChild} onAddChild={openAddChild}/>
       case 'tasks':
         return <TasksScreen/>
       case 'shop':
@@ -347,7 +356,7 @@ export default function ParentCenter() {
           coinsThisWeek={weeklySummary.coinsThisWeek} taskRate={weeklySummary.taskRate}
           streakHighlight={weeklySummary.streakHighlight} weeklyError={weeklySummary.error}/>
       case 'settings':
-        return <SettingsScreen allChildren={children} notify={(msg, tone) => notify(msg, tone as any)} onNavigate={setRoute}/>
+        return <SettingsScreen allChildren={children} notify={(msg, tone) => notify(msg, tone as any)} onNavigate={setRoute} onAddChild={openAddChild}/>
       case 'child':
         return activeChild
           ? <ChildProfile child={activeChild} onBack={backFromChild} onAction={openAction}/>
@@ -519,6 +528,7 @@ export default function ParentCenter() {
         />
 
         <ActionModal open={modal.open} child={modal.child} action={modal.action} onClose={closeAction} onConfirm={confirmAction}/>
+        <AddChildModal open={addChildOpen} familyId={familyId ?? ''} onClose={() => setAddChildOpen(false)} onCreated={onChildCreated}/>
         <DailyModal isOpen={dailyModal.open} onClose={closeFillDay} childId={dailyModal.childId} date={localDateString()} onSave={() => { closeFillDay(); setRefreshKey(k => k + 1) }}/>
         <Toast toast={toast}/>
       </div>
@@ -646,6 +656,8 @@ export default function ParentCenter() {
         open={modal.open} child={modal.child} action={modal.action}
         onClose={closeAction} onConfirm={confirmAction}
       />
+
+      <AddChildModal open={addChildOpen} familyId={familyId ?? ''} onClose={() => setAddChildOpen(false)} onCreated={onChildCreated}/>
 
       <DailyModal isOpen={dailyModal.open} onClose={closeFillDay} childId={dailyModal.childId} date={localDateString()} onSave={() => { closeFillDay(); setRefreshKey(k => k + 1) }}/>
 

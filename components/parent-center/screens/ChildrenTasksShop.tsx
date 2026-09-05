@@ -21,9 +21,10 @@ function useDesktop() {
 }
 
 // ═══════════ CHILDREN ═══════════
-export function ChildrenScreen({ children, onOpenChild }: {
+export function ChildrenScreen({ children, onOpenChild, onAddChild }: {
   children: ParentChild[]
   onOpenChild: (id: string) => void
+  onAddChild?: () => void
 }) {
   const t = useT()
   const isDesktop = useDesktop()
@@ -89,7 +90,7 @@ export function ChildrenScreen({ children, onOpenChild }: {
       ))}
       </div>
 
-      <Btn variant="ghost" size="lg" icon="plus" full onClick={() => window.location.href = '/register'}>{t('parentCenter.childrenScreen.addChild')}</Btn>
+      <Btn variant="ghost" size="lg" icon="plus" full onClick={onAddChild}>{t('parentCenter.childrenScreen.addChild')}</Btn>
     </div>
   )
 }

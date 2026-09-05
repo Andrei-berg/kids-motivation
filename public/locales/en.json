@@ -1825,6 +1825,17 @@
       "penalty": "Penalty applied to {{name}}",
       "bonus": "Bonus for {{name}}",
       "freeze": "Froze streak for {{name}}"
+    },
+    "addChild": {
+      "title": "Add child",
+      "nameLabel": "Name",
+      "namePlaceholder": "Child's name",
+      "birthYearLabel": "Year of birth",
+      "submit": "Add",
+      "submitting": "Adding…",
+      "nameRequired": "Enter the child's name",
+      "toastCreated": "{{name}} added to the family",
+      "genericError": "Could not add the child"
     }
   },
   "wallets": {

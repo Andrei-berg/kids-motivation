@@ -1825,6 +1825,17 @@
       "penalty": "Штраф — {{name}}",
       "bonus": "Бонус — {{name}}",
       "freeze": "Серия заморожена — {{name}}"
+    },
+    "addChild": {
+      "title": "Добавить ребёнка",
+      "nameLabel": "Имя",
+      "namePlaceholder": "Имя ребёнка",
+      "birthYearLabel": "Год рождения",
+      "submit": "Добавить",
+      "submitting": "Добавление…",
+      "nameRequired": "Введите имя ребёнка",
+      "toastCreated": "{{name}} добавлен(а) в семью",
+      "genericError": "Не удалось добавить ребёнка"
     }
   },
   "wallets": {

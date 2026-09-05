@@ -75,7 +75,7 @@ function LanguageCard() {
 }
 
 // ───── Family tab ─────
-function FamilyTab({ allChildren, notify, familyId }: { allChildren: ParentChild[]; notify: (msg: string, tone?: string) => void; familyId: string | null }) {
+function FamilyTab({ allChildren, notify, familyId, onAddChild }: { allChildren: ParentChild[]; notify: (msg: string, tone?: string) => void; familyId: string | null; onAddChild?: () => void }) {
   const [copied, setCopied] = useState(false)
   const [code, setCode] = useState('')
   const [helpOpen, setHelpOpen] = useState(false)
@@ -140,7 +140,7 @@ function FamilyTab({ allChildren, notify, familyId }: { allChildren: ParentChild
           <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             {t('parentCenter.settings.family.members')}
           </div>
-          <Btn variant="ghost" size="sm" icon="plus" onClick={() => window.open('/register', '_blank')}>
+          <Btn variant="ghost" size="sm" icon="plus" onClick={onAddChild}>
             {t('parentCenter.settings.family.addChild')}
           </Btn>
         </div>
@@ -1006,10 +1006,11 @@ function AccountTab({ notify, familyId }: { notify: (msg: string, tone?: string)
 }
 
 // ───── Settings root ─────
-export default function SettingsScreen({ allChildren, notify, onNavigate }: {
+export default function SettingsScreen({ allChildren, notify, onNavigate, onAddChild }: {
   allChildren: ParentChild[]
   notify: (msg: string, tone?: string) => void
   onNavigate: (route: Route) => void
+  onAddChild?: () => void
 }) {
   const [tab, setTab] = useState('family')
   const { familyId } = useAppStore()
@@ -1025,7 +1026,7 @@ export default function SettingsScreen({ allChildren, notify, onNavigate }: {
   ]
 
   const content: Record<string, JSX.Element> = {
-    family:   <FamilyTab allChildren={allChildren} notify={notify} familyId={familyId}/>,
+    family:   <FamilyTab allChildren={allChildren} notify={notify} familyId={familyId} onAddChild={onAddChild}/>,
     coins:    <CoinsRulesTab notify={notify}/>,
     children: <ChildrenTab allChildren={allChildren} notify={notify}/>,
     schedule: <ScheduleTab allChildren={allChildren}/>,
