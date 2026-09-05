@@ -34,46 +34,39 @@ direct `SUPABASE_DB_URL` queries, `npm test` (193 tests), `npx tsc --noEmit`,
 
 ---
 
-## Operator checklist (genuinely manual — device / browser / provisioning)
+## Operator status (2026-09-05)
 
-These cannot be scripted. None block correctness; all are confirmations or
-account-provisioning steps.
+Operator confirms the following are already validated through live production use
+of the app with their own family — no further action:
 
-### Push delivery on a real device (covers 01.3-1, 3.1-1..4, 05.10-5)
-1. On a phone/desktop browser, open the app, go to Settings → Уведомления, allow
-   notifications, tap the test-notification button. Expect a visible push.
-2. With that subscription live, have a parent approve a shop purchase / send a
-   Medal of the Day / trigger a badge. Expect a push on the child device, deep-
-   linking to the right screen.
-3. `push_subscriptions` has **0 rows in prod** today — no device has ever
-   subscribed (no working delivery path existed before the Phase 5.10 fix). This
-   check also validates that the subscribe flow itself now works end-to-end.
+| Was checklist item | Reports it closes | Operator note |
+|---|---|---|
+| PWA install prompt | 01.3-2 | Tried, works. |
+| Sentry + PostHog | 05.1-1, 05.1-2 | Provisioned in the Vercel project "давно" (long since). |
+| 05.8 visual re-confirmation | 05.8-1, 05.8-2 | In daily use, correct. |
+| Real-device push — *previously* | 3.1-1..4, 05.10-5 | Operator tested push on a real device before and it worked. **Caveat below.** |
 
-### PWA install (01.3-2)
-4. Open the site in Chrome on Android / Safari on iOS → confirm the install /
-   "Add to Home Screen" prompt appears and the app opens standalone.
+### One genuine open item — real-device push, current stack
 
-### Sentry + PostHog provisioning (05.1-1, 05.1-2)
-5. Create a Sentry project, add `NEXT_PUBLIC_SENTRY_DSN` + `SENTRY_DSN` to Vercel
-   Production, redeploy, `GET /api/health?boom=1` → expect a 500 and an issue in
-   Sentry within ~2 min. (Code no-ops cleanly without the DSN — verified.)
-6. Create a PostHog EU project, add `NEXT_PUBLIC_POSTHOG_KEY` to Vercel
-   Production, redeploy, browse + save a day → expect `$pageview` and `day_saved`
-   events in PostHog Live Events.
+`push_subscriptions` has **0 rows in the prod DB right now**. The whole push
+infrastructure (`push_subscriptions` / `schedule_items` etc.) was rebuilt when
+the never-applied Phase 1.3 migration was finally run on 2026-07-23 — any
+successful push test before that date was on the earlier setup. The write path
+is verified correct now (RLS `ALL` for the authed member scoped to their family;
+unique index `push_subscriptions_member_endpoint_idx` matches the upsert's
+`onConflict`), but nobody has subscribed since the rebuild, so nothing is being
+delivered.
 
-### Account / COPPA browser interactions (04.4-1..4)
-7. Settings → Account → Download Data Export → unzip → confirm `family-data.json`
-   + the CSV set.
-8. Danger Zone: confirm the data-summary counts are real; the Delete button
-   stays disabled until the confirm input is exactly `DELETE`.
-9. Family Manager: add a child with age < 13 → the COPPA consent modal blocks
-   creation until the checkbox is ticked; Cancel creates nothing.
+**30-second confirm:** on one device, open the app → Settings → Уведомления →
+allow → tap the test button. Then `select count(*) from push_subscriptions`
+should be ≥ 1 and the device should show the notification. Once that row exists,
+the daily cron's section / unfilled-day / streak-at-risk pushes will reach it.
 
-### 05.8 visual re-confirmation (05.8-1, 05.8-2)
-10. Parent Center → Settings → Schedule → Day Constructor → a child's own tab →
-    Room row → 🔗 Schedule link → pick an item → expect a green "Custom" tag +
-    synced StatusChip on that child's row only; "None" clears it.
-11. Parent Center → Analytics → Weekly Summary → "Tasks done" chip shows
-    green/yellow per real week performance, not permanently red.
-    *(Hard-refresh / unregister the service worker first — the 05.8-09 session
-    was misled by a stale cached bundle.)*
+### Still not verified — COPPA / data-export browser flows (04.4-1..4)
+
+Not covered by operator's note. Low urgency (single-family use, no under-13
+onboarding happening), left for whenever convenient:
+- Settings → Account → Download Data Export → unzip → `family-data.json` + CSVs.
+- Danger Zone: data-summary counts real; Delete button disabled until input is
+  exactly `DELETE`.
+- Family Manager: add a child with age < 13 → COPPA consent modal gates creation.

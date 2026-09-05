@@ -173,22 +173,25 @@ Resume file: none — next step is /gsd:complete-milestone
 
 Items acknowledged and deferred at v5.0 milestone close on 2026-07-23:
 
-| Category | Item | Status |
+| Category | Item | Status (2026-09-05 sweep) |
 |----------|------|--------|
-| uat_gaps | 05.10-HUMAN-UAT.md | partial — 1 pending scenario (real-device VAPID push receipt; needs operator with physical device) |
-| uat_gaps | 05.8-HUMAN-UAT.md | partial — 2 pending scenarios |
-| verification_gaps | 01.3-VERIFICATION.md | human_needed |
-| verification_gaps | 02.2-VERIFICATION.md | gaps_found |
-| verification_gaps | 3.2-VERIFICATION.md | human_needed |
-| verification_gaps | 04.4-VERIFICATION.md | human_needed |
-| verification_gaps | 05.1-VERIFICATION.md | human_needed |
-| verification_gaps | 05.10-VERIFICATION.md | human_needed |
-| verification_gaps | 05.8-VERIFICATION.md | human_needed |
-| verification_gaps | 3.1-VERIFICATION.md | human_needed |
+| uat_gaps | 05.10-HUMAN-UAT.md | **passed** — operator confirms push worked previously; infra verified on current stack; 1 re-subscribe needed (push_subscriptions empty in prod) |
+| uat_gaps | 05.8-HUMAN-UAT.md | **passed** — operator confirms both scenarios correct in daily use |
+| verification_gaps | 01.3-VERIFICATION.md | **verified** — push (operator + infra), PWA install (operator), ScheduleEditor linked-children (dead code, deleted) |
+| verification_gaps | 02.2-VERIFICATION.md | **verified** — coin awards = v5.0 server-side award route + tests; dark theme superseded |
+| verification_gaps | 3.2-VERIFICATION.md | **verified** — kid chat sends family_members.id; system-message path present; chat in daily use |
+| verification_gaps | 04.4-VERIFICATION.md | **partial** — audit-screen item unblocked (f760ef3); data-export ZIP / Danger-Zone / COPPA modal still unverified (browser, low urgency) |
+| verification_gaps | 05.1-VERIFICATION.md | **verified** — operator confirms Sentry + PostHog provisioned in Vercel and in use |
+| verification_gaps | 05.10-VERIFICATION.md | **verified** — see 05.10-HUMAN-UAT above |
+| verification_gaps | 05.8-VERIFICATION.md | **verified** — code-level + operator daily use |
+| verification_gaps | 3.1-VERIFICATION.md | **verified** — push (operator + infra), medals table confirmed in prod |
 
-> **2026-09-05: all 10 rows above swept.** Code/DB/test-closeable items resolved;
-> the manual remainder is one consolidated operator checklist in
-> `.planning/POST-MILESTONE-VERIFICATION.md`. See the cleanup-pass table below.
+> **2026-09-05: all 10 rows swept.** 9 closed (verified/passed), 1 partial
+> (04.4 — 3 COPPA/export browser flows left, low urgency). Operator confirmed
+> PWA install, Sentry/PostHog, 05.8 visual, and prior real-device push through
+> live family use. Only genuine open item: one fresh push re-subscribe on the
+> post-2026-07-23 stack (`push_subscriptions` is empty in prod). Full detail:
+> `.planning/POST-MILESTONE-VERIFICATION.md`.
 
 ### Post-milestone cleanup pass (2026-09-05, on `main`)
 
@@ -199,7 +202,7 @@ Working through the deferred backlog. Per-item, each committed + pushed separate
 | CR-01 (streak bonus / arbitrary client dates) | **RESOLVED** — `isValidCalendarDate()` gate in `/api/wallet/award` (commit `cf9fac1`). Client-writable `streaks` + replay were already closed by Phase 5.5; see Blockers/Concerns entry above. |
 | Early-migration "never applied to prod" audit (the Phase 1.3 pattern) | **RESOLVED — no gaps.** New `scripts/verify-migrations-applied.mjs` parses every table/column/function/index/policy declared across `supabase/migrations/*.sql` and checks each against prod via `SUPABASE_DB_URL`. Result: 22 tables / 39 added columns / 19 functions / 30 indexes / 94 policies — **all present**. 15 declared policies are absent by design (anon-policy purge `04.4-04/05`, money-table SELECT-only lockdown `04.4-03`/`05.5-03`, and `family_members_self_update` → `mark_chat_read()` RPC `05.7-02`) and are allow-listed in the script. Money tables confirmed RLS-on with exactly one SELECT-only policy each. |
 | `insertAuditEvent` server-role writes | **RESOLVED** — optional `client` param; 6 server call sites pass the `admin` client, no longer silently RLS-denied. See Blockers/Concerns entry above. |
-| Deferred `human_needed` / `gaps_found` verification reports (8) + 2 HUMAN-UAT | **SWEPT — see `.planning/POST-MILESTONE-VERIFICATION.md`.** Every `human_verification` item triaged. Closed by code/DB/test: 01.3-3 (fixed — see below), 02.2-1/2/3, 3.1-5, 3.2-1/2, 04.4-5, 05.10-1..4, 05.8-1/2 (code-level). Genuinely manual remainder (real-device push ×5 reports, PWA install, Sentry/PostHog provisioning, COPPA/export browser clicks, 05.8 visual ×2) consolidated into one operator checklist in that doc — nothing else outstanding. |
+| Deferred `human_needed` / `gaps_found` verification reports (8) + 2 HUMAN-UAT | **SWEPT — see `.planning/POST-MILESTONE-VERIFICATION.md`.** 9 of 10 reports now verified/passed; 04.4 partial (3 COPPA/export browser flows left, low urgency). Closed by code/DB/test: 01.3-3, 02.2-1/2/3, 3.1-5, 3.2-1/2, 04.4-5, 05.10-1..4, 05.8-1/2. Operator confirmed via live family use: PWA install, Sentry/PostHog, 05.8 visual, prior real-device push. Only genuine open item: one fresh push re-subscribe on the post-2026-07-23 stack (`push_subscriptions` empty in prod; write-path verified correct). |
 | 01.3-3: linked-account children invisible in ScheduleEditor / TaskManager | **Closed — dead code deleted.** Those components (legacy `/settings` page, removed in 5.11 but left behind, zero imports) are gone. The shipping Parent Center schedule UI is fed by `getChildren()` (children table, no account filter) — all children already visible. |
 
 ---
