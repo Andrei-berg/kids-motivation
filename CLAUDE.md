@@ -34,6 +34,9 @@ node --env-file=.env.local -e 'import("pg").then(async({default:pg})=>{const fs=
 Verification scripts (run against the live DB with the service-role key):
 `node --env-file=.env.local scripts/verify-wallet-rls.mjs` (RLS lock),
 `verify-award-idempotency.mjs`, `verify-award-reads.mjs`.
+`verify-migrations-applied.mjs` (needs `SUPABASE_DB_URL` + `pg`) audits that every
+table/column/function/index/policy declared in `supabase/migrations/*.sql` actually
+exists in prod — guards the "ROADMAP Complete ≠ migration ran" gap.
 
 ## Architecture
 

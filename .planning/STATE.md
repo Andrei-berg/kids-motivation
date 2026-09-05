@@ -180,6 +180,15 @@ Items acknowledged and deferred at v5.0 milestone close on 2026-07-23:
 | verification_gaps | 05.8-VERIFICATION.md | human_needed |
 | verification_gaps | 3.1-VERIFICATION.md | human_needed |
 
+### Post-milestone cleanup pass (2026-09-05, on `main`)
+
+Working through the deferred backlog. Per-item, each committed + pushed separately.
+
+| Item | Status |
+|------|--------|
+| CR-01 (streak bonus / arbitrary client dates) | **RESOLVED** — `isValidCalendarDate()` gate in `/api/wallet/award` (commit `cf9fac1`). Client-writable `streaks` + replay were already closed by Phase 5.5; see Blockers/Concerns entry above. |
+| Early-migration "never applied to prod" audit (the Phase 1.3 pattern) | **RESOLVED — no gaps.** New `scripts/verify-migrations-applied.mjs` parses every table/column/function/index/policy declared across `supabase/migrations/*.sql` and checks each against prod via `SUPABASE_DB_URL`. Result: 22 tables / 39 added columns / 19 functions / 30 indexes / 94 policies — **all present**. 15 declared policies are absent by design (anon-policy purge `04.4-04/05`, money-table SELECT-only lockdown `04.4-03`/`05.5-03`, and `family_members_self_update` → `mark_chat_read()` RPC `05.7-02`) and are allow-listed in the script. Money tables confirmed RLS-on with exactly one SELECT-only policy each. |
+
 ---
 
 ## Decisions
