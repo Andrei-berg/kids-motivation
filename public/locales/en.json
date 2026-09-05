@@ -1635,13 +1635,16 @@
         "loginStatePinOnly": "Signs in with family code + PIN only",
         "loginStateNone": "No login method set up",
         "loginResetTitle": "Reset login",
-        "loginResetHint": "If {{name}} lost access to their email/Google, unlink the account. All history is kept, and the profile can be linked to a new account again at sign-in.",
+        "loginResetHint": "Unlink the account if {{name}} has lost access to their email or Google. After unlinking: {{name}} signs in with the new account, opens “Join a family” and picks their profile. All history is kept.",
         "loginResetBtn": "Unlink login account",
-        "loginResetConfirmPin": "{{name}}'s account will be unlinked. Family code + PIN sign-in keeps working, and the profile can be linked to a new account via “Join a family”. No data is lost.",
-        "loginResetConfirmNoPin": "{{name}}'s account will be unlinked. No PIN is set — after the reset, set a PIN here or let the child link a new account via “Join a family”. No data is lost.",
+        "loginResetConfirmPin": "{{name}}'s account will be unlinked. Then: 1) {{name}} can sign in now with the family code + PIN; 2) to restore Google/email sign-in, {{name}} signs in with the new account at “Join a family” (code {{code}}) and picks their profile. No data is lost.",
+        "loginResetConfirmNoPin": "{{name}}'s account will be unlinked and no PIN is set. Then: set a PIN above, or {{name}} signs in with the new account at “Join a family” (code {{code}}) and picks their profile. No data is lost.",
         "loginResetConfirmBtn": "Unlink",
-        "loginResetDonePin": "{{name}}'s account unlinked — family code + PIN sign-in works",
-        "loginResetDoneNoPin": "{{name}}'s account unlinked — set a PIN or link a new account"
+        "loginResetDonePin": "Account unlinked. {{name}} signs in with the family code + PIN. A new Google/email links via “Join a family”, code {{code}}",
+        "loginResetDoneNoPin": "Account unlinked. Set a PIN above, or have {{name}} sign in with the new account via “Join a family”, code {{code}}",
+        "loginPinInfoTitle": "Sign-in & recovery",
+        "loginPinInfoHint": "{{name}} signs in with the family code + PIN. To add Google/email sign-in: {{name}} signs in with that account, opens “Join a family” and picks their profile — all history is kept.",
+        "loginCodeLabel": "Family code"
       },
       "more": {
         "subjects": "Manage subjects",

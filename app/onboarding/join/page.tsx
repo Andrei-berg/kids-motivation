@@ -691,6 +691,15 @@ function JoinFamilyPageInner() {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
 
+        // An explicit 6-char invite code in the URL means the parent handed this
+        // person a join link on purpose (e.g. recovering a child who lost their
+        // login). Honour that intent even for a user who already has a
+        // membership row somewhere, instead of bouncing them to a dashboard
+        // where they can never reach the profile picker.
+        const hasJoinCode = /^[A-Z0-9]{6}$/.test(
+          (searchParams.get('code') || '').toUpperCase().replace(/[^A-Z0-9]/g, ''),
+        )
+
         const { data: existingRows } = await supabase
           .from('family_members')
           .select('id, role, family_id, display_name, child_id')
@@ -699,7 +708,7 @@ function JoinFamilyPageInner() {
           .limit(1)
 
         const existing = existingRows?.[0]
-        if (existing) {
+        if (existing && !hasJoinCode) {
           setStoreFamilyId(existing.family_id)
           if (existing.role === 'child') {
             if (existing.child_id) {

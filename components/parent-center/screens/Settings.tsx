@@ -512,14 +512,20 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
 // ───── Child login PIN card ─────
 function PinCard({ child, notify }: { child: ParentChild; notify: (msg: string, tone?: string) => void }) {
   const t = useT()
+  const { familyId } = useAppStore()
   const [pin, setPin] = useState('')
   const [saving, setSaving] = useState(false)
 
   // Current login identity for this child (real Google/email account vs. a
-  // synthetic PIN-only one). Drives the "reset login" affordance below.
+  // synthetic PIN-only one). Drives the sign-in & recovery block below.
   const [status, setStatus] = useState<ChildLoginStatus | null>(null)
   const [confirming, setConfirming] = useState(false)
   const [resetting, setResetting] = useState(false)
+
+  // Family invite code — the child needs it to link a new account at
+  // /onboarding/join, so the recovery instructions spell it out.
+  const [inviteCode, setInviteCode] = useState('')
+  const [codeCopied, setCodeCopied] = useState(false)
 
   async function loadStatus() {
     try {
@@ -534,6 +540,25 @@ function PinCard({ child, notify }: { child: ParentChild; notify: (msg: string, 
     loadStatus()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [child.id])
+
+  useEffect(() => {
+    if (!familyId) return
+    let cancelled = false
+    createClient()
+      .from('families')
+      .select('invite_code')
+      .eq('id', familyId)
+      .single()
+      .then(({ data }) => { if (!cancelled && data) setInviteCode(data.invite_code) })
+    return () => { cancelled = true }
+  }, [familyId])
+
+  async function copyCode() {
+    if (!inviteCode) return
+    await navigator.clipboard?.writeText(inviteCode).catch(() => {})
+    setCodeCopied(true)
+    setTimeout(() => setCodeCopied(false), 2000)
+  }
 
   async function save() {
     if (pin.length < 4 || pin.length > 6) { notify(t('parentCenter.settings.child.pinTooShort'), 'error'); return }
@@ -557,8 +582,8 @@ function PinCard({ child, notify }: { child: ParentChild; notify: (msg: string, 
       setConfirming(false)
       notify(
         pinSet
-          ? t('parentCenter.settings.child.loginResetDonePin', { name: child.name })
-          : t('parentCenter.settings.child.loginResetDoneNoPin', { name: child.name }),
+          ? t('parentCenter.settings.child.loginResetDonePin', { name: child.name, code: inviteCode })
+          : t('parentCenter.settings.child.loginResetDoneNoPin', { name: child.name, code: inviteCode }),
       )
       loadStatus()
     } catch (e) {
@@ -609,39 +634,60 @@ function PinCard({ child, notify }: { child: ParentChild; notify: (msg: string, 
         </Btn>
       </div>
 
-      {/* Reset login — only meaningful when a real account is linked (e.g. the
-          child lost access to the email they signed in with). */}
-      {status?.hasRealAccount && (
+      {/* Sign-in & recovery — always shown once status loads, so a parent
+          always has a path to get a child back in, whichever broken state
+          they are in (lost email on a real account, or already PIN-only). */}
+      {status && (
         <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.cardBorder}` }}>
           <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-            {t('parentCenter.settings.child.loginResetTitle')}
+            {status.hasRealAccount
+              ? t('parentCenter.settings.child.loginResetTitle')
+              : t('parentCenter.settings.child.loginPinInfoTitle')}
           </div>
-          {!confirming ? (
-            <>
-              <div style={{ fontSize: 12, color: T.faint, lineHeight: 1.5, marginBottom: 10 }}>
-                {t('parentCenter.settings.child.loginResetHint', { name: child.name })}
-              </div>
-              <Btn variant="outline" size="md" onClick={() => setConfirming(true)} full>
-                {t('parentCenter.settings.child.loginResetBtn')}
-              </Btn>
-            </>
+
+          {status.hasRealAccount ? (
+            !confirming ? (
+              <>
+                <div style={{ fontSize: 12, color: T.faint, lineHeight: 1.5, marginBottom: 10 }}>
+                  {t('parentCenter.settings.child.loginResetHint', { name: child.name })}
+                </div>
+                <Btn variant="outline" size="md" onClick={() => setConfirming(true)} full>
+                  {t('parentCenter.settings.child.loginResetBtn')}
+                </Btn>
+              </>
+            ) : (
+              <>
+                <div style={{ padding: 12, background: T.dangerSoft, borderRadius: T.r, border: `1px solid ${T.cardBorder}`, fontSize: 12, color: T.textDim, lineHeight: 1.5, marginBottom: 10 }}>
+                  {status.pinSet
+                    ? t('parentCenter.settings.child.loginResetConfirmPin', { name: child.name, code: inviteCode || '——' })
+                    : t('parentCenter.settings.child.loginResetConfirmNoPin', { name: child.name, code: inviteCode || '——' })}
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Btn variant="ghost" size="md" onClick={() => setConfirming(false)} disabled={resetting} style={{ flex: 1 }}>
+                    {t('common.cancel')}
+                  </Btn>
+                  <Btn variant="danger" size="md" onClick={() => doReset()} disabled={resetting} style={{ flex: 1 }}>
+                    {resetting ? t('common.loading') : t('parentCenter.settings.child.loginResetConfirmBtn')}
+                  </Btn>
+                </div>
+              </>
+            )
           ) : (
-            <>
-              <div style={{ padding: 12, background: T.dangerSoft, borderRadius: T.r, border: `1px solid ${T.cardBorder}`, fontSize: 12, color: T.textDim, lineHeight: 1.5, marginBottom: 10 }}>
-                {status.pinSet
-                  ? t('parentCenter.settings.child.loginResetConfirmPin', { name: child.name })
-                  : t('parentCenter.settings.child.loginResetConfirmNoPin', { name: child.name })}
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <Btn variant="ghost" size="md" onClick={() => setConfirming(false)} disabled={resetting} style={{ flex: 1 }}>
-                  {t('common.cancel')}
-                </Btn>
-                <Btn variant="danger" size="md" onClick={() => doReset()} disabled={resetting} style={{ flex: 1 }}>
-                  {resetting ? t('common.loading') : t('parentCenter.settings.child.loginResetConfirmBtn')}
-                </Btn>
-              </div>
-            </>
+            <div style={{ fontSize: 12, color: T.faint, lineHeight: 1.5 }}>
+              {t('parentCenter.settings.child.loginPinInfoHint', { name: child.name })}
+            </div>
           )}
+
+          {/* Family code — needed for the /onboarding/join claim step. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
+            <span style={{ fontSize: 12, color: T.muted }}>{t('parentCenter.settings.child.loginCodeLabel')}</span>
+            <span style={{ fontFamily: T.fMono, fontSize: 14, fontWeight: 700, color: T.cyan, letterSpacing: '0.2em' }}>
+              {inviteCode || '······'}
+            </span>
+            <Btn variant="ghost" size="sm" icon={codeCopied ? 'check' : 'copy'} onClick={copyCode} disabled={!inviteCode}>
+              {codeCopied ? t('parentCenter.settings.family.copied') : t('parentCenter.settings.family.copy')}
+            </Btn>
+          </div>
         </div>
       )}
     </Card>
