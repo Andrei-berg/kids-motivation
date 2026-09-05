@@ -8,6 +8,7 @@ import { LedgerRow } from '@/components/design/atoms'
 import type { ParentChild, ActivityEntry, ActionType } from '../types'
 import type { RewardPurchase } from '@/lib/models/wallet.types'
 import { useT, useLanguage } from '@/lib/i18n'
+import BehaviorApprovalQueue from './BehaviorApprovalQueue'
 
 function useCountUp(target: number, duration = 800) {
   const [n, setN] = useState(0)
@@ -238,6 +239,10 @@ export default function Dashboard({ children, activity, pending, readingChecks =
 
         {/* Right column: pending approvals + activity feed */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          {/* Child-proposed behavior tags awaiting a decision — renders nothing
+              when the queue is empty (compact mount). */}
+          <BehaviorApprovalQueue compact/>
+
           {pending.length > 0 && (
             <div>
               <SectionH title={t('parentCenter.dashboard.pendingApprovals')}

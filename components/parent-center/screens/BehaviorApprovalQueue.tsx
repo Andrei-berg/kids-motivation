@@ -28,7 +28,11 @@ type PendingRow = {
   childName: string
 }
 
-export default function BehaviorApprovalQueue() {
+// `compact` is the Dashboard mount: it renders nothing at all when there is
+// nothing pending (no header, no empty state), so it only ever draws attention
+// when a child is actually waiting on a decision. The full (non-compact) mount
+// in Settings keeps its header + empty state.
+export default function BehaviorApprovalQueue({ compact = false }: { compact?: boolean } = {}) {
   const t = useT()
   const { familyId } = useAppStore()
 
@@ -116,6 +120,9 @@ export default function BehaviorApprovalQueue() {
   }
 
   const representativeChildName = rows[0]?.childName ?? t('chat.child')
+
+  // Dashboard mount: draw nothing until there is something to decide.
+  if (compact && !loading && rows.length === 0 && !error) return null
 
   return (
     <div>

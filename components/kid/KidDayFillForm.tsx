@@ -751,6 +751,26 @@ export function KidDayFillForm({
         }
       }
 
+      // Behavior tags (05.9): a child who ticked a tag but did not tap the
+      // dedicated "Предложить тег" button still expects it submitted when they
+      // save the day. Flush any still-selected tags as pending marks here
+      // (skipping ones already pending for this day). Mirrors handleProposeTags;
+      // never writes days.good_behavior — RLS forces status='pending'.
+      if (selectedTagIds.length > 0) {
+        const proposedBy = activeMemberId ?? childId
+        const flushed: BehaviorMark[] = []
+        for (const tagId of selectedTagIds) {
+          if (behaviorMarks.some(m => m.tag_id === tagId && m.status === 'pending')) continue
+          try {
+            flushed.push(await proposeMark({ childId, date, tagId, proposedBy }))
+          } catch (e) {
+            console.warn('[KidDayFillForm] flush behavior tag on save failed:', e)
+          }
+        }
+        if (flushed.length > 0) setBehaviorMarks(prev => [...prev, ...flushed])
+        setSelectedTagIds([])
+      }
+
       triggerCoinFlyup(coinsPreview)
 
       // Credit all of today's coin awards server-side (idempotent). The server
@@ -896,7 +916,7 @@ export function KidDayFillForm({
             boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 12, background: active ? T.tealSoft : T.lineSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>💪</div>
+              <div style={{ width: 36, height: 36, borderRadius: 12, background: active ? T.tealSoft : T.lineSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>{et.icon ?? '🤸'}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: T.fDisp, fontSize: 14, fontWeight: 800, color: T.ink }}>{et.name}</div>
                 <div style={{ fontFamily: T.fBody, fontSize: 11, color: T.ink3, fontWeight: 600 }}>{et.unit}</div>
@@ -1094,7 +1114,7 @@ export function KidDayFillForm({
         ) : null
       case 'exercise':
         return exerciseTypes.length > 0 ? (
-          <BlockCard key={block.id} title={block.name} icon={block.icon ?? '💪'} sub={t('kidFillForm.homeSub')}>
+          <BlockCard key={block.id} title={block.name} icon={block.icon ?? '🤸'} sub={t('kidFillForm.homeSub')}>
             {exercisesBody}
           </BlockCard>
         ) : null
@@ -1236,7 +1256,7 @@ export function KidDayFillForm({
 
       {/* ─── Exercises (same body as flag-on — 05.7-04 dedupe) ─── */}
       {exerciseTypes.length > 0 && (
-        <BlockCard title={t('kidFillForm.exercisesSection')} icon="💪" sub={t('kidFillForm.homeSub')}>
+        <BlockCard title={t('kidFillForm.exercisesSection')} icon="🤸" sub={t('kidFillForm.homeSub')}>
           {exercisesBody}
         </BlockCard>
       )}

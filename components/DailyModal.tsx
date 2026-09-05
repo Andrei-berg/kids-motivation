@@ -1222,7 +1222,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
             <div key={exerciseType.id} className={`premium-exercise-card ${isChecked ? 'active' : ''}`}>
               <label className="premium-exercise-header" onClick={(e) => { if (e.target instanceof HTMLInputElement) return; toggleExercise(exerciseType.id) }}>
                 <input type="checkbox" checked={isChecked} onChange={() => toggleExercise(exerciseType.id)} onClick={(e) => e.stopPropagation()} />
-                <span className="premium-exercise-icon">💪</span>
+                <span className="premium-exercise-icon">{exerciseType.icon ?? '🤸'}</span>
                 <span className="premium-exercise-name">{exerciseType.name}</span>
               </label>
               {isChecked && (
@@ -1325,7 +1325,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
         )
       case 'exercise':
         return (
-          <BlockSection key={block.id} title={block.name} icon={block.icon ?? '💪'}>
+          <BlockSection key={block.id} title={block.name} icon={block.icon ?? '🤸'}>
             {exerciseBody}
           </BlockSection>
         )
@@ -1588,7 +1588,7 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
             {/* ── СПОРТ ────────────────────────────────────────── */}
             <div className="scroll-section">
               <div className="scroll-section-header">
-                <span className="scroll-section-icon">💪</span>
+                <span className="scroll-section-icon">🤸</span>
                 <span className="scroll-section-title">{t('dailyModal.sport')}</span>
               </div>
               {exerciseBody}

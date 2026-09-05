@@ -24,6 +24,7 @@ export interface ScheduleLesson {
 export interface ExerciseType {
   id: string
   name: string
+  icon: string | null
   track_quantity: boolean
   unit: string
   display_order: number
