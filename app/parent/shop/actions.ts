@@ -98,7 +98,7 @@ export async function approvePurchaseAction(purchaseId: string): Promise<RewardP
     coins_delta: null,
     actor_user_id: member.userId,
     metadata: { purchase_id: purchaseId },
-  })
+  }, admin)
 
   return data
 }
@@ -167,7 +167,7 @@ export async function rejectPurchaseAction(
     coins_delta: priceCoins > 0 ? priceCoins : null,
     actor_user_id: member.userId,
     metadata: { purchase_id: purchaseId, refunded_coins: priceCoins },
-  })
+  }, admin)
 
   return data
 }

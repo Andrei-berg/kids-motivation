@@ -149,9 +149,15 @@ None.
 - **Discovered 2026-07-07: `parent_audit_events` was never created in prod** — every
   `insertAuditEvent` (shop_approve/reject etc.) has been silently failing since 04.4.
   Fixed same day: applied `04.4-01-audit-consent.sql` + `05.4-04-withdraw-audit-actions.sql`
-  (adds withdraw_approve/withdraw_reject action types). Note: `insertAuditEvent` still
+  (adds withdraw_approve/withdraw_reject action types). ~~Note: `insertAuditEvent` still
   writes via the anon browser client — works only where an authenticated parent session
-  exists; server-role audit writes are a follow-up.
+  exists; server-role audit writes are a follow-up.~~ **RESOLVED 2026-09-05:**
+  `insertAuditEvent(params, client?)` now takes an optional client; the 6 server-side
+  call sites (shop approve/reject, behavior approve/reject, withdraw approve/reject) pass
+  the service-role `admin` client so their rows are no longer silently RLS-denied. Client
+  components keep the browser-singleton default. Regression guard:
+  `tests/audit-repo.test.ts`. (Still unemitted anywhere: the `coin_adjust`, `badge_award`,
+  `data_export`, `account_delete_request` action types — separate pre-existing gap.)
 
 ---
 
@@ -188,6 +194,7 @@ Working through the deferred backlog. Per-item, each committed + pushed separate
 |------|--------|
 | CR-01 (streak bonus / arbitrary client dates) | **RESOLVED** — `isValidCalendarDate()` gate in `/api/wallet/award` (commit `cf9fac1`). Client-writable `streaks` + replay were already closed by Phase 5.5; see Blockers/Concerns entry above. |
 | Early-migration "never applied to prod" audit (the Phase 1.3 pattern) | **RESOLVED — no gaps.** New `scripts/verify-migrations-applied.mjs` parses every table/column/function/index/policy declared across `supabase/migrations/*.sql` and checks each against prod via `SUPABASE_DB_URL`. Result: 22 tables / 39 added columns / 19 functions / 30 indexes / 94 policies — **all present**. 15 declared policies are absent by design (anon-policy purge `04.4-04/05`, money-table SELECT-only lockdown `04.4-03`/`05.5-03`, and `family_members_self_update` → `mark_chat_read()` RPC `05.7-02`) and are allow-listed in the script. Money tables confirmed RLS-on with exactly one SELECT-only policy each. |
+| `insertAuditEvent` server-role writes | **RESOLVED** — optional `client` param; 6 server call sites pass the `admin` client, no longer silently RLS-denied. See Blockers/Concerns entry above. |
 
 ---
 

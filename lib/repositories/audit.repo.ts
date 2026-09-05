@@ -3,6 +3,7 @@
 // insertAuditEvent is intentionally non-blocking: it logs errors but never throws,
 // so audit failures never interrupt the parent action being audited.
 
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 
 // ============================================================================
@@ -42,9 +43,19 @@ export type InsertAuditEventParams = Omit<AuditEvent, 'id' | 'created_at'>
  * Insert a single audit event.
  * Non-blocking: catches and logs errors instead of throwing so callers are never
  * disrupted by an audit write failure.
+ *
+ * `client` defaults to the browser (RLS-bound) singleton, which works from a
+ * client component where a parent session cookie is present. Server callers
+ * ('use server' actions, API routes, cron) MUST pass the service-role admin
+ * client — `parent_audit_events` RLS scopes INSERT to `auth.uid()`'s family,
+ * and the browser singleton has no session on the server, so every server-side
+ * audit write was being silently denied (deferred item, fixed 2026-09-05).
  */
-export async function insertAuditEvent(params: InsertAuditEventParams): Promise<void> {
-  const { error } = await supabase.from('parent_audit_events').insert(params)
+export async function insertAuditEvent(
+  params: InsertAuditEventParams,
+  client: SupabaseClient = supabase,
+): Promise<void> {
+  const { error } = await client.from('parent_audit_events').insert(params)
   if (error) {
     // Intentionally non-throwing — audit failure must not break the parent action
     console.error('[audit] insertAuditEvent failed', error)

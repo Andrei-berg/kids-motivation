@@ -74,7 +74,7 @@ export async function approveBehaviorMark(markId: string): Promise<BehaviorMark>
     coins_delta: null,
     actor_user_id: member.userId,
     metadata: { mark_id: markId, tag_id: mark.tag_id },
-  })
+  }, admin)
 
   return data as BehaviorMark
 }
@@ -136,7 +136,7 @@ export async function rejectBehaviorMark(markId: string, note?: string): Promise
     coins_delta: null,
     actor_user_id: member.userId,
     metadata: { mark_id: markId, tag_id: mark.tag_id, note: note ?? null },
-  })
+  }, admin)
 
   return data as BehaviorMark
 }

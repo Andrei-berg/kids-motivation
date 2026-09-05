@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
         coins_delta: null,
         actor_user_id: member.userId,
         metadata: { withdrawal_id: withdrawalId },
-      })
+      }, admin)
       return NextResponse.json({ ok: true, withdrawal: flipped })
     }
 
@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
       coins_delta: null,
       actor_user_id: member.userId,
       metadata: { withdrawal_id: withdrawalId, amount },
-    })
+    }, admin)
 
     return NextResponse.json({ ok: true, withdrawal: settled })
   } catch (err) {
