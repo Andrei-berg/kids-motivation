@@ -132,15 +132,19 @@ None.
   10/10 integration tests green (`exchange-withdraw.test.ts` incl. reserve, approve,
   409-double-approve, reject, compensation).
 
-- **DEFECT (code review 05.4, CR-01, pre-existing): streak bonus mintable via arbitrary
-  client dates.** `/api/wallet/award` keys the streak-bonus award on the raw
-  client-supplied `date` string (regex-only validation) and pays from client-writable
-  `streaks.current_count` — a child can loop distinct date strings and mint bonus×N.
-  Predates 05.4 (present since the original server-side award, commit `c873a8d`).
-  Fix direction (see `05.4-REVIEW.md` CR-01): pay only when `date === localDateString()`
-
-  + real-calendar validation; longer term key on the milestone and move `updateStreaks`
-  server-side. Candidate for an early 5.5 gap plan.
+- ~~**DEFECT (code review 05.4, CR-01, pre-existing): streak bonus mintable via arbitrary
+  client dates.**~~ **RESOLVED.** Closed across three changes:
+  (1) Phase 5.5 moved `updateStreaks` server-side (admin client only, no client callers)
+  and locked `streaks` to RLS SELECT-only (migration `05.5-03-streaks-rls-readonly.sql`)
+  — `current_count` is no longer client-writable money input.
+  (2) Phase 5.5/5.6 gated the streak bonus to the server's `localDateString()` ±1 day
+  (timezone tolerance) — arbitrary past/future date replay no longer pays, and the
+  `(child_id,'streak',date)` idempotency key caps each in-window date to one credit.
+  (3) 2026-09-05 (on `main`): the award route now rejects non-calendar dates
+  (`2026-02-30`, `9999-99-99`) via `isValidCalendarDate()` before any DB/streak work,
+  instead of the `/^\d{4}-\d{2}-\d{2}$/` regex that let them roll silently or 500.
+  Tests: `tests/helpers.test.ts` (isValidCalendarDate), `tests/integration/award.test.ts`
+  (non-skipped date-validation block).
 
 - **Discovered 2026-07-07: `parent_audit_events` was never created in prod** — every
   `insertAuditEvent` (shop_approve/reject etc.) has been silently failing since 04.4.

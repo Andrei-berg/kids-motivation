@@ -24,7 +24,7 @@ import {
 } from '@/lib/supabase/admin'
 import { errorResponse, loadSettings, loadFeatureFlag, creditAwards, type AwardIntent } from '../_lib'
 import { updateStreaks } from '@/lib/services/streaks.service'
-import { localDateString, addDays } from '@/utils/helpers'
+import { localDateString, addDays, isValidCalendarDate } from '@/utils/helpers'
 import { getDayType } from '@/lib/day-type'
 import { assembleDayBlocks, resolveBlockPrice, resolveMultiplier } from '@/lib/day-blocks'
 import type { DayBlock } from '@/lib/models/day-block.types'
@@ -142,7 +142,13 @@ function dedupeBlocksForChild(rows: DayBlock[]): DayBlock[] {
 export async function POST(req: NextRequest) {
   try {
     const { childId, date } = await req.json()
-    if (!childId || !date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    // date must be a REAL calendar date, not just regex-shaped: an impossible
+    // date (2026-02-30, 9999-99-99) would otherwise silently roll to another
+    // day or throw downstream in updateStreaks/getDayType, and — pre Phase 5.5,
+    // when `streaks` was still client-writable — was the replay vector in
+    // CR-01 (streak bonus mintable for arbitrary client dates). The bonus is
+    // additionally gated to the server's "today" ±1 day further below.
+    if (!childId || typeof childId !== 'string' || !isValidCalendarDate(date)) {
       return NextResponse.json({ error: 'childId and date (YYYY-MM-DD) required' }, { status: 400 })
     }
 

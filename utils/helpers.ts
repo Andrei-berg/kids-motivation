@@ -79,6 +79,24 @@ export function addDays(date: Date | string, days: number): string {
 }
 
 /**
+ * True only for a real calendar date in strict `YYYY-MM-DD` form.
+ *
+ * The `YYYY-MM-DD` regex alone accepts impossible dates (`2026-02-30`,
+ * `2026-13-01`, `9999-99-99`) which then either roll silently to a different
+ * day via `new Date(...)` or throw a `RangeError` from `.toISOString()`
+ * downstream. Server routes that key money awards on a client-supplied date
+ * (`/api/wallet/award`) must reject these before any DB/streak work — see
+ * CR-01 in `.planning/.../05.4-REVIEW.md`.
+ */
+export function isValidCalendarDate(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const [y, m, d] = value.split('-').map(Number)
+  if (m < 1 || m > 12 || d < 1 || d > 31) return false
+  const dt = new Date(Date.UTC(y, m - 1, d))
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d
+}
+
+/**
  * Форматировать дату для отображения
  */
 export function formatDate(dateStr: string): string {

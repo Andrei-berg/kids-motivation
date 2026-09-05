@@ -6,6 +6,7 @@ import {
   addDays,
   calculatePercentage,
   isoWeekKey,
+  isValidCalendarDate,
 } from '../utils/helpers'
 
 describe('getLevelFromXP', () => {
@@ -89,6 +90,31 @@ describe('calculatePercentage', () => {
 
   it('calculates correctly at 50%', () => {
     expect(calculatePercentage(50, 100)).toBe(50)
+  })
+})
+
+describe('isValidCalendarDate', () => {
+  it('accepts a real calendar date', () => {
+    expect(isValidCalendarDate('2026-02-28')).toBe(true)
+    expect(isValidCalendarDate('2024-02-29')).toBe(true) // leap year
+    expect(isValidCalendarDate('2020-01-15')).toBe(true)
+  })
+
+  it('rejects a regex-shaped but impossible date', () => {
+    expect(isValidCalendarDate('2026-02-30')).toBe(false)
+    expect(isValidCalendarDate('2026-13-01')).toBe(false)
+    expect(isValidCalendarDate('2025-02-29')).toBe(false) // not a leap year
+    expect(isValidCalendarDate('9999-99-99')).toBe(false)
+    expect(isValidCalendarDate('2026-00-10')).toBe(false)
+  })
+
+  it('rejects wrong shapes and non-strings', () => {
+    expect(isValidCalendarDate('2026-1-1')).toBe(false)
+    expect(isValidCalendarDate('2026/02/03')).toBe(false)
+    expect(isValidCalendarDate('2026-02-03T00:00:00Z')).toBe(false)
+    expect(isValidCalendarDate('')).toBe(false)
+    expect(isValidCalendarDate(undefined)).toBe(false)
+    expect(isValidCalendarDate(20260203)).toBe(false)
   })
 })
 

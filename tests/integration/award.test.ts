@@ -71,6 +71,35 @@ function postAward(childId: string, date: string) {
   return POST(req)
 }
 
+// Pure input-validation — runs WITHOUT integration env. The route rejects a
+// malformed/impossible `date` before touching auth or the DB (CR-01): a
+// regex-shaped but non-calendar date like 2026-02-30 must 400, not roll to
+// another day inside updateStreaks or 500 from a downstream RangeError.
+describe('POST /api/wallet/award — date validation', () => {
+  beforeAll(() => mockRequireFamilyMember.mockReset())
+  afterAll(() => mockRequireFamilyMember.mockReset())
+
+  it.each([
+    ['impossible day-of-month', '2026-02-30'],
+    ['month 13', '2026-13-01'],
+    ['non-leap Feb 29', '2025-02-29'],
+    ['all nines', '9999-99-99'],
+    ['unpadded', '2026-1-1'],
+    ['datetime string', '2026-02-03T00:00:00Z'],
+    ['empty', ''],
+  ])('rejects %s with 400 before auth runs', async (_label, date) => {
+    const res = await postAward('child-1', date)
+    expect(res.status).toBe(400)
+    expect(mockRequireFamilyMember).not.toHaveBeenCalled()
+  })
+
+  it('rejects a missing childId with 400', async () => {
+    const res = await postAward('', '2026-02-03')
+    expect(res.status).toBe(400)
+    expect(mockRequireFamilyMember).not.toHaveBeenCalled()
+  })
+})
+
 describe.skipIf(!hasIntegrationEnv)('POST /api/wallet/award — integration', () => {
   let family: TestFamily
   const db = hasIntegrationEnv ? serviceClient() : null!
