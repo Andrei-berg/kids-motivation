@@ -918,32 +918,6 @@
       "remindersTitle": "Task Reminders",
       "remindersDesc": "Set reminder times for each task in the Tasks section."
     },
-    "familyManager": {
-      "title": "Family",
-      "inviteCode": "Invite Code",
-      "members": "Members",
-      "addMember": "Add Member",
-      "removeConfirm": "Remove this member?",
-      "childNameRequired": "Enter child's name",
-      "familyNotFound": "Family not found — reload the page",
-      "roleParent": "Parent",
-      "roleChild": "Child",
-      "roleExtended": "Family Member",
-      "inviteInstructions": "Child registers on the site, then goes to",
-      "inviteEnterCode": "and enters this code",
-      "copyCode": "Copy",
-      "childInstructions": "Instructions for child: open",
-      "enterCodeAbove": "enter the code above",
-      "addChild": "Add Child",
-      "childName": "Child's name",
-      "birthYear": "Birth year",
-      "avatar": "Avatar",
-      "removePhoto": "Remove photo",
-      "uploadPhoto": "Upload photo",
-      "noName": "No name",
-      "pendingJoin": "awaiting join",
-      "cancel": "Cancel"
-    },
     "tabs": {
       "children": "Children",
       "schedule": "Schedule",
@@ -1669,7 +1643,8 @@
         "loginResetDoneNoPin": "Account unlinked. Set a PIN above, or have {{name}} sign in with the new account via “Join a family”, code {{code}}",
         "loginPinInfoTitle": "Sign-in & recovery",
         "loginPinInfoHint": "{{name}} signs in with the family code + PIN. To add Google/email sign-in: {{name}} signs in with that account, opens “Join a family” and picks their profile — all history is kept.",
-        "loginCodeLabel": "Family code"
+        "loginCodeLabel": "Family code",
+        "modeN": "Mode {{n}}"
       },
       "more": {
         "subjects": "Manage subjects",

@@ -747,7 +747,7 @@ function ChildrenTab({ allChildren, notify }: { allChildren: ParentChild[]; noti
               }}>
                 <span style={{ fontSize: 20 }}>{m.icon}</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>Mode {m.id} · {m.label}</div>
+                  <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>{t('parentCenter.settings.child.modeN', { n: m.id })} · {m.label}</div>
                   <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{m.desc}</div>
                 </div>
                 {active && <span style={{ width: 8, height: 8, borderRadius: '50%', background: T.indigo, flexShrink: 0 }}/>}
