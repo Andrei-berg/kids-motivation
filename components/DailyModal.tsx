@@ -6,7 +6,7 @@ import { api } from '@/lib/api'
 import { flexibleApi, Subject, ExerciseType } from '@/lib/flexible-api'
 import { getSectionsForDate, markSectionVisit, Section, SectionVisit, ExtraActivity, getActivitiesForDay, getActivityLogs, saveActivityLogs } from '@/lib/expenses-api'
 import { checkAndAwardBadges } from '@/lib/badges'
-import { getGradeColor } from '@/utils/helpers'
+import { getGradeColor, localDateString } from '@/utils/helpers'
 import { triggerConfetti } from '@/utils/confetti'
 import { useAppStore } from '@/lib/store'
 import {
@@ -110,9 +110,16 @@ function BlockSection({ title, icon, badge, children }: { title: string; icon: s
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function DailyModal({ isOpen, onClose, childId, date, onSave }: DailyModalProps) {
+export default function DailyModal({ isOpen, onClose, childId, date: initialDate, onSave }: DailyModalProps) {
   const t = useT()
   const { familyId } = useAppStore()
+
+  // The day being edited. Seeded from the `date` prop; a parent can retarget it
+  // to any past day via the header date picker (back-fill, 2026-09-10). Every
+  // reference below reads this state var, so changing it re-drives the loads,
+  // day-type, previews and save payloads exactly as an `isOpen`/prop change did.
+  const [date, setDate] = useState(initialDate)
+  useEffect(() => { if (isOpen) setDate(initialDate) }, [isOpen, initialDate])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [status, setStatus] = useState('')
@@ -1384,7 +1391,21 @@ export default function DailyModal({ isOpen, onClose, childId, date, onSave }: D
                 {dayTypeInfo.emoji} {dayTypeInfo.label}
               </span>
             </div>
-            <div className="premium-modal-subtitle">{formattedDate}</div>
+            <div className="premium-modal-subtitle" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ textTransform: 'capitalize' }}>{formattedDate}</span>
+              <input
+                type="date"
+                value={date}
+                max={localDateString()}
+                onChange={(e) => { if (e.target.value) setDate(e.target.value) }}
+                disabled={saving}
+                aria-label={t('dailyModal.pickDate')}
+                style={{
+                  fontSize: 12, padding: '2px 6px', borderRadius: 6,
+                  border: '1px solid var(--line)', background: '#fff', color: 'inherit',
+                }}
+              />
+            </div>
           </div>
           <button className="premium-close-btn" onClick={onClose}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

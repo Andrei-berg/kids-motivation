@@ -426,7 +426,8 @@
     "progressPlaceholder": "Progress",
     "feedbackPlaceholder": "Coach feedback",
     "coachRatingLabel": "Coach rating:",
-    "roomPhotoAlt": "Room photo"
+    "roomPhotoAlt": "Room photo",
+    "pickDate": "Pick a date"
   },
   "coachRating": {
     "title": "Coach Rating",
@@ -1165,7 +1166,12 @@
     "moodLabel": "Mood noted",
     "moodNote": "Great job filling in the day!",
     "noData": "No data",
-    "levelWord": "Level"
+    "levelWord": "Level",
+    "backfillBanner": "Filling {{date}} (past day)",
+    "backToToday": "← Today",
+    "sentForReview": "Saved and sent to your parent for review. Coins arrive once it's approved.",
+    "requestSent": "Request sent to your parent.",
+    "requestFailed": "Could not send the request."
   },
   "kidLeaderboardPage": {
     "familyRating": "FAMILY RATING",
@@ -1669,7 +1675,17 @@
         "copyLoginLink": "Copy sign-in link",
         "loginLinkCopied": "Link copied",
         "pinWhereTitle": "How {{name}} signs in with a PIN — two steps",
-        "pinWhereSteps": "App → “I'm a kid”. Step 1 — family code {{code}} (one per family). Step 2 — pick “{{name}}” and enter their PIN (6 digits, per child). The family code and the PIN are entered on DIFFERENT steps — they are not the same thing."
+        "pinWhereSteps": "App → “I'm a kid”. Step 1 — family code {{code}} (one per family). Step 2 — pick “{{name}}” and enter their PIN (6 digits, per child). The family code and the PIN are entered on DIFFERENT steps — they are not the same thing.",
+        "backfillTitle": "Filling past days",
+        "backfillHint": "How {{name}} may fill past days. A parent can fill any day from “Fill day” regardless of this setting.",
+        "backfillOff": "Off",
+        "backfillOffDesc": "Only a parent fills past days.",
+        "backfillRequest": "On request",
+        "backfillRequestDesc": "Kid asks → you approve → kid fills → you review → coins.",
+        "backfillOpen": "Open",
+        "backfillOpenDesc": "{{name}} fills past days freely; coins credit immediately.",
+        "backfillDaysLabel": "How many days back",
+        "backfillSaved": "Past-day fill setting saved for {{name}}"
       },
       "more": {
         "subjects": "Manage subjects",
@@ -1836,6 +1852,16 @@
       "nameRequired": "Enter the child's name",
       "toastCreated": "{{name}} added to the family",
       "genericError": "Could not add the child"
+    },
+    "backfill": {
+      "title": "Past-day fill",
+      "subtitle": "Kids' requests to fill past days, and filled days awaiting review.",
+      "empty": "No requests or days awaiting review.",
+      "requestedHeading": "Requests to fill",
+      "submittedHeading": "Filled — awaiting review",
+      "reject": "Reject",
+      "approveRequest": "Allow",
+      "credit": "Credit"
     }
   },
   "wallets": {
@@ -1896,6 +1922,11 @@
     "today": "Today",
     "filled": "filled",
     "missed": "missed",
-    "todayDot": "today"
+    "todayDot": "today",
+    "waiting": "waiting",
+    "fillPast": "Fill this day",
+    "requestPast": "Ask to fill this day",
+    "hintOpen": "Tap a past day to fill it in.",
+    "hintRequest": "Tap a past day to ask a parent if you can fill it."
   }
 }

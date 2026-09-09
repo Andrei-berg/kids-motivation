@@ -16,6 +16,8 @@ export type ParentChild = {
   todayDone: number
   todayTotal: number
   mode: 1 | 2 | 3
+  backfillMode: 'off' | 'request' | 'open'
+  backfillDays: number
   week: number[]    // last 7 days coins
   subjects: string[]
   badges: number

@@ -11,6 +11,31 @@ export type Child = {
   level: number
   created_at: string
   kid_fill_mode: 1 | 2 | 3
+  // How the child may fill PAST days (see 2026-09-10-backfill-day-requests.sql).
+  backfill_mode: 'off' | 'request' | 'open'
+  backfill_days: number
+}
+
+export type BackfillRequestStatus =
+  | 'requested'
+  | 'approved'
+  | 'submitted'
+  | 'done'
+  | 'rejected'
+
+export type DayFillRequest = {
+  id: string
+  family_id: string
+  child_id: string
+  date: string
+  status: BackfillRequestStatus
+  requested_at: string
+  decided_by: string | null
+  decided_at: string | null
+  submitted_at: string | null
+  reviewed_by: string | null
+  reviewed_at: string | null
+  note: string | null
 }
 
 export type DayData = {

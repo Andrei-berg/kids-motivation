@@ -86,7 +86,7 @@ export default function ParentCenter() {
   const [readingChecks, setReadingChecks] = useState<PendingReadingCheck[]>([])
   const [activity, setActivity] = useState<ActivityEntry[]>([])
   const [loading, setLoading] = useState(true)
-  const [dailyModal, setDailyModal] = useState<{ open: boolean; childId: string }>({ open: false, childId: '' })
+  const [dailyModal, setDailyModal] = useState<{ open: boolean; childId: string; date: string }>({ open: false, childId: '', date: localDateString() })
   const [addChildOpen, setAddChildOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   const [weeklySummary, setWeeklySummary] = useState<{
@@ -99,7 +99,7 @@ export default function ParentCenter() {
 
   const openFillDay = () => {
     const firstChild = children[0]
-    if (firstChild) setDailyModal({ open: true, childId: firstChild.id })
+    if (firstChild) setDailyModal({ open: true, childId: firstChild.id, date: localDateString() })
   }
   const closeFillDay = () => setDailyModal(m => ({ ...m, open: false }))
 
@@ -185,6 +185,8 @@ export default function ParentCenter() {
               todayDone,
               todayTotal,
               mode: c.kid_fill_mode,
+              backfillMode: (c as { backfill_mode?: 'off' | 'request' | 'open' }).backfill_mode ?? 'off',
+              backfillDays: (c as { backfill_days?: number }).backfill_days ?? 7,
               week: weekCoins.length === 7 ? weekCoins : [10, 15, 8, 20, 12, 18, 9],
               subjects: subjects.map((s: any) => s.name ?? s.subject_name ?? String(s)),
               badges: 0,
@@ -529,7 +531,7 @@ export default function ParentCenter() {
 
         <ActionModal open={modal.open} child={modal.child} action={modal.action} onClose={closeAction} onConfirm={confirmAction}/>
         <AddChildModal open={addChildOpen} familyId={familyId ?? ''} onClose={() => setAddChildOpen(false)} onCreated={onChildCreated}/>
-        <DailyModal isOpen={dailyModal.open} onClose={closeFillDay} childId={dailyModal.childId} date={localDateString()} onSave={() => { closeFillDay(); setRefreshKey(k => k + 1) }}/>
+        <DailyModal isOpen={dailyModal.open} onClose={closeFillDay} childId={dailyModal.childId} date={dailyModal.date} onSave={() => { closeFillDay(); setRefreshKey(k => k + 1) }}/>
         <Toast toast={toast}/>
       </div>
     )
@@ -659,7 +661,7 @@ export default function ParentCenter() {
 
       <AddChildModal open={addChildOpen} familyId={familyId ?? ''} onClose={() => setAddChildOpen(false)} onCreated={onChildCreated}/>
 
-      <DailyModal isOpen={dailyModal.open} onClose={closeFillDay} childId={dailyModal.childId} date={localDateString()} onSave={() => { closeFillDay(); setRefreshKey(k => k + 1) }}/>
+      <DailyModal isOpen={dailyModal.open} onClose={closeFillDay} childId={dailyModal.childId} date={dailyModal.date} onSave={() => { closeFillDay(); setRefreshKey(k => k + 1) }}/>
 
       <Toast toast={toast}/>
     </div>

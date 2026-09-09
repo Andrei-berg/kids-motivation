@@ -23,6 +23,9 @@ import ScreenHeader from '@/components/kid/design/ScreenHeader'
 import WeekStrip from '@/components/kid/WeekStrip'
 import { useDesktop } from '@/lib/hooks/useDesktop'
 import { useT, useLanguage } from '@/lib/i18n'
+import { requestBackfillDay } from '@/app/kid/day/actions'
+import { getChildBackfillRequestsInRange } from '@/lib/repositories/backfill.repo'
+import type { BackfillRequestStatus } from '@/lib/models/child.types'
 
 function todayLabel(language: string): string {
   const locale = language === 'ru' ? 'ru-RU' : 'en-US'
@@ -64,6 +67,13 @@ export default function KidDayPage() {
   const [savedResult, setSavedResult] = useState<DaySaveResult | null>(null)
   // Which days of the current week already have a saved row — drives WeekStrip.
   const [weekFilled, setWeekFilled] = useState<Set<string>>(new Set())
+  // date → back-fill request status for the current week (mode 'request').
+  const [weekRequests, setWeekRequests] = useState<Record<string, BackfillRequestStatus>>({})
+  // The day being filled/shown. Defaults to today; a WeekStrip tap on an
+  // approved/open past day retargets it (back-fill, 2026-09-10).
+  const [selectedDate, setSelectedDate] = useState(() => localDateString())
+  const [busyDate, setBusyDate] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const isDesktop = useDesktop()
   // Header balance count-up (05.7-11, D-17): drives ONLY the ScreenHeader
   // balance to the new server-confirmed total; never fed a client estimate.
@@ -91,11 +101,12 @@ export default function KidDayPage() {
       if (!childData) { setLoading(false); return }
 
       const week = getWeekRange(today)
-      const [dayData, walletData, streaksData, weekDays] = await Promise.all([
-        api.getDay(resolvedId, today),
+      const [dayData, walletData, streaksData, weekDays, bfReqs] = await Promise.all([
+        api.getDay(resolvedId, selectedDate),
         getWallet(resolvedId),
         api.getStreaks(resolvedId),
         api.getDaysInRange(resolvedId, week.start, week.end).catch(() => [] as string[]),
+        getChildBackfillRequestsInRange(resolvedId, week.start, week.end).catch(() => []),
       ])
 
       setChild(childData)
@@ -103,6 +114,9 @@ export default function KidDayPage() {
       setWallet(walletData)
       setStreaks((streaksData ?? []).filter((s: any) => s.current_count > 0))
       setWeekFilled(new Set(weekDays))
+      setWeekRequests(
+        Object.fromEntries(bfReqs.map((r) => [r.date.slice(0, 10), r.status])),
+      )
 
       // Determine day type. Vacation periods are keyed by family_id (NOT child_id)
       // and may target one child via child_filter — use the shared getDayType helper
@@ -114,7 +128,7 @@ export default function KidDayPage() {
           getFamilyCalendar(familyId),
           getFamilyDayBlocksEnabled(familyId),
         ])
-        const info = getDayType(today, false, vacations ?? [], resolvedId, undefined, familyCalendar)
+        const info = getDayType(selectedDate, false, vacations ?? [], resolvedId, undefined, familyCalendar)
         // getDayType can also return 'sick'; the day form only handles these three.
         setDayType(info.type === 'sick' ? 'school' : info.type)
 
@@ -130,7 +144,7 @@ export default function KidDayPage() {
           setDayBlocks([])
         }
       } catch {
-        const dow = new Date(today + 'T12:00:00').getDay()
+        const dow = new Date(selectedDate + 'T12:00:00').getDay()
         setDayType(dow === 0 || dow === 6 ? 'weekend' : 'school')
         setDayBlocksEnabled(false)
         setDayBlocks([])
@@ -140,7 +154,7 @@ export default function KidDayPage() {
     } finally {
       setLoading(false)
     }
-  }, [activeMemberId, today])
+  }, [activeMemberId, today, selectedDate])
 
   useEffect(() => { loadData() }, [loadData])
 
@@ -159,17 +173,68 @@ export default function KidDayPage() {
   const xpInLevel = xp % 1000 // XP accumulated toward the next level (1000 per level)
   const streakDays = streaks.reduce((max, s) => Math.max(max, s.current_count), 0)
 
+  const isBackfill = selectedDate !== today
+
   function handleFillSaved(result: DaySaveResult) {
     setEditMode(false)
     setSavedResult(result)
+    if (result.pendingReview) {
+      // A back-filled day (mode 'request') — saved, now waiting for the parent's
+      // review. No coins yet, so no celebration.
+      setNotice(t('kidDayPage.sentForReview'))
+      loadData()
+      return
+    }
     // D-19 relaxed (product ask, 2026-09): celebrate every coin-earning save,
     // not only a credited streak / XP level-up crossing.
     if (result.hasStreak || result.leveledUp || result.creditedCoins > 0) triggerConfetti()
     loadData()
   }
 
+  async function handleRequestDay(date: string) {
+    const cid = child?.id ?? activeMemberId
+    if (!cid || busyDate) return
+    setBusyDate(date)
+    setNotice(null)
+    try {
+      await requestBackfillDay(cid, date)
+      setNotice(t('kidDayPage.requestSent'))
+      await loadData()
+    } catch (e) {
+      setNotice(e instanceof Error ? e.message : t('kidDayPage.requestFailed'))
+    } finally {
+      setBusyDate(null)
+    }
+  }
+
+  function handleFillDay(date: string) {
+    setNotice(null)
+    setEditMode(false)
+    setSavedResult(null)
+    setSelectedDate(date)
+  }
+
+  function backToToday() {
+    setNotice(null)
+    setEditMode(false)
+    setSavedResult(null)
+    setSelectedDate(today)
+  }
+
   // Show the form if no day yet OR in edit mode
   const showForm = todayDay === null || editMode
+
+  const weekStripProps = {
+    today,
+    filledDates: weekFilled,
+    language,
+    backfillMode: (child?.backfill_mode ?? 'off') as 'off' | 'request' | 'open',
+    backfillDays: child?.backfill_days ?? 0,
+    requests: weekRequests,
+    busyDate,
+    onRequestDay: handleRequestDay,
+    onFillDay: handleFillDay,
+  }
 
   return (
     <div style={isDesktop ? {
@@ -204,7 +269,7 @@ export default function KidDayPage() {
 
           {/* Week strip — filled vs. missed days, today highlighted */}
           <div style={{ margin: '0 -12px' }}>
-            <WeekStrip today={today} filledDates={weekFilled} language={language}/>
+            <WeekStrip {...weekStripProps}/>
           </div>
 
           {/* Streak card */}
@@ -325,7 +390,7 @@ export default function KidDayPage() {
             </div>
             <StreakFlame days={streakDays} label={t('common.days')}/>
           </div>
-          <WeekStrip today={today} filledDates={weekFilled} language={language}/>
+          <WeekStrip {...weekStripProps}/>
         </div>
       )}
 
@@ -337,6 +402,40 @@ export default function KidDayPage() {
           <ScreenHeader title={t('kidHeader.day')} coins={headerCoins} name={child?.name ?? ''} showLogout/>
         )}
         {activeMemberId && <KidChallenges childId={activeMemberId}/>}
+
+        {notice && (
+          <div style={{
+            margin: isDesktop ? '0 0 12px' : '8px 16px 0',
+            padding: '10px 14px', borderRadius: 12, background: T.coralSoft,
+            border: `1.5px solid ${T.coral}`, fontFamily: T.fBody, fontSize: 13, color: T.ink,
+          }}>
+            {notice}
+          </div>
+        )}
+
+        {isBackfill && (
+          <div style={{
+            margin: isDesktop ? '0 0 12px' : '8px 16px 0',
+            padding: '10px 14px', borderRadius: 12, background: T.sunSoft,
+            border: `1.5px solid ${T.sun}`, display: 'flex', alignItems: 'center',
+            justifyContent: 'space-between', gap: 10, flexWrap: 'wrap',
+          }}>
+            <span style={{ fontFamily: T.fBody, fontSize: 13, fontWeight: 700, color: T.ink }}>
+              {t('kidDayPage.backfillBanner', {
+                date: new Date(selectedDate + 'T12:00:00').toLocaleDateString(
+                  language === 'ru' ? 'ru-RU' : 'en-US',
+                  { weekday: 'short', day: 'numeric', month: 'short' },
+                ),
+              })}
+            </span>
+            <button onClick={backToToday} style={{
+              height: 30, padding: '0 12px', borderRadius: 15, border: `1.5px solid ${T.line}`,
+              background: '#fff', cursor: 'pointer', fontFamily: T.fBody, fontSize: 12,
+              color: T.ink3, fontWeight: 700,
+            }}>{t('kidDayPage.backToToday')}</button>
+          </div>
+        )}
+
         {showForm ? (
           <>
             {editMode && todayDay && (
@@ -351,7 +450,7 @@ export default function KidDayPage() {
             {activeMemberId && (
               <KidDayFillForm
                 childId={activeMemberId}
-                date={today}
+                date={selectedDate}
                 dayType={dayType}
                 existingDay={todayDay}
                 onSaved={handleFillSaved}

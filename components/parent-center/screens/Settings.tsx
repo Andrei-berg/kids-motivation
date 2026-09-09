@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 import AuthHelpModal from '@/components/AuthHelpModal'
 import { getWalletSettings } from '@/lib/wallet-api'
 import { setChildPin, getChildLoginStatus, resetChildLogin, sendChildLoginLink, type ChildLoginStatus } from '@/lib/onboarding-api'
+import { updateChildBackfillSettings } from '@/lib/repositories/children.repo'
 import { updateWalletSettingsApi } from '@/lib/wallet-client'
 import type { WalletSettings } from '@/lib/wallet-api'
 import { useLanguage, SUPPORTED_LANGUAGES, useT } from '@/lib/i18n'
@@ -19,6 +20,7 @@ import { PRESET_IDS, getPresetValues, GRADE_SCALE_VALUES, defaultGradeCoinMap, t
 import { Amount } from '@/components/design/atoms'
 import BehaviorTagsManager from '@/components/settings/BehaviorTagsManager'
 import BehaviorApprovalQueue from '@/components/parent-center/screens/BehaviorApprovalQueue'
+import BackfillRequestQueue from '@/components/parent-center/screens/BackfillRequestQueue'
 import PeriodsManager from '@/components/settings/PeriodsManager'
 import SectionsManager from '@/components/settings/SectionsManager'
 import SubjectsManager from '@/components/settings/SubjectsManager'
@@ -504,8 +506,98 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
         <Card pad={16}>
           <BehaviorApprovalQueue/>
         </Card>
+        <Card pad={16}>
+          <BackfillRequestQueue/>
+        </Card>
       </div>
     </div>
+  )
+}
+
+// ───── Past-day back-fill config (per child) ─────
+function BackfillCard({ child, notify }: { child: ParentChild; notify: (msg: string, tone?: string) => void }) {
+  const t = useT()
+  const [mode, setMode] = useState<'off' | 'request' | 'open'>(child.backfillMode ?? 'off')
+  const [days, setDays] = useState<number>(child.backfillDays ?? 7)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    setMode(child.backfillMode ?? 'off')
+    setDays(child.backfillDays ?? 7)
+  }, [child.id, child.backfillMode, child.backfillDays])
+
+  const opts: { id: 'off' | 'request' | 'open'; icon: string; label: string; desc: string }[] = [
+    { id: 'off', icon: '🚫', label: t('parentCenter.settings.child.backfillOff'), desc: t('parentCenter.settings.child.backfillOffDesc') },
+    { id: 'request', icon: '🙋', label: t('parentCenter.settings.child.backfillRequest'), desc: t('parentCenter.settings.child.backfillRequestDesc') },
+    { id: 'open', icon: '✅', label: t('parentCenter.settings.child.backfillOpen'), desc: t('parentCenter.settings.child.backfillOpenDesc', { name: child.name }) },
+  ]
+
+  async function save() {
+    setSaving(true)
+    try {
+      const d = Math.max(1, Math.min(60, Math.round(days || 7)))
+      await updateChildBackfillSettings(child.id, { mode, days: d })
+      setDays(d)
+      notify(t('parentCenter.settings.child.backfillSaved', { name: child.name }))
+    } catch (e) {
+      notify(e instanceof Error ? e.message : 'Error', 'error')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Card pad={16}>
+      <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+        {t('parentCenter.settings.child.backfillTitle')}
+      </div>
+      <div style={{ fontSize: 12, color: T.faint, lineHeight: 1.5, marginBottom: 10 }}>
+        {t('parentCenter.settings.child.backfillHint', { name: child.name })}
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {opts.map((o) => {
+          const active = mode === o.id
+          return (
+            <button key={o.id} onClick={() => setMode(o.id)} style={{
+              padding: 12, textAlign: 'left', cursor: 'pointer',
+              background: active ? T.indigoSoft : T.bg1,
+              border: `1px solid ${active ? 'rgba(108,92,231,0.4)' : T.cardBorder}`,
+              borderRadius: T.rM, display: 'flex', alignItems: 'center', gap: 12,
+            }}>
+              <span style={{ fontSize: 20 }}>{o.icon}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>{o.label}</div>
+                <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{o.desc}</div>
+              </div>
+              {active && <span style={{ width: 8, height: 8, borderRadius: '50%', background: T.indigo, flexShrink: 0 }}/>}
+            </button>
+          )
+        })}
+      </div>
+
+      {mode !== 'off' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
+          <span style={{ fontSize: 12, color: T.textDim }}>{t('parentCenter.settings.child.backfillDaysLabel')}</span>
+          <input
+            type="number" min={1} max={60}
+            value={days}
+            onChange={(e) => setDays(Number(e.target.value))}
+            style={{
+              width: 72, height: 36, padding: '0 10px', borderRadius: T.r,
+              background: T.bg1, border: `1px solid ${T.cardBorder}`, color: T.text,
+              fontFamily: T.fBody, fontSize: 14, textAlign: 'center',
+            }}
+          />
+        </div>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>
+        <Btn variant="primary" size="md" onClick={() => save()} disabled={saving}>
+          {saving ? t('common.loading') : t('common.save')}
+        </Btn>
+      </div>
+    </Card>
   )
 }
 
@@ -845,6 +937,7 @@ function ChildrenTab({ allChildren, notify }: { allChildren: ParentChild[]; noti
         </div>
       </Card>
 
+      {child && <BackfillCard child={child} notify={notify}/>}
       {child && <PinCard child={child} notify={notify}/>}
       {child && <AutomationCards child={child} notify={notify}/>}
     </div>

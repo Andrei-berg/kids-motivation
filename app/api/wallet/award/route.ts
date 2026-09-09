@@ -163,6 +163,61 @@ export async function POST(req: NextRequest) {
 
     const admin = createAdminClient()
     await assertChildInFamily(admin, childId, member.familyId)
+
+    // Back-fill gate (2026-09-10): a CHILD awarding a NON-today day may only be
+    // credited under the child's backfill policy. Parents are never gated here.
+    //  - mode 'open'  + within backfill_days      → credit normally
+    //  - mode 'request' + a 'done' request row    → credit normally
+    //  - mode 'request' + 'approved'/'submitted'  → flip to 'submitted', hold coins
+    //  - anything else (mode 'off', out of window, no/rejected request) → 403
+    if (member.role === 'child' && date !== localDateString()) {
+      const { data: bfChild } = await admin
+        .from('children')
+        .select('backfill_mode, backfill_days')
+        .eq('id', childId)
+        .maybeSingle()
+      const mode = bfChild?.backfill_mode ?? 'off'
+      const daysBack = Math.round(
+        (Date.parse(localDateString()) - Date.parse(date)) / 86_400_000,
+      )
+      const inWindow = daysBack > 0 && daysBack <= (bfChild?.backfill_days ?? 0)
+
+      let allowCredit = false
+      if (mode === 'open' && inWindow) {
+        allowCredit = true
+      } else if (mode === 'request') {
+        const { data: reqRow } = await admin
+          .from('day_fill_requests')
+          .select('status')
+          .eq('child_id', childId)
+          .eq('date', date)
+          .maybeSingle()
+        if (reqRow?.status === 'done') {
+          allowCredit = true
+        } else if (reqRow && (reqRow.status === 'approved' || reqRow.status === 'submitted')) {
+          await admin
+            .from('day_fill_requests')
+            .update({ status: 'submitted', submitted_at: new Date().toISOString() })
+            .eq('child_id', childId)
+            .eq('date', date)
+            .eq('status', 'approved')
+          return NextResponse.json({
+            ok: true,
+            pendingReview: true,
+            creditedCoins: 0,
+            awards: 0,
+            streakEvents: { broken: [], records: [] },
+            appliedSources: [],
+            appliedItems: [],
+          })
+        }
+      }
+
+      if (!allowCredit) {
+        return NextResponse.json({ error: 'backfill_not_allowed' }, { status: 403 })
+      }
+    }
+
     const settings = await loadSettings(admin, member.familyId)
 
     // Streak counts are recomputed server-side (admin client) inside this

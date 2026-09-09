@@ -9,6 +9,7 @@ import type { ParentChild, ActivityEntry, ActionType } from '../types'
 import type { RewardPurchase } from '@/lib/models/wallet.types'
 import { useT, useLanguage } from '@/lib/i18n'
 import BehaviorApprovalQueue from './BehaviorApprovalQueue'
+import BackfillRequestQueue from './BackfillRequestQueue'
 
 function useCountUp(target: number, duration = 800) {
   const [n, setN] = useState(0)
@@ -242,6 +243,7 @@ export default function Dashboard({ children, activity, pending, readingChecks =
           {/* Child-proposed behavior tags awaiting a decision — renders nothing
               when the queue is empty (compact mount). */}
           <BehaviorApprovalQueue compact/>
+          <BackfillRequestQueue compact/>
 
           {pending.length > 0 && (
             <div>

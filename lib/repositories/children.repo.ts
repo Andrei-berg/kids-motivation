@@ -154,6 +154,21 @@ export async function saveDay(params: {
   return data
 }
 
+// Parent-only in practice (children RLS is family-isolation, so a child could
+// technically call this — the Settings UI that uses it is parent-gated, and the
+// award-route gate re-reads these columns server-side regardless).
+export async function updateChildBackfillSettings(
+  childId: string,
+  settings: { mode: 'off' | 'request' | 'open'; days: number },
+): Promise<void> {
+  const days = Math.max(0, Math.min(60, Math.round(settings.days)))
+  const { error } = await supabase
+    .from('children')
+    .update({ backfill_mode: settings.mode, backfill_days: days })
+    .eq('id', childId)
+  if (error) throw error
+}
+
 export async function getDay(childId: string, date: string) {
   const { data, error } = await supabase
     .from('days')

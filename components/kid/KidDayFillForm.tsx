@@ -67,6 +67,9 @@ export interface DaySaveResult {
   hasStreak: boolean
   leveledUp: boolean
   appliedItems: AwardedItem[]
+  // A back-filled past day (mode 'request') that was saved but is now waiting
+  // for the parent's final review — no coins credited yet.
+  pendingReview?: boolean
 }
 
 export interface KidDayFillFormProps {
@@ -536,6 +539,7 @@ export function KidDayFillForm({
     let creditedCoins = 0
     let hasStreak = false
     let appliedItems: AwardedItem[] = []
+    let pendingReview = false
 
     // A stale cookie session makes the middleware bounce this POST (now a JSON
     // 401; historically a 307 → '/' that fetch silently followed to 200 HTML).
@@ -563,6 +567,7 @@ export function KidDayFillForm({
         creditedCoins = parsed.creditedCoins
         hasStreak = parsed.hasStreak
         appliedItems = Array.isArray(data?.appliedItems) ? data.appliedItems : []
+        pendingReview = data?.pendingReview === true
         // Fire-and-forget: don't block save completion on push delivery
         import('@/app/actions/push-streaks').then(({ notifyStreakEvents }) => {
           notifyStreakEvents(childId, '', data?.streakEvents ?? { broken: [], records: [] }).catch(() => {})
@@ -601,7 +606,7 @@ export function KidDayFillForm({
     // instant one from the client estimate) so the number the child sees pop
     // is the one that actually landed in the wallet.
     if (creditedCoins !== 0) triggerCoinFlyup(creditedCoins)
-    onSaved({ creditedCoins, hasStreak, leveledUp, appliedItems })
+    onSaved({ creditedCoins, hasStreak, leveledUp, appliedItems, pendingReview })
   }
 
   async function handleRetryAward() {
