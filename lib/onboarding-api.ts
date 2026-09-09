@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { seedDefaultCategories } from '@/lib/categories-api'
 import { getPresetValues, type PresetId } from '@/lib/presets'
 import { updateWalletSettingsApi } from '@/lib/wallet-client'
+import { normalizeInviteInput } from '@/lib/invite-code'
 
 // ---------------------------------------------------------------------------
 // Internal utilities
@@ -286,7 +287,9 @@ export async function addChildToFamily(
 export async function lookupFamilyByCode(code: string): Promise<FamilyLookup | null> {
   const supabase = createClient()
 
-  const normalizedCode = code.trim().toUpperCase()
+  // Fold ambiguous glyphs (O→0, I/L→1) client-side too; the RPC also
+  // canonicalizes via public.canonical_invite_code(), this is belt-and-braces.
+  const normalizedCode = normalizeInviteInput(code)
 
   const { data, error } = await supabase
     .rpc('lookup_family_by_invite_code', { p_code: normalizedCode })
@@ -605,6 +608,36 @@ export async function resetChildLogin(childId: string): Promise<{ pinSet: boolea
     throw new Error(body?.error || 'Failed to reset login')
   }
   return res.json()
+}
+
+// Send a sign-in link to a NEW email for a child (e.g. the child changed phone /
+// email). The server (service-role, requireParent) creates/invites that address
+// and mails a link that lands the child in /onboarding/join with the family code
+// prefilled, so they claim their existing profile — data and PIN are preserved.
+// `alreadyExists` is surfaced (not thrown) so the UI can point the parent at the
+// self-serve path instead. Calls PUT /api/child-login.
+export interface ChildLoginLinkResult {
+  ok: boolean
+  alreadyExists?: boolean
+}
+
+export async function sendChildLoginLink(
+  childId: string,
+  email: string,
+): Promise<ChildLoginLinkResult> {
+  const res = await fetch('/api/child-login', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ childId, email }),
+  })
+  const body = await res.json().catch(() => ({ error: 'Unknown error' }))
+  if (res.status === 409 && body?.alreadyExists) {
+    return { ok: false, alreadyExists: true }
+  }
+  if (!res.ok) {
+    throw new Error(body?.error || 'Failed to send the sign-in link')
+  }
+  return { ok: true }
 }
 
 // ---------------------------------------------------------------------------

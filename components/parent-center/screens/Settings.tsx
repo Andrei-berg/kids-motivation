@@ -8,7 +8,7 @@ import type { ParentChild, Route } from '../types'
 import { createClient } from '@/lib/supabase/client'
 import AuthHelpModal from '@/components/AuthHelpModal'
 import { getWalletSettings } from '@/lib/wallet-api'
-import { setChildPin, getChildLoginStatus, resetChildLogin, type ChildLoginStatus } from '@/lib/onboarding-api'
+import { setChildPin, getChildLoginStatus, resetChildLogin, sendChildLoginLink, type ChildLoginStatus } from '@/lib/onboarding-api'
 import { updateWalletSettingsApi } from '@/lib/wallet-client'
 import type { WalletSettings } from '@/lib/wallet-api'
 import { useLanguage, SUPPORTED_LANGUAGES, useT } from '@/lib/i18n'
@@ -526,6 +526,13 @@ function PinCard({ child, notify }: { child: ParentChild; notify: (msg: string, 
   // /onboarding/join, so the recovery instructions spell it out.
   const [inviteCode, setInviteCode] = useState('')
   const [codeCopied, setCodeCopied] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
+
+  // "Give this child a new email" — sends a sign-in link to a new address.
+  const [newEmail, setNewEmail] = useState('')
+  const [sendingLink, setSendingLink] = useState(false)
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
   async function loadStatus() {
     try {
@@ -558,6 +565,33 @@ function PinCard({ child, notify }: { child: ParentChild; notify: (msg: string, 
     await navigator.clipboard?.writeText(inviteCode).catch(() => {})
     setCodeCopied(true)
     setTimeout(() => setCodeCopied(false), 2000)
+  }
+
+  async function copyLoginLink() {
+    if (!inviteCode) return
+    const link = `${window.location.origin}/onboarding/join?code=${encodeURIComponent(inviteCode)}`
+    await navigator.clipboard?.writeText(link).catch(() => {})
+    setLinkCopied(true)
+    setTimeout(() => setLinkCopied(false), 2000)
+  }
+
+  async function sendLink() {
+    const email = newEmail.trim().toLowerCase()
+    if (!EMAIL_RE.test(email)) { notify(t('parentCenter.settings.child.emailInviteBadEmail'), 'error'); return }
+    setSendingLink(true)
+    try {
+      const { alreadyExists } = await sendChildLoginLink(child.id, email)
+      if (alreadyExists) {
+        notify(t('parentCenter.settings.child.emailInviteExists', { name: child.name }), 'error')
+        return
+      }
+      setNewEmail('')
+      notify(t('parentCenter.settings.child.emailInviteSent', { name: child.name, email }))
+    } catch (e) {
+      notify(e instanceof Error ? e.message : 'Error', 'error')
+    } finally {
+      setSendingLink(false)
+    }
   }
 
   async function save() {
@@ -634,59 +668,97 @@ function PinCard({ child, notify }: { child: ParentChild; notify: (msg: string, 
         </Btn>
       </div>
 
-      {/* Sign-in & recovery — always shown once status loads, so a parent
-          always has a path to get a child back in, whichever broken state
-          they are in (lost email on a real account, or already PIN-only). */}
+      {/* Sign-in & recovery — always shown once status loads, so a parent always
+          has a path to get a child back in, whichever state they are in. Two
+          options are always offered: (1) send a sign-in link to a new email,
+          (2) the child signs in themselves and claims their profile. */}
       {status && (
         <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.cardBorder}` }}>
           <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-            {status.hasRealAccount
-              ? t('parentCenter.settings.child.loginResetTitle')
-              : t('parentCenter.settings.child.loginPinInfoTitle')}
+            {t('parentCenter.settings.child.loginPinInfoTitle')}
           </div>
 
-          {status.hasRealAccount ? (
-            !confirming ? (
-              <>
-                <div style={{ fontSize: 12, color: T.faint, lineHeight: 1.5, marginBottom: 10 }}>
-                  {t('parentCenter.settings.child.loginResetHint', { name: child.name })}
-                </div>
-                <Btn variant="outline" size="md" onClick={() => setConfirming(true)} full>
-                  {t('parentCenter.settings.child.loginResetBtn')}
-                </Btn>
-              </>
-            ) : (
-              <>
-                <div style={{ padding: 12, background: T.dangerSoft, borderRadius: T.r, border: `1px solid ${T.cardBorder}`, fontSize: 12, color: T.textDim, lineHeight: 1.5, marginBottom: 10 }}>
-                  {status.pinSet
-                    ? t('parentCenter.settings.child.loginResetConfirmPin', { name: child.name, code: inviteCode || '——' })
-                    : t('parentCenter.settings.child.loginResetConfirmNoPin', { name: child.name, code: inviteCode || '——' })}
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Btn variant="ghost" size="md" onClick={() => setConfirming(false)} disabled={resetting} style={{ flex: 1 }}>
-                    {t('common.cancel')}
+          {/* Option 1 — send a sign-in link to a new email */}
+          <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700, marginBottom: 4 }}>
+            {t('parentCenter.settings.child.emailInviteTitle')}
+          </div>
+          <div style={{ fontSize: 12, color: T.faint, lineHeight: 1.5, marginBottom: 8 }}>
+            {t('parentCenter.settings.child.emailInviteHint', { name: child.name })}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              value={newEmail}
+              onChange={e => setNewEmail(e.target.value)}
+              type="email"
+              inputMode="email"
+              autoComplete="off"
+              placeholder={t('parentCenter.settings.child.emailInvitePlaceholder')}
+              style={{
+                flex: 1, height: 40, padding: '0 14px', borderRadius: T.r,
+                background: T.bg1, border: `1px solid ${T.cardBorder}`, color: T.text,
+                fontFamily: T.fBody, fontSize: 14,
+              }}
+            />
+            <Btn variant="primary" size="md" onClick={() => sendLink()} disabled={sendingLink || !EMAIL_RE.test(newEmail.trim())}>
+              {sendingLink ? t('parentCenter.settings.child.emailInviteSending') : t('parentCenter.settings.child.emailInviteBtn')}
+            </Btn>
+          </div>
+
+          {/* Unlink the current real account (only relevant when one is linked) */}
+          {status.hasRealAccount && (
+            <div style={{ marginTop: 14 }}>
+              <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700, marginBottom: 4 }}>
+                {t('parentCenter.settings.child.loginResetTitle')}
+              </div>
+              {!confirming ? (
+                <>
+                  <div style={{ fontSize: 12, color: T.faint, lineHeight: 1.5, marginBottom: 10 }}>
+                    {t('parentCenter.settings.child.loginResetHint', { name: child.name })}
+                  </div>
+                  <Btn variant="outline" size="md" onClick={() => setConfirming(true)} full>
+                    {t('parentCenter.settings.child.loginResetBtn')}
                   </Btn>
-                  <Btn variant="danger" size="md" onClick={() => doReset()} disabled={resetting} style={{ flex: 1 }}>
-                    {resetting ? t('common.loading') : t('parentCenter.settings.child.loginResetConfirmBtn')}
-                  </Btn>
-                </div>
-              </>
-            )
-          ) : (
-            <div style={{ fontSize: 12, color: T.faint, lineHeight: 1.5 }}>
-              {t('parentCenter.settings.child.loginPinInfoHint', { name: child.name })}
+                </>
+              ) : (
+                <>
+                  <div style={{ padding: 12, background: T.dangerSoft, borderRadius: T.r, border: `1px solid ${T.cardBorder}`, fontSize: 12, color: T.textDim, lineHeight: 1.5, marginBottom: 10 }}>
+                    {status.pinSet
+                      ? t('parentCenter.settings.child.loginResetConfirmPin', { name: child.name, code: inviteCode || '——' })
+                      : t('parentCenter.settings.child.loginResetConfirmNoPin', { name: child.name, code: inviteCode || '——' })}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Btn variant="ghost" size="md" onClick={() => setConfirming(false)} disabled={resetting} style={{ flex: 1 }}>
+                      {t('common.cancel')}
+                    </Btn>
+                    <Btn variant="danger" size="md" onClick={() => doReset()} disabled={resetting} style={{ flex: 1 }}>
+                      {resetting ? t('common.loading') : t('parentCenter.settings.child.loginResetConfirmBtn')}
+                    </Btn>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
-          {/* Family code — needed for the /onboarding/join claim step. */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
-            <span style={{ fontSize: 12, color: T.muted }}>{t('parentCenter.settings.child.loginCodeLabel')}</span>
-            <span style={{ fontFamily: T.fMono, fontSize: 14, fontWeight: 700, color: T.cyan, letterSpacing: '0.2em' }}>
-              {inviteCode || '······'}
-            </span>
-            <Btn variant="ghost" size="sm" icon={codeCopied ? 'check' : 'copy'} onClick={copyCode} disabled={!inviteCode}>
-              {codeCopied ? t('parentCenter.settings.family.copied') : t('parentCenter.settings.family.copy')}
-            </Btn>
+          {/* Option 2 — the child signs in themselves and claims their profile */}
+          <div style={{ marginTop: 14 }}>
+            <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700, marginBottom: 4 }}>
+              {t('parentCenter.settings.child.selfServeTitle')}
+            </div>
+            <div style={{ fontSize: 12, color: T.faint, lineHeight: 1.6, marginBottom: 10 }}>
+              {t('parentCenter.settings.child.selfServeSteps', { name: child.name })}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 12, color: T.muted }}>{t('parentCenter.settings.child.loginCodeLabel')}</span>
+              <span style={{ fontFamily: T.fMono, fontSize: 14, fontWeight: 700, color: T.cyan, letterSpacing: '0.2em' }}>
+                {inviteCode || '······'}
+              </span>
+              <Btn variant="ghost" size="sm" icon={codeCopied ? 'check' : 'copy'} onClick={copyCode} disabled={!inviteCode}>
+                {codeCopied ? t('parentCenter.settings.family.copied') : t('parentCenter.settings.family.copy')}
+              </Btn>
+              <Btn variant="ghost" size="sm" icon={linkCopied ? 'check' : 'copy'} onClick={copyLoginLink} disabled={!inviteCode}>
+                {linkCopied ? t('parentCenter.settings.child.loginLinkCopied') : t('parentCenter.settings.child.copyLoginLink')}
+              </Btn>
+            </div>
           </div>
         </div>
       )}

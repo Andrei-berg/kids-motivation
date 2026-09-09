@@ -180,3 +180,86 @@ export async function POST(req: NextRequest) {
     )
   }
 }
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/**
+ * PUT { childId, email } — "give this child a new email".
+ *
+ * Invites `email` and mails a link that lands the child in /onboarding/join with
+ * the family invite code prefilled, so they claim their existing profile (data +
+ * PIN preserved). Nothing on family_members is mutated here — the link happens
+ * only when the child completes the claim (claim_child_profile), so there is no
+ * half-linked identity state if the email is never opened.
+ *
+ * If the address already has an auth account, `inviteUserByEmail` fails; we
+ * report `alreadyExists` (409) so the parent is pointed at the self-serve path
+ * (child signs in with that account, then /onboarding/join) instead.
+ */
+export async function PUT(req: NextRequest) {
+  try {
+    const { childId, email } = await req.json()
+    if (!childId || typeof childId !== 'string') {
+      return NextResponse.json({ error: 'childId is required' }, { status: 400 })
+    }
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : ''
+    if (!EMAIL_RE.test(normalizedEmail)) {
+      return NextResponse.json({ error: 'A valid email is required' }, { status: 400 })
+    }
+
+    const member = await requireParent()
+    const admin = createAdminClient()
+    const childMember = await loadChildMember(admin, childId, member.familyId)
+
+    const { data: family, error: familyError } = await admin
+      .from('families')
+      .select('invite_code')
+      .eq('id', member.familyId)
+      .maybeSingle()
+    if (familyError || !family?.invite_code) {
+      return NextResponse.json({ error: 'Could not read the family invite code' }, { status: 500 })
+    }
+
+    const redirectTo =
+      `${req.nextUrl.origin}/auth/callback?next=join` +
+      `&code_invite=${encodeURIComponent(family.invite_code)}`
+
+    const { error: inviteError } = await admin.auth.admin.inviteUserByEmail(normalizedEmail, {
+      redirectTo,
+    })
+
+    if (inviteError) {
+      const already =
+        inviteError.message.includes('already been registered') ||
+        inviteError.message.includes('already exists') ||
+        inviteError.message.includes('already registered')
+      if (already) {
+        return NextResponse.json({ alreadyExists: true }, { status: 409 })
+      }
+      return NextResponse.json({ error: inviteError.message }, { status: 500 })
+    }
+
+    void insertAuditEvent(
+      {
+        family_id: member.familyId,
+        child_id: childId,
+        action_type: 'settings_change',
+        description: `Отправлена ссылка для входа ребёнка на новую почту (${normalizedEmail})`,
+        coins_delta: null,
+        actor_user_id: member.userId,
+        metadata: { kind: 'child_login_email_invite', email: normalizedEmail, member_id: childMember.id },
+      },
+      admin,
+    )
+
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    if (err instanceof AuthError) {
+      return NextResponse.json({ error: err.message }, { status: err.status })
+    }
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Internal error' },
+      { status: 500 },
+    )
+  }
+}

@@ -20,6 +20,7 @@ import {
 } from '@/lib/onboarding-api'
 import { useAppStore } from '@/lib/store'
 import { useT } from '@/lib/i18n'
+import { normalizeInviteInput } from '@/lib/invite-code'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -48,7 +49,9 @@ function CodeInput({
   const focus = (i: number) => refs.current[i]?.focus()
 
   const handleChange = (idx: number, raw: string) => {
-    const ch = raw.toUpperCase().replace(/[^A-Z0-9]/g, '')
+    // Fold ambiguous glyphs as the user types (O→0, I/L→1) so the box shows
+    // the character the lookup will actually match.
+    const ch = normalizeInviteInput(raw)
     if (!ch) return
     const next = value.slice(0, idx) + ch[0] + value.slice(idx + 1)
     const trimmed = next.slice(0, 6)
@@ -77,8 +80,7 @@ function CodeInput({
 
   const handlePaste = (e: ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault()
-    const pasted = e.clipboardData.getData('text')
-      .toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)
+    const pasted = normalizeInviteInput(e.clipboardData.getData('text'))
     onChange(pasted)
     const focusIdx = Math.min(pasted.length, 5)
     setTimeout(() => focus(focusIdx), 0)

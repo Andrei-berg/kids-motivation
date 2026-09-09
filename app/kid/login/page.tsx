@@ -7,6 +7,7 @@ import { useAppStore } from '@/lib/store'
 import type { ChildProfile } from '@/lib/onboarding-api'
 import { useT } from '@/lib/i18n'
 import { paper, base } from '@/lib/design/tokens'
+import { normalizeInviteInput } from '@/lib/invite-code'
 
 const ACCENT = paper.accent
 const ACCENT_SOFT = base.indigoSoft
@@ -168,7 +169,7 @@ export default function KidLogin() {
               type="text"
               placeholder={t('kidLogin.familyCodePlaceholder')}
               value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
+              onChange={(e) => setCode(normalizeInviteInput(e.target.value))}
               maxLength={6}
               style={{
                 width: '100%',
@@ -206,17 +207,17 @@ export default function KidLogin() {
             <button
               type="button"
               onClick={lookupFamily}
-              disabled={loading || code.length < 4}
+              disabled={loading || code.length !== 6}
               style={{
                 width: '100%',
                 padding: '0.875rem',
                 borderRadius: '0.625rem',
                 border: 'none',
-                background: code.length < 4 ? paper.line : ACCENT,
-                color: code.length < 4 ? paper.ink3 : '#ffffff',
+                background: code.length !== 6 ? paper.line : ACCENT,
+                color: code.length !== 6 ? paper.ink3 : '#ffffff',
                 fontSize: '1rem',
                 fontWeight: 700,
-                cursor: code.length < 4 ? 'not-allowed' : 'pointer',
+                cursor: code.length !== 6 ? 'not-allowed' : 'pointer',
                 transition: 'opacity 0.2s',
                 fontFamily: 'inherit',
               }}

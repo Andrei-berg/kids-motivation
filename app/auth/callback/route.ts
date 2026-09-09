@@ -23,9 +23,18 @@ export async function GET(request: Request) {
           .eq('user_id', user.id)
           .maybeSingle()
 
-        let next = inviteCode ? `/onboarding/join?code=${encodeURIComponent(inviteCode)}` : '/onboarding'
-        if (membership) {
+        // An explicit invite code means the user was handed a join link on
+        // purpose (e.g. a child recovering their profile on a new account) —
+        // honour it even if this account already has a membership row somewhere,
+        // instead of bouncing to a dashboard where the claim picker is
+        // unreachable. Mirrors the same rule in app/onboarding/join/page.tsx.
+        let next: string
+        if (inviteCode) {
+          next = `/onboarding/join?code=${encodeURIComponent(inviteCode)}`
+        } else if (membership) {
           next = membership.role === 'child' ? '/kid' : '/parent/dashboard'
+        } else {
+          next = '/onboarding'
         }
         return NextResponse.redirect(`${origin}${next}`)
       }
