@@ -650,6 +650,17 @@ function PinCard({ child, notify }: { child: ParentChild; notify: (msg: string, 
       <div style={{ padding: 12, background: T.indigoSoft, borderRadius: T.r, border: `1px solid rgba(108,92,231,0.2)`, fontSize: 13, color: T.textDim, lineHeight: 1.5, marginBottom: 10 }}>
         {t('parentCenter.settings.child.pinHint', { name: child.name })}
       </div>
+
+      {/* Exactly where the child types the PIN — the #1 point of confusion. */}
+      <div style={{ padding: 12, background: T.bg1, borderRadius: T.r, border: `1px solid ${T.cardBorder}`, marginBottom: 10 }}>
+        <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700, marginBottom: 4 }}>
+          {t('parentCenter.settings.child.pinWhereTitle', { name: child.name })}
+        </div>
+        <div style={{ fontSize: 12, color: T.faint, lineHeight: 1.6 }}>
+          {t('parentCenter.settings.child.pinWhereSteps', { name: child.name, code: inviteCode || '——' })}
+        </div>
+      </div>
+
       <div style={{ display: 'flex', gap: 8 }}>
         <input
           value={pin}

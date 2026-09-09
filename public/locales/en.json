@@ -113,7 +113,7 @@
     "wrongPin": "Wrong PIN",
     "error": "Login error",
     "step0Title": "Log in as a child",
-    "step0Subtitle": "First, the family code (not your PIN!). Ask a parent — we'll ask for your PIN on the next step.",
+    "step0Subtitle": "First the 6-character family code (not the PIN!). A parent gives it to you. We'll ask for the PIN on the last step.",
     "familyCodePlaceholder": "Family code",
     "codeNotFound": "Code not found. Check and try again.",
     "connectionError": "Connection error. Try again.",
@@ -1614,10 +1614,10 @@
         "modeSaved": "Mode saved (manage fully in Settings)",
         "childPin": "Child Login PIN",
         "childPinManage": "Manage child PINs in the full",
-        "pinHint": "Set a 6-digit PIN — {{name}} will be able to sign in with the family code + PIN any time, in addition to email/Google if they already have it.",
+        "pinHint": "The PIN is 6 digits for {{name}} to sign in without an email of their own. It works alongside Google/email (if any), it doesn't replace it.",
         "pinPlaceholder": "6 digits",
         "pinSaveBtn": "Save PIN",
-        "pinSaved": "PIN saved — {{name}} can sign in with the family code + PIN",
+        "pinSaved": "PIN saved. {{name}} signs in via: “I'm a kid” → family code → name → PIN.",
         "pinTooShort": "PIN must be exactly 6 digits",
         "trustLimit": "Trust Limit",
         "trustLimitHint": "Purchases {{name}} makes at or under this amount auto-approve — no parent review needed. Set to 0 to disable (every purchase goes to your review queue).",
@@ -1667,7 +1667,9 @@
         "selfServeTitle": "Or the child signs in themselves",
         "selfServeSteps": "1. {{name}} signs in with the new Google / email account.  2. Opens “Join a family”.  3. Enters the family code below and picks their profile.",
         "copyLoginLink": "Copy sign-in link",
-        "loginLinkCopied": "Link copied"
+        "loginLinkCopied": "Link copied",
+        "pinWhereTitle": "Where {{name}} enters the PIN",
+        "pinWhereSteps": "Open the app → on the first screen pick “I'm a kid” → enter family code {{code}} → pick “{{name}}” → enter the PIN. Family code {{code}} is one per family; the PIN is per child."
       },
       "more": {
         "subjects": "Manage subjects",
