@@ -156,9 +156,9 @@ export default function KidDayPage() {
   function handleFillSaved(result: DaySaveResult) {
     setEditMode(false)
     setSavedResult(result)
-    // D-19: confetti reserved for a credited streak source or an XP level-up
-    // crossing — never fires for an ordinary award.
-    if (result.hasStreak || result.leveledUp) triggerConfetti()
+    // D-19 relaxed (product ask, 2026-09): celebrate every coin-earning save,
+    // not only a credited streak / XP level-up crossing.
+    if (result.hasStreak || result.leveledUp || result.creditedCoins > 0) triggerConfetti()
     loadData()
   }
 

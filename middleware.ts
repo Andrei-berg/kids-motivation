@@ -47,6 +47,14 @@ export async function middleware(request: NextRequest) {
 
   // Not logged in + trying to access protected route → /
   if (!user && !isPublicPath && !isOnboardingPath) {
+    // API routes must fail loud with a status code, never a 307 → '/': a
+    // client fetch() transparently follows the redirect and receives 200 HTML,
+    // which callers then mis-read as success. This is how a stale-session
+    // POST /api/wallet/award silently "saved" a kid's day while crediting
+    // nothing. Return JSON 401 so the caller sees the failure and can retry.
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)

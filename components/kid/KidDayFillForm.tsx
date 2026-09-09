@@ -537,18 +537,28 @@ export function KidDayFillForm({
     let hasStreak = false
     let appliedItems: AwardedItem[] = []
 
+    // A stale cookie session makes the middleware bounce this POST (now a JSON
+    // 401; historically a 307 → '/' that fetch silently followed to 200 HTML).
+    // Refresh the session first so the cookie is current when the route reads
+    // it, then require a genuine JSON `ok:true` body before treating the award
+    // as done — anything else is a failure the child should see and retry.
+    try { await supabase.auth.getSession() } catch { /* non-fatal */ }
+
     try {
       const res = await fetch('/api/wallet/award', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ childId, date }),
       })
-      if (!res.ok) {
-        console.warn('[KidDayFillForm] award failed:', res.status)
+      const contentType = res.headers.get('content-type') ?? ''
+      const data = contentType.includes('application/json')
+        ? await res.json().catch(() => null)
+        : null
+      if (!res.ok || !data || data.ok !== true) {
+        console.warn('[KidDayFillForm] award failed:', res.status, contentType)
       } else {
         awardOk = true
         track('day_saved', { role: 'kid' })
-        const data = await res.json().catch(() => ({}))
         const parsed = detectAward(data)
         creditedCoins = parsed.creditedCoins
         hasStreak = parsed.hasStreak
@@ -587,6 +597,10 @@ export function KidDayFillForm({
     }
 
     if (proofLocalUrl) URL.revokeObjectURL(proofLocalUrl)
+    // Flyup with the SERVER-confirmed amount (handleSubmit already fired an
+    // instant one from the client estimate) so the number the child sees pop
+    // is the one that actually landed in the wallet.
+    if (creditedCoins !== 0) triggerCoinFlyup(creditedCoins)
     onSaved({ creditedCoins, hasStreak, leveledUp, appliedItems })
   }
 
@@ -782,7 +796,11 @@ export function KidDayFillForm({
       // hands the server-confirmed result (never coinsPreview) to onSaved.
       await creditAwardAndFinish()
     } catch (err) {
+      // A throw anywhere in the save sequence must not look like success —
+      // surface the retry affordance instead of leaving the child on a form
+      // that silently did nothing.
       console.error('KidDayFillForm submit error:', err)
+      setSaveError(true)
     } finally {
       setSaving(false)
     }
