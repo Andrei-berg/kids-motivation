@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useAppStore } from '@/lib/store'
 import { api, getChildren } from '@/lib/api'
 import type { Child } from '@/lib/api'
-import { localDateString } from '@/utils/helpers'
+import { localDateString, getWeekRange } from '@/utils/helpers'
 import { getWallet } from '@/lib/repositories/wallet.repo'
 import { KidDayFillForm, type DaySaveResult } from '@/components/kid/KidDayFillForm'
 import { KidChallenges } from '@/components/kid/KidChallenges'
@@ -20,6 +20,7 @@ import { Stamp, useCountUp, LedgerRow } from '@/components/design/atoms'
 import { levelForXp } from '@/lib/kid/level'
 import { triggerConfetti } from '@/utils/confetti'
 import ScreenHeader from '@/components/kid/design/ScreenHeader'
+import WeekStrip from '@/components/kid/WeekStrip'
 import { useDesktop } from '@/lib/hooks/useDesktop'
 import { useT, useLanguage } from '@/lib/i18n'
 
@@ -61,6 +62,8 @@ export default function KidDayPage() {
   // drives the stamp + day-summary ledger rows; null until the child saves
   // once this session (never derived from the pre-save client estimate).
   const [savedResult, setSavedResult] = useState<DaySaveResult | null>(null)
+  // Which days of the current week already have a saved row — drives WeekStrip.
+  const [weekFilled, setWeekFilled] = useState<Set<string>>(new Set())
   const isDesktop = useDesktop()
   // Header balance count-up (05.7-11, D-17): drives ONLY the ScreenHeader
   // balance to the new server-confirmed total; never fed a client estimate.
@@ -87,16 +90,19 @@ export default function KidDayPage() {
       }
       if (!childData) { setLoading(false); return }
 
-      const [dayData, walletData, streaksData] = await Promise.all([
+      const week = getWeekRange(today)
+      const [dayData, walletData, streaksData, weekDays] = await Promise.all([
         api.getDay(resolvedId, today),
         getWallet(resolvedId),
         api.getStreaks(resolvedId),
+        api.getDaysInRange(resolvedId, week.start, week.end).catch(() => [] as string[]),
       ])
 
       setChild(childData)
       setTodayDay(dayData)
       setWallet(walletData)
       setStreaks((streaksData ?? []).filter((s: any) => s.current_count > 0))
+      setWeekFilled(new Set(weekDays))
 
       // Determine day type. Vacation periods are keyed by family_id (NOT child_id)
       // and may target one child via child_filter — use the shared getDayType helper
@@ -194,6 +200,11 @@ export default function KidDayPage() {
                 {t('kidDayPage.levelDay', { level, date: todayLabel(language) })}
               </div>
             </div>
+          </div>
+
+          {/* Week strip — filled vs. missed days, today highlighted */}
+          <div style={{ margin: '0 -12px' }}>
+            <WeekStrip today={today} filledDates={weekFilled} language={language}/>
           </div>
 
           {/* Streak card */}
@@ -314,6 +325,7 @@ export default function KidDayPage() {
             </div>
             <StreakFlame days={streakDays} label={t('common.days')}/>
           </div>
+          <WeekStrip today={today} filledDates={weekFilled} language={language}/>
         </div>
       )}
 

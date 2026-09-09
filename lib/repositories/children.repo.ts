@@ -166,6 +166,25 @@ export async function getDay(childId: string, date: string) {
   return data as DayData | null
 }
 
+// Lightweight "which days have a saved row" lookup for a date range (inclusive).
+// Used by the kid Day screen's week strip to show filled vs. missed days —
+// only the date column is needed, so this stays cheap.
+export async function getDaysInRange(
+  childId: string,
+  start: string,
+  end: string,
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('days')
+    .select('date')
+    .eq('child_id', childId)
+    .gte('date', normalizeDate(start))
+    .lte('date', normalizeDate(end))
+
+  if (error) throw error
+  return (data ?? []).map((r: { date: string }) => normalizeDate(r.date))
+}
+
 // ============================================================================
 // SPORT
 // ============================================================================

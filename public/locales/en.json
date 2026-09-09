@@ -1891,5 +1891,11 @@
     "title": "Family",
     "subtitle": "Shared family space — accessible to all members.",
     "goToDashboard": "Go to dashboard"
+  },
+  "kidWeekStrip": {
+    "today": "Today",
+    "filled": "filled",
+    "missed": "missed",
+    "todayDot": "today"
   }
 }

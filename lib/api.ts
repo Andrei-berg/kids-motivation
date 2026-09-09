@@ -19,6 +19,7 @@ export {
   getSettings,
   saveDay,
   getDay,
+  getDaysInRange,
   saveHomeSport,
   getHomeSportForDate,
   getSections,
@@ -53,6 +54,7 @@ import {
   getSettings,
   saveDay,
   getDay,
+  getDaysInRange,
   saveHomeSport,
   getHomeSportForDate,
   getSections,
@@ -88,6 +90,7 @@ export const api = {
   // Days
   saveDay,
   getDay,
+  getDaysInRange,
 
   // Grades
   saveSubjectGrade,
