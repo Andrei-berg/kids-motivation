@@ -595,7 +595,7 @@ function PinCard({ child, notify }: { child: ParentChild; notify: (msg: string, 
   }
 
   async function save() {
-    if (pin.length < 4 || pin.length > 6) { notify(t('parentCenter.settings.child.pinTooShort'), 'error'); return }
+    if (pin.length !== 6) { notify(t('parentCenter.settings.child.pinTooShort'), 'error'); return }
     setSaving(true)
     try {
       await setChildPin(child.id, pin)
@@ -663,7 +663,7 @@ function PinCard({ child, notify }: { child: ParentChild; notify: (msg: string, 
             fontFamily: T.fBody, fontSize: 16, letterSpacing: '0.3em', textAlign: 'center',
           }}
         />
-        <Btn variant="primary" size="md" onClick={() => save()} disabled={saving || pin.length < 4 || pin.length > 6}>
+        <Btn variant="primary" size="md" onClick={() => save()} disabled={saving || pin.length !== 6}>
           {saving ? t('common.loading') : t('parentCenter.settings.child.pinSaveBtn')}
         </Btn>
       </div>

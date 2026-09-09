@@ -323,6 +323,10 @@ function ScreenCode({
 
       <CodeInput value={code} onChange={onChange} onComplete={canSubmit ? onSubmit : undefined} disabled={loading} />
 
+      <p style={{ fontSize: '0.8125rem', color: '#6b7280', textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
+        {t('onboarding.joinCodeNotPin')}
+      </p>
+
       {error && (
         <div style={errorBoxStyle}>
           <span>⚠️</span> {error}
@@ -348,6 +352,12 @@ function ScreenCode({
           style={{ color: '#10b981', textDecoration: 'none', fontWeight: 700 }}
         >
           {t('onboarding.register')}
+        </a>
+      </p>
+
+      <p style={{ fontSize: '0.8125rem', color: '#9ca3af', textAlign: 'center', margin: 0 }}>
+        <a href="/kid/login" style={{ color: '#10b981', textDecoration: 'none', fontWeight: 700 }}>
+          {t('onboarding.kidPinLink')}
         </a>
       </p>
     </div>

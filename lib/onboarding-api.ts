@@ -551,7 +551,7 @@ export async function completeOnboarding(
 // ---------------------------------------------------------------------------
 // setChildPin
 // ---------------------------------------------------------------------------
-// Set or update a 4-6 digit PIN for a child, as an additional (not exclusive)
+// Set or update a 6-digit PIN for a child, as an additional (not exclusive)
 // login method — it never disturbs a real Google/email account already linked
 // to the child; it only ever creates a synthetic bootstrap account when no
 // account is linked yet at all. Calls /api/set-child-pin (service-role).

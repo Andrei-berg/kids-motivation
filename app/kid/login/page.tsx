@@ -48,7 +48,7 @@ export default function KidLogin() {
   }
 
   async function signInWithPin() {
-    if (!selectedProfile || pin.length < 4) return
+    if (!selectedProfile || pin.length !== 6) return
     // child_id comes straight from the (SECURITY DEFINER) picker RPC.
     if (!selectedProfile.childId) {
       setError(t('kidLogin.profileNotFound'))
@@ -423,7 +423,7 @@ export default function KidLogin() {
             <input
               type="text"
               inputMode="numeric"
-              placeholder="••••"
+              placeholder="••••••"
               value={pin}
               onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
               maxLength={6}
@@ -462,17 +462,17 @@ export default function KidLogin() {
             <button
               type="button"
               onClick={signInWithPin}
-              disabled={loading || pin.length < 4}
+              disabled={loading || pin.length !== 6}
               style={{
                 width: '100%',
                 padding: '0.875rem',
                 borderRadius: '0.625rem',
                 border: 'none',
-                background: pin.length < 4 ? paper.line : ACCENT,
-                color: pin.length < 4 ? paper.ink3 : '#ffffff',
+                background: pin.length !== 6 ? paper.line : ACCENT,
+                color: pin.length !== 6 ? paper.ink3 : '#ffffff',
                 fontSize: '1rem',
                 fontWeight: 700,
-                cursor: pin.length < 4 ? 'not-allowed' : 'pointer',
+                cursor: pin.length !== 6 ? 'not-allowed' : 'pointer',
                 transition: 'opacity 0.2s',
                 fontFamily: 'inherit',
               }}

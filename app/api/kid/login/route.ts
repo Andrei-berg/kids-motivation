@@ -12,8 +12,8 @@ import { createClient } from '@/lib/supabase/server'
 export async function POST(req: NextRequest) {
   const { familyId, childId, pin } = await req.json()
 
-  if (!familyId || !childId || typeof pin !== 'string' || !/^\d{4,8}$/.test(pin)) {
-    return NextResponse.json({ error: 'familyId, childId and a 4–8 digit pin required' }, { status: 400 })
+  if (!familyId || !childId || typeof pin !== 'string' || !/^\d{6}$/.test(pin)) {
+    return NextResponse.json({ error: 'familyId, childId and a 6-digit pin required' }, { status: 400 })
   }
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY

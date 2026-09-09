@@ -64,7 +64,7 @@
     "step2Title": "2. Invite code — for joining",
     "step2Body": "One shared code per family, it doesn't change. Needed once: for a second parent, or a kid with their own account, on the \"Have an invite code?\" screen. After that they just sign in normally with email/Google.",
     "step3Title": "3. PIN — for a kid without an account",
-    "step3Body": "You set a PIN (4–6 digits) for the kid in Settings → Children. From then on they sign in themselves on the \"Are you a kid?\" screen: family code → their name → PIN.",
+    "step3Body": "You set a 6-digit PIN for the kid in Settings → Children. From then on they sign in themselves on the “I'm a kid” screen: family code → their name → PIN.",
     "step4Title": "4. Both at once, if you want",
     "step4Body": "If a kid already has a Google/email account, you can still set a PIN for them. Both sign-in methods work at the same time — the kid picks whichever's convenient."
   },
@@ -109,7 +109,7 @@
     "loginButton": "Login",
     "back": "Back",
     "selectChild": "Select child",
-    "pinPlaceholder": "Enter 4-digit PIN",
+    "pinPlaceholder": "6-digit PIN",
     "wrongPin": "Wrong PIN",
     "error": "Login error",
     "step0Title": "Log in as a child",
@@ -124,7 +124,7 @@
     "noProfiles": "No profiles available",
     "notInList": "Not in the list? Ask your parent",
     "step2Title": "Enter PIN",
-    "step2Subtitle": "4 digits set by your parent",
+    "step2Subtitle": "6 digits set by your parent",
     "profileNotFound": "Profile not found. Contact your parent.",
     "wrongPinRetry": "Wrong PIN. Try again.",
     "lockedRetry": "Too many attempts. Try again in {{mins}} min.",
@@ -1037,7 +1037,7 @@
     "notAuthorized": "Not authorized",
     "generalError": "An error occurred. Please try again.",
     "joinTitle": "Join a Family",
-    "joinSubtitle": "Enter the 6-digit code your parent gave you",
+    "joinSubtitle": "Enter the family code — 6 letters and digits (e.g. 0B83B3)",
     "searching": "Searching...",
     "findFamily": "Find Family →",
     "noAccount": "No account?",
@@ -1060,7 +1060,9 @@
     "roleExtendedDesc": "View progress: grandparent or other relative",
     "presetStep": {
       "continueBtn": "Continue with this preset"
-    }
+    },
+    "joinCodeNotPin": "This is the 6-character family code — not the child's PIN. Copy it from Settings → Family.",
+    "kidPinLink": "Child signs in with a PIN? Open family-code + PIN sign-in →"
   },
   "celebration": {
     "congrats": "Congratulations!",
@@ -1612,11 +1614,11 @@
         "modeSaved": "Mode saved (manage fully in Settings)",
         "childPin": "Child Login PIN",
         "childPinManage": "Manage child PINs in the full",
-        "pinHint": "Set a 4–6 digit PIN — {{name}} will be able to sign in with the family code + PIN any time, in addition to email/Google if they already have it.",
-        "pinPlaceholder": "4–6 digits",
+        "pinHint": "Set a 6-digit PIN — {{name}} will be able to sign in with the family code + PIN any time, in addition to email/Google if they already have it.",
+        "pinPlaceholder": "6 digits",
         "pinSaveBtn": "Save PIN",
         "pinSaved": "PIN saved — {{name}} can sign in with the family code + PIN",
-        "pinTooShort": "PIN must be 4–6 digits",
+        "pinTooShort": "PIN must be exactly 6 digits",
         "trustLimit": "Trust Limit",
         "trustLimitHint": "Purchases {{name}} makes at or under this amount auto-approve — no parent review needed. Set to 0 to disable (every purchase goes to your review queue).",
         "trustLimitSaveBtn": "Save Limit",

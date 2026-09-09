@@ -14,8 +14,8 @@ function randomPassword() {
 export async function POST(req: NextRequest) {
   const { childId, pin } = await req.json()
 
-  if (!childId || !pin || !/^\d{4,8}$/.test(pin)) {
-    return NextResponse.json({ error: 'Invalid input: childId and 4–8 digit pin required' }, { status: 400 })
+  if (!childId || !pin || !/^\d{6}$/.test(pin)) {
+    return NextResponse.json({ error: 'Invalid input: childId and a 6-digit pin required' }, { status: 400 })
   }
 
   const supabase = await createClient()
