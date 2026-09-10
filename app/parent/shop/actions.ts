@@ -3,6 +3,7 @@
 import { createAdminClient, requireParent } from '@/lib/supabase/admin'
 import { loadWallet, insertTx } from '@/app/api/wallet/_lib'
 import { insertAuditEvent } from '@/lib/repositories/audit.repo'
+import { emitFeedEvent } from '@/lib/services/feed.service'
 import type { RewardPurchase } from '@/lib/models/wallet.types'
 
 // Adjust a child's coin balance via the service-role client (bypasses RLS) and
@@ -98,6 +99,18 @@ export async function approvePurchaseAction(purchaseId: string): Promise<RewardP
     coins_delta: null,
     actor_user_id: member.userId,
     metadata: { purchase_id: purchaseId },
+  }, admin)
+
+  void emitFeedEvent({
+    familyId: purchase.family_id ?? member.familyId,
+    childId: purchase.child_id ?? null,
+    kind: 'reward_approved',
+    title: `Награда получена: ${purchase.reward_title}`,
+    amount: purchase.price_coins ? -Math.abs(purchase.price_coins) : null,
+    icon: purchase.reward_icon ?? '🎁',
+    refType: 'reward_purchase',
+    refId: purchaseId,
+    mode: 'once',
   }, admin)
 
   return data

@@ -95,17 +95,42 @@ const DAY_TYPE_STYLES: Record<string, { bg: string; border: string; text: string
 // Mirrors the existing scroll-section/scroll-section-header markup used by
 // every hardcoded section below, so assembled blocks (flag-on) look identical
 // to the hardcoded ones (flag-off) — just titled/iconed from block config.
-function BlockSection({ title, icon, badge, children }: { title: string; icon: string; badge?: React.ReactNode; children: React.ReactNode }) {
+function BlockSection({ title, icon, badge, children, collapsible = false, defaultOpen = true }: { title: string; icon: string; badge?: React.ReactNode; children: React.ReactNode; collapsible?: boolean; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen)
+  if (!collapsible) {
+    return (
+      <div className="scroll-section">
+        <div className="scroll-section-header">
+          <span className="scroll-section-icon">{icon}</span>
+          <span className="scroll-section-title">{title}</span>
+          {badge}
+        </div>
+        {children}
+      </div>
+    )
+  }
   return (
     <div className="scroll-section">
-      <div className="scroll-section-header">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="scroll-section-header"
+        style={{ width: '100%', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', font: 'inherit' }}
+      >
         <span className="scroll-section-icon">{icon}</span>
-        <span className="scroll-section-title">{title}</span>
+        <span className="scroll-section-title">{open || badge ? title : `${title} — добавить`}</span>
         {badge}
-      </div>
-      {children}
+        <span aria-hidden style={{ color: '#837C99', fontSize: 12, transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .15s' }}>▶</span>
+      </button>
+      <div hidden={!open}>{children}</div>
     </div>
   )
+}
+
+// Same collapsible shell for the flag-off (legacy) render path, which builds its
+// section chrome inline rather than through BlockSection.
+function Collapsible({ title, icon, badge, children, defaultOpen = true }: { title: string; icon: string; badge?: React.ReactNode; children: React.ReactNode; defaultOpen?: boolean }) {
+  return <BlockSection title={title} icon={icon} badge={badge} collapsible defaultOpen={defaultOpen}>{children}</BlockSection>
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -807,35 +832,35 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
         <div>
           <div className="premium-label">{t('dailyModal.pages')}</div>
-          <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface,#0D0D1E)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid #ECE8E0', borderRadius: '10px', overflow: 'hidden' }}>
             <button
               onClick={() => setPagesRead(Math.max(0, pagesRead - 5))}
-              style={{ width: 42, height: 44, background: 'rgba(255,255,255,0.04)', border: 'none', color: 'white', fontSize: '18px', cursor: 'pointer' }}
+              style={{ width: 42, height: 44, background: '#F6F4EF', border: 'none', color: '#4A4363', fontSize: '18px', cursor: 'pointer' }}
             >−</button>
             <div style={{ flex: 1, textAlign: 'center' }}>
               <div style={{ fontSize: '18px', fontWeight: 900 }}>{pagesRead}</div>
-              <div style={{ fontSize: '9px', color: 'rgba(238,238,255,0.4)', fontWeight: 700 }}>{t('dailyModal.pagesUnit')}</div>
+              <div style={{ fontSize: '9px', color: '#837C99', fontWeight: 700 }}>{t('dailyModal.pagesUnit')}</div>
             </div>
             <button
               onClick={() => setPagesRead(pagesRead + 5)}
-              style={{ width: 42, height: 44, background: 'rgba(255,255,255,0.04)', border: 'none', color: 'white', fontSize: '18px', cursor: 'pointer' }}
+              style={{ width: 42, height: 44, background: '#F6F4EF', border: 'none', color: '#4A4363', fontSize: '18px', cursor: 'pointer' }}
             >+</button>
           </div>
         </div>
         <div>
           <div className="premium-label">{t('dailyModal.minutes')}</div>
-          <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface,#0D0D1E)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid #ECE8E0', borderRadius: '10px', overflow: 'hidden' }}>
             <button
               onClick={() => setMinutesRead(Math.max(0, minutesRead - 5))}
-              style={{ width: 42, height: 44, background: 'rgba(255,255,255,0.04)', border: 'none', color: 'white', fontSize: '18px', cursor: 'pointer' }}
+              style={{ width: 42, height: 44, background: '#F6F4EF', border: 'none', color: '#4A4363', fontSize: '18px', cursor: 'pointer' }}
             >−</button>
             <div style={{ flex: 1, textAlign: 'center' }}>
               <div style={{ fontSize: '18px', fontWeight: 900 }}>{minutesRead}</div>
-              <div style={{ fontSize: '9px', color: 'rgba(238,238,255,0.4)', fontWeight: 700 }}>{t('dailyModal.minutesUnit')}</div>
+              <div style={{ fontSize: '9px', color: '#837C99', fontWeight: 700 }}>{t('dailyModal.minutesUnit')}</div>
             </div>
             <button
               onClick={() => setMinutesRead(Math.min(120, minutesRead + 5))}
-              style={{ width: 42, height: 44, background: 'rgba(255,255,255,0.04)', border: 'none', color: 'white', fontSize: '18px', cursor: 'pointer' }}
+              style={{ width: 42, height: 44, background: '#F6F4EF', border: 'none', color: '#4A4363', fontSize: '18px', cursor: 'pointer' }}
             >+</button>
           </div>
         </div>
@@ -866,8 +891,8 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
             key={a.id}
             style={{
               padding: '10px 14px',
-              background: done ? 'rgba(16,185,129,0.07)' : 'rgba(255,255,255,0.03)',
-              border: `1.5px solid ${done ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.08)'}`,
+              background: done ? 'rgba(16,185,129,0.07)' : '#F6F4EF',
+              border: `1.5px solid ${done ? 'rgba(16,185,129,0.25)' : '#ECE8E0'}`,
               borderRadius: '10px',
             }}
           >
@@ -879,7 +904,7 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
                 style={{ width: '18px', height: '18px', accentColor: '#10B981', flexShrink: 0 }}
               />
               <span style={{ fontSize: '18px', flexShrink: 0 }}>{a.emoji}</span>
-              <span style={{ flex: 1, fontSize: '13px', fontWeight: 800, color: done ? '#fff' : 'rgba(238,238,255,0.7)' }}>
+              <span style={{ flex: 1, fontSize: '13px', fontWeight: 800, color: done ? '#1D7355' : '#4A4363' }}>
                 {a.name}
               </span>
               <span style={{ fontSize: '11px', fontWeight: 900, color: '#10B981', flexShrink: 0 }}>
@@ -891,7 +916,7 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
             {done && trackType === 'pages' && (
               <div style={{ marginTop: '8px', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 1 100px' }}>
-                  <span style={{ fontSize: '11px', color: 'rgba(238,238,255,0.45)', whiteSpace: 'nowrap' }}>📄 стр.</span>
+                  <span style={{ fontSize: '11px', color: '#837C99', whiteSpace: 'nowrap' }}>📄 стр.</span>
                   <input
                     className="premium-input"
                     type="number"
@@ -903,7 +928,7 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
                   />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 1 100px' }}>
-                  <span style={{ fontSize: '11px', color: 'rgba(238,238,255,0.45)', whiteSpace: 'nowrap' }}>⏱ мин.</span>
+                  <span style={{ fontSize: '11px', color: '#837C99', whiteSpace: 'nowrap' }}>⏱ мин.</span>
                   <input
                     className="premium-input"
                     type="number"
@@ -915,7 +940,7 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
                   />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 1 120px' }}>
-                  <span style={{ fontSize: '11px', color: 'rgba(238,238,255,0.45)', whiteSpace: 'nowrap' }}>🔖 закл.</span>
+                  <span style={{ fontSize: '11px', color: '#837C99', whiteSpace: 'nowrap' }}>🔖 закл.</span>
                   <input
                     className="premium-input"
                     type="number"
@@ -931,7 +956,7 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
 
             {done && trackType === 'duration' && (
               <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ fontSize: '11px', color: 'rgba(238,238,255,0.45)' }}>⏱ минут</span>
+                <span style={{ fontSize: '11px', color: '#837C99' }}>⏱ минут</span>
                 <input
                   className="premium-input"
                   type="number"
@@ -952,8 +977,8 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
                     onClick={() => setActivityRating(prev => ({ ...prev, [a.id]: star }))}
                     style={{
                       flex: 1, padding: '6px', fontSize: '16px', borderRadius: '8px', border: '1px solid',
-                      borderColor: (activityRating[a.id] ?? 0) >= star ? 'rgba(251,191,36,0.5)' : 'rgba(255,255,255,0.08)',
-                      background: (activityRating[a.id] ?? 0) >= star ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.03)',
+                      borderColor: (activityRating[a.id] ?? 0) >= star ? 'rgba(251,191,36,0.5)' : '#ECE8E0',
+                      background: (activityRating[a.id] ?? 0) >= star ? 'rgba(251,191,36,0.15)' : '#F6F4EF',
                       cursor: 'pointer',
                     }}
                   >
@@ -1098,7 +1123,7 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
   const roomBody = (
     <>
       {dayType === 'sick' ? (
-        <div style={{ padding: '8px 0', fontSize: '12px', color: 'rgba(238,238,255,0.45)' }}>
+        <div style={{ padding: '8px 0', fontSize: '12px', color: '#837C99' }}>
           {t('dailyModal.sickGraceNote')}
         </div>
       ) : (
@@ -1119,13 +1144,13 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
       )}
       {/* Proof photo — shown only when present (proof is optional) */}
       {roomProofUrl && (
-        <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(238,238,255,0.08)' }}>
+        <div className="mt-3 pt-3" style={{ borderTop: '1px solid #F1EDE4' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={roomProofUrl}
             alt={t('dailyModal.roomPhotoAlt')}
             className="w-20 h-20 rounded-xl object-cover cursor-pointer"
-            style={{ border: '2px solid rgba(238,238,255,0.15)' }}
+            style={{ border: '2px solid #ECE8E0' }}
             onClick={() => setLightboxProofUrl(roomProofUrl)}
           />
         </div>
@@ -1163,7 +1188,7 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
         <span className="premium-checkbox-icon">✅</span>
         <span className="premium-checkbox-label">
           {t('dailyModal.goodBehaviorLabel')}
-          {dayType === 'sick' && <span style={{ color: 'rgba(238,238,255,0.4)', fontSize: '12px', marginLeft: '6px' }}>{t('dailyModal.goodBehaviorAuto')}</span>}
+          {dayType === 'sick' && <span style={{ color: '#837C99', fontSize: '12px', marginLeft: '6px' }}>{t('dailyModal.goodBehaviorAuto')}</span>}
         </span>
         <span className="premium-checkbox-check">✓</span>
       </label>
@@ -1302,13 +1327,13 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
     switch (block.legacy_key) {
       case 'book':
         return (
-          <BlockSection key={block.id} title={block.name} icon={block.icon ?? '📚'} badge={readingBadge}>
+          <BlockSection key={block.id} title={block.name} icon={block.icon ?? '📚'} badge={readingBadge} collapsible defaultOpen={!!readingBadge}>
             {readingBody}
           </BlockSection>
         )
       case 'activity':
         return activities.length > 0 ? (
-          <BlockSection key={block.id} title={block.name} icon={block.icon ?? '📋'} badge={activitiesBadge}>
+          <BlockSection key={block.id} title={block.name} icon={block.icon ?? '📋'} badge={activitiesBadge} collapsible defaultOpen={!!activitiesBadge}>
             {activitiesBody}
           </BlockSection>
         ) : null
@@ -1332,13 +1357,13 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
         )
       case 'exercise':
         return (
-          <BlockSection key={block.id} title={block.name} icon={block.icon ?? '🤸'}>
+          <BlockSection key={block.id} title={block.name} icon={block.icon ?? '🤸'} collapsible defaultOpen={false}>
             {exerciseBody}
           </BlockSection>
         )
       case 'sport':
         return sections.length > 0 ? (
-          <BlockSection key={block.id} title={block.name} icon={block.icon ?? '🏊'}>
+          <BlockSection key={block.id} title={block.name} icon={block.icon ?? '🏊'} collapsible defaultOpen={false}>
             {sectionsBody}
           </BlockSection>
         ) : null
@@ -1350,8 +1375,8 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
   function renderCustomBlock(block: DayBlock) {
     const done = customBlockDone[block.id] ?? false
     return (
-      <BlockSection key={block.id} title={block.name} icon={block.icon ?? '⭐'}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '10px 14px', background: done ? 'rgba(16,185,129,0.07)' : 'rgba(255,255,255,0.03)', border: `1.5px solid ${done ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.08)'}`, borderRadius: '10px' }}>
+      <BlockSection key={block.id} title={block.name} icon={block.icon ?? '⭐'} collapsible defaultOpen={done}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '10px 14px', background: done ? 'rgba(16,185,129,0.07)' : '#F6F4EF', border: `1.5px solid ${done ? 'rgba(16,185,129,0.25)' : '#ECE8E0'}`, borderRadius: '10px' }}>
           <input
             type="checkbox"
             checked={done}
@@ -1359,7 +1384,7 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
             style={{ width: '18px', height: '18px', accentColor: '#10B981', flexShrink: 0 }}
           />
           <span style={{ fontSize: '18px', flexShrink: 0 }}>{block.icon ?? '⭐'}</span>
-          <span style={{ flex: 1, fontSize: '13px', fontWeight: 800, color: done ? '#fff' : 'rgba(238,238,255,0.7)' }}>{block.name}</span>
+          <span style={{ flex: 1, fontSize: '13px', fontWeight: 800, color: done ? '#1D7355' : '#4A4363' }}>{block.name}</span>
           {block.price != null && block.price !== 0 && (
             <span style={{ fontSize: '11px', fontWeight: 900, color: '#10B981', flexShrink: 0 }}>
               {block.price > 0 ? `+${block.price}` : block.price}💰
@@ -1376,6 +1401,21 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
 
   return (
     <div className="premium-modal-overlay" onClick={onClose}>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .scroll-modal .premium-modal-header { background: #fff; color: #241E38; }
+        .scroll-modal .premium-modal-header::before { display: none; }
+        .scroll-modal .premium-modal-title { color: #241E38; font-family: var(--font-display), 'Bitter', Georgia, serif; font-size: 22px; }
+        .scroll-modal .premium-modal-subtitle { color: #5D5775; opacity: 1; }
+        .scroll-modal .premium-close-btn { background: #F1EDE4; border: 1px solid #ECE8E0; color: #4A4363; }
+        .scroll-modal .premium-close-btn:hover { background: #E7E1D4; }
+        .scroll-modal .scroll-section-title { color: #241E38; font-family: var(--font-display), 'Bitter', Georgia, serif; font-weight: 600; }
+        .scroll-modal .premium-modal-footer { background: #FBFAF7; border-top: 1px solid #ECE8E0; }
+        .scroll-modal .premium-btn-save { background: #5B4BD4; box-shadow: 0 4px 12px rgba(91,75,212,0.25); }
+        .scroll-modal .premium-btn-save:hover { box-shadow: 0 6px 16px rgba(91,75,212,0.35); }
+        .scroll-modal .premium-select:focus, .scroll-modal .premium-input:focus, .scroll-modal .premium-textarea:focus { border-color: #5B4BD4; box-shadow: 0 0 0 4px rgba(91,75,212,0.10); }
+        .scroll-modal .premium-checkbox:hover { border-color: #5B4BD4; background: #FBFAF7; }
+        .scroll-modal .premium-checkbox input:checked ~ .premium-checkbox-check { background: linear-gradient(135deg, #2E9E77 0%, #24805F 100%); }
+      ` }} />
       <div className="premium-modal scroll-modal" onClick={(e) => e.stopPropagation()}>
 
         {/* ── Header ──────────────────────────────────────────── */}
@@ -1427,14 +1467,14 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
             <div style={{
               position: 'sticky', top: 0, zIndex: 5,
               display: 'flex', alignItems: 'center', gap: 8,
-              padding: '8px 14px', marginBottom: 6, borderRadius: 12,
-              background: 'rgba(233,168,60,0.14)', border: '1px solid rgba(233,168,60,0.3)',
+              padding: '10px 14px', marginBottom: 6, borderRadius: 12,
+              background: '#FBF3E2', border: '1px solid #EAD9B6',
               backdropFilter: 'blur(4px)',
             }}>
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#F0BE6A' }}>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#7A5510' }}>
                 {t('dailyModal.coinsToday')}
               </span>
-              <span style={{ fontSize: 17, fontWeight: 800, color: '#F0BE6A' }}>
+              <span style={{ fontSize: 17, fontWeight: 800, color: '#7A5510', fontFamily: "var(--font-mono), 'JetBrains Mono', ui-monospace, monospace" }}>
                 ≈ {totalCoins >= 0 ? '+' : ''}{totalCoins}💰
               </span>
             </div>
@@ -1446,7 +1486,7 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
                   <span style={{ fontSize: '24px' }}>🤒</span>
                   <div>
                     <div style={{ fontWeight: 800, fontSize: '14px', color: '#F43F5E' }}>{t('dailyModal.sickDay')}</div>
-                    <div style={{ fontSize: '12px', color: 'rgba(238,238,255,0.55)', marginTop: '2px' }}>
+                    <div style={{ fontSize: '12px', color: '#4A4363', marginTop: '2px' }}>
                       {t('dailyModal.sickDayNote')}
                     </div>
                   </div>
@@ -1464,38 +1504,22 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
             {!dayBlocksEnabled && (
               <>
             {/* ── ЧТЕНИЕ (all day types) ──────────── */}
-            {(
-              <div className="scroll-section">
-                <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
-                  <span className="scroll-section-icon">📚</span>
-                  <span className="scroll-section-title">{t('dailyModal.reading')}</span>
-                  {readingBadge}
-                </div>
-                {readingBody}
-              </div>
-            )}
+            <Collapsible icon="📚" title={t('dailyModal.reading')} badge={readingBadge} defaultOpen={!!readingBadge}>
+              {readingBody}
+            </Collapsible>
 
             {/* ── ДОП. ЗАНЯТИЯ (catalog-based, pre-filtered by getActivitiesForDay) ── */}
             {activities.length > 0 && (
-              <div className="scroll-section">
-                <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
-                  <span className="scroll-section-icon">📋</span>
-                  <span className="scroll-section-title">{t('dailyModal.extraActivities')}</span>
-                  {activitiesBadge}
-                </div>
+              <Collapsible icon="📋" title={t('dailyModal.extraActivities')} badge={activitiesBadge} defaultOpen={!!activitiesBadge}>
                 {activitiesBody}
-              </div>
+              </Collapsible>
             )}
 
             {/* ── ПОМОЩЬ ПО ДОМУ (vacation + weekend) — orphaned legacy field
                  (D-03/D-07): the seeded 'home help' custom block supersedes
                  this flag-on, so it's confined to the flag-off branch only ── */}
             {(isNonSchoolDay(dayType)) && (
-              <div className="scroll-section">
-                <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
-                  <span className="scroll-section-icon">🏠</span>
-                  <span className="scroll-section-title">{t('dailyModal.homeHelp')}</span>
-                </div>
+              <Collapsible icon="🏠" title={t('dailyModal.homeHelp')} defaultOpen={homeHelp !== null}>
                 <div style={{ padding: '12px 0 0' }}>
                   <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
                     {[
@@ -1510,13 +1534,13 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
                           borderRadius: '10px', border: '1.5px solid', cursor: 'pointer',
                           borderColor: homeHelp === opt.val
                             ? (opt.green ? 'rgba(16,185,129,0.4)' : 'rgba(244,63,94,0.35)')
-                            : 'rgba(255,255,255,0.1)',
+                            : '#ECE8E0',
                           background: homeHelp === opt.val
                             ? (opt.green ? 'rgba(16,185,129,0.12)' : 'rgba(244,63,94,0.1)')
-                            : 'rgba(255,255,255,0.03)',
+                            : '#F6F4EF',
                           color: homeHelp === opt.val
                             ? (opt.green ? '#10B981' : '#F43F5E')
-                            : 'rgba(238,238,255,0.5)',
+                            : '#837C99',
                         }}
                       >
                         {opt.label}
@@ -1534,7 +1558,7 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
                     />
                   )}
                 </div>
-              </div>
+              </Collapsible>
             )}
               </>
             )}
@@ -1543,11 +1567,7 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
                  model (unlike homeHelp, the plan does not scope this field to
                  be superseded); always shown regardless of the flag ── */}
             {dayType === 'weekend' && (
-              <div className="scroll-section">
-                <div className="scroll-section-header" style={{ borderBottom: `1px solid ${styles.border}` }}>
-                  <span className="scroll-section-icon">📝</span>
-                  <span className="scroll-section-title">{t('dailyModal.homework')}</span>
-                </div>
+              <Collapsible icon="📝" title={t('dailyModal.homework')} defaultOpen={homeworkDone !== null}>
                 <div style={{ padding: '12px 0 0' }}>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     {[
@@ -1562,13 +1582,13 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
                           borderRadius: '10px', border: '1.5px solid', cursor: 'pointer',
                           borderColor: homeworkDone === opt.val
                             ? (opt.green ? 'rgba(16,185,129,0.4)' : 'rgba(244,63,94,0.35)')
-                            : 'rgba(255,255,255,0.1)',
+                            : '#ECE8E0',
                           background: homeworkDone === opt.val
                             ? (opt.green ? 'rgba(16,185,129,0.12)' : 'rgba(244,63,94,0.1)')
-                            : 'rgba(255,255,255,0.03)',
+                            : '#F6F4EF',
                           color: homeworkDone === opt.val
                             ? (opt.green ? '#10B981' : '#F43F5E')
-                            : 'rgba(238,238,255,0.5)',
+                            : '#837C99',
                         }}
                       >
                         {opt.label}
@@ -1576,7 +1596,7 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
                     ))}
                   </div>
                 </div>
-              </div>
+              </Collapsible>
             )}
 
             {!dayBlocksEnabled && (
@@ -1624,23 +1644,15 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
             </div>
 
             {/* ── СПОРТ ────────────────────────────────────────── */}
-            <div className="scroll-section">
-              <div className="scroll-section-header">
-                <span className="scroll-section-icon">🤸</span>
-                <span className="scroll-section-title">{t('dailyModal.sport')}</span>
-              </div>
+            <Collapsible icon="🤸" title={t('dailyModal.sport')} defaultOpen={false}>
               {exerciseBody}
-            </div>
+            </Collapsible>
 
             {/* ── СЕКЦИИ ───────────────────────────────────────── */}
             {sections.length > 0 && (
-              <div className="scroll-section">
-                <div className="scroll-section-header">
-                  <span className="scroll-section-icon">🏊</span>
-                  <span className="scroll-section-title">{t('dailyModal.sections')}</span>
-                </div>
+              <Collapsible icon="🏊" title={t('dailyModal.sections')} defaultOpen={false}>
                 {sectionsBody}
-              </div>
+              </Collapsible>
             )}
               </>
             )}

@@ -131,7 +131,7 @@ function DarkViewModeToggle({ mode, onToggle, desktop }: { mode: ViewMode; onTog
           fontFamily: T.fBody, fontSize: desktop ? 10 : 11, fontWeight: 600,
           background: mode === m ? T.cardHi : 'transparent',
           color: mode === m ? T.text : T.faint,
-          boxShadow: mode === m ? `0 1px 4px rgba(0,0,0,.3)` : 'none',
+          boxShadow: mode === m ? `0 1px 4px rgba(36,30,56,.12)` : 'none',
           transition: 'all .15s',
         }}>
           {m === 'mixed' ? 'Лента' : 'Раздельно'}
@@ -291,7 +291,7 @@ function DarkActivityBurst({ messages, desktop }: { messages: ChatMessage[]; des
       <div style={{
         background: T.cardHi, border: `1px solid ${T.cardBorderHi}`, borderRadius: desktop ? 12 : 14,
         overflow: 'hidden', maxWidth: desktop ? 260 : 290, width: '100%',
-        boxShadow: `0 2px 12px rgba(0,0,0,.25)`,
+        boxShadow: `0 2px 12px rgba(36,30,56,.10)`,
       }}>
         <button
           onClick={() => setOpen(v => !v)}
@@ -742,7 +742,7 @@ export default function ChatPanel({ open, onClose, children, pending, onApprove,
         background: T.bg1, borderTopLeftRadius: 24, borderTopRightRadius: 24,
         border: `1px solid ${T.cardBorderHi}`, borderBottom: 'none',
         display: 'flex', flexDirection: 'column',
-        boxShadow: '0 -20px 60px rgba(0,0,0,.5)', overflow: 'hidden',
+        boxShadow: '0 -20px 60px rgba(36,30,56,.18)', overflow: 'hidden',
       }}>
         {renderHeader()}
         {renderMessages()}

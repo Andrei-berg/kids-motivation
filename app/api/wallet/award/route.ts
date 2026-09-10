@@ -23,6 +23,7 @@ import {
   assertChildInFamily,
 } from '@/lib/supabase/admin'
 import { errorResponse, loadSettings, loadFeatureFlag, creditAwards, type AwardIntent } from '../_lib'
+import { emitFeedEvent } from '@/lib/services/feed.service'
 import { updateStreaks } from '@/lib/services/streaks.service'
 import { localDateString, addDays, isValidCalendarDate, getWeekRange } from '@/utils/helpers'
 import { GRADE_SCALE_VALUES, type GradeScale } from '@/lib/presets'
@@ -761,6 +762,22 @@ export async function POST(req: NextRequest) {
     }
 
     const { creditedCoins, applied } = await creditAwards(admin, childId, intents)
+
+    // Family Feed — one bump-on-resave "day filled" event per (child, date),
+    // carrying the running total earned. Non-blocking; never breaks the award.
+    void emitFeedEvent({
+      familyId: member.familyId,
+      childId,
+      kind: 'day_filled',
+      title: 'День заполнен',
+      body: applied.length > 0 ? applied.map(a => a.description).filter(Boolean).join(' · ') : null,
+      amount: creditedCoins > 0 ? creditedCoins : null,
+      icon: '📅',
+      refType: 'day',
+      refId: `${childId}:${date}`,
+      mode: 'bump',
+      metadata: { date, sources: applied.map(a => a.sourceType) },
+    }, admin)
 
     // appliedItems (05.7-11): per-item detail (description/coins/icon) for the
     // client's day-summary ledger rows — additive alongside appliedSources

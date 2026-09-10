@@ -70,8 +70,8 @@ export function Card({ children, style, pad = 16, hover, glow, onClick }: {
         borderRadius: T.rL,
         padding: pad,
         boxShadow: glow
-          ? `0 0 0 1px ${T.indigoSoft}, 0 8px 24px rgba(108,92,231,0.12)`
-          : '0 1px 0 rgba(255,255,255,0.02), 0 10px 30px rgba(0,0,0,0.25)',
+          ? `0 0 0 1px rgba(91,75,212,0.20), 0 8px 24px rgba(91,75,212,0.12)`
+          : '0 1px 2px rgba(36,30,56,0.04), 0 6px 20px rgba(36,30,56,0.06)',
         transition: 'border-color .18s ease, background .18s ease',
         cursor: onClick ? 'pointer' : 'default',
         ...style,
@@ -94,13 +94,13 @@ export function Btn({ variant = 'ghost', size = 'md', children, icon, onClick, s
   const [hover, setHover] = useState(false)
   const palettes: Record<BtnVariant, { bg: string; fg: string; bd: string; hBg: string }> = {
     primary: { bg: T.indigo, fg: '#fff', bd: T.indigo, hBg: T.indigoHi },
-    cyan: { bg: T.cyan, fg: '#04131A', bd: T.cyan, hBg: T.indigoHi },
-    success: { bg: T.successSoft, fg: T.success, bd: 'rgba(0,230,118,0.25)', hBg: 'rgba(0,230,118,0.18)' },
-    warn: { bg: T.warningSoft, fg: T.warning, bd: 'rgba(255,217,61,0.25)', hBg: 'rgba(255,217,61,0.18)' },
-    danger: { bg: T.dangerSoft, fg: T.danger, bd: 'rgba(255,107,107,0.25)', hBg: 'rgba(255,107,107,0.18)' },
-    ghost: { bg: 'rgba(255,255,255,0.04)', fg: T.text, bd: T.cardBorder, hBg: 'rgba(255,255,255,0.08)' },
-    solid: { bg: T.cardHi, fg: T.text, bd: T.cardBorderHi, hBg: '#2A2A3D' },
-    outline: { bg: 'transparent', fg: T.textDim, bd: T.cardBorder, hBg: 'rgba(255,255,255,0.04)' },
+    cyan: { bg: T.cyan, fg: '#fff', bd: T.cyan, hBg: T.indigoHi },
+    success: { bg: T.successSoft, fg: T.success, bd: 'rgba(46,158,119,0.30)', hBg: 'rgba(46,158,119,0.20)' },
+    warn: { bg: T.warningSoft, fg: T.warning, bd: 'rgba(224,122,46,0.30)', hBg: 'rgba(224,122,46,0.20)' },
+    danger: { bg: T.dangerSoft, fg: T.danger, bd: 'rgba(217,85,99,0.30)', hBg: 'rgba(217,85,99,0.20)' },
+    ghost: { bg: T.bg2, fg: T.text, bd: T.cardBorder, hBg: T.cardHi },
+    solid: { bg: T.card, fg: T.text, bd: T.cardBorderHi, hBg: T.bg2 },
+    outline: { bg: 'transparent', fg: T.textDim, bd: T.cardBorder, hBg: T.bg2 },
   }
   const p = palettes[variant]
   const sizes = { sm: { h: 28, px: 10, fs: 12, g: 6 }, md: { h: 36, px: 14, fs: 13, g: 8 }, lg: { h: 44, px: 18, fs: 14, g: 10 } }
@@ -138,12 +138,12 @@ export function Pill({ children, tone = 'default', style, icon }: {
   children: ReactNode; tone?: PillTone; style?: CSSProperties; icon?: string
 }) {
   const tones: Record<PillTone, { bg: string; fg: string; bd: string }> = {
-    default: { bg: 'rgba(255,255,255,0.04)', fg: T.textDim, bd: T.cardBorder },
-    indigo: { bg: T.indigoSoft, fg: T.indigoHi, bd: 'rgba(108,92,231,0.25)' },
-    cyan: { bg: T.cyanSoft, fg: T.cyan, bd: 'rgba(0,210,255,0.25)' },
-    success: { bg: T.successSoft, fg: T.success, bd: 'rgba(0,230,118,0.25)' },
-    warn: { bg: T.warningSoft, fg: T.warning, bd: 'rgba(255,217,61,0.25)' },
-    danger: { bg: T.dangerSoft, fg: T.danger, bd: 'rgba(255,107,107,0.25)' },
+    default: { bg: T.bg2, fg: T.textDim, bd: T.cardBorder },
+    indigo: { bg: T.indigoSoft, fg: T.indigoHi, bd: 'rgba(91,75,212,0.25)' },
+    cyan: { bg: T.cyanSoft, fg: T.cyan, bd: 'rgba(91,75,212,0.25)' },
+    success: { bg: T.successSoft, fg: T.success, bd: 'rgba(46,158,119,0.28)' },
+    warn: { bg: T.warningSoft, fg: T.warning, bd: 'rgba(224,122,46,0.28)' },
+    danger: { bg: T.dangerSoft, fg: T.danger, bd: 'rgba(217,85,99,0.28)' },
   }
   const p = tones[tone]
   return (
@@ -171,7 +171,7 @@ export function Avatar({ child, size = 40, ring = true }: {
       border: ring ? `2px solid ${child.accent}` : 'none',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontSize: size * 0.55, flexShrink: 0,
-      boxShadow: ring ? `0 0 0 3px ${T.bg1}, 0 0 12px ${child.accent}33` : 'none',
+      boxShadow: ring ? `0 0 0 3px ${T.card}, 0 2px 8px ${child.accent}22` : 'none',
     }}>
       <span style={{ filter: 'saturate(1.1)' }}>{child.avatar}</span>
     </div>
@@ -235,7 +235,7 @@ export function Ring({ pct, size = 44, stroke = 4, color = T.indigo, children }:
   return (
     <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size/2} cy={size/2} r={r} stroke="rgba(255,255,255,0.08)" strokeWidth={stroke} fill="none"/>
+        <circle cx={size/2} cy={size/2} r={r} stroke="rgba(36,30,56,0.10)" strokeWidth={stroke} fill="none"/>
         <circle cx={size/2} cy={size/2} r={r} stroke={color} strokeWidth={stroke} fill="none"
           strokeDasharray={c} strokeDashoffset={off} strokeLinecap="round"
           style={{ transition: 'stroke-dashoffset .6s ease' }}/>
@@ -253,7 +253,7 @@ export function Ring({ pct, size = 44, stroke = 4, color = T.indigo, children }:
 // ───────── Bar ─────────
 export function Bar({ pct, color = T.indigo, h = 6 }: { pct: number; color?: string; h?: number }) {
   return (
-    <div style={{ height: h, background: 'rgba(255,255,255,0.06)', borderRadius: T.rPill, overflow: 'hidden' }}>
+    <div style={{ height: h, background: 'rgba(36,30,56,0.08)', borderRadius: T.rPill, overflow: 'hidden' }}>
       <div style={{
         height: '100%', width: `${Math.min(100, Math.max(0, pct))}%`,
         background: color.includes('gradient') ? color : `linear-gradient(90deg, ${color}, ${color}cc)`,
@@ -271,7 +271,7 @@ export function Field({ label, value, onChange, placeholder, type = 'text', suff
   const [focus, setFocus] = useState(false)
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
-      {label && <span style={{ fontSize: 11, fontWeight: 600, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>}
+      {label && <span style={{ fontSize: 12, fontWeight: 600, color: T.muted }}>{label}</span>}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 8,
         height: 40, padding: '0 12px',
@@ -299,7 +299,7 @@ export function Toggle({ on, onChange }: { on: boolean; onChange?: (v: boolean) 
   return (
     <button onClick={() => onChange?.(!on)} style={{
       width: 36, height: 20, borderRadius: T.rPill,
-      background: on ? T.indigo : 'rgba(255,255,255,0.1)',
+      background: on ? T.indigo : 'rgba(36,30,56,0.16)',
       border: 'none', padding: 2, cursor: 'pointer',
       transition: 'background .18s', position: 'relative',
       flexShrink: 0,
@@ -307,7 +307,7 @@ export function Toggle({ on, onChange }: { on: boolean; onChange?: (v: boolean) 
       <span style={{
         display: 'block', width: 16, height: 16, borderRadius: '50%',
         background: '#fff', transform: `translateX(${on ? 16 : 0}px)`,
-        transition: 'transform .18s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+        transition: 'transform .18s', boxShadow: '0 1px 3px rgba(36,30,56,0.25)',
       }}/>
     </button>
   )
@@ -334,16 +334,17 @@ export function Tabs({ tabs, value, onChange, scroll }: {
   return (
     <div style={{
       display: 'flex', gap: 4, padding: 4,
-      background: T.bg1, border: `1px solid ${T.cardBorder}`,
+      background: T.bg2, border: `1px solid ${T.cardBorder}`,
       borderRadius: T.rPill, overflowX: scroll ? 'auto' : 'visible',
       scrollbarWidth: 'none',
     }}>
       {tabs.map(t => (
         <button key={t.id} onClick={() => onChange(t.id)} style={{
           flex: scroll ? '0 0 auto' : 1, height: 30, padding: '0 14px',
-          background: value === t.id ? T.cardHi : 'transparent',
+          background: value === t.id ? T.card : 'transparent',
           color: value === t.id ? T.text : T.muted,
           border: 'none', borderRadius: T.rPill,
+          boxShadow: value === t.id ? '0 1px 3px rgba(36,30,56,0.10)' : 'none',
           fontFamily: T.fBody, fontSize: 12, fontWeight: 600,
           cursor: 'pointer', whiteSpace: 'nowrap',
           display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -363,10 +364,10 @@ export function Toast({ toast }: { toast: { msg: string; tone?: string } | null 
   return (
     <div style={{
       position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)',
-      background: T.cardHi, border: `1px solid ${T.cardBorderHi}`, borderRadius: T.rPill,
-      padding: '10px 16px', color: T.text, fontSize: 13, fontWeight: 500,
+      background: '#241E38', border: '1px solid rgba(255,255,255,0.08)', borderRadius: T.rPill,
+      padding: '10px 16px', color: '#F5F3EF', fontSize: 13, fontWeight: 500,
       display: 'flex', alignItems: 'center', gap: 8,
-      boxShadow: '0 10px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(108,92,231,0.2)',
+      boxShadow: '0 10px 40px rgba(36,30,56,0.28), 0 0 0 1px rgba(36,30,56,0.06)',
       zIndex: 200, fontFamily: T.fBody, pointerEvents: 'none',
     }}>
       <span style={{

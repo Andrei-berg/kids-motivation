@@ -10,6 +10,14 @@ interface AppStore {
   // Localization (Phase 4.3)
   language: string
   setLanguage: (lang: string) => void
+  // Parent Center view mode — 'classic' screens vs the family Feed. Per-device
+  // preference; the Feed is only actually reachable when the family has it
+  // enabled (wallet_settings.feed_enabled).
+  pcView: 'classic' | 'feed'
+  setPcView: (v: 'classic' | 'feed') => void
+  // Per-parent: land the Parent Center directly in the Feed on open.
+  pcFeedDefault: boolean
+  setPcFeedDefault: (v: boolean) => void
 }
 
 export const useAppStore = create<AppStore>()(persist(
@@ -20,6 +28,10 @@ export const useAppStore = create<AppStore>()(persist(
     setActiveMemberId: (id) => set({ activeMemberId: id }),
     language: 'ru',
     setLanguage: (lang) => set({ language: lang }),
+    pcView: 'classic',
+    setPcView: (v) => set({ pcView: v }),
+    pcFeedDefault: false,
+    setPcFeedDefault: (v) => set({ pcFeedDefault: v }),
   }),
   { name: 'v5_child' }
 ))

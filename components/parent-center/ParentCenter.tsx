@@ -16,10 +16,11 @@ import ActionModal from './screens/ActionModal'
 import AddChildModal from './screens/AddChildModal'
 import ChatPanel from './screens/ChatPanel'
 import DailyModal from '@/components/DailyModal'
+import FamilyFeed from '@/components/feed/FamilyFeed'
 import type { ParentChild, ActivityEntry, ActionType, ToastState, ModalState, Route } from './types'
 import type { RewardPurchase } from '@/lib/models/wallet.types'
 import { getChildren, getDay } from '@/lib/repositories/children.repo'
-import { getWallet, getPendingPurchases, getTransactions, getTransactionsStrict } from '@/lib/repositories/wallet.repo'
+import { getWallet, getPendingPurchases, getTransactions, getTransactionsStrict, getWalletSettings } from '@/lib/repositories/wallet.repo'
 import { approvePurchaseAction, rejectPurchaseAction } from '@/app/parent/shop/actions'
 import { getPendingReadingChecks, type PendingReadingCheck } from '@/lib/vacation-api'
 import { approveReadingAction, rejectReadingAction } from '@/app/parent/reading/actions'
@@ -73,8 +74,9 @@ function ParentCenterSkeleton() {
 
 export default function ParentCenter() {
   const t = useT()
-  const { familyId } = useAppStore()
+  const { familyId, pcView, setPcView, pcFeedDefault } = useAppStore()
   const { language, setLanguage } = useLanguage()
+  const [feedEnabled, setFeedEnabled] = useState(false)
   const [route, setRoute] = useState<Route>('dashboard')
   const [openChild, setOpenChild] = useState<string | null>(null)
   const [chatOpen, setChatOpen] = useState(false)
@@ -238,6 +240,24 @@ export default function ParentCenter() {
     loadAll()
   }, [refreshKey])
 
+  // Feed availability + optional "land in feed" preference.
+  useEffect(() => {
+    let cancelled = false
+    getWalletSettings()
+      .then(s => {
+        if (cancelled) return
+        const on = s.feed_enabled !== false
+        setFeedEnabled(on)
+        if (on && pcFeedDefault) setPcView('feed')
+        if (!on) setPcView('classic')
+      })
+      .catch(() => { if (!cancelled) setFeedEnabled(false) })
+    return () => { cancelled = true }
+  }, [pcFeedDefault, setPcView])
+
+  // Selecting any classic screen leaves feed mode.
+  const goRoute = (r: Route) => { setPcView('classic'); setRoute(r) }
+
   const openAction = (child: ParentChild, action: ActionType) => setModal({ open: true, child, action })
   const closeAction = () => setModal(m => ({ ...m, open: false }))
   const confirmAction = (data: { child: ParentChild; action: ActionType; amount: number; reason: string }) => {
@@ -325,7 +345,7 @@ export default function ParentCenter() {
       title={langNext.label}
       style={{
         height: 30, padding: '0 10px', borderRadius: T.rPill,
-        background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+        background: T.bg2, border: `1px solid ${T.cardBorder}`,
         color: T.textDim, fontSize: 13, fontWeight: 700, cursor: 'pointer',
         display: 'inline-flex', alignItems: 'center', gap: 5, transition: 'all .15s',
         flexShrink: 0, ...style,
@@ -334,6 +354,25 @@ export default function ParentCenter() {
       <span>{SUPPORTED_LANGUAGES.find(l => l.code === language)?.flag}</span>
       <span style={{ fontSize: 11 }}>{language.toUpperCase()}</span>
     </button>
+  )
+
+  const ViewToggle = ({ style }: { style?: React.CSSProperties }) => (
+    <div style={{
+      display: 'inline-flex', gap: 2, padding: 2, borderRadius: T.rPill,
+      background: T.bg2, border: `1px solid ${T.cardBorder}`, flexShrink: 0, ...style,
+    }}>
+      {([['classic', t('parentNav.classic')], ['feed', t('parentNav.feed')]] as const).map(([id, label]) => {
+        const on = (id === 'feed') === (pcView === 'feed')
+        return (
+          <button key={id} onClick={() => setPcView(id)} style={{
+            height: 26, padding: '0 12px', borderRadius: T.rPill, border: 'none', cursor: 'pointer',
+            background: on ? T.card : 'transparent', color: on ? T.text : T.muted,
+            boxShadow: on ? '0 1px 3px rgba(36,30,56,0.10)' : 'none',
+            fontFamily: T.fBody, fontSize: 12, fontWeight: 600,
+          }}>{label}</button>
+        )
+      })}
+    </div>
   )
 
   const renderScreen = () => {
@@ -383,11 +422,11 @@ export default function ParentCenter() {
         background: T.bg0, fontFamily: T.fBody, color: T.text, overflow: 'hidden',
       }}>
         <style dangerouslySetInnerHTML={{__html: `
-          @import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=Bitter:wght@500;600;700&family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
           * { box-sizing: border-box; }
           ::-webkit-scrollbar { width: 4px; height: 4px; }
           ::-webkit-scrollbar-track { background: transparent; }
-          ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+          ::-webkit-scrollbar-thumb { background: rgba(36,30,56,0.15); border-radius: 4px; }
           @keyframes spin { to { transform: rotate(360deg); } }
           input[type="number"]::-webkit-outer-spin-button,
           input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -406,10 +445,10 @@ export default function ParentCenter() {
           }}>
             <div style={{
               width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-              background: `linear-gradient(135deg, ${T.indigo}, ${T.cyan})`,
+              background: `linear-gradient(135deg, ${T.indigo}, ${T.indigoHi})`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 15, fontWeight: 700, color: '#fff', fontFamily: T.fHead,
-              boxShadow: `0 4px 14px ${T.indigo}55`,
+              boxShadow: `0 4px 14px ${T.indigo}33`,
             }}>P</div>
             <div>
               <div style={{ fontFamily: T.fHead, fontSize: 13, fontWeight: 600, color: T.text, letterSpacing: '-0.01em' }}>{t('parentCenter.header.title')}</div>
@@ -422,7 +461,7 @@ export default function ParentCenter() {
             {navItems.map(n => {
               const active = route === n.id || (n.id === 'children' && route === 'child')
               return (
-                <button key={n.id} onClick={() => setRoute(n.id)} style={{
+                <button key={n.id} onClick={() => goRoute(n.id)} style={{
                   width: '100%', height: 38, padding: '0 12px',
                   background: active ? T.indigoSoft : 'transparent',
                   border: `1px solid ${active ? T.indigo + '44' : 'transparent'}`,
@@ -435,7 +474,6 @@ export default function ParentCenter() {
                     <span style={{
                       position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
                       width: 3, height: 16, background: T.indigoHi, borderRadius: '0 3px 3px 0',
-                      boxShadow: `0 0 8px ${T.indigo}88`,
                     }}/>
                   )}
                   <Icon name={n.icon} size={15} stroke={active ? 2 : 1.6}/>
@@ -456,7 +494,7 @@ export default function ParentCenter() {
 
           {/* Settings + lang at bottom */}
           <div style={{ padding: '10px 10px 16px', borderTop: `1px solid ${T.cardBorder}`, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <button onClick={() => setRoute('settings')} style={{
+            <button onClick={() => goRoute('settings')} style={{
               width: '100%', height: 38, padding: '0 12px',
               background: route === 'settings' ? T.indigoSoft : 'transparent',
               border: `1px solid ${route === 'settings' ? T.indigo + '44' : 'transparent'}`,
@@ -484,8 +522,11 @@ export default function ParentCenter() {
             background: T.bg1, borderBottom: `1px solid ${T.cardBorder}`, gap: 12,
           }}>
             <div style={{ flex: 1, fontFamily: T.fHead, fontSize: 15, fontWeight: 600, color: T.text, letterSpacing: '-0.01em' }}>
-              {navItems.find(n => n.id === route || (n.id === 'children' && route === 'child'))?.label ?? t('parentCenter.header.title')}
+              {pcView === 'feed'
+                ? t('parentNav.feed')
+                : navItems.find(n => n.id === route || (n.id === 'children' && route === 'child'))?.label ?? t('parentCenter.header.title')}
             </div>
+            {feedEnabled && <ViewToggle/>}
             {pendingCount > 0 && (
               <div style={{
                 height: 28, padding: '0 10px',
@@ -507,7 +548,7 @@ export default function ParentCenter() {
             }}>
               <div style={{
                 width: 18, height: 18, borderRadius: '50%',
-                background: `linear-gradient(135deg, ${T.indigo}, ${T.cyan})`,
+                background: `linear-gradient(135deg, ${T.indigo}, ${T.indigoHi})`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 9, fontWeight: 700, color: '#fff',
               }}>P</div>
@@ -517,7 +558,9 @@ export default function ParentCenter() {
 
           {/* Screen content */}
           <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
-            {loading ? <ParentCenterSkeleton /> : renderScreen()}
+            {pcView === 'feed'
+              ? <FamilyFeed variant="parent"/>
+              : loading ? <ParentCenterSkeleton /> : renderScreen()}
           </div>
         </main>
 
@@ -545,7 +588,7 @@ export default function ParentCenter() {
       maxWidth: 480, margin: '0 auto',
     }}>
       <style dangerouslySetInnerHTML={{__html: `
-        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Bitter:wght@500;600;700&family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 0; height: 0; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -561,17 +604,17 @@ export default function ParentCenter() {
       }}>
         <div style={{
           width: 30, height: 30, borderRadius: 8,
-          background: `linear-gradient(135deg, ${T.indigo}, ${T.cyan})`,
+          background: `linear-gradient(135deg, ${T.indigo}, ${T.indigoHi})`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 15, fontWeight: 700, color: '#fff',
-          boxShadow: `0 3px 12px ${T.indigo}55`, flexShrink: 0,
+          boxShadow: `0 3px 12px ${T.indigo}30`, flexShrink: 0,
         }}>P</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: T.fHead, fontSize: 14, fontWeight: 600, color: T.text, letterSpacing: '-0.01em' }}>{t('parentCenter.header.title')}</div>
           <div style={{ fontSize: 10, color: T.muted }}>{t('dashboard.familyCount', { count: String(children.length) })}</div>
         </div>
         <LangToggle/>
-        <button onClick={() => setRoute('settings')} style={{
+        <button onClick={() => goRoute('settings')} style={{
           width: 32, height: 32, borderRadius: '50%',
           background: T.cardHi, border: `1px solid ${T.cardBorder}`,
           color: T.text, cursor: 'pointer', position: 'relative',
@@ -591,9 +634,18 @@ export default function ParentCenter() {
         </button>
       </div>
 
+      {feedEnabled && (
+        <div style={{
+          flexShrink: 0, display: 'flex', justifyContent: 'center',
+          padding: '8px 14px', background: T.bg1, borderBottom: `1px solid ${T.cardBorder}`, zIndex: 49,
+        }}>
+          <ViewToggle style={{ width: '100%', maxWidth: 280, justifyContent: 'center' }}/>
+        </div>
+      )}
+
       {/* Content */}
       <div style={{ flex: 1, overflowY: 'auto', position: 'relative', WebkitOverflowScrolling: 'touch' as any }}>
-        {renderScreen()}
+        {pcView === 'feed' ? <FamilyFeed variant="parent"/> : renderScreen()}
       </div>
 
       {/* Chat floating button */}
@@ -601,10 +653,10 @@ export default function ParentCenter() {
         <button onClick={() => setChatOpen(true)} style={{
           position: 'absolute', bottom: 72, right: 16,
           width: 52, height: 52, borderRadius: '50%',
-          background: `linear-gradient(135deg, ${T.indigo}, ${T.cyan})`,
+          background: `linear-gradient(135deg, ${T.indigo}, ${T.indigoHi})`,
           border: 'none', color: '#fff', cursor: 'pointer',
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: `0 8px 24px ${T.indigo}55, 0 0 0 1px rgba(255,255,255,0.1) inset`,
+          boxShadow: `0 8px 20px ${T.indigo}40`,
           zIndex: 40,
         }}>
           <Icon name="msg" size={22}/>
@@ -627,7 +679,7 @@ export default function ParentCenter() {
         {navItems.map(n => {
           const active = route === n.id || (n.id === 'children' && route === 'child')
           return (
-            <button key={n.id} onClick={() => setRoute(n.id)} style={{
+            <button key={n.id} onClick={() => goRoute(n.id)} style={{
               height: 56, background: 'transparent', border: 'none', cursor: 'pointer',
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
               color: active ? T.indigoHi : T.muted, position: 'relative', transition: 'color .15s',
@@ -636,7 +688,6 @@ export default function ParentCenter() {
                 <span style={{
                   position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
                   width: 28, height: 2, borderRadius: 2, background: T.indigoHi,
-                  boxShadow: `0 0 8px ${T.indigo}`,
                 }}/>
               )}
               <Icon name={n.icon} size={19} stroke={active ? 2 : 1.6}/>

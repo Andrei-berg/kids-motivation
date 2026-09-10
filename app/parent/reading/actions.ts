@@ -7,6 +7,7 @@
 
 import { createAdminClient, requireParent, assertChildInFamily } from '@/lib/supabase/admin'
 import { loadSettings, creditAwards } from '@/app/api/wallet/_lib'
+import { emitFeedEvent } from '@/lib/services/feed.service'
 
 export async function approveReadingAction(childId: string, date: string): Promise<{ creditedCoins: number }> {
   const member = await requireParent()
@@ -38,6 +39,18 @@ export async function approveReadingAction(childId: string, date: string): Promi
       creditedCoins = res.creditedCoins
     }
   }
+
+  void emitFeedEvent({
+    familyId: member.familyId,
+    childId,
+    kind: 'reading_approved',
+    title: reading.book_title ? `Книга прочитана: ${reading.book_title}` : 'Чтение подтверждено',
+    amount: creditedCoins > 0 ? creditedCoins : null,
+    icon: '📚',
+    refType: 'reading_log',
+    refId: reading.id,
+    mode: 'once',
+  }, admin)
 
   try {
     const { notifyChild } = await import('@/app/actions/push-notifications')

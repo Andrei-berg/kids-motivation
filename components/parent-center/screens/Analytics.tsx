@@ -53,7 +53,7 @@ function LineChart({ series, w = 320, h = 160, labels }: {
       {[0, 0.25, 0.5, 0.75, 1].map((p, i) => (
         <g key={i}>
           <line x1={padL} x2={w - padR} y1={padT + innerH * p} y2={padT + innerH * p}
-            stroke="rgba(255,255,255,0.05)" strokeWidth="1"/>
+            stroke="rgba(36,30,56,0.08)" strokeWidth="1"/>
           <text x={padL - 6} y={padT + innerH * p + 3} textAnchor="end"
             fontSize="9" fill={T.muted} fontFamily={T.fMono}>
             {Math.round(max * (1 - p))}

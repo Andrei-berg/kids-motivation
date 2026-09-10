@@ -12,6 +12,7 @@ import { getChatUnreadCount } from '@/lib/repositories/chat.repo'
 
 const TAB_DEFS = [
   { href: '/kid/day',          labelKey: 'kidNav.myDay',  icon: 'home'   },
+  { href: '/kid/feed',         labelKey: 'kidNav.feed',   icon: 'feed'   },
   { href: '/kid/wallet',       labelKey: 'kidNav.wallet', icon: 'wallet' },
   { href: '/kid/achievements', labelKey: 'kidNav.awards', icon: 'trophy' },
   { href: '/kid/shop',         labelKey: 'kidNav.shop',   icon: 'shop'   },
@@ -26,6 +27,12 @@ function TabIcon({ name, active }: { name: string; active: boolean }) {
     <svg width={w} height={h} viewBox="0 0 24 24" fill="none">
       <path d="M4 10.5L12 4l8 6.5V19a1 1 0 01-1 1h-4v-5h-6v5H5a1 1 0 01-1-1v-8.5z"
         stroke={stroke} strokeWidth="2" strokeLinejoin="round" fill={fill}/>
+    </svg>
+  )
+  if (name === 'feed') return (
+    <svg width={w} height={h} viewBox="0 0 24 24" fill="none">
+      <rect x="4" y="4" width="16" height="6" rx="1.5" stroke={stroke} strokeWidth="2" fill={fill}/>
+      <path d="M4 14h16M4 18h10" stroke={stroke} strokeWidth="2" strokeLinecap="round"/>
     </svg>
   )
   if (name === 'wallet') return (

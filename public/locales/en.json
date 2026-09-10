@@ -147,7 +147,8 @@
       "body": "You'll need to sign back in with your code and PIN.",
       "cancel": "Cancel",
       "confirm": "Log out"
-    }
+    },
+    "feed": "Feed"
   },
   "achievements": {
     "title": "Trophy Room",
@@ -996,6 +997,14 @@
       "emptyBody": "When {{childName}} proposes a behavior tag, it'll show up here.",
       "approveBtn": "Approve tag",
       "rejectBtn": "Reject tag"
+    },
+    "feed": {
+      "title": "Family feed",
+      "enabled": "Enable the feed",
+      "enabledDesc": "One shared stream of family activity with reactions and comments.",
+      "kids": "Show to kids",
+      "kidsDesc": "Kids see the feed and can react and comment.",
+      "default": "Open the Parent Center in the feed"
     }
   },
   "onboarding": {
@@ -1533,7 +1542,9 @@
     "home": "Home",
     "children": "Children",
     "tasks": "Tasks",
-    "stats": "Stats"
+    "stats": "Stats",
+    "feed": "Feed",
+    "classic": "Classic"
   },
   "consent": {
     "title": "Parental Consent Required",
@@ -1985,5 +1996,14 @@
       "filled100": "100 days filled",
       "streak30": "30-day streak"
     }
+  },
+  "feed": {
+    "title": "Family feed",
+    "compose": "Write to the family…",
+    "publish": "Publish",
+    "empty": "Nothing yet. Fill a day or send a reward — it will show up here.",
+    "more": "Show more",
+    "comment": "Comment…",
+    "send": "Send"
   }
 }

@@ -4,6 +4,7 @@
 import { createAdminClient, requireParent, assertChildInFamily, AuthError } from '@/lib/supabase/admin'
 import { loadWallet, insertTx } from '@/app/api/wallet/_lib'
 import { notifyChild } from '@/app/actions/push-notifications'
+import { emitFeedEvent } from '@/lib/services/feed.service'
 import { localDateString } from '@/utils/helpers'
 
 export interface SendMedalParams {
@@ -90,6 +91,20 @@ export async function sendMedal(params: SendMedalParams): Promise<SendMedalResul
       // Medal was saved; coin failure is non-fatal
     }
   }
+
+  void emitFeedEvent({
+    familyId,
+    childId,
+    kind: 'medal',
+    title: 'Медаль дня 🏅',
+    body: message,
+    amount: coins > 0 ? coins : null,
+    icon: '🏅',
+    refType: 'medal',
+    refId: `${childId}:${today}`,
+    mode: 'once',
+    metadata: { sentBy: sentBy ?? null },
+  }, admin)
 
   // Send push notification
   try {
