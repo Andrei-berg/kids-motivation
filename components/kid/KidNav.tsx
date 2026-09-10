@@ -9,6 +9,8 @@ import { K } from '@/components/kid/design/kidTheme'
 import { useT } from '@/lib/i18n'
 import { useDesktop } from '@/lib/hooks/useDesktop'
 import { getChatUnreadCount } from '@/lib/repositories/chat.repo'
+import { getFeedUnreadCount, getFeedSeen } from '@/lib/repositories/feed.repo'
+import { getWalletSettings } from '@/lib/repositories/wallet.repo'
 
 const TAB_DEFS = [
   { href: '/kid/day',          labelKey: 'kidNav.myDay',  icon: 'home'   },
@@ -19,10 +21,10 @@ const TAB_DEFS = [
   { href: '/kid/chat',         labelKey: 'kidNav.chat',   icon: 'chat'   },
 ]
 
-function TabIcon({ name, active }: { name: string; active: boolean }) {
+function TabIcon({ name, active, size = 26 }: { name: string; active: boolean; size?: number }) {
   const stroke = active ? K.sky : K.ink3
   const fill = active ? K.sky + '22' : 'none'
-  const w = 26, h = 26
+  const w = size, h = size
   if (name === 'home') return (
     <svg width={w} height={h} viewBox="0 0 24 24" fill="none">
       <path d="M4 10.5L12 4l8 6.5V19a1 1 0 01-1 1h-4v-5h-6v5H5a1 1 0 01-1-1v-8.5z"
@@ -91,9 +93,25 @@ export default function KidNav() {
   const isDesktop = useDesktop()
   const t = useT()
 
-  const TABS = TAB_DEFS.map((tab) => ({ ...tab, label: t(tab.labelKey) }))
-
   const [unreadCount, setUnreadCount] = useState(0)
+  const [feedUnread, setFeedUnread] = useState(0)
+  // Feed tab is hidden when the family turned the feed off or hid it from kids.
+  // Defaults to visible so it never flashes out on a slow settings fetch.
+  const [feedVisible, setFeedVisible] = useState(true)
+
+  const TABS = TAB_DEFS
+    .filter((tab) => tab.href !== '/kid/feed' || feedVisible)
+    .map((tab) => ({ ...tab, label: t(tab.labelKey) }))
+  const compact = TABS.length >= 6
+
+  // Feed availability — fetched once (not on the unread poll).
+  useEffect(() => {
+    let cancelled = false
+    getWalletSettings()
+      .then((s) => { if (!cancelled) setFeedVisible(s.feed_enabled !== false && s.feed_visible_to_kids !== false) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [activeMemberId])
 
   useEffect(() => {
     let cancelled = false
@@ -106,8 +124,14 @@ export default function KidNav() {
         .eq('child_id', activeMemberId)
         .maybeSingle()
       if (!member || cancelled) return
-      const count = await getChatUnreadCount(member.family_id, member.id, member.chat_last_read_at)
-      if (!cancelled) setUnreadCount(count)
+      const [chat, feed] = await Promise.all([
+        getChatUnreadCount(member.family_id, member.id, member.chat_last_read_at),
+        getFeedUnreadCount(member.family_id, getFeedSeen(member.family_id)),
+      ])
+      if (!cancelled) {
+        setUnreadCount(chat)
+        setFeedUnread(feed)
+      }
     }
 
     loadUnread()
@@ -125,6 +149,11 @@ export default function KidNav() {
   }
 
   const unreadAria = t('kidNav.unreadAria', { count: unreadCount })
+  const feedAria = t('kidNav.unreadAria', { count: feedUnread })
+  const badgeFor = (href: string) =>
+    href === '/kid/chat' ? <ChatUnreadBadge count={unreadCount} ariaLabel={unreadAria} />
+    : href === '/kid/feed' ? <ChatUnreadBadge count={feedUnread} ariaLabel={feedAria} />
+    : null
 
   if (isDesktop) {
     return (
@@ -139,7 +168,7 @@ export default function KidNav() {
               className="flex items-center justify-center w-12 h-12 rounded-2xl transition-all"
               style={{ background: isActive ? K.sky + '18' : 'transparent', position: 'relative' }}>
               <TabIcon name={tab.icon} active={isActive}/>
-              {tab.href === '/kid/chat' && <ChatUnreadBadge count={unreadCount} ariaLabel={unreadAria}/>}
+              {badgeFor(tab.href)}
             </Link>
           )
         })}
@@ -170,16 +199,18 @@ export default function KidNav() {
           const isActive = pathname === tab.href || pathname.startsWith(tab.href + '/')
           return (
             <Link key={tab.href} href={tab.href} style={{
-              flex: 1, minWidth: 44, minHeight: 64, textDecoration: 'none',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+              flex: 1, minWidth: compact ? 40 : 44, minHeight: 64, textDecoration: 'none',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: compact ? 2 : 3, padding: compact ? '0 1px' : 0,
             }}>
               <span style={{ position: 'relative', display: 'flex' }}>
-                <TabIcon name={tab.icon} active={isActive}/>
-                {tab.href === '/kid/chat' && <ChatUnreadBadge count={unreadCount} ariaLabel={unreadAria}/>}
+                <TabIcon name={tab.icon} active={isActive} size={compact ? 23 : 26}/>
+                {badgeFor(tab.href)}
               </span>
               <span style={{
-                fontFamily: K.fBody, fontSize: 10, fontWeight: isActive ? 700 : 500,
-                color: isActive ? K.sky : K.ink3, letterSpacing: 0.2,
+                fontFamily: K.fBody, fontSize: compact ? 9 : 10, fontWeight: isActive ? 700 : 500,
+                color: isActive ? K.sky : K.ink3, letterSpacing: compact ? 0 : 0.2,
+                whiteSpace: 'nowrap',
               }}>{tab.label}</span>
             </Link>
           )

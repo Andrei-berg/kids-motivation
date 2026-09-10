@@ -225,7 +225,8 @@
     "wallet": "Wallet",
     "awards": "Awards",
     "shop": "Shop",
-    "chat": "Chat"
+    "chat": "Chat",
+    "feed": "Feed"
   },
   "stamp": {
     "received": "Received",

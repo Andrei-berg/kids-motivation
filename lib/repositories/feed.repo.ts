@@ -133,6 +133,46 @@ export async function addComment(params: {
   return data as FeedComment
 }
 
+// ─── Unread marker ───────────────────────────────────────────────────────────
+// The feed's "unread" nudge is a per-device convenience (one kid, one device),
+// so the last-seen timestamp lives in localStorage rather than on
+// family_members like chat_last_read_at. Every access is guarded.
+
+function feedSeenKey(familyId: string) {
+  return `feed_seen_${familyId}`
+}
+
+export function getFeedSeen(familyId: string): string | null {
+  try {
+    return window.localStorage.getItem(feedSeenKey(familyId))
+  } catch {
+    return null
+  }
+}
+
+export function markFeedSeen(familyId: string, atIso?: string): void {
+  try {
+    window.localStorage.setItem(feedSeenKey(familyId), atIso ?? new Date().toISOString())
+  } catch {
+    /* private mode / disabled storage — the badge just won't clear, no crash */
+  }
+}
+
+export async function getFeedUnreadCount(familyId: string, since: string | null): Promise<number> {
+  let q = supabase
+    .from('family_events')
+    .select('*', { count: 'exact', head: true })
+    .eq('family_id', familyId)
+  if (since) q = q.gt('created_at', since)
+
+  const { count, error } = await q
+  if (error) {
+    console.error('[feed.repo] getFeedUnreadCount error:', error)
+    return 0
+  }
+  return count ?? 0
+}
+
 // Realtime: any INSERT into the three feed tables for this family.
 export function subscribeFeed(
   familyId: string,

@@ -69,7 +69,7 @@ function dayLabel(iso: string): string {
   return d.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
-export default function FamilyFeed({ variant }: { variant: Variant }) {
+export default function FamilyFeed({ variant, hideHeader = false }: { variant: Variant; hideHeader?: boolean }) {
   const C = useMemo(() => palette(variant), [variant])
   const storeFamilyId = useAppStore(s => s.familyId)
 
@@ -189,10 +189,12 @@ export default function FamilyFeed({ variant }: { variant: Variant }) {
 
   return (
     <div style={{ background: C.ground, minHeight: '100%', fontFamily: C.fBody }}>
-      <div style={{ maxWidth: 600, margin: '0 auto', padding: '16px 16px 48px' }}>
-        <h1 style={{ margin: '4px 0 14px', fontFamily: C.fHead, fontSize: 24, fontWeight: 700, color: C.ink, letterSpacing: '-0.02em' }}>
-          Лента семьи
-        </h1>
+      <div style={{ maxWidth: 600, margin: '0 auto', padding: hideHeader ? '12px 16px 48px' : '16px 16px 48px' }}>
+        {!hideHeader && (
+          <h1 style={{ margin: '4px 0 14px', fontFamily: C.fHead, fontSize: 24, fontWeight: 700, color: C.ink, letterSpacing: '-0.02em' }}>
+            Лента семьи
+          </h1>
+        )}
 
         {canPost && (
           <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 16, padding: 12, marginBottom: 20, boxShadow: '0 1px 2px rgba(36,30,56,0.04), 0 8px 24px rgba(36,30,56,0.05)' }}>
@@ -234,7 +236,7 @@ export default function FamilyFeed({ variant }: { variant: Variant }) {
           groups.map(group => (
             <div key={group.label} style={{ marginBottom: 8 }}>
               <div style={{
-                position: 'sticky', top: 0, zIndex: 2,
+                position: 'sticky', top: hideHeader ? 65 : 0, zIndex: 2,
                 padding: '10px 2px 8px', background: C.ground,
                 fontFamily: C.fBody, fontSize: 12, fontWeight: 700, color: C.ink3,
                 textTransform: 'capitalize',
