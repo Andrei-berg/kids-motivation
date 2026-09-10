@@ -5,8 +5,12 @@ import { T } from '../tokens'
 import { Btn, Pill, Icon } from '../ui'
 import type { ParentChild } from '../types'
 import type { RewardPurchase } from '@/lib/models/wallet.types'
-import type { ChatMessage } from '@/lib/models/chat.types'
-import { getMessages, sendMessage, subscribeToMessages } from '@/lib/repositories/chat.repo'
+import type { ChatMessage, ChatReaction } from '@/lib/models/chat.types'
+import {
+  getMessages, sendMessage, subscribeToMessages,
+  getReactionsByFamily, subscribeToReactions, upsertReaction, deleteReaction,
+} from '@/lib/repositories/chat.repo'
+import { ReactionPickerBar } from '@/components/chat/MessageReactions'
 import { supabase } from '@/lib/supabase'
 import { useT } from '@/lib/i18n'
 
@@ -418,6 +422,7 @@ function ShopBanner({
 export default function ChatPanel({ open, onClose, children, pending, onApprove, onDecline, familyId, desktop }: Props) {
   const t = useT()
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [reactions, setReactions] = useState<Record<string, ChatReaction[]>>({})
   const [input, setInput] = useState('')
   const [who, setWho] = useState('family')
   const [parentMemberId, setParentMemberId] = useState<string | null>(null)
@@ -452,13 +457,69 @@ export default function ChatPanel({ open, onClose, children, pending, onApprove,
 
   useEffect(() => {
     if (!familyId) return
+    let cancelled = false
     setLoading(true)
-    getMessages(familyId).then(data => { setMessages(data); setLoading(false) })
+    const settle = (m: ChatMessage[], r: Record<string, ChatReaction[]>) => {
+      if (cancelled) return
+      setMessages(m); setReactions(r); setLoading(false)
+    }
+    // Guard against a hung fetch (stale JWT after sleep) leaving the spinner up.
+    const guard = setTimeout(() => settle([], {}), 12000)
+    Promise.all([getMessages(familyId), getReactionsByFamily(familyId)])
+      .then(([data, rxns]) => { clearTimeout(guard); settle(data, rxns) })
+      .catch(() => { clearTimeout(guard); settle([], {}) })
+
     const unsub = subscribeToMessages(familyId, (msg) => {
       setMessages(prev => prev.some(m => m.id === msg.id) ? prev : [...prev, msg])
     })
-    return () => unsub()
+    const unsubRx = subscribeToReactions(familyId, (reaction, eventType) => {
+      setReactions(prev => {
+        const list = prev[reaction.message_id] ?? []
+        const without = list.filter(r => !(r.member_id === reaction.member_id && r.emoji === reaction.emoji))
+        return { ...prev, [reaction.message_id]: eventType === 'INSERT' ? [...without, reaction] : without }
+      })
+    })
+    return () => { cancelled = true; clearTimeout(guard); unsub(); unsubRx() }
   }, [familyId])
+
+  async function ensureMemberId(): Promise<string | null> {
+    if (parentMemberId) return parentMemberId
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+    const { data: member } = await supabase
+      .from('family_members')
+      .select('id, display_name')
+      .eq('user_id', user.id)
+      .eq('family_id', familyId)
+      .maybeSingle()
+    if (!member) return null
+    setParentMemberId(member.id)
+    setParentName(member.display_name || 'Parent')
+    return member.id
+  }
+
+  async function handleReactionToggle(messageId: string, emoji: string, mine: boolean) {
+    const memberId = await ensureMemberId()
+    if (!memberId) return
+    setReactions(prev => {
+      const list = prev[messageId] ?? []
+      const without = list.filter(r => !(r.member_id === memberId && r.emoji === emoji))
+      if (mine) return { ...prev, [messageId]: without }
+      const optimistic: ChatReaction = {
+        id: `tmp-${messageId}-${emoji}-${Date.now()}`,
+        message_id: messageId, family_id: familyId,
+        member_id: memberId, emoji, created_at: new Date().toISOString(),
+      }
+      return { ...prev, [messageId]: [...without, optimistic] }
+    })
+    try {
+      if (mine) await deleteReaction({ messageId, memberId, emoji })
+      else await upsertReaction({ messageId, familyId, memberId, emoji })
+    } catch (err) {
+      console.warn('[ChatPanel] reaction toggle failed, reloading:', err)
+      setReactions(await getReactionsByFamily(familyId))
+    }
+  }
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
@@ -466,21 +527,26 @@ export default function ChatPanel({ open, onClose, children, pending, onApprove,
 
   const send = useCallback(async () => {
     const text = input.trim()
-    if (!text || !familyId || !parentMemberId) return
+    if (!text || !familyId) return
+    // Resolve the member row now if the init effect hasn't (transient no-session
+    // on mount used to leave the parent unable to send until a remount).
+    const memberId = await ensureMemberId()
+    if (!memberId) return
     setInput('')
     const optimistic: ChatMessage = {
       id: `opt-${Date.now()}`, family_id: familyId,
-      sender_id: parentMemberId, sender_name: parentName, sender_role: 'parent',
+      sender_id: memberId, sender_name: parentName, sender_role: 'parent',
       message_type: 'text', content: text, sticker_id: null, photo_url: null,
       created_at: new Date().toISOString(),
     }
     setMessages(prev => [...prev, optimistic])
     try {
-      const saved = await sendMessage({ familyId, senderId: parentMemberId, senderName: parentName, senderRole: 'parent', messageType: 'text', content: text })
+      const saved = await sendMessage({ familyId, senderId: memberId, senderName: parentName, senderRole: 'parent', messageType: 'text', content: text })
       setMessages(prev => prev.map(m => m.id === optimistic.id ? saved : m))
     } catch {
       setMessages(prev => prev.filter(m => m.id !== optimistic.id))
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input, familyId, parentMemberId, parentName])
 
   const rooms = [
@@ -633,6 +699,12 @@ export default function ChatPanel({ open, onClose, children, pending, onApprove,
                 }}>
                   {formatTime(m.created_at)}
                 </div>
+                <ReactionPickerBar
+                  reactions={reactions[m.id] ?? []}
+                  currentMemberId={parentMemberId ?? ''}
+                  theme="light"
+                  onToggle={(emoji, mine) => handleReactionToggle(m.id, emoji, mine)}
+                />
               </div>
             </div>
           )

@@ -20,15 +20,23 @@ export default function KidChatPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // activeMemberId comes from the persisted Zustand store; on a hard refresh
+    // it can be null for a tick before rehydration. Stay in the loading state
+    // (KidLayout has already guaranteed a child is here), but fall back after
+    // 4s so a genuinely missing profile still surfaces instead of spinning.
+    if (!activeMemberId) {
+      const fallback = setTimeout(() => setLoading(false), 4000)
+      return () => clearTimeout(fallback)
+    }
+    const memberChildId = activeMemberId
     async function init() {
-      if (!activeMemberId) { setLoading(false); return }
       const [{ data: member }, wallet] = await Promise.all([
         supabase
           .from('family_members')
           .select('id, family_id, display_name')
-          .eq('child_id', activeMemberId)
+          .eq('child_id', memberChildId)
           .maybeSingle(),
-        getWallet(activeMemberId).catch(() => null),
+        getWallet(memberChildId).catch(() => null),
       ])
       if (member) {
         setFamilyId(member.family_id)
