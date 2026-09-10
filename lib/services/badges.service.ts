@@ -16,7 +16,7 @@ interface Badge {
   xp: number
 }
 
-const BADGES: Badge[] = [
+export const BADGES: Badge[] = [
   {
     key: 'week_excellent',
     title: 'Неделя отличника',

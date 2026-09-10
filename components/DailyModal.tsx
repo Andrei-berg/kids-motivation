@@ -6,6 +6,7 @@ import { api } from '@/lib/api'
 import { flexibleApi, Subject, ExerciseType } from '@/lib/flexible-api'
 import { getSectionsForDate, markSectionVisit, Section, SectionVisit, ExtraActivity, getActivitiesForDay, getActivityLogs, saveActivityLogs } from '@/lib/expenses-api'
 import { checkAndAwardBadges } from '@/lib/badges'
+import { emitBadgeFeedEvents } from '@/app/actions/emit-badge-feed'
 import { getGradeColor, localDateString } from '@/utils/helpers'
 import { triggerConfetti } from '@/utils/confetti'
 import { useAppStore } from '@/lib/store'
@@ -740,7 +741,10 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
       }
 
       const badges = await checkAndAwardBadges(childId, date)
-      if (badges.length > 0) { triggerConfetti(); setStatus(t('dailyModal.savedBadge')) }
+      if (badges.length > 0) {
+        triggerConfetti(); setStatus(t('dailyModal.savedBadge'))
+        void emitBadgeFeedEvents(childId, badges)
+      }
       else { setStatus(t('dailyModal.saved')) }
 
       if (onSave) onSave()

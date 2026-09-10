@@ -19,6 +19,7 @@ import { assembleDayBlocks } from '@/lib/day-blocks'
 import { getDayBlockEntries, saveDayBlockEntries } from '@/lib/repositories/day-blocks.repo'
 import type { DayBlock } from '@/lib/models/day-block.types'
 import { checkAndAwardBadges } from '@/lib/badges'
+import { emitBadgeFeedEvents } from '@/app/actions/emit-badge-feed'
 import { detectAward } from '@/lib/kid/awardResult'
 import { computeLevelUp } from '@/lib/kid/level'
 import { compressImage, uploadPhoto, getSignedPhotoUrl } from '@/lib/photo-upload'
@@ -607,7 +608,8 @@ export function KidDayFillForm({
     // or xp-read failure must never strand the save (a silent re-submit would
     // duplicate subject_grades rows and re-award coins under new row ids).
     try {
-      await checkAndAwardBadges(childId, date)
+      const newBadges = await checkAndAwardBadges(childId, date)
+      if (newBadges.length > 0) void emitBadgeFeedEvents(childId, newBadges)
     } catch (e) {
       console.warn('[KidDayFillForm] badge check failed (non-fatal):', e)
     }

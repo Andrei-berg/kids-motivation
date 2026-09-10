@@ -34,9 +34,11 @@ CREATE INDEX IF NOT EXISTS family_events_family_created
 
 -- One row per logical source event. emitFeedEvent() upserts on this key:
 -- 'once' events ignore the conflict, 'bump' events refresh amount/title/created_at.
+-- Must be a FULL (non-partial) unique index — PostgREST upsert on_conflict=
+-- cannot target a partial one. NULL ref_ids (free-text notes) never collide
+-- because NULLs are DISTINCT, and emitFeedEvent plain-inserts those anyway.
 CREATE UNIQUE INDEX IF NOT EXISTS family_events_dedup
-  ON family_events (family_id, kind, ref_type, ref_id)
-  WHERE ref_id IS NOT NULL;
+  ON family_events (family_id, kind, ref_type, ref_id);
 
 ALTER TABLE family_events ENABLE ROW LEVEL SECURITY;
 
