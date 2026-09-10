@@ -11,6 +11,10 @@ import {
   getReactionsByFamily, subscribeToReactions, upsertReaction, deleteReaction,
 } from '@/lib/repositories/chat.repo'
 import { ReactionPickerBar } from '@/components/chat/MessageReactions'
+import StickerPicker from '@/components/chat/StickerPicker'
+import { PhotoLightbox } from '@/components/chat/PhotoLightbox'
+import { compressImage, uploadPhoto, getSignedPhotoUrl } from '@/lib/photo-upload'
+import type { Sticker } from '@/lib/chat-stickers'
 import { supabase } from '@/lib/supabase'
 import { useT } from '@/lib/i18n'
 
@@ -430,7 +434,14 @@ export default function ChatPanel({ open, onClose, children, pending, onApprove,
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<ViewMode>(loadViewMode)
   const [activeTab, setActiveTab] = useState<ChatTab>('messages')
+  const [showStickerPicker, setShowStickerPicker] = useState(false)
+  const [photoPreview, setPhotoPreview] = useState<{ file: File; localUrl: string } | null>(null)
+  const [photoCaption, setPhotoCaption] = useState('')
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
 
   function toggleViewMode() {
     const next: ViewMode = viewMode === 'mixed' ? 'split' : 'mixed'
@@ -548,6 +559,65 @@ export default function ChatPanel({ open, onClose, children, pending, onApprove,
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input, familyId, parentMemberId, parentName])
+
+  async function handleStickerSelect(sticker: Sticker) {
+    const memberId = await ensureMemberId()
+    if (!memberId) return
+    const optimistic: ChatMessage = {
+      id: `opt-sticker-${Date.now()}`, family_id: familyId,
+      sender_id: memberId, sender_name: parentName, sender_role: 'parent',
+      message_type: 'sticker', content: sticker.emoji, sticker_id: sticker.id,
+      photo_url: null, created_at: new Date().toISOString(),
+    }
+    setMessages(prev => [...prev, optimistic])
+    try {
+      const saved = await sendMessage({ familyId, senderId: memberId, senderName: parentName, senderRole: 'parent', messageType: 'sticker', content: sticker.emoji, stickerId: sticker.id })
+      setMessages(prev => prev.map(m => m.id === optimistic.id ? saved : m))
+    } catch {
+      setMessages(prev => prev.filter(m => m.id !== optimistic.id))
+    }
+  }
+
+  function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoPreview({ file, localUrl: URL.createObjectURL(file) })
+    setPhotoCaption('')
+    e.target.value = ''
+  }
+
+  async function handlePhotoSend() {
+    if (!photoPreview) return
+    const memberId = await ensureMemberId()
+    if (!memberId) return
+    setPhotoUploading(true)
+    const optimisticId = `opt-photo-${Date.now()}`
+    const optimistic: ChatMessage = {
+      id: optimisticId, family_id: familyId,
+      sender_id: memberId, sender_name: parentName, sender_role: 'parent',
+      message_type: 'photo', content: photoCaption.trim() || null, sticker_id: null,
+      photo_url: photoPreview.localUrl, created_at: new Date().toISOString(),
+    }
+    setMessages(prev => [...prev, optimistic])
+    const { file, localUrl } = photoPreview
+    const caption = photoCaption.trim()
+    setPhotoPreview(null); setPhotoCaption('')
+    try {
+      const compressed = await compressImage(file)
+      const path = `${familyId}/chat/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`
+      await uploadPhoto(compressed, path)
+      const signedUrl = await getSignedPhotoUrl(path)
+      const saved = await sendMessage({ familyId, senderId: memberId, senderName: parentName, senderRole: 'parent', messageType: 'photo', content: caption || undefined, photoUrl: signedUrl })
+      setMessages(prev => prev.map(m => (m.id === optimisticId ? saved : m)))
+      URL.revokeObjectURL(localUrl)
+    } catch (err) {
+      console.warn('[ChatPanel] photo send failed:', err)
+      setMessages(prev => prev.filter(m => m.id !== optimisticId))
+      URL.revokeObjectURL(localUrl)
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
 
   const rooms = [
     { id: 'family', name: t('chat.familyRoom'), avatar: '👨‍👩‍👧‍👦', accent: T.indigo },
@@ -677,20 +747,37 @@ export default function ChatPanel({ open, onClose, children, pending, onApprove,
                     {m.sender_name}
                   </div>
                 )}
-                <div style={{
-                  padding: desktop ? '7px 11px' : '9px 13px',
-                  fontSize,
-                  fontFamily: T.fBody,
-                  background: isMe ? T.indigo : T.cardHi,
-                  color: isMe ? '#fff' : T.text,
-                  borderRadius: isMe
-                    ? (desktop ? '14px 14px 3px 14px' : '16px 16px 4px 16px')
-                    : (desktop ? '3px 14px 14px 14px' : '4px 16px 16px 16px'),
-                  lineHeight: 1.45,
-                  boxShadow: isMe ? `0 4px ${desktop ? 12 : 16}px ${T.indigo}44` : 'none',
-                }}>
-                  {m.content}
-                </div>
+                {m.message_type === 'photo' ? (
+                  <div style={{ alignSelf: isMe ? 'flex-end' : 'flex-start' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={m.photo_url ?? ''}
+                      alt="photo"
+                      onClick={() => m.photo_url && setLightboxUrl(m.photo_url)}
+                      style={{ width: desktop ? 150 : 180, borderRadius: 14, cursor: 'pointer', objectFit: 'cover', display: 'block', boxShadow: '0 4px 14px rgba(36,30,56,.12)' }}
+                    />
+                    {m.content && (
+                      <div style={{ fontSize: fontSize - 1, color: T.muted, marginTop: 3, marginLeft: 2, fontFamily: T.fBody }}>{m.content}</div>
+                    )}
+                  </div>
+                ) : m.message_type === 'sticker' ? (
+                  <span style={{ fontSize: desktop ? 40 : 46, lineHeight: 1, display: 'block' }}>{m.content}</span>
+                ) : (
+                  <div style={{
+                    padding: desktop ? '7px 11px' : '9px 13px',
+                    fontSize,
+                    fontFamily: T.fBody,
+                    background: isMe ? T.indigo : T.cardHi,
+                    color: isMe ? '#fff' : T.text,
+                    borderRadius: isMe
+                      ? (desktop ? '14px 14px 3px 14px' : '16px 16px 4px 16px')
+                      : (desktop ? '3px 14px 14px 14px' : '4px 16px 16px 16px'),
+                    lineHeight: 1.45,
+                    boxShadow: isMe ? `0 4px ${desktop ? 12 : 16}px ${T.indigo}44` : 'none',
+                  }}>
+                    {m.content}
+                  </div>
+                )}
                 <div style={{
                   fontSize: 9, color: T.faint, marginTop: desktop ? 2 : 3,
                   textAlign: isMe ? 'right' : 'left',
@@ -715,39 +802,83 @@ export default function ChatPanel({ open, onClose, children, pending, onApprove,
     </div>
   )
 
+  const mediaBtn = (label: string, title: string, onClick: () => void) => (
+    <button onClick={onClick} title={title} style={{
+      width: desktop ? 30 : 36, height: desktop ? 30 : 36, borderRadius: '50%', flexShrink: 0,
+      background: T.cardHi, border: `1px solid ${T.cardBorder}`,
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: desktop ? 15 : 17, cursor: 'pointer',
+    }}>{label}</button>
+  )
+
   const renderInput = () => (
-    <div style={{
-      padding: desktop ? '8px 10px 10px' : '10px 12px 20px',
-      borderTop: `1px solid ${T.cardBorder}`,
-      background: T.bg1, display: 'flex', gap: desktop ? 6 : 8, alignItems: 'center', flexShrink: 0,
-    }}>
-      <div style={{
-        flex: 1, height: desktop ? 34 : 40, padding: '0 12px',
-        background: T.cardHi, border: `1px solid ${T.cardBorder}`, borderRadius: T.rPill,
-        display: 'flex', alignItems: 'center',
-      }}>
-        <input
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && send()}
-          placeholder={t('chat.messagePlaceholder')}
-          style={{
-            flex: 1, background: 'transparent', border: 'none', outline: 'none',
-            color: T.text, fontSize: desktop ? 13 : 14, fontFamily: T.fBody,
-          }}
+    <div style={{ borderTop: `1px solid ${T.cardBorder}`, background: T.bg1, flexShrink: 0, position: 'relative' }}>
+      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handlePhotoSelect} />
+      <input ref={galleryInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoSelect} />
+
+      {showStickerPicker && (
+        <StickerPicker
+          onSelect={(s) => { handleStickerSelect(s); setShowStickerPicker(false) }}
+          onClose={() => setShowStickerPicker(false)}
         />
-      </div>
-      <button onClick={send} style={{
-        width: desktop ? 34 : 40, height: desktop ? 34 : 40, borderRadius: '50%',
-        background: input.trim() ? T.indigo : T.cardHi,
-        border: `1px solid ${input.trim() ? 'transparent' : T.cardBorder}`,
-        color: '#fff', cursor: 'pointer',
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        boxShadow: input.trim() ? `0 4px ${desktop ? 12 : 16}px ${T.indigo}55` : 'none',
-        transition: 'all .15s',
+      )}
+
+      {photoPreview && (
+        <div style={{ padding: '10px 12px', borderBottom: `1px solid ${T.cardBorder}`, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={photoPreview.localUrl} alt="preview" style={{ width: 60, height: 60, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <input
+              value={photoCaption}
+              onChange={e => setPhotoCaption(e.target.value)}
+              placeholder={t('chat.caption')}
+              style={{ width: '100%', height: 32, padding: '0 10px', borderRadius: 8, border: `1px solid ${T.cardBorder}`, background: T.card, color: T.text, fontFamily: T.fBody, fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+            />
+            <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+              <button onClick={() => { setPhotoPreview(null); setPhotoCaption('') }} style={{ background: 'none', border: 'none', color: T.muted, fontFamily: T.fBody, fontSize: 12, cursor: 'pointer', padding: 0 }}>{t('chat.cancel')}</button>
+              <button onClick={handlePhotoSend} disabled={photoUploading} style={{ background: T.indigo, color: '#fff', border: 'none', padding: '4px 14px', borderRadius: 999, fontFamily: T.fBody, fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: photoUploading ? 0.6 : 1 }}>
+                {photoUploading ? t('chat.sending') : t('chat.send')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{
+        padding: desktop ? '8px 10px 10px' : '10px 12px 20px',
+        display: 'flex', gap: desktop ? 6 : 8, alignItems: 'center',
       }}>
-        <Icon name="send" size={desktop ? 15 : 17}/>
-      </button>
+        {mediaBtn('🎭', t('chat.stickers'), () => setShowStickerPicker(v => !v))}
+        {mediaBtn('📷', t('chat.camera'), () => cameraInputRef.current?.click())}
+        {mediaBtn('🖼️', t('chat.gallery'), () => galleryInputRef.current?.click())}
+        <div style={{
+          flex: 1, height: desktop ? 34 : 40, padding: '0 12px',
+          background: T.cardHi, border: `1px solid ${T.cardBorder}`, borderRadius: T.rPill,
+          display: 'flex', alignItems: 'center',
+        }}>
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && send()}
+            placeholder={t('chat.messagePlaceholder')}
+            style={{
+              flex: 1, background: 'transparent', border: 'none', outline: 'none',
+              color: T.text, fontSize: desktop ? 13 : 14, fontFamily: T.fBody,
+            }}
+          />
+        </div>
+        <button onClick={send} style={{
+          width: desktop ? 34 : 40, height: desktop ? 34 : 40, borderRadius: '50%',
+          background: input.trim() ? T.indigo : T.cardHi,
+          border: `1px solid ${input.trim() ? 'transparent' : T.cardBorder}`,
+          color: '#fff', cursor: 'pointer',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          boxShadow: input.trim() ? `0 4px ${desktop ? 12 : 16}px ${T.indigo}55` : 'none',
+          transition: 'all .15s',
+        }}>
+          <Icon name="send" size={desktop ? 15 : 17}/>
+        </button>
+      </div>
     </div>
   )
 
@@ -799,6 +930,7 @@ export default function ChatPanel({ open, onClose, children, pending, onApprove,
         {renderHeader()}
         {renderMessages()}
         {renderInput()}
+        {lightboxUrl && <PhotoLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
       </div>
     )
   }
@@ -820,6 +952,7 @@ export default function ChatPanel({ open, onClose, children, pending, onApprove,
         {renderMessages()}
         {renderInput()}
       </div>
+      {lightboxUrl && <PhotoLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />}
     </div>
   )
 }
