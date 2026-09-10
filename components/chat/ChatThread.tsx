@@ -8,6 +8,8 @@ import {
   sendMessage,
   subscribeToMessages,
   subscribeToReactions,
+  upsertReaction,
+  deleteReaction,
 } from '@/lib/repositories/chat.repo'
 import { compressImage, uploadPhoto, getSignedPhotoUrl } from '@/lib/photo-upload'
 import { PhotoLightbox } from './PhotoLightbox'
@@ -471,12 +473,22 @@ export default function ChatThread({
   }
 
   useEffect(() => {
+    if (!familyId) return
     let cancelled = false
-    async function load() {
-      const [data, rxns] = await Promise.all([getMessages(familyId), getReactionsByFamily(familyId)])
-      if (!cancelled) { setMessages(data); setReactions(rxns); setLoading(false) }
+    setLoading(true)
+    // getMessages / getReactionsByFamily swallow their own errors and resolve
+    // []/{}, so the only way load() can hang is a stuck fetch (e.g. a stale JWT
+    // after the device wakes from sleep). The timeout guarantees the spinner
+    // clears no matter what.
+    const settle = (m: ChatMessage[], r: Record<string, ChatReaction[]>) => {
+      if (cancelled) return
+      setMessages(m); setReactions(r); setLoading(false)
     }
-    load()
+    const guard = setTimeout(() => settle([], {}), 12000)
+    Promise.all([getMessages(familyId), getReactionsByFamily(familyId)])
+      .then(([data, rxns]) => { clearTimeout(guard); settle(data, rxns) })
+      .catch(() => { clearTimeout(guard); settle([], {}) })
+
     const unsubMessages = subscribeToMessages(familyId, (msg) => {
       setMessages((prev) => prev.some((m) => m.id === msg.id) ? prev : [...prev, msg])
     })
@@ -485,14 +497,40 @@ export default function ChatThread({
         const msgId = reaction.message_id
         const existing = prev[msgId] ?? []
         if (eventType === 'INSERT') {
-          if (existing.some((r) => r.id === reaction.id)) return prev
-          return { ...prev, [msgId]: [...existing, reaction] }
+          // Replace any row (incl. an optimistic temp) for the same member+emoji
+          // — the DB unique key is (message_id, member_id, emoji).
+          const deduped = existing.filter((r) => !(r.member_id === reaction.member_id && r.emoji === reaction.emoji))
+          return { ...prev, [msgId]: [...deduped, reaction] }
         }
-        return { ...prev, [msgId]: existing.filter((r) => r.id !== reaction.id) }
+        return { ...prev, [msgId]: existing.filter((r) => !(r.member_id === reaction.member_id && r.emoji === reaction.emoji)) }
       })
     })
-    return () => { cancelled = true; unsubMessages(); unsubReactions() }
+    return () => { cancelled = true; clearTimeout(guard); unsubMessages(); unsubReactions() }
   }, [familyId])
+
+  // Optimistic reaction toggle. `mine` is the state before the click.
+  async function handleReactionToggle(messageId: string, emoji: string, mine: boolean) {
+    if (!currentMemberId) return
+    setReactions((prev) => {
+      const list = prev[messageId] ?? []
+      const without = list.filter((r) => !(r.member_id === currentMemberId && r.emoji === emoji))
+      if (mine) return { ...prev, [messageId]: without }
+      const optimistic: ChatReaction = {
+        id: `tmp-${messageId}-${emoji}-${Date.now()}`,
+        message_id: messageId, family_id: familyId,
+        member_id: currentMemberId, emoji, created_at: new Date().toISOString(),
+      }
+      return { ...prev, [messageId]: [...without, optimistic] }
+    })
+    try {
+      if (mine) await deleteReaction({ messageId, memberId: currentMemberId, emoji })
+      else await upsertReaction({ messageId, familyId, memberId: currentMemberId, emoji })
+    } catch (err) {
+      console.warn('[ChatThread] reaction toggle failed, reloading:', err)
+      const fresh = await getReactionsByFamily(familyId)
+      setReactions(fresh)
+    }
+  }
 
   useEffect(() => {
     if (activeTab === 'messages') messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -652,7 +690,12 @@ export default function ChatThread({
                       </div>
                     </div>
                     <div style={{ paddingLeft: isOwn ? 0 : 38, paddingRight: isOwn ? 38 : 0 }}>
-                      <ReactionPickerBar message={msg} reactions={reactions[msg.id] ?? []} currentMemberId={currentMemberId} familyId={familyId} />
+                      <ReactionPickerBar
+                        reactions={reactions[msg.id] ?? []}
+                        currentMemberId={currentMemberId}
+                        theme={theme === 'ink' ? 'dark' : 'light'}
+                        onToggle={(emoji, mine) => handleReactionToggle(msg.id, emoji, mine)}
+                      />
                     </div>
                   </div>
                 </div>
