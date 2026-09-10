@@ -49,6 +49,34 @@ export const paper = {
   dangerText: '#B33846',
 } as const
 
+// daylight — the parent (light) theme ground colors. Same family-bank system as
+// `paper`, one temperature cooler: the parent center reads as "daylight /
+// operations" where the kid side (`paper`) stays "warm cream / play". Text,
+// accent and tone colors are shared with `paper` (all already WCAG-checked on a
+// near-white ground); only the grounds and hairlines differ.
+export const daylight = {
+  bg: '#F6F4EF',        // app ground, behind cards
+  chrome: '#FBFAF7',    // sidebar / top bar / input fills
+  bg2: '#F1EDE4',       // deeper inset
+  card: '#FFFFFF',
+  cardHi: '#F7F4EE',    // hover / raised
+  ink: paper.ink,       // #241E38 — primary text
+  ink2: paper.ink2,     // #4A4363 — secondary text (AA on all grounds)
+  ink3: paper.ink3,     // #837C99 — decorative / large text only
+  muted: '#5D5775',     // AA muted text on the light grounds (≥4.6:1 on #F6F4EF)
+  line: '#ECE8E0',
+  lineHi: '#E0DACE',
+  accent: paper.accent,       // #5B4BD4 — solid primary (buttons, links)
+  accentHi: base.indigo,      // #6C5CE7 — brighter, for active text / hover
+  goldText: paper.goldText,
+  success: paper.success,
+  warning: paper.warning,
+  danger: paper.danger,
+  successText: paper.successText,
+  warningText: paper.warningText,
+  dangerText: paper.dangerText,
+} as const
+
 // ink — the parent (dark) theme ground colors.
 // Lightened 2026-07-23 per user feedback (2026-07-21 checkpoint: theme read as
 // too dark/gloomy, text hard to read). Same hue family, raised lightness across

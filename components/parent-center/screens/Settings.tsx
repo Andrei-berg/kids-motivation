@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { T } from '../tokens'
-import { Card, Btn, Pill, Icon, Tabs } from '../ui'
+import { Card, Btn, Pill, Icon, Tabs, Toggle } from '../ui'
 import { AutomationCards } from '../AutomationCards'
 import type { ParentChild, Route } from '../types'
 import { createClient } from '@/lib/supabase/client'
@@ -77,6 +77,76 @@ function LanguageCard() {
 }
 
 // ───── Family tab ─────
+// ───── Family Feed availability (2026-09-11-family-feed.sql) ─────
+function FeedSettingsCard({ notify }: { notify: (msg: string, tone?: string) => void }) {
+  const t = useT()
+  const pcFeedDefault = useAppStore(s => s.pcFeedDefault)
+  const setPcFeedDefault = useAppStore(s => s.setPcFeedDefault)
+  const [enabled, setEnabled] = useState(true)
+  const [visibleToKids, setVisibleToKids] = useState(true)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    getWalletSettings().then(s => {
+      if (!s) return
+      setEnabled(s.feed_enabled !== false)
+      setVisibleToKids(s.feed_visible_to_kids !== false)
+    }).catch(() => {})
+  }, [])
+
+  const persist = async (patch: { feed_enabled?: boolean; feed_visible_to_kids?: boolean }) => {
+    setSaving(true)
+    try {
+      await updateWalletSettingsApi(patch)
+    } catch {
+      notify(t('common.error') || 'Ошибка', 'danger')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const Row = ({ label, desc, on, onChange, disabled }: { label: string; desc: string; on: boolean; onChange: (v: boolean) => void; disabled?: boolean }) => (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 0', opacity: disabled ? 0.5 : 1 }}>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 14, color: T.text, fontWeight: 600 }}>{label}</div>
+        <div style={{ fontSize: 12, color: T.muted, marginTop: 2, lineHeight: 1.45 }}>{desc}</div>
+      </div>
+      <Toggle on={on} onChange={disabled ? undefined : onChange} />
+    </div>
+  )
+
+  return (
+    <Card pad={16}>
+      <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, marginBottom: 6 }}>
+        {t('settings.feed.title')}
+      </div>
+      <Row
+        label={t('settings.feed.enabled')}
+        desc={t('settings.feed.enabledDesc')}
+        on={enabled}
+        onChange={(v) => { setEnabled(v); persist({ feed_enabled: v }) }}
+      />
+      <div style={{ borderTop: `1px solid ${T.cardBorder}` }} />
+      <Row
+        label={t('settings.feed.kids')}
+        desc={t('settings.feed.kidsDesc')}
+        on={visibleToKids}
+        disabled={!enabled}
+        onChange={(v) => { setVisibleToKids(v); persist({ feed_visible_to_kids: v }) }}
+      />
+      <div style={{ borderTop: `1px solid ${T.cardBorder}` }} />
+      <Row
+        label={t('settings.feed.default')}
+        desc=""
+        on={pcFeedDefault}
+        disabled={!enabled}
+        onChange={setPcFeedDefault}
+      />
+      {saving && <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>{t('common.saving') || '…'}</div>}
+    </Card>
+  )
+}
+
 function FamilyTab({ allChildren, notify, familyId, onAddChild }: { allChildren: ParentChild[]; notify: (msg: string, tone?: string) => void; familyId: string | null; onAddChild?: () => void }) {
   const [copied, setCopied] = useState(false)
   const [code, setCode] = useState('')
@@ -108,6 +178,7 @@ function FamilyTab({ allChildren, notify, familyId, onAddChild }: { allChildren:
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <LanguageCard />
+      <FeedSettingsCard notify={notify} />
 
       <Card pad={16}>
         <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>

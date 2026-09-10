@@ -23,6 +23,7 @@ import {
   assertChildInFamily,
 } from '@/lib/supabase/admin'
 import { errorResponse, loadSettings, loadFeatureFlag, creditAwards, type AwardIntent } from '../_lib'
+import { emitFeedEvent } from '@/lib/services/feed.service'
 import { updateStreaks } from '@/lib/services/streaks.service'
 import { localDateString, addDays, isValidCalendarDate, getWeekRange } from '@/utils/helpers'
 import { GRADE_SCALE_VALUES, type GradeScale } from '@/lib/presets'
@@ -761,6 +762,57 @@ export async function POST(req: NextRequest) {
     }
 
     const { creditedCoins, applied } = await creditAwards(admin, childId, intents)
+
+    // Family Feed — one bump-on-resave "day filled" event per (child, date),
+    // carrying the running total earned. Non-blocking; never breaks the award.
+    void emitFeedEvent({
+      familyId: member.familyId,
+      childId,
+      kind: 'day_filled',
+      title: 'День заполнен',
+      body: applied.length > 0 ? applied.map(a => a.description).filter(Boolean).join(' · ') : null,
+      amount: creditedCoins > 0 ? creditedCoins : null,
+      icon: '📅',
+      refType: 'day',
+      refId: `${childId}:${date}`,
+      mode: 'bump',
+      metadata: { date, sources: applied.map(a => a.sourceType) },
+    }, admin)
+
+    // Its own feed row for the standout awards (streak bonus, weekly boost,
+    // consistency milestone) — these are the "achievement" moments, not just a
+    // day being filled. Each is idempotent on its own ref key.
+    for (const a of applied) {
+      if (a.sourceType === 'streak') {
+        void emitFeedEvent({
+          familyId: member.familyId, childId, kind: 'streak',
+          title: a.description || 'Бонус за серию', amount: a.coins, icon: a.icon || '🔥',
+          refType: 'award', refId: `${childId}:streak:${date}`, mode: 'once',
+        }, admin)
+      } else if (a.sourceType === 'weekly_boost') {
+        void emitFeedEvent({
+          familyId: member.familyId, childId, kind: 'boost',
+          title: a.description || 'Буст недели', amount: a.coins, icon: a.icon || '🚀',
+          refType: 'award', refId: `${childId}:weekly_boost:${date}`, mode: 'bump',
+        }, admin)
+      } else if (a.sourceType === 'boost_milestone') {
+        void emitFeedEvent({
+          familyId: member.familyId, childId, kind: 'boost',
+          title: a.description || 'Награда за постоянство', amount: a.coins, icon: a.icon || '🏅',
+          refType: 'award', refId: `${childId}:milestone:${a.sourceId}`, mode: 'once',
+        }, admin)
+      }
+    }
+
+    // Streak records — a personal best for a streak type, worth surfacing even
+    // when it carries no coin bonus.
+    for (const rec of streakEvents.records ?? []) {
+      void emitFeedEvent({
+        familyId: member.familyId, childId, kind: 'streak',
+        title: `Новый рекорд серии — ${rec.newCount} дн.`, icon: '🔥',
+        refType: 'streak_record', refId: `${childId}:${rec.type}:${rec.newCount}`, mode: 'once',
+      }, admin)
+    }
 
     // appliedItems (05.7-11): per-item detail (description/coins/icon) for the
     // client's day-summary ledger rows — additive alongside appliedSources

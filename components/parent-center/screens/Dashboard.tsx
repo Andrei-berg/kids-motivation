@@ -100,13 +100,13 @@ function ChildCard({ child, onAction }: { child: ParentChild; onAction: Props['o
 
       <div style={{ padding: '0 16px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>
+          <div style={{ fontSize: 11.5, color: T.muted, fontWeight: 600, marginBottom: 2 }}>
             {t('parentCenter.dashboard.lastWeekCoins')}
           </div>
           <Sparkline data={child.week} color={child.accent} w={160} h={32}/>
         </div>
         <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 10, color: T.muted, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>{t('parentCenter.dashboard.today')}</div>
+          <div style={{ fontSize: 11.5, color: T.muted, fontWeight: 600 }}>{t('parentCenter.dashboard.today')}</div>
           <div style={{ fontFamily: T.fMono, fontSize: 14, color: T.text, fontWeight: 600 }}>
             {child.todayDone}/{child.todayTotal}
           </div>
@@ -169,7 +169,7 @@ export default function Dashboard({ children, activity, pending, readingChecks =
   return (
     <div style={{ padding: isDesktop ? '24px' : '20px 16px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div>
-        <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+        <div style={{ fontSize: 12.5, color: T.muted, fontWeight: 600 }}>
           {new Date().toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' })}
         </div>
         <h1 style={{ margin: '4px 0 0', fontFamily: T.fHead, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>

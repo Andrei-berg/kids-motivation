@@ -247,6 +247,8 @@ export async function getWalletSettings(): Promise<WalletSettings> {
       boost_milestone_30d: 150,
       boost_milestone_100d: 500,
       boost_milestone_streak30: 300,
+      feed_enabled: true,
+      feed_visible_to_kids: true,
       updated_at: new Date().toISOString()
     })
   }

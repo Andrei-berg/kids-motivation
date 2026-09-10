@@ -1,28 +1,34 @@
-import { base, ink } from '@/lib/design/tokens'
+import { base, daylight } from '@/lib/design/tokens'
 
+// The Parent Center runs on the `daylight` (light) theme. Every key name below
+// is unchanged from the previous dark-theme token set — only the values moved —
+// so no screen needs to change to follow the reskin. `success`/`warning`/
+// `danger` resolve to the WCAG AA text-safe variants because components use
+// them directly as small-text foregrounds (Pill, Coin, Btn); their soft
+// backgrounds are the raw tone at low alpha.
 export const T = {
-  bg0: '#211A38',
-  bg1: ink.bg,
-  bg2: ink.bg2,
-  card: ink.card,
-  cardHi: ink.cardHi,
-  cardBorder: 'rgba(255,255,255,0.06)',
-  cardBorderHi: 'rgba(255,255,255,0.10)',
-  text: ink.text,
-  textDim: ink.textDim,
-  muted: ink.muted,
-  faint: '#565E78',
-  indigo: base.indigo,
-  indigoHi: ink.accent,
-  indigoSoft: 'rgba(108,92,231,0.14)',
-  cyan: ink.accent,
-  cyanSoft: 'rgba(139,123,245,0.14)',
-  success: ink.success,
-  successSoft: 'rgba(63,191,146,0.14)',
-  warning: ink.warning,
-  warningSoft: 'rgba(232,147,74,0.16)',
-  danger: ink.danger,
-  dangerSoft: 'rgba(255,138,150,0.14)',
+  bg0: daylight.bg,
+  bg1: daylight.chrome,
+  bg2: daylight.bg2,
+  card: daylight.card,
+  cardHi: daylight.cardHi,
+  cardBorder: daylight.line,
+  cardBorderHi: daylight.lineHi,
+  text: daylight.ink,
+  textDim: daylight.ink2,
+  muted: daylight.muted,
+  faint: daylight.ink3,
+  indigo: daylight.accent,
+  indigoHi: daylight.accentHi,
+  indigoSoft: 'rgba(91,75,212,0.10)',
+  cyan: daylight.accent,
+  cyanSoft: 'rgba(91,75,212,0.10)',
+  success: daylight.successText,
+  successSoft: 'rgba(46,158,119,0.13)',
+  warning: daylight.warningText,
+  warningSoft: 'rgba(224,122,46,0.14)',
+  danger: daylight.dangerText,
+  dangerSoft: 'rgba(217,85,99,0.13)',
   r: 12,
   rM: 14,
   rL: 16,
@@ -33,4 +39,4 @@ export const T = {
   fMono: base.fontMono,
 } as const
 
-export const CHILD_ACCENTS = ['#8B7BF5', '#3FBF92', '#E88AA6', '#5FB3E0', '#C58BE0']
+export const CHILD_ACCENTS = ['#6C5CE7', '#2E9E77', '#D9548A', '#3C86C6', '#B06AC6']

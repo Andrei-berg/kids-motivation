@@ -145,6 +145,9 @@ export interface WalletSettings {
   boost_milestone_30d?: number
   boost_milestone_100d?: number
   boost_milestone_streak30?: number
+  // Family Feed availability (2026-09-11-family-feed.sql).
+  feed_enabled?: boolean
+  feed_visible_to_kids?: boolean
 }
 
 export interface MonthlyPotential {
