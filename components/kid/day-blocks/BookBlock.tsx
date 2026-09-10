@@ -9,7 +9,7 @@
 
 import React from 'react'
 import { Tick } from '@/components/design/atoms'
-import { base, paper } from '@/lib/design/tokens'
+import { base, paper } from '@/components/kid/design/kidTheme'
 import { useT } from '@/lib/i18n'
 
 export interface ReadingState {

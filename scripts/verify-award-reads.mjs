@@ -23,8 +23,10 @@ async function main() {
   console.log('Using child', childId)
 
   // Seed: a grade, a day (room_ok + behavior), a section + visit w/ rating.
+  // subject_grades.grade is TEXT since phase 5.9 (05.9-02 migration) — insert the
+  // literal scale value as a string, not a number.
   const g = await db.from('subject_grades')
-    .insert({ child_id: childId, date: DATE, subject: 'ТестМатем', grade: 5, family_id: familyId })
+    .insert({ child_id: childId, date: DATE, subject: 'ТестМатем', grade: '5', family_id: familyId })
     .select('id').single()
   if (g.error) throw new Error('grade insert: ' + g.error.message)
   cleanup.push(() => db.from('subject_grades').delete().eq('id', g.data.id))
@@ -59,7 +61,8 @@ async function main() {
 
   const { data: grades } = await db.from('subject_grades').select('id, grade')
     .eq('child_id', childId).eq('date', DATE)
-  if ((grades ?? []).some((x) => x.grade === 5)) found.push('grade')
+  // grade is TEXT (5.9) — compare as a string, not a number.
+  if ((grades ?? []).some((x) => String(x.grade) === '5')) found.push('grade')
 
   const { data: childSections } = await db.from('sections').select('id').eq('child_id', childId)
   const sectionIds = (childSections ?? []).map((s) => s.id)

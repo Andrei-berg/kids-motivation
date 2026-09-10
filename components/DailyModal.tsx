@@ -1422,6 +1422,23 @@ export default function DailyModal({ isOpen, onClose, childId, date: initialDate
         ) : (
           <div className="scroll-modal-body">
 
+            {/* Live estimate strip — mirrors the kid Day form's language.
+                Client preview only; /api/wallet/award recomputes on save. */}
+            <div style={{
+              position: 'sticky', top: 0, zIndex: 5,
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '8px 14px', marginBottom: 6, borderRadius: 12,
+              background: 'rgba(233,168,60,0.14)', border: '1px solid rgba(233,168,60,0.3)',
+              backdropFilter: 'blur(4px)',
+            }}>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#F0BE6A' }}>
+                {t('dailyModal.coinsToday')}
+              </span>
+              <span style={{ fontSize: 17, fontWeight: 800, color: '#F0BE6A' }}>
+                ≈ {totalCoins >= 0 ? '+' : ''}{totalCoins}💰
+              </span>
+            </div>
+
             {/* ── Sick Day Banner ─────────────────────────────── */}
             {dayType === 'sick' && (
               <div className="scroll-section" style={{ background: 'rgba(244,63,94,0.06)', border: '1px solid rgba(244,63,94,0.2)', borderRadius: '12px', margin: '0 0 4px', padding: '12px 16px' }}>

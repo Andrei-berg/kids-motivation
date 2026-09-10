@@ -9,7 +9,7 @@
 import React from 'react'
 import type { ExtraActivity } from '@/lib/models/expense.types'
 import { Tick, LedgerRow } from '@/components/design/atoms'
-import { base, paper } from '@/lib/design/tokens'
+import { base, paper } from '@/components/kid/design/kidTheme'
 
 interface ActivitiesBlockProps {
   activities: ExtraActivity[]

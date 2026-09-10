@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/lib/store'
 import { getClosestBadge, type ClosestBadge } from '@/lib/services/badges.service'
 import { localDateString } from '@/utils/helpers'
-import { base, paper } from '@/lib/design/tokens'
+import { base, paper } from '@/components/kid/design/kidTheme'
 import { ProgressRing } from '@/components/kid/design/atoms'
 import { useT } from '@/lib/i18n'
 

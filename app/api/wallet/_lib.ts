@@ -63,6 +63,22 @@ const SETTINGS_DEFAULTS = {
   streak_sport_days: 7,
   streak_sport_bonus: 100,
   grade_scale: 'five_point',
+  // Weekly boost + milestone tiers (2026-09-11-weekly-boost.sql). Mirrors
+  // DEFAULT_BOOST_SETTINGS in lib/kid/boost-rules.ts and the getWalletSettings
+  // fallback in lib/repositories/wallet.repo.ts.
+  boost_grades_t1: 150,
+  boost_grades_t2: 300,
+  boost_grades_t3: 500,
+  boost_grades_t1_count: 5,
+  boost_grades_t2_count: 10,
+  boost_grades_perfect_days: 4,
+  boost_full_week: 50,
+  boost_streaks_2: 50,
+  boost_streaks_3: 100,
+  boost_milestone_7d: 70,
+  boost_milestone_30d: 150,
+  boost_milestone_100d: 500,
+  boost_milestone_streak30: 300,
 } as Record<string, number | string>
 
 export type WalletSettingsRow = Record<string, number> & {

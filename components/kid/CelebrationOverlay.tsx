@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
 import { getChildBadges } from '@/lib/services/badges.service'
 import { useT } from '@/lib/i18n'
-import { base, paper } from '@/lib/design/tokens'
+import { base, paper } from '@/components/kid/design/kidTheme'
 import { Stamp } from '@/components/design/atoms'
 
 const STORAGE_KEY = 'kid_last_celebration_check'

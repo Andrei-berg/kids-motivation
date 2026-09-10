@@ -14,6 +14,12 @@ export type Child = {
   // How the child may fill PAST days (see 2026-09-10-backfill-day-requests.sql).
   backfill_mode: 'off' | 'request' | 'open'
   backfill_days: number
+  // Avatar (see 2026-09-11-child-avatar.sql). `avatar_url` (onboarding photo)
+  // still wins when set; otherwise `avatar_kind` + `avatar_config` drive the
+  // <Avatar> atom via lib/kid/avatar.ts resolveAvatar().
+  avatar_url?: string | null
+  avatar_kind?: 'emoji' | 'character' | null
+  avatar_config?: Record<string, unknown> | null
 }
 
 export type BackfillRequestStatus =

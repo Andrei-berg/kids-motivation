@@ -24,7 +24,16 @@ import {
 } from '@/lib/supabase/admin'
 import { errorResponse, loadSettings, loadFeatureFlag, creditAwards, type AwardIntent } from '../_lib'
 import { updateStreaks } from '@/lib/services/streaks.service'
-import { localDateString, addDays, isValidCalendarDate } from '@/utils/helpers'
+import { localDateString, addDays, isValidCalendarDate, getWeekRange } from '@/utils/helpers'
+import { GRADE_SCALE_VALUES, type GradeScale } from '@/lib/presets'
+import {
+  boostSettings,
+  computeWeeklyBoost,
+  MILESTONE_TIERS,
+  type WeeklyGradeStats,
+  type WeeklyConsistencyStats,
+  type MilestoneStats,
+} from '@/lib/kid/boost-rules'
 import { getDayType } from '@/lib/day-type'
 import { assembleDayBlocks, resolveBlockPrice, resolveMultiplier } from '@/lib/day-blocks'
 import type { DayBlock } from '@/lib/models/day-block.types'
@@ -728,7 +737,9 @@ export async function POST(req: NextRequest) {
     // every real-world timezone offset. Runs identically in both branches —
     // a streak is a bonus, not a day_block.
     const serverToday = localDateString()
-    if (date === serverToday || date === addDays(serverToday, 1) || date === addDays(serverToday, -1)) {
+    const inTodayWindow =
+      date === serverToday || date === addDays(serverToday, 1) || date === addDays(serverToday, -1)
+    if (inTodayWindow) {
       const streakBonus = await computeStreakBonus(admin, childId, settings)
       if (streakBonus > 0) {
         intents.push({
@@ -739,6 +750,14 @@ export async function POST(req: NextRequest) {
           sourceId: date,
         })
       }
+    }
+
+    // 7. Weekly boost + one-time milestone tiers (Adam's "буст от алгоритма" +
+    // "вся неделя пятёрки → до +500"). Same server-today ±1 gate as the streak
+    // bonus so a child cannot loop past weeks; idempotent per source_id
+    // (weekly_boost → ISO week start, boost_milestone → tier key) via creditAwards.
+    if (inTodayWindow) {
+      await pushBoostIntents(admin, childId, date, settings, intents)
     }
 
     const { creditedCoins, applied } = await creditAwards(admin, childId, intents)
@@ -799,4 +818,108 @@ async function computeStreakBonus(
     }
   }
   return bonus
+}
+
+// Longest run of consecutive filled days ending on `today` or `yesterday`.
+function consecutiveFilledRun(filled: Set<string>, today: string): number {
+  let cursor = filled.has(today) ? today : addDays(today, -1)
+  if (!filled.has(cursor)) return 0
+  let run = 0
+  while (filled.has(cursor)) {
+    run++
+    cursor = addDays(cursor, -1)
+  }
+  return run
+}
+
+// Block 7 helper — recomputes the weekly boost + milestone tiers from saved
+// data and pushes AwardIntents. Pure rules live in lib/kid/boost-rules.ts so
+// the client "до буста" copy (lib/kid/boost.ts) can't drift from this.
+async function pushBoostIntents(
+  admin: ReturnType<typeof createAdminClient>,
+  childId: string,
+  date: string,
+  settings: Record<string, unknown> & { grade_coin_map?: Record<string, number>; grade_scale?: string },
+  intents: AwardIntent[],
+): Promise<void> {
+  const s = boostSettings(settings)
+  const week = getWeekRange(date)
+  const scale = (settings.grade_scale ?? 'five_point') as GradeScale
+  const coinMap = settings.grade_coin_map ?? {}
+  const topGrade = (GRADE_SCALE_VALUES[scale] ?? GRADE_SCALE_VALUES.five_point)[0]
+
+  const [weekGradesRes, weekDaysRes, allDaysRes, streaksRes, priorBoostRes] = await Promise.all([
+    admin.from('subject_grades').select('date, grade').eq('child_id', childId).gte('date', week.start).lte('date', week.end),
+    admin.from('days').select('date').eq('child_id', childId).gte('date', week.start).lte('date', week.end),
+    admin.from('days').select('date').eq('child_id', childId),
+    admin.from('streaks').select('streak_type, current_count, best_count').eq('child_id', childId),
+    // Everything already credited toward THIS week's boost — so a later save
+    // that reaches a higher tier tops up by the difference instead of being
+    // skipped by creditAwards' idempotency (source_id carries the running total).
+    admin.from('wallet_transactions').select('coins_change')
+      .eq('child_id', childId).eq('source_type', 'weekly_boost')
+      .like('source_id', `${week.start}%`),
+  ])
+
+  const weekGrades = weekGradesRes.data ?? []
+  let goodGradeCount = 0
+  let topGradeCount = 0
+  let hasPenaltyGrade = false
+  const gradedDates = new Set<string>()
+  for (const g of weekGrades) {
+    const v = String(g.grade)
+    const c = coinMap[v] ?? 0
+    if (c > 0) goodGradeCount++
+    if (c < 0) hasPenaltyGrade = true
+    if (v === topGrade) topGradeCount++
+    gradedDates.add(String(g.date).slice(0, 10))
+  }
+  const gradeStats: WeeklyGradeStats = { goodGradeCount, topGradeCount, hasPenaltyGrade, gradedDays: gradedDates.size }
+
+  const filledThisWeek = new Set((weekDaysRes.data ?? []).map((d) => String(d.date).slice(0, 10)))
+  const streaks = streaksRes.data ?? []
+  const thr: Record<string, number> = {
+    room: clampStreakDays((settings.streak_room_days as number) ?? 7),
+    study: clampStreakDays((settings.streak_study_days as number) ?? 14),
+    sport: clampStreakDays((settings.streak_sport_days as number) ?? 7),
+  }
+  const streaksAtThreshold = streaks.filter(
+    (st) => thr[st.streak_type] != null && (st.current_count ?? 0) >= thr[st.streak_type],
+  ).length
+  const consistencyStats: WeeklyConsistencyStats = { filledDays: filledThisWeek.size, streaksAtThreshold }
+
+  const boost = computeWeeklyBoost(s, gradeStats, consistencyStats)
+  const wanted = Math.min(100000, Math.round(boost.total))
+  const alreadyCredited = (priorBoostRes.data ?? []).reduce((sum, r) => sum + (r.coins_change ?? 0), 0)
+  const topUp = wanted - alreadyCredited
+  if (topUp > 0) {
+    intents.push({
+      coins: topUp,
+      description: 'Буст недели',
+      icon: '🚀',
+      sourceType: 'weekly_boost',
+      // Running total in the id → each distinct week-total is its own idempotent
+      // source; a re-save at the same total is skipped, a higher tier tops up.
+      sourceId: `${week.start}:${wanted}`,
+    })
+  }
+
+  const allFilled = new Set((allDaysRes.data ?? []).map((d) => String(d.date).slice(0, 10)))
+  const milestoneStats: MilestoneStats = {
+    daysFilledTotal: allFilled.size,
+    daysFilledStreak: consecutiveFilledRun(allFilled, localDateString()),
+    bestAnyStreak: streaks.reduce((m, st) => Math.max(m, st.best_count ?? 0), 0),
+  }
+  for (const tier of MILESTONE_TIERS) {
+    const coins = tier.coins(s)
+    if (coins > 0 && tier.reached(milestoneStats)) {
+      intents.push({
+        coins: Math.min(100000, Math.round(coins)),
+        description: 'Награда за постоянство',
+        icon: '🏅',
+        sourceType: 'boost_milestone',
+        sourceId: tier.key,
+      })
+    }
+  }
 }

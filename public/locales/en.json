@@ -188,7 +188,10 @@
     "soloCompareHeading": "You vs. last week",
     "soloCompareEmpty": "Next week you'll see how this week compares.",
     "soloThisWeek": "This week",
-    "soloLastWeek": "Last week"
+    "soloLastWeek": "Last week",
+    "boostHeading": "Boosts",
+    "boostThisWeek": "Weekly boost",
+    "boostClaimed": "Claimed"
   },
   "kidWallet": {
     "title": "Wallet",
@@ -427,7 +430,8 @@
     "feedbackPlaceholder": "Coach feedback",
     "coachRatingLabel": "Coach rating:",
     "roomPhotoAlt": "Room photo",
-    "pickDate": "Pick a date"
+    "pickDate": "Pick a date",
+    "coinsToday": "Coins today"
   },
   "coachRating": {
     "title": "Coach Rating",
@@ -901,7 +905,18 @@
       "streakStudyDays": "Study streak — days to bonus",
       "streakStudyBonus": "Study streak — bonus",
       "streakSportDays": "Sport streak — days to bonus",
-      "streakSportBonus": "Sport streak — bonus"
+      "streakSportBonus": "Sport streak — bonus",
+      "boostGroup": "Boosts",
+      "boostGradesT1": "Boost: 5 top grades this week",
+      "boostGradesT2": "Boost: 10 top grades this week",
+      "boostGradesT3": "Boost: a perfect grade week",
+      "boostFullWeek": "Boost: all 7 days filled",
+      "boostStreaks2": "Boost: 2 streaks at target",
+      "boostStreaks3": "Boost: 3 streaks at target",
+      "boostMilestone7d": "Milestone: 7 days in a row",
+      "boostMilestone30d": "Milestone: 30 days filled",
+      "boostMilestone100d": "Milestone: 100 days filled",
+      "boostMilestoneStreak30": "Milestone: 30-day streak"
     },
     "notificationSettings": {
       "title": "Notifications",
@@ -1928,5 +1943,47 @@
     "requestPast": "Ask to fill this day",
     "hintOpen": "Tap a past day to fill it in.",
     "hintRequest": "Tap a past day to ask a parent if you can fill it."
+  },
+  "kidProfile": {
+    "open": "Open profile",
+    "levelLine": "Level {{level}}",
+    "changeAvatar": "Change avatar",
+    "streaksHeading": "Your streaks",
+    "streakRoom": "Room",
+    "streakStudy": "Study",
+    "streakSport": "Sport",
+    "streakBehavior": "Behavior",
+    "streakGeneric": "Streak",
+    "xpTotal": "Total XP",
+    "goalsDone": "Goals reached",
+    "pickAvatar": "Pick an avatar",
+    "pickAvatarHint": "An emoji or your own character",
+    "tabEmoji": "Emoji",
+    "tabCharacter": "Character",
+    "background": "Background",
+    "skin": "Skin",
+    "hair": "Hair",
+    "hairColor": "Hair colour",
+    "shirt": "Shirt",
+    "accessory": "Accessory",
+    "hairShape": {
+      "short": "Short",
+      "buzz": "Buzz",
+      "curly": "Curly",
+      "long": "Long",
+      "bun": "Bun",
+      "mohawk": "Mohawk"
+    },
+    "save": "Save",
+    "saving": "Saving…",
+    "avatarSaveError": "Could not save the avatar"
+  },
+  "kidBoost": {
+    "milestone": {
+      "filled7": "7 days in a row",
+      "filled30": "30 days filled",
+      "filled100": "100 days filled",
+      "streak30": "30-day streak"
+    }
   }
 }

@@ -1,6 +1,6 @@
 import './globals.css'
 import type { Metadata, Viewport } from 'next'
-import { Bitter, Golos_Text, JetBrains_Mono } from 'next/font/google'
+import { Bitter, Golos_Text, JetBrains_Mono, Rubik, Nunito } from 'next/font/google'
 import { PushInit } from '@/components/PushInit'
 import { InstallPrompt } from '@/components/InstallPrompt'
 import { OfflineBanner } from '@/components/OfflineBanner'
@@ -47,13 +47,30 @@ const jetBrainsMono = JetBrains_Mono({
   variable: '--font-mono',
 })
 
+// Kid UI only (components/kid/design/kidTheme.ts). Friendly, high x-height,
+// full Cyrillic — deliberately not the parent Bitter serif. Parent screens
+// never reference these variables.
+const kidDisplay = Rubik({
+  weight: ['500', '600', '700', '800'],
+  subsets: ['latin', 'cyrillic'],
+  display: 'swap',
+  variable: '--font-kid-display',
+})
+
+const nunito = Nunito({
+  weight: ['400', '600', '700', '800'],
+  subsets: ['latin', 'cyrillic'],
+  display: 'swap',
+  variable: '--font-kid-body',
+})
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${bitter.variable} ${golosText.variable} ${jetBrainsMono.variable}`}>
+    <html lang="en" className={`${bitter.variable} ${golosText.variable} ${jetBrainsMono.variable} ${kidDisplay.variable} ${nunito.variable}`}>
       <body>
         <LanguageProvider>
           <AnalyticsProvider />

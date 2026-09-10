@@ -11,8 +11,10 @@ import { T } from '@/components/kid/design/tokens'
 import { SectionHeader, ProgressRing, Avatar } from '@/components/kid/design/atoms'
 import { Tabs, Amount } from '@/components/design/atoms'
 import ScreenHeader from '@/components/kid/design/ScreenHeader'
-import { paper } from '@/lib/design/tokens'
+import { paper } from '@/components/kid/design/kidTheme'
 import { levelForXp } from '@/lib/kid/level'
+import { getBoostProgress, type BoostProgress } from '@/lib/kid/boost'
+import { K } from '@/components/kid/design/kidTheme'
 import { rankChildren, type RankEntry } from '@/lib/kid/rating-rank'
 import { useDesktop } from '@/lib/hooks/useDesktop'
 import { localDateString, getWeekRange, addDays } from '@/utils/helpers'
@@ -97,22 +99,25 @@ export default function AchievementsPage() {
   const [ratingState, setRatingState] = useState<'idle' | 'loading' | 'ready'>('idle')
   const [entries, setEntries] = useState<RatingEntry[]>([])
   const [soloLastWeek, setSoloLastWeek] = useState<number>(0)
+  const [boost, setBoost] = useState<BoostProgress | null>(null)
 
   useEffect(() => {
     if (!activeMemberId) return
     const load = async () => {
       setLoading(true)
       try {
-        const [childData, earned, streaksData, wallet] = await Promise.all([
+        const [childData, earned, streaksData, wallet, boostData] = await Promise.all([
           api.getChild(activeMemberId),
           getChildBadges(activeMemberId),
           api.getStreaks(activeMemberId),
           getWallet(activeMemberId).catch(() => null),
+          getBoostProgress(activeMemberId).catch(() => null),
         ])
         setChild(childData)
         setEarnedBadges(earned)
         setStreaks(streaksData ?? [])
         setCoins(wallet?.coins ?? 0)
+        setBoost(boostData)
         const prog = await getBadgeProgress(activeMemberId)
         setBadgeProgress(prog)
       } catch (err) {
@@ -241,7 +246,7 @@ export default function AchievementsPage() {
   return (
     <div style={isDesktop ? { padding: '0 32px 110px' } : { paddingBottom: 110, maxWidth: 500, margin: '0 auto' }}>
       {/* ═══ Unified header (D-13) + XP/level (D-05) ═════════════════════════ */}
-      <ScreenHeader title={t('kidHeader.awards')} coins={coins} name={child?.name ?? ''}/>
+      <ScreenHeader title={t('kidHeader.awards')} coins={coins} name={child?.name ?? ''} child={child}/>
 
       {/* XP bar + level live with the header, above the tabs (D-05).
           Never gold: XP/level are not money — accent (indigo) fill only. */}
@@ -281,6 +286,60 @@ export default function AchievementsPage() {
       {/* ═══ Tab: Badges ══════════════════════════════════════════════════════ */}
       {tab === 'badges' && (
         <>
+          {/* Бусты — weekly boost meter + one-time milestone tiers */}
+          {boost && (
+            <div style={{ padding: '16px 16px 0' }}>
+              <SectionHeader title={t('achievements.boostHeading')}/>
+              <div style={{
+                marginTop: 12, background: K.card, border: `1.5px solid ${K.line}`,
+                borderRadius: 16, padding: 14,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+                  <span style={{ fontFamily: K.fDisp, fontSize: 14, fontWeight: 800, color: K.mangoDeep }}>
+                    {t('achievements.boostThisWeek')}
+                  </span>
+                  <span style={{ fontFamily: K.fNum, fontSize: 15, fontWeight: 800, color: K.mangoDeep }}>
+                    +{boost.week.total.toLocaleString('ru-RU')} 🪙
+                  </span>
+                </div>
+                <div style={{ height: 8, background: K.lineSoft, borderRadius: 999, overflow: 'hidden', marginTop: 8 }}>
+                  <div style={{
+                    width: `${boost.week.max > 0 ? Math.min(100, (boost.week.total / boost.week.max) * 100) : 0}%`,
+                    height: '100%', background: `linear-gradient(90deg, ${K.mango}, ${K.berry})`, borderRadius: 999,
+                  }}/>
+                </div>
+                <div style={{ fontFamily: K.fBody, fontSize: 12, color: K.ink2, fontWeight: 600, marginTop: 6 }}>
+                  {boost.week.nextLabel}
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
+                {boost.milestones.map(m => (
+                  <div key={m.key} style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    background: K.card, border: `1.5px solid ${m.claimed ? K.mint : K.line}`,
+                    borderRadius: 14, padding: '10px 12px',
+                  }}>
+                    <span style={{ fontSize: 22 }} aria-hidden>{m.claimed ? '🏅' : '🔒'}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: K.fDisp, fontSize: 14, fontWeight: 700, color: K.ink }}>
+                        {t(m.labelKey)}
+                      </div>
+                      <div style={{ height: 6, background: K.lineSoft, borderRadius: 999, overflow: 'hidden', marginTop: 5 }}>
+                        <div style={{
+                          width: `${m.target > 0 ? Math.min(100, (m.current / m.target) * 100) : 0}%`,
+                          height: '100%', background: m.claimed ? K.mint : K.grape, borderRadius: 999,
+                        }}/>
+                      </div>
+                    </div>
+                    <span style={{ fontFamily: K.fNum, fontSize: 13, fontWeight: 800, color: m.claimed ? K.mintDeep : K.ink3, whiteSpace: 'nowrap' }}>
+                      {m.claimed ? t('achievements.boostClaimed') : `+${m.coins} 🪙`}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* "Almost there" coach card (signature) — paper card, accent ring */}
           {closest && (
             <div style={{ padding: '16px 16px 0' }}>

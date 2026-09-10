@@ -1,32 +1,37 @@
 'use client'
 
-// Unified "сберкнижка" header (D-13) — shared across all 5 kid screens.
-// Left: Avatar + child name. Right: gold coin balance via the Amount atom.
-// The Day-screen variant (`showLogout`) adds a D-03 logout trigger (indigo
-// icon, danger-colored confirm dialog). Pulls all colors from lib/design/tokens.
+// Shared header across all kid screens. Left: avatar (tap → ProfileSheet) +
+// child name. Right: coin balance + optional logout (Day screen). New kid
+// palette / fonts (components/kid/design/kidTheme.ts) — no parent "family bank"
+// tokens here.
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAppStore } from '@/lib/store'
 import { useT } from '@/lib/i18n'
-import { base, paper } from '@/lib/design/tokens'
-import { Amount } from '@/components/design/atoms'
-import { Avatar } from '@/components/kid/design/atoms'
+import { K } from './kidTheme'
+import { Avatar, Coin } from './atoms'
+import { resolveAvatar, type ChildAvatarFields } from '@/lib/kid/avatar'
+import ProfileSheet from '@/components/kid/ProfileSheet'
 
 interface ScreenHeaderProps {
   title: string
   coins: number
   name: string
+  /** Child row (or the avatar-relevant subset) — drives the avatar + profile sheet. */
+  child?: (ChildAvatarFields & { id?: string; name?: string; xp?: number }) | null
+  /** Back-compat: an explicit onboarding photo URL. `child.avatar_url` is preferred. */
   avatarUrl?: string | null
   showLogout?: boolean
 }
 
-export default function ScreenHeader({ title, coins, name, avatarUrl, showLogout = false }: ScreenHeaderProps) {
+export default function ScreenHeader({ title, coins, name, child, avatarUrl, showLogout = false }: ScreenHeaderProps) {
   const t = useT()
   const router = useRouter()
   const setActiveMemberId = useAppStore((s) => s.setActiveMemberId)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
 
   async function handleLogout() {
     setActiveMemberId(null)
@@ -34,40 +39,49 @@ export default function ScreenHeader({ title, coins, name, avatarUrl, showLogout
     router.push('/')
   }
 
+  const av = resolveAvatar(child ?? (avatarUrl ? { avatar_url: avatarUrl } : null))
+
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      gap: 12, padding: '12px 16px', background: paper.bg,
+      gap: 12, padding: '12px 16px', background: K.cream,
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-        {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={avatarUrl}
-            alt={name}
-            style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
-          />
-        ) : (
-          <Avatar size={44}/>
-        )}
+      <button
+        type="button"
+        onClick={() => setProfileOpen(true)}
+        aria-label={t('kidProfile.open')}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 10, minWidth: 0,
+          background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left',
+        }}
+      >
+        <Avatar size={44} {...av} />
         <div style={{ minWidth: 0 }}>
           <div style={{
-            fontFamily: base.fontDisplay, fontSize: 18, fontWeight: 700, color: paper.ink,
+            fontFamily: K.fDisp, fontSize: 18, fontWeight: 800, color: K.ink,
             lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
             {title}
           </div>
           <div style={{
-            fontFamily: base.fontBody, fontSize: 12, fontWeight: 600, color: paper.ink3,
+            fontFamily: K.fBody, fontSize: 12, fontWeight: 600, color: K.ink3,
             marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
             {name}
           </div>
         </div>
-      </div>
+      </button>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-        <Amount value={coins} theme="paper" money size="lg"/>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6, height: 40, padding: '0 14px 0 8px',
+          borderRadius: 20, background: K.mangoSoft, border: `1.5px solid ${K.mango}55`,
+        }}>
+          <Coin size={24} />
+          <span style={{ fontFamily: K.fNum, fontSize: 18, fontWeight: 800, color: K.ink }}>
+            {coins.toLocaleString('ru-RU')}
+          </span>
+        </div>
         {showLogout && (
           <button
             type="button"
@@ -76,16 +90,18 @@ export default function ScreenHeader({ title, coins, name, avatarUrl, showLogout
             style={{
               width: 44, height: 44, borderRadius: 12, flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'transparent', border: 'none', cursor: 'pointer', color: paper.accent,
+              background: 'transparent', border: 'none', cursor: 'pointer', color: K.sky,
             }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
         )}
       </div>
+
+      {profileOpen && <ProfileSheet child={child ?? null} onClose={() => setProfileOpen(false)} />}
 
       {confirmOpen && (
         <div
@@ -93,7 +109,7 @@ export default function ScreenHeader({ title, coins, name, avatarUrl, showLogout
           aria-modal="true"
           onClick={() => setConfirmOpen(false)}
           style={{
-            position: 'fixed', inset: 0, background: 'rgba(36,30,56,0.5)', zIndex: 200,
+            position: 'fixed', inset: 0, background: 'rgba(33,49,74,0.5)', zIndex: 200,
             display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
           }}
         >
@@ -101,14 +117,14 @@ export default function ScreenHeader({ title, coins, name, avatarUrl, showLogout
             onClick={(e) => e.stopPropagation()}
             style={{
               width: '100%', maxWidth: 340, borderRadius: 20, padding: 24,
-              background: paper.card, boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
+              background: K.card, boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
             }}
           >
-            <div style={{ fontFamily: base.fontDisplay, fontSize: 18, fontWeight: 700, color: paper.ink }}>
+            <div style={{ fontFamily: K.fDisp, fontSize: 18, fontWeight: 800, color: K.ink }}>
               {t('kidNav.logoutConfirm.title')}
             </div>
             <div style={{
-              fontFamily: base.fontBody, fontSize: 14, fontWeight: 500, color: paper.ink2,
+              fontFamily: K.fBody, fontSize: 14, fontWeight: 500, color: K.ink2,
               marginTop: 8, lineHeight: 1.5,
             }}>
               {t('kidNav.logoutConfirm.body')}
@@ -119,8 +135,8 @@ export default function ScreenHeader({ title, coins, name, avatarUrl, showLogout
                 onClick={() => setConfirmOpen(false)}
                 style={{
                   flex: 1, height: 44, borderRadius: 12, cursor: 'pointer',
-                  border: `1.5px solid ${paper.line}`, background: paper.card, color: paper.ink,
-                  fontFamily: base.fontBody, fontSize: 14, fontWeight: 600,
+                  border: `1.5px solid ${K.line}`, background: K.card, color: K.ink,
+                  fontFamily: K.fBody, fontSize: 14, fontWeight: 700,
                 }}
               >
                 {t('kidNav.logoutConfirm.cancel')}
@@ -130,8 +146,8 @@ export default function ScreenHeader({ title, coins, name, avatarUrl, showLogout
                 onClick={handleLogout}
                 style={{
                   flex: 1, height: 44, borderRadius: 12, cursor: 'pointer', border: 'none',
-                  background: paper.dangerText, color: '#fff',
-                  fontFamily: base.fontBody, fontSize: 14, fontWeight: 700,
+                  background: K.danger, color: '#fff',
+                  fontFamily: K.fBody, fontSize: 14, fontWeight: 700,
                 }}
               >
                 {t('kidNav.logoutConfirm.confirm')}

@@ -468,6 +468,21 @@ function CoinsRulesTab({ notify }: { notify: (msg: string, tone?: string) => voi
         <RuleRow icon="📅" label={t('settings.coinRules.streakSportDays')} value={settings.streak_sport_days} rkey="streak_sport_days"/>
         <RuleRow icon="🔥" label={t('settings.coinRules.streakSportBonus')} value={settings.streak_sport_bonus} rkey="streak_sport_bonus"/>
       </Card>
+      <Card pad={16}>
+        <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+          {t('settings.coinRules.boostGroup')}
+        </div>
+        <RuleRow icon="⭐" label={t('settings.coinRules.boostGradesT1')} value={settings.boost_grades_t1 ?? 150} rkey="boost_grades_t1"/>
+        <RuleRow icon="⭐" label={t('settings.coinRules.boostGradesT2')} value={settings.boost_grades_t2 ?? 300} rkey="boost_grades_t2"/>
+        <RuleRow icon="🌟" label={t('settings.coinRules.boostGradesT3')} value={settings.boost_grades_t3 ?? 500} rkey="boost_grades_t3"/>
+        <RuleRow icon="📅" label={t('settings.coinRules.boostFullWeek')} value={settings.boost_full_week ?? 50} rkey="boost_full_week"/>
+        <RuleRow icon="🔥" label={t('settings.coinRules.boostStreaks2')} value={settings.boost_streaks_2 ?? 50} rkey="boost_streaks_2"/>
+        <RuleRow icon="🔥" label={t('settings.coinRules.boostStreaks3')} value={settings.boost_streaks_3 ?? 100} rkey="boost_streaks_3"/>
+        <RuleRow icon="🏅" label={t('settings.coinRules.boostMilestone7d')} value={settings.boost_milestone_7d ?? 70} rkey="boost_milestone_7d"/>
+        <RuleRow icon="🏅" label={t('settings.coinRules.boostMilestone30d')} value={settings.boost_milestone_30d ?? 150} rkey="boost_milestone_30d"/>
+        <RuleRow icon="🏆" label={t('settings.coinRules.boostMilestone100d')} value={settings.boost_milestone_100d ?? 500} rkey="boost_milestone_100d"/>
+        <RuleRow icon="🏆" label={t('settings.coinRules.boostMilestoneStreak30')} value={settings.boost_milestone_streak30 ?? 300} rkey="boost_milestone_streak30"/>
+      </Card>
       <Card pad={16} style={{ background: `linear-gradient(135deg, ${T.cyanSoft}, ${T.card})` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
           <Pill tone="cyan">{t('parentCenter.settings.coinsRules.trainer')}</Pill>

@@ -6,7 +6,7 @@ import KidInitializer from '@/components/kid/KidInitializer'
 import CelebrationOverlay from '@/components/kid/CelebrationOverlay'
 import BadgeNudge from '@/components/kid/BadgeNudge'
 import ParentPreviewBanner from '@/components/kid/ParentPreviewBanner'
-import { paper } from '@/lib/design/tokens'
+import { K } from '@/components/kid/design/kidTheme'
 
 export default async function KidLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -39,7 +39,7 @@ export default async function KidLayout({ children }: { children: React.ReactNod
 
   if (previewChildId && previewValid) {
     return (
-      <div className="min-h-screen" style={{ background: paper.bg, color: paper.ink }}>
+      <div className="min-h-screen" style={{ background: K.cream, color: K.ink }}>
         <KidInitializer memberId={previewChildId} />
         <ParentPreviewBanner />
         <KidNav />
@@ -57,7 +57,7 @@ export default async function KidLayout({ children }: { children: React.ReactNod
   const resolvedChildId = membership.child_id
 
   return (
-    <div className="min-h-screen" style={{ background: paper.bg, color: paper.ink }}>
+    <div className="min-h-screen" style={{ background: K.cream, color: K.ink }}>
       <KidInitializer memberId={resolvedChildId} />
       <KidNav />
       <CelebrationOverlay />

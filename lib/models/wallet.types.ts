@@ -129,6 +129,22 @@ export interface WalletSettings {
   // scale-aware lookup consulted first when present.
   grade_scale?: 'five_point' | 'twelve_point' | 'a_f'
   grade_coin_map?: Record<string, number>
+  // Weekly boost + one-time milestone tiers (2026-09-11-weekly-boost.sql).
+  // See lib/kid/boost-rules.ts. Optional: legacy rows predate the columns and
+  // fall back to DEFAULT_BOOST_SETTINGS.
+  boost_grades_t1?: number
+  boost_grades_t2?: number
+  boost_grades_t3?: number
+  boost_grades_t1_count?: number
+  boost_grades_t2_count?: number
+  boost_grades_perfect_days?: number
+  boost_full_week?: number
+  boost_streaks_2?: number
+  boost_streaks_3?: number
+  boost_milestone_7d?: number
+  boost_milestone_30d?: number
+  boost_milestone_100d?: number
+  boost_milestone_streak30?: number
 }
 
 export interface MonthlyPotential {

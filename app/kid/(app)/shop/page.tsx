@@ -7,7 +7,7 @@ import { requestPurchase } from '@/app/kid/(app)/shop/actions'
 import { api } from '@/lib/api'
 import type { Wallet, Reward, RewardPurchase } from '@/lib/models/wallet.types'
 import type { Child } from '@/lib/models/child.types'
-import { base, paper } from '@/lib/design/tokens'
+import { base, paper } from '@/components/kid/design/kidTheme'
 import { Amount, StatusChip, Tabs, Stamp } from '@/components/design/atoms'
 import ScreenHeader from '@/components/kid/design/ScreenHeader'
 import { useDesktop } from '@/lib/hooks/useDesktop'
@@ -95,7 +95,7 @@ export default function KidShopPage() {
       )}
 
       {/* ═══ Header («сберкнижка», D-13) ══════════════════════════════════════ */}
-      <ScreenHeader title={t('kidHeader.shop')} coins={coins} name={child?.name ?? ''}/>
+      <ScreenHeader title={t('kidHeader.shop')} coins={coins} name={child?.name ?? ''} child={child}/>
 
       {/* ═══ Tabs (shared atom) ═══════════════════════════════════════════════ */}
       <div style={{ padding: '8px 16px 0' }}>

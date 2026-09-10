@@ -62,6 +62,18 @@ function clampGradeCoinMap(safe: Record<string, unknown>): void {
   safe.grade_coin_map = clamped
 }
 
+// Weekly boost + milestone tier amounts (2026-09-11-weekly-boost.sql). Same
+// defense-in-depth idiom: clamp every boost_* field to a non-negative integer
+// ≤ 100000. lib/kid/boost-rules.ts + award/route.ts remain authoritative.
+function clampBoostFields(safe: Record<string, unknown>): void {
+  for (const key of Object.keys(safe)) {
+    if (!key.startsWith('boost_')) continue
+    const n = Number(safe[key])
+    if (!Number.isFinite(n)) { delete safe[key]; continue }
+    safe[key] = Math.min(100000, Math.max(0, Math.floor(n)))
+  }
+}
+
 export async function PATCH(req: NextRequest) {
   try {
     const updates = await req.json()
@@ -73,6 +85,7 @@ export async function PATCH(req: NextRequest) {
     void id; void family_id; void updated_at
     clampStreakFields(safe)
     clampGradeCoinMap(safe)
+    clampBoostFields(safe)
 
     const { data, error } = await admin
       .from('wallet_settings')

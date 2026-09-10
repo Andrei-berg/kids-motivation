@@ -25,11 +25,10 @@ import { compressImage, uploadPhoto, getSignedPhotoUrl } from '@/lib/photo-uploa
 import { supabase } from '@/lib/supabase'
 import { getReadingLog, saveReadingLog } from '@/lib/vacation-api'
 import { T } from '@/components/kid/design/tokens'
-import { AnimatedNum } from '@/components/kid/design/atoms'
+import { K } from '@/components/kid/design/kidTheme'
+import { AnimatedNum, CollapsibleRow, Coin } from '@/components/kid/design/atoms'
 import { Tick, StatusChip, Amount } from '@/components/design/atoms'
-import { base, paper } from '@/lib/design/tokens'
 import { GRADE_SCALE_VALUES, defaultGradeCoinMap } from '@/lib/presets'
-import BlockCard from '@/components/kid/day-blocks/BlockCard'
 import RoomBlock from '@/components/kid/day-blocks/RoomBlock'
 import ActivitiesBlock from '@/components/kid/day-blocks/ActivitiesBlock'
 import BookBlock from '@/components/kid/day-blocks/BookBlock'
@@ -353,65 +352,87 @@ export function KidDayFillForm({
   }, [childId, dayType, date, dayBlocksEnabled])
 
   // ── Live coin calculation (no state — pure compute) ──────────────────────
-  const coinsPreview = useMemo(() => {
-    let total = 0
+  // Broken out per section so each CollapsibleRow can show its own contribution;
+  // `coinsPreview` is the sum and behaves exactly as before (same inputs, same
+  // total). Preview only — /api/wallet/award recomputes authoritatively.
+  const sectionCoins = useMemo(() => {
     // WR-02: under flag-on only count sources whose built-in block is visible
     // today — the server's flag-on award path credits nothing for hidden
     // blocks, so the preview must not promise those coins. Flag-off keeps the
     // pre-5.6 behavior (every source counts).
     const legacyVisible = (key: string) =>
       !dayBlocksEnabled || visibleBlocks.some(b => b.legacy_key === key)
-    // Preview only — the server (/api/wallet/award) recomputes from room_checks
-    // with the same threshold rule: max(1, ceil(0.6 * activeTaskCount)).
+    const out: Record<string, number> = {}
+
+    // Preview only — the server recomputes from room_checks with the same
+    // threshold rule: max(1, ceil(0.6 * activeTaskCount)).
     const roomDoneCount = Object.values(roomChecked).filter(Boolean).length
     const roomTaskCount = roomTasks.length
     if (legacyVisible('room') && roomTaskCount > 0 && roomDoneCount >= Math.max(1, Math.ceil(0.6 * roomTaskCount))) {
-      total += settings?.coins_per_room_task ?? 3
+      out.room = settings?.coins_per_room_task ?? 3
     }
+
     if (legacyVisible('activity')) {
+      let a = 0
       checkedActivities.forEach(id => {
-        const act = activities.find(a => a.id === id)
-        if (act) total += act.coins
+        const act = activities.find(x => x.id === id)
+        if (act) a += act.coins
       })
+      if (a) out.activity = a
     }
+
     // Grade coins — only unsaved (new) entries. grade_coin_map[grade] mirrors
-    // the award route's lookup exactly (05.9, D-06/D-08) — no numeric switch,
-    // works for all three scales.
+    // the award route's lookup exactly (05.9, D-06/D-08).
     if (legacyVisible('grade')) {
+      let g = 0
       Object.values(kidGrades).flat().forEach(e => {
         if (e.saved || e.grade === null) return
-        total += gradeCoinMap[e.grade] ?? 0
+        g += gradeCoinMap[e.grade] ?? 0
       })
+      if (g) out.grade = g
     }
+
     // Coach rating coins for attended sections. coins_per_coach_2/_1 are already
     // negative (penalties), so always add — matching the server's award logic.
     if (settings && legacyVisible('sport')) {
+      let sp = 0
       sections.forEach(s => {
         const note = sectionNotes[s.id]
         if (!note?.coachRating) return
         const r = note.coachRating
-        if (r === 5) total += settings.coins_per_coach_5
-        else if (r === 4) total += settings.coins_per_coach_4
-        else if (r === 3) total += settings.coins_per_coach_3 // usually 0
-        else if (r === 2) total += settings.coins_per_coach_2
-        else if (r === 1) total += settings.coins_per_coach_1
+        if (r === 5) sp += settings.coins_per_coach_5
+        else if (r === 4) sp += settings.coins_per_coach_4
+        else if (r === 3) sp += settings.coins_per_coach_3 // usually 0
+        else if (r === 2) sp += settings.coins_per_coach_2
+        else if (r === 1) sp += settings.coins_per_coach_1
       })
+      if (sp) out.sport = sp
     }
-    // Book finished bonus — only counted in the preview when it credits on save.
-    // If parent verification is required, it stays pending, so don't promise coins.
+
+    // Book finished bonus — only counted when it credits on save. If parent
+    // verification is required it stays pending, so don't promise coins.
     if (legacyVisible('book') && readingActive && reading.bookFinished && !requireReadingCheck) {
-      total += (settings as any)?.coins_per_book ?? 20
+      out.book = (settings as any)?.coins_per_book ?? 20
     }
+
     // Custom day-blocks (flag-on only) — flat block.price for each toggled-on
-    // custom block, mirroring resolveBlockPrice's explicit-price case. Preview
-    // only; /api/wallet/award recomputes server-side from day_block_entries.
+    // custom block, mirroring resolveBlockPrice's explicit-price case.
     if (dayBlocksEnabled) {
       visibleBlocks.forEach(b => {
-        if (!b.legacy_key && customBlockDone[b.id] && b.price) total += b.price
+        if (!b.legacy_key && customBlockDone[b.id] && b.price) out[`custom:${b.id}`] = b.price
       })
     }
-    return total
+    return out
   }, [roomTasks, roomChecked, checkedActivities, activities, settings, gradeCoinMap, kidGrades, sections, sectionNotes, reading, readingActive, requireReadingCheck, dayBlocksEnabled, visibleBlocks, customBlockDone])
+
+  const coinsPreview = useMemo(
+    () => Object.values(sectionCoins).reduce((a, b) => a + b, 0),
+    [sectionCoins],
+  )
+
+  // ── Accordion: one section open at a time (the checklist, not a form) ─────
+  const [openId, setOpenId] = useState<string | null>(null)
+  const toggleSection = (id: string) => setOpenId(cur => (cur === id ? null : id))
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   function toggleRoomTask(taskId: string) {
@@ -874,7 +895,7 @@ export function KidDayFillForm({
                           threshold, so this works for five_point/twelve_point/a_f alike. */}
                       {gradeValues.map(g => {
                         const coinVal = gradeCoinMap[g] ?? 0
-                        const c = coinVal > 0 ? T.tealDeep : coinVal < 0 ? paper.dangerText : T.ink3
+                        const c = coinVal > 0 ? T.tealDeep : coinVal < 0 ? K.danger : T.ink3
                         const on = entry.grade === g
                         return (
                           <button key={g} disabled={isLocked} onClick={() => setKidGrades(prev => ({ ...prev, [sub.name]: prev[sub.name].map((e, i) => i === idx ? { ...e, grade: e.grade === g ? null : g } : e) }))} style={{
@@ -903,7 +924,7 @@ export function KidDayFillForm({
                     // Sign-based (grade_coin_map), not a numeric threshold —
                     // works for every scale, not just five_point (05.9, D-06).
                     const coinVal = gradeCoinMap[entry.grade] ?? 0
-                    const c = coinVal > 0 ? T.tealDeep : coinVal < 0 ? paper.dangerText : T.ink3
+                    const c = coinVal > 0 ? T.tealDeep : coinVal < 0 ? K.danger : T.ink3
                     return (
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 999, background: T.lineSoft, marginRight: 6, marginBottom: 4 }}>
                         <span style={{ fontFamily: T.fDisp, fontSize: 13, fontWeight: 900, color: c }}>{entry.grade}</span>
@@ -1078,8 +1099,8 @@ export function KidDayFillForm({
           return (
             <button key={tag.id} disabled={isLocked} onClick={() => toggleTagSelection(tag.id)} style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px', borderRadius: 999,
-              border: on ? `1.5px solid ${paper.accent}` : `1px solid ${T.line}`,
-              background: on ? `${paper.accent}1F` : '#fff', cursor: isLocked ? 'not-allowed' : 'pointer',
+              border: on ? `1.5px solid ${K.sky}` : `1px solid ${T.line}`,
+              background: on ? `${K.sky}1F` : '#fff', cursor: isLocked ? 'not-allowed' : 'pointer',
             }}>
               <Tick on={on} theme="paper" size={16}/>
               <span style={{ fontSize: 14 }}>{tag.icon ?? '⭐'}</span>
@@ -1091,7 +1112,7 @@ export function KidDayFillForm({
               {tag.price !== 0 && (
                 tag.price > 0
                   ? <Amount value={tag.price} theme="paper" money size="sm" signed/>
-                  : <Amount value={tag.price} theme="paper" money={false} color={paper.dangerText} size="sm"/>
+                  : <Amount value={tag.price} theme="paper" money={false} color={K.danger} size="sm"/>
               )}
             </button>
           )
@@ -1100,7 +1121,7 @@ export function KidDayFillForm({
       {selectedTagIds.length > 0 && !isLocked && (
         <button onClick={handleProposeTags} disabled={proposingTags} style={{
           alignSelf: 'flex-start', height: 36, padding: '0 16px', borderRadius: 18, border: 'none',
-          background: paper.accent, color: '#fff', fontFamily: T.fDisp, fontSize: 13, fontWeight: 800,
+          background: K.sky, color: '#fff', fontFamily: T.fDisp, fontSize: 13, fontWeight: 800,
           cursor: proposingTags ? 'not-allowed' : 'pointer', opacity: proposingTags ? 0.7 : 1,
         }}>
           {proposingTags ? t('kidFillForm.saving') : t('kidDay.behavior.proposeBtn')}
@@ -1109,50 +1130,75 @@ export function KidDayFillForm({
     </div>
   )
 
-  // Flag-on: one BlockCard per assembled block, titled/iconed from the
-  // block's own config (parent-editable — Plan 05). Built-in blocks
-  // (legacy_key non-null) reuse the exact bodies above; 'behavior' has no
-  // kid-side widget today (good-behavior has always been a parent-only
-  // assessment — see DailyModal) so it renders nothing here, unchanged from
-  // before this feature existed. Custom blocks render a generic toggle.
+  // Per-section "has any input" — drives the mint status rail + collapsed tick.
+  const done = {
+    room: Object.values(roomChecked).some(Boolean),
+    activity: checkedActivities.size > 0,
+    grade: Object.values(kidGrades).flat().some(e => e.grade !== null),
+    exercise: exercises.length > 0,
+    sport: sections.some(s => s.visit?.attended),
+    book: readingActive && !!reading.bookTitle.trim(),
+    mood: mood !== null,
+    behavior: selectedTagIds.length > 0 || behaviorMarks.some(m => m.status === 'pending'),
+  }
+
+  // Trailing slot for a collapsed row: its coin contribution, or a plain tick.
+  function trailingFor(id: string, isDone: boolean) {
+    const c = sectionCoins[id]
+    if (c) {
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontFamily: K.fNum, fontSize: 13, fontWeight: 800, color: c < 0 ? K.danger : K.mintDeep }}>
+          {c > 0 ? '+' : ''}{c}<Coin size={15} />
+        </span>
+      )
+    }
+    return isDone ? <Tick on theme="paper" size={18} /> : undefined
+  }
+
+  // One CollapsibleRow per section — the checklist row, replacing BlockCard.
+  // A plain function (not a nested component) so `children` — which hold
+  // controlled inputs — never remount on a parent re-render.
+  function renderSection(id: string, title: string, icon: string, isDone: boolean, body: React.ReactNode, key?: string) {
+    return (
+      <CollapsibleRow
+        key={key ?? id}
+        title={title}
+        icon={icon}
+        done={isDone}
+        trailing={trailingFor(id, isDone)}
+        open={openId === id}
+        onToggle={() => toggleSection(id)}
+        disabled={isLocked}
+      >
+        {body}
+      </CollapsibleRow>
+    )
+  }
+
+  // Flag-on: one row per assembled block, titled/iconed from the block's own
+  // config (parent-editable — Plan 05). Built-in blocks (legacy_key non-null)
+  // reuse the exact bodies above; 'behavior' has no kid-side widget today so it
+  // renders nothing. Custom blocks render a generic toggle.
   function renderBuiltinBlock(block: DayBlock) {
     switch (block.legacy_key) {
       case 'room':
-        return (
-          <BlockCard key={block.id} title={block.name} icon={block.icon ?? '🏠'} sub={`${Object.values(roomChecked).filter(Boolean).length}/${roomTasks.length}`}>
-            {roomBody}
-          </BlockCard>
-        )
+        return renderSection('room', block.name, block.icon ?? '🏠', done.room, roomBody, block.id)
       case 'activity':
-        return activities.length > 0 ? (
-          <BlockCard key={block.id} title={block.name} icon={block.icon ?? '⭐'}>
-            {extraActivitiesBody}
-          </BlockCard>
-        ) : null
+        return activities.length > 0
+          ? renderSection('activity', block.name, block.icon ?? '⭐', done.activity, extraActivitiesBody, block.id)
+          : null
       case 'grade':
-        return (dayType === 'school' && subjects.length > 0) ? (
-          <BlockCard key={block.id} title={block.name} icon={block.icon ?? '📚'} sub={t('kidFillForm.schoolSub')}>
-            {gradesBody}
-          </BlockCard>
-        ) : null
+        return (dayType === 'school' && subjects.length > 0)
+          ? renderSection('grade', block.name, block.icon ?? '📚', done.grade, gradesBody, block.id)
+          : null
       case 'exercise':
-        return exerciseTypes.length > 0 ? (
-          <BlockCard key={block.id} title={block.name} icon={block.icon ?? '🤸'} sub={t('kidFillForm.homeSub')}>
-            {exercisesBody}
-          </BlockCard>
-        ) : null
+        return exerciseTypes.length > 0
+          ? renderSection('exercise', block.name, block.icon ?? '🤸', done.exercise, exercisesBody, block.id)
+          : null
       case 'sport':
-        return (
-          <BlockCard key={block.id} title={block.name} icon={block.icon ?? '🏆'} sub={t('kidFillForm.trainerSub')}>
-            {sectionsBody}
-          </BlockCard>
-        )
+        return renderSection('sport', block.name, block.icon ?? '🏆', done.sport, sectionsBody, block.id)
       case 'book':
-        return (
-          <BlockCard key={block.id} title={block.name} icon={block.icon ?? '📖'} sub={t('kidFillForm.everyDay')}>
-            {readingBody}
-          </BlockCard>
-        )
+        return renderSection('book', block.name, block.icon ?? '📖', done.book, readingBody, block.id)
       case 'behavior':
       default:
         return null
@@ -1160,178 +1206,144 @@ export function KidDayFillForm({
   }
 
   function renderCustomBlock(block: DayBlock) {
-    return (
-      <BlockCard key={block.id} title={block.name} icon={block.icon ?? '⭐'}>
-        <CustomBlock
-          block={block}
-          done={customBlockDone[block.id] ?? false}
-          onToggle={toggleCustomBlock}
-          isLocked={isLocked}
-        />
-      </BlockCard>
+    return renderSection(
+      `custom:${block.id}`,
+      block.name,
+      block.icon ?? '⭐',
+      !!customBlockDone[block.id],
+      <CustomBlock
+        block={block}
+        done={customBlockDone[block.id] ?? false}
+        onToggle={toggleCustomBlock}
+        isLocked={isLocked}
+      />,
+      block.id,
     )
   }
 
   // ── Render ───────────────────────────────────────────────────────────────
+  const nothingToday = dayBlocksEnabled && visibleBlocks.length === 0
+
   return (
-    <div style={{ paddingBottom: 130, position: 'relative' }}>
-      {/* CoinFlyup keeps working */}
+    <div style={{ paddingBottom: 120, position: 'relative' }}>
       <CoinFlyup flyups={flyups} />
 
-      {/* ─── Hero: today's estimate (client preview only — never stamped, D-17) ─── */}
-      <div style={{ padding: '16px 16px 0' }}>
+      {/* Live estimate strip — client preview only, never stamped (D-17). */}
+      <div style={{ padding: '12px 16px 0' }}>
         <div style={{
-          background: paper.card,
-          border: `1px solid ${paper.line}`,
-          borderRadius: 16, padding: 16,
-          display: 'flex', alignItems: 'baseline', gap: 8,
+          background: K.mangoSoft, border: `1.5px solid ${K.mango}55`,
+          borderRadius: 14, padding: '10px 14px',
+          display: 'flex', alignItems: 'center', gap: 8,
         }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{
-              fontFamily: base.fontBody, fontSize: 12, fontWeight: 600,
-              color: paper.ink3, letterSpacing: 0.5, textTransform: 'uppercase',
-            }}>{t('kidFillForm.coinsToday')}</div>
-            <div style={{
-              fontFamily: base.fontMono, fontVariantNumeric: 'tabular-nums',
-              fontSize: 24, fontWeight: 800, color: paper.goldText, lineHeight: 1.15, marginTop: 4,
-            }}>
-              ≈ +<AnimatedNum value={coinsPreview} duration={500}/>
-            </div>
-          </div>
+          <span style={{ fontFamily: K.fBody, fontSize: 13, fontWeight: 700, color: K.mangoDeep, flex: 1 }}>
+            {t('kidFillForm.coinsToday')}
+          </span>
+          <span style={{ fontFamily: K.fNum, fontSize: 20, fontWeight: 800, color: K.mangoDeep, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            ≈ +<AnimatedNum value={coinsPreview} duration={500} /><Coin size={17} />
+          </span>
           {isLocked && (
-            <div style={{
-              padding: '4px 10px', borderRadius: 999, background: paper.lineSoft,
-              color: paper.ink2, fontFamily: base.fontBody, fontSize: 11, fontWeight: 600,
-            }}>{t('kidFillForm.locked')}</div>
+            <span style={{
+              padding: '3px 9px', borderRadius: 999, background: '#fff',
+              color: K.ink2, fontFamily: K.fBody, fontSize: 11, fontWeight: 700,
+            }}>{t('kidFillForm.locked')}</span>
           )}
         </div>
       </div>
 
-      {/* ─── Mood (always shown — not part of the day-blocks model) ─── */}
-      <BlockCard title={t('kidFillForm.moodSection')} icon="✨">
-        <div style={{ display: 'flex', gap: 6, justifyContent: 'space-between' }}>
-          {MOOD_OPTIONS.map(m => {
-            const on = mood === m.key
-            return (
-              <button key={m.key} onClick={() => !isLocked && setMood(prev => prev === m.key ? null : m.key)} disabled={isLocked} style={{
-                flex: 1, minHeight: 64, borderRadius: 12, cursor: isLocked ? 'not-allowed' : 'pointer',
-                background: paper.card,
-                border: on ? `1.5px solid ${paper.accent}` : `1px solid ${paper.line}`,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
-              }}>
-                <div style={{ fontSize: 24 }}>{m.emoji}</div>
-                <div style={{ fontFamily: base.fontBody, fontSize: 10, fontWeight: 600, color: on ? paper.accent : paper.ink3 }}>{m.label}</div>
-              </button>
-            )
-          })}
-        </div>
-      </BlockCard>
+      {/* Checklist — one collapsible row per section, collapsed by default. */}
+      <div style={{ padding: '12px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {behaviorTags.length > 0 &&
+          renderSection('behavior', t('kidFillForm.behaviorSection'), '🌟', done.behavior, behaviorBody)}
 
-      {/* ─── Behavior tags (05.9) — always shown, like Mood: proposing a
-           tag is not a day-blocks credit source (D-09), so it isn't gated
-           by dayBlocksEnabled/visibleBlocks. Hidden entirely when the family
-           has no active tags (should not happen — the default "Good behavior"
-           tag is seeded for every family, plan 01/03). ─── */}
-      {behaviorTags.length > 0 && (
-        <BlockCard title={t('kidFillForm.behaviorSection')} icon="🌟">
-          {behaviorBody}
-        </BlockCard>
-      )}
-
-      {dayBlocksEnabled ? (
-        // WR-02: flag-on is AUTHORITATIVE — even with zero visible blocks the
-        // legacy form must NOT render, because the server's flag-on award path
-        // (/api/wallet/award) credits nothing for hidden blocks; the legacy
-        // form would promise coins that never arrive. Matches DailyModal,
-        // which renders no block sections in the same state.
-        visibleBlocks.length > 0 ? (
-          <>
-            {visibleBlocks.map(block => block.legacy_key ? renderBuiltinBlock(block) : renderCustomBlock(block))}
-          </>
-        ) : (
-          <BlockCard title={t('kidFillForm.nothingTodaySection')} icon="🌤️">
-            <div style={{ textAlign: 'center', padding: '12px 0', fontFamily: base.fontBody, fontSize: 14, fontWeight: 500, color: paper.ink3 }}>
-              {t('kidFillForm.nothingToday')}
-            </div>
-          </BlockCard>
-        )
-      ) : (
-        <>
-      {/* ─── Room checklist (pre-5.6 parity, CR-01: rendered here since
-           flag-on covers it via renderBuiltinBlock('room')) ─── */}
-      <BlockCard title={t('kidFillForm.roomSection')} icon="🏠" sub={`${Object.values(roomChecked).filter(Boolean).length}/${roomTasks.length}`}>
-        {roomBody}
-      </BlockCard>
-
-      {/* ─── Extra activities (same renderer as flag-on — 05.7-04 dedupe) ─── */}
-      {activities.length > 0 && (
-        <BlockCard title={t('kidFillForm.extraSection')} icon="⭐">
-          {extraActivitiesBody}
-        </BlockCard>
-      )}
-
-      {/* ─── Grades (same body as flag-on — 05.7-04 dedupe) ─── */}
-      {dayType === 'school' && subjects.length > 0 && (
-        <BlockCard title={t('kidFillForm.gradesSection')} icon="📚" sub={t('kidFillForm.schoolSub')}>
-          {gradesBody}
-        </BlockCard>
-      )}
-
-      {/* ─── Exercises (same body as flag-on — 05.7-04 dedupe) ─── */}
-      {exerciseTypes.length > 0 && (
-        <BlockCard title={t('kidFillForm.exercisesSection')} icon="🤸" sub={t('kidFillForm.homeSub')}>
-          {exercisesBody}
-        </BlockCard>
-      )}
-
-      {/* ─── Clubs / Sections ─── */}
-      <BlockCard title={t('kidFillForm.sectionsSection')} icon="🏆" sub={t('kidFillForm.trainerSub')}>
-        {sectionsBody}
-      </BlockCard>
-
-      {/* ─── Reading (same renderer as flag-on — 05.7-04 dedupe) ─── */}
-      <BlockCard title={t('kidFillForm.readingSection')} icon="📖" sub={t('kidFillForm.everyDay')}>
-        {readingBody}
-      </BlockCard>
-        </>
-      )}
-
-      {/* ─── Save button (indigo primary CTA — accent = interactive) ─── */}
-      <div style={{ padding: '24px 16px 0' }}>
-        <div style={{ textAlign: 'center', fontFamily: base.fontBody, fontSize: 12, fontWeight: 500, color: paper.ink3, marginBottom: 8 }}>
-          {t('kidFillForm.trustNote')}
-        </div>
-        {saveError && (
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
-            padding: '10px 14px', borderRadius: 12, marginBottom: 10,
-            background: `${paper.dangerText}14`, border: `1.5px solid ${paper.dangerText}40`,
-          }}>
-            <span style={{ fontFamily: base.fontBody, fontSize: 13, fontWeight: 600, color: paper.dangerText }}>
-              {t('kidDay.saveError')}
-            </span>
-            <button onClick={handleRetryAward} disabled={saving} style={{
-              flexShrink: 0, minHeight: 32, padding: '0 14px', borderRadius: 10, border: 'none',
-              cursor: saving ? 'not-allowed' : 'pointer', background: paper.dangerText, color: '#fff',
-              fontFamily: base.fontBody, fontSize: 13, fontWeight: 700, opacity: saving ? 0.7 : 1,
+        {dayBlocksEnabled ? (
+          // WR-02: flag-on is AUTHORITATIVE — with zero visible blocks the legacy
+          // sections must NOT render (the server credits nothing for hidden blocks).
+          nothingToday ? (
+            <div style={{
+              background: K.card, border: `1.5px solid ${K.line}`, borderRadius: 18,
+              padding: '20px 16px', textAlign: 'center',
+              fontFamily: K.fBody, fontSize: 14, fontWeight: 600, color: K.ink3,
             }}>
-              {t('kidDay.retryBtn')}
-            </button>
-          </div>
+              🌤️ {t('kidFillForm.nothingToday')}
+            </div>
+          ) : (
+            visibleBlocks.map(block => block.legacy_key ? renderBuiltinBlock(block) : renderCustomBlock(block))
+          )
+        ) : (
+          <>
+            {renderSection('room', t('kidFillForm.roomSection'), '🏠', done.room, roomBody)}
+            {activities.length > 0 &&
+              renderSection('activity', t('kidFillForm.extraSection'), '⭐', done.activity, extraActivitiesBody)}
+            {dayType === 'school' && subjects.length > 0 &&
+              renderSection('grade', t('kidFillForm.gradesSection'), '📚', done.grade, gradesBody)}
+            {exerciseTypes.length > 0 &&
+              renderSection('exercise', t('kidFillForm.exercisesSection'), '🤸', done.exercise, exercisesBody)}
+            {renderSection('sport', t('kidFillForm.sectionsSection'), '🏆', done.sport, sectionsBody)}
+            {renderSection('book', t('kidFillForm.readingSection'), '📖', done.book, readingBody)}
+          </>
         )}
+
+        {/* Mood — always shown, not a day-blocks credit source. */}
+        {renderSection('mood', t('kidFillForm.moodSection'), '✨', done.mood, (
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'space-between' }}>
+            {MOOD_OPTIONS.map(m => {
+              const on = mood === m.key
+              return (
+                <button key={m.key} onClick={() => !isLocked && setMood(prev => prev === m.key ? null : m.key)} disabled={isLocked} style={{
+                  flex: 1, minHeight: 64, borderRadius: 12, cursor: isLocked ? 'not-allowed' : 'pointer',
+                  background: on ? K.skySoft : K.card,
+                  border: on ? `1.5px solid ${K.sky}` : `1px solid ${K.line}`,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+                }}>
+                  <div style={{ fontSize: 24 }}>{m.emoji}</div>
+                  <div style={{ fontFamily: K.fBody, fontSize: 10, fontWeight: 700, color: on ? K.skyDeep : K.ink3 }}>{m.label}</div>
+                </button>
+              )
+            })}
+          </div>
+        ))}
+      </div>
+
+      {saveError && (
+        <div style={{
+          margin: '14px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+          padding: '10px 14px', borderRadius: 12,
+          background: `${K.danger}14`, border: `1.5px solid ${K.danger}40`,
+        }}>
+          <span style={{ fontFamily: K.fBody, fontSize: 13, fontWeight: 700, color: K.danger }}>
+            {t('kidDay.saveError')}
+          </span>
+          <button onClick={handleRetryAward} disabled={saving} style={{
+            flexShrink: 0, minHeight: 32, padding: '0 14px', borderRadius: 10, border: 'none',
+            cursor: saving ? 'not-allowed' : 'pointer', background: K.danger, color: '#fff',
+            fontFamily: K.fBody, fontSize: 13, fontWeight: 700, opacity: saving ? 0.7 : 1,
+          }}>
+            {t('kidDay.retryBtn')}
+          </button>
+        </div>
+      )}
+
+      {/* Pinned primary action — hovers above the bottom nav while scrolling. */}
+      <div style={{
+        position: 'sticky', bottom: 76, zIndex: 20, marginTop: 18, padding: '10px 16px 0',
+      }}>
         {isLocked ? (
-          <div style={{ textAlign: 'center', fontFamily: base.fontBody, fontSize: 14, fontWeight: 500, color: paper.ink3, padding: '16px 0' }}>{t('kidFillForm.dayLocked')}</div>
+          <div style={{
+            textAlign: 'center', fontFamily: K.fBody, fontSize: 14, fontWeight: 600, color: K.ink3,
+            background: K.card, border: `1.5px solid ${K.line}`, borderRadius: 16, padding: '16px 0',
+          }}>{t('kidFillForm.dayLocked')}</div>
         ) : (
           <button onClick={handleSubmit} disabled={saving} style={{
-            width: '100%', minHeight: 52, borderRadius: 14, border: 'none', cursor: saving ? 'not-allowed' : 'pointer',
-            background: paper.accent,
-            color: '#fff', fontFamily: base.fontBody, fontSize: 16, fontWeight: 700,
+            width: '100%', minHeight: 56, borderRadius: 18, border: 'none',
+            cursor: saving ? 'not-allowed' : 'pointer', background: K.sky, color: '#fff',
+            fontFamily: K.fDisp, fontSize: 17, fontWeight: 800,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            opacity: saving ? 0.7 : 1,
+            boxShadow: `0 6px 0 ${K.skyDeep}, 0 10px 24px ${K.skyDeep}44`,
+            opacity: saving ? 0.75 : 1,
           }}>
             {saving ? (
               <>
-                <span style={{ display: 'inline-block', width: 20, height: 20, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}/>
+                <span style={{ display: 'inline-block', width: 20, height: 20, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                 {t('kidFillForm.saving')}
               </>
             ) : (
@@ -1339,6 +1351,9 @@ export function KidDayFillForm({
             )}
           </button>
         )}
+        <div style={{ textAlign: 'center', fontFamily: K.fBody, fontSize: 12, fontWeight: 500, color: K.ink3, margin: '8px 0 0' }}>
+          {t('kidFillForm.trustNote')}
+        </div>
       </div>
     </div>
   )

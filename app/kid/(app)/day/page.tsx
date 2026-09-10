@@ -15,8 +15,11 @@ import { getFamilyDayBlocksEnabled, getDayBlocks } from '@/lib/repositories/day-
 import type { DayBlock } from '@/lib/models/day-block.types'
 import type { Wallet } from '@/lib/models/wallet.types'
 import { T } from '@/components/kid/design/tokens'
-import { Avatar, Coin, AnimatedNum, StreakFlame, XPBar } from '@/components/kid/design/atoms'
+import { K } from '@/components/kid/design/kidTheme'
+import { Avatar, Coin, AnimatedNum, StreakFlame, XPBar, BoostMeter } from '@/components/kid/design/atoms'
 import { Stamp, useCountUp, LedgerRow } from '@/components/design/atoms'
+import { getBoostProgress, type BoostProgress } from '@/lib/kid/boost'
+import { resolveAvatar } from '@/lib/kid/avatar'
 import { levelForXp } from '@/lib/kid/level'
 import { triggerConfetti } from '@/utils/confetti'
 import ScreenHeader from '@/components/kid/design/ScreenHeader'
@@ -74,6 +77,7 @@ export default function KidDayPage() {
   const [selectedDate, setSelectedDate] = useState(() => localDateString())
   const [busyDate, setBusyDate] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [boost, setBoost] = useState<BoostProgress | null>(null)
   const isDesktop = useDesktop()
   // Header balance count-up (05.7-11, D-17): drives ONLY the ScreenHeader
   // balance to the new server-confirmed total; never fed a client estimate.
@@ -101,17 +105,19 @@ export default function KidDayPage() {
       if (!childData) { setLoading(false); return }
 
       const week = getWeekRange(today)
-      const [dayData, walletData, streaksData, weekDays, bfReqs] = await Promise.all([
+      const [dayData, walletData, streaksData, weekDays, bfReqs, boostData] = await Promise.all([
         api.getDay(resolvedId, selectedDate),
         getWallet(resolvedId),
         api.getStreaks(resolvedId),
         api.getDaysInRange(resolvedId, week.start, week.end).catch(() => [] as string[]),
         getChildBackfillRequestsInRange(resolvedId, week.start, week.end).catch(() => []),
+        getBoostProgress(resolvedId).catch(() => null),
       ])
 
       setChild(childData)
       setTodayDay(dayData)
       setWallet(walletData)
+      setBoost(boostData)
       setStreaks((streaksData ?? []).filter((s: any) => s.current_count > 0))
       setWeekFilled(new Set(weekDays))
       setWeekRequests(
@@ -256,7 +262,7 @@ export default function KidDayPage() {
         }}>
           {/* Avatar + greeting */}
           <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-            <Avatar size={52} skin="#F5C9A1" hair="#2B1810" shirt={T.coral}/>
+            <Avatar size={52} {...resolveAvatar(child)}/>
             <div>
               <div style={{ fontFamily: T.fDisp, fontSize: 16, fontWeight: 900, color: T.ink }}>
                 {t('kidDayPage.greeting', { name: child?.name ?? '…' })}
@@ -325,6 +331,9 @@ export default function KidDayPage() {
             <XPBar xp={xpInLevel} max={1000} level={level} compact/>
           </div>
 
+          {/* Weekly boost meter */}
+          {boost && <BoostMeter earned={boost.week.total} max={boost.week.max} label={boost.week.nextLabel}/>}
+
           {/* Day-complete celebration (desktop only, when not in form mode) */}
           {!showForm && (
             <div style={{
@@ -381,15 +390,20 @@ export default function KidDayPage() {
           )}
         </div>
       ) : (
-        /* Mobile: unified «сберкнижка» header (D-13) with logout (D-03) + XP strip */
+        /* Mobile: header + XP/streak strip + boost meter + week strip */
         <div>
-          <ScreenHeader title={t('kidHeader.day')} coins={headerCoins} name={child?.name ?? ''} showLogout/>
+          <ScreenHeader title={t('kidHeader.day')} coins={headerCoins} name={child?.name ?? ''} child={child} showLogout/>
           <div style={{ padding: '0 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <XPBar xp={xpInLevel} max={1000} level={level} compact/>
             </div>
             <StreakFlame days={streakDays} label={t('common.days')}/>
           </div>
+          {boost && (
+            <div style={{ padding: '10px 16px 0' }}>
+              <BoostMeter earned={boost.week.total} max={boost.week.max} label={boost.week.nextLabel} compact/>
+            </div>
+          )}
           <WeekStrip {...weekStripProps}/>
         </div>
       )}
@@ -399,7 +413,7 @@ export default function KidDayPage() {
         {/* Desktop: unified «сберкнижка» header (D-13) with logout (D-03) —
             the 4.5 sticky sidebar keeps the stats (D-15) */}
         {isDesktop && (
-          <ScreenHeader title={t('kidHeader.day')} coins={headerCoins} name={child?.name ?? ''} showLogout/>
+          <ScreenHeader title={t('kidHeader.day')} coins={headerCoins} name={child?.name ?? ''} child={child} showLogout/>
         )}
         {activeMemberId && <KidChallenges childId={activeMemberId}/>}
 

@@ -10,7 +10,7 @@ import { localDateString, getWeekRange } from '@/utils/helpers'
 import type { Wallet, WalletTransaction } from '@/lib/models/wallet.types'
 import type { Child } from '@/lib/models/child.types'
 import { T } from '@/components/kid/design/tokens'
-import { base, paper } from '@/lib/design/tokens'
+import { base, paper } from '@/components/kid/design/kidTheme'
 import { LedgerRow, Amount, useCountUp } from '@/components/design/atoms'
 import ScreenHeader from '@/components/kid/design/ScreenHeader'
 import { useDesktop } from '@/lib/hooks/useDesktop'
@@ -120,7 +120,7 @@ export default function KidWalletPage() {
 
   return (
     <div style={isDesktop ? {} : { paddingBottom: 110, maxWidth: 500, margin: '0 auto' }}>
-      <ScreenHeader title={t('kidHeader.wallet')} coins={coins} name={child?.name ?? ''}/>
+      <ScreenHeader title={t('kidHeader.wallet')} coins={coins} name={child?.name ?? ''} child={child}/>
 
       {/* ═══ Hero сберкнижка balance (D-16) ═══════════════════════════════════ */}
       <div style={{ padding: '4px 16px 0' }}>

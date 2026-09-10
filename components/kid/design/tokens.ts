@@ -1,35 +1,45 @@
-import { base, paper } from '@/lib/design/tokens'
+// Legacy `T` shape for kid components — now sourced from the new kid palette
+// (components/kid/design/kidTheme.ts), NOT the parent "family bank" tokens.
+// Kept so not-yet-migrated consumers keep compiling during the redesign sweep;
+// new code should import `K` from './kidTheme' directly.
+
+import { K } from './kidTheme'
+
+export { K } from './kidTheme'
 
 export const T = {
-  // Brand
-  coral:     base.indigo,
-  coralDeep: base.indigoDeep,
-  coralSoft: base.indigoSoft,
-  teal:      base.success,
-  tealDeep:  base.successDeep,
-  tealSoft:  '#D7EFE5',
-  sun:       base.gold,
-  sunDeep:   base.goldDeep,
-  sunSoft:   base.goldSoft,
-  // Support
-  plum:     base.indigo,
-  plumSoft: base.indigoSoft,
-  pink:     '#C48CA8',
-  pinkSoft: '#F0E2EA',
-  mint:     '#9CC7B3',
+  // Brand / primary action (was indigo → now sky)
+  coral:     K.sky,
+  coralDeep: K.skyDeep,
+  coralSoft: K.skySoft,
+  // "done / earned" (was teal → now mint)
+  teal:      K.mint,
+  tealDeep:  K.mintDeep,
+  tealSoft:  K.mintSoft,
+  // Coins / heat (was sun → now mango)
+  sun:       K.mango,
+  sunDeep:   K.mangoDeep,
+  sunSoft:   K.mangoSoft,
+  // Level / XP (was plum → now grape)
+  plum:     K.grape,
+  plumSoft: K.grapeSoft,
+  // Highlight (was pink → now berry)
+  pink:     K.berry,
+  pinkSoft: K.berrySoft,
+  mint:     K.mint,
   // Neutrals
-  ink:      paper.ink,
-  ink2:     paper.ink2,
-  ink3:     paper.ink3,
-  line:     paper.line,
-  lineSoft: paper.lineSoft,
-  bg:       paper.bg,
-  card:     paper.card,
+  ink:      K.ink,
+  ink2:     K.ink2,
+  ink3:     K.ink3,
+  line:     K.line,
+  lineSoft: K.lineSoft,
+  bg:       K.cream,
+  card:     K.card,
   // Status
-  success: paper.success,
-  warn:    base.warning,
+  success: K.success,
+  warn:    K.warn,
   // Fonts
-  fDisp: base.fontDisplay,
-  fBody: base.fontBody,
-  fNum:  base.fontMono,
+  fDisp: K.fDisp,
+  fBody: K.fBody,
+  fNum:  K.fNum,
 } as const

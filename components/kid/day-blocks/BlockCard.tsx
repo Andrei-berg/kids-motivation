@@ -6,7 +6,7 @@
 // title (18px/700 Bitter). All colors come from lib/design/tokens.
 
 import React from 'react'
-import { base, paper } from '@/lib/design/tokens'
+import { base, paper } from '@/components/kid/design/kidTheme'
 
 interface BlockCardProps {
   title: string

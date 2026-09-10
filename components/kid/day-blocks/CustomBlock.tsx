@@ -10,7 +10,7 @@
 import React from 'react'
 import type { DayBlock } from '@/lib/models/day-block.types'
 import { Tick, LedgerRow } from '@/components/design/atoms'
-import { base, paper } from '@/lib/design/tokens'
+import { base, paper } from '@/components/kid/design/kidTheme'
 
 interface CustomBlockProps {
   block: DayBlock

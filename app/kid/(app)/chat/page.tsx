@@ -7,7 +7,7 @@ import ChatThread from '@/components/chat/ChatThread'
 import ScreenHeader from '@/components/kid/design/ScreenHeader'
 import { markChatRead, subscribeToMessages } from '@/lib/repositories/chat.repo'
 import { getWallet } from '@/lib/repositories/wallet.repo'
-import { base, paper } from '@/lib/design/tokens'
+import { base, paper } from '@/components/kid/design/kidTheme'
 import { useT } from '@/lib/i18n'
 
 export default function KidChatPage() {

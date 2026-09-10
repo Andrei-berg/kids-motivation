@@ -188,7 +188,10 @@
     "soloCompareHeading": "Ты против себя",
     "soloCompareEmpty": "На следующей неделе здесь появится сравнение с этой неделей.",
     "soloThisWeek": "Эта неделя",
-    "soloLastWeek": "Прошлая неделя"
+    "soloLastWeek": "Прошлая неделя",
+    "boostHeading": "Бусты",
+    "boostThisWeek": "Буст недели",
+    "boostClaimed": "Получено"
   },
   "kidWallet": {
     "title": "Кошелёк",
@@ -427,7 +430,8 @@
     "feedbackPlaceholder": "Отзыв тренера",
     "coachRatingLabel": "Оценка тренера:",
     "roomPhotoAlt": "Фото комнаты",
-    "pickDate": "Выбрать дату"
+    "pickDate": "Выбрать дату",
+    "coinsToday": "Монеты за день"
   },
   "coachRating": {
     "title": "Оценка тренера",
@@ -901,7 +905,18 @@
       "streakStudyDays": "Учебная серия — дней до бонуса",
       "streakStudyBonus": "Учебная серия — бонус",
       "streakSportDays": "Спортивная серия — дней до бонуса",
-      "streakSportBonus": "Спортивная серия — бонус"
+      "streakSportBonus": "Спортивная серия — бонус",
+      "boostGroup": "Бусты",
+      "boostGradesT1": "Буст: 5 пятёрок за неделю",
+      "boostGradesT2": "Буст: 10 пятёрок за неделю",
+      "boostGradesT3": "Буст: вся неделя на отлично",
+      "boostFullWeek": "Буст: заполнены все 7 дней",
+      "boostStreaks2": "Буст: 2 серии на максимуме",
+      "boostStreaks3": "Буст: 3 серии на максимуме",
+      "boostMilestone7d": "Веха: 7 дней подряд",
+      "boostMilestone30d": "Веха: 30 заполненных дней",
+      "boostMilestone100d": "Веха: 100 заполненных дней",
+      "boostMilestoneStreak30": "Веха: серия 30 дней"
     },
     "notificationSettings": {
       "title": "Уведомления",
@@ -1928,5 +1943,47 @@
     "requestPast": "Запросить заполнение",
     "hintOpen": "Нажми на прошлый день, чтобы заполнить его.",
     "hintRequest": "Нажми на прошлый день, чтобы попросить родителя разрешить его заполнить."
+  },
+  "kidProfile": {
+    "open": "Открыть профиль",
+    "levelLine": "Уровень {{level}}",
+    "changeAvatar": "Сменить аватар",
+    "streaksHeading": "Твои серии",
+    "streakRoom": "Комната",
+    "streakStudy": "Учёба",
+    "streakSport": "Спорт",
+    "streakBehavior": "Поведение",
+    "streakGeneric": "Серия",
+    "xpTotal": "Всего XP",
+    "goalsDone": "Целей достигнуто",
+    "pickAvatar": "Выбери аватар",
+    "pickAvatarHint": "Эмодзи или свой персонаж",
+    "tabEmoji": "Эмодзи",
+    "tabCharacter": "Персонаж",
+    "background": "Фон",
+    "skin": "Кожа",
+    "hair": "Причёска",
+    "hairColor": "Цвет волос",
+    "shirt": "Футболка",
+    "accessory": "Аксессуар",
+    "hairShape": {
+      "short": "Обычные",
+      "buzz": "Ёжик",
+      "curly": "Кудри",
+      "long": "Длинные",
+      "bun": "Пучок",
+      "mohawk": "Ирокез"
+    },
+    "save": "Сохранить",
+    "saving": "Сохраняем…",
+    "avatarSaveError": "Не удалось сохранить аватар"
+  },
+  "kidBoost": {
+    "milestone": {
+      "filled7": "7 дней подряд",
+      "filled30": "30 заполненных дней",
+      "filled100": "100 заполненных дней",
+      "streak30": "Серия 30 дней"
+    }
   }
 }

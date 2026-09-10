@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAppStore } from '@/lib/store'
-import { paper, base } from '@/lib/design/tokens'
+import { K } from '@/components/kid/design/kidTheme'
 import { useT } from '@/lib/i18n'
 import { useDesktop } from '@/lib/hooks/useDesktop'
 import { getChatUnreadCount } from '@/lib/repositories/chat.repo'
@@ -19,8 +19,8 @@ const TAB_DEFS = [
 ]
 
 function TabIcon({ name, active }: { name: string; active: boolean }) {
-  const stroke = active ? paper.accent : paper.ink3
-  const fill = active ? paper.accent + '22' : 'none'
+  const stroke = active ? K.sky : K.ink3
+  const fill = active ? K.sky + '22' : 'none'
   const w = 26, h = 26
   if (name === 'home') return (
     <svg width={w} height={h} viewBox="0 0 24 24" fill="none">
@@ -65,8 +65,8 @@ function ChatUnreadBadge({ count, ariaLabel }: { count: number; ariaLabel: strin
       style={{
         position: 'absolute', top: -2, right: -8,
         minWidth: 16, height: 16, padding: '0 4px', boxSizing: 'border-box',
-        borderRadius: 999, background: paper.danger, color: '#fff',
-        fontFamily: base.fontBody, fontSize: 10, fontWeight: 700,
+        borderRadius: 999, background: K.danger, color: '#fff',
+        fontFamily: K.fBody, fontSize: 10, fontWeight: 700,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         lineHeight: 1,
       }}
@@ -123,14 +123,14 @@ export default function KidNav() {
     return (
       <nav
         className="fixed top-0 left-0 bottom-0 z-50 flex flex-col items-center py-4 gap-2"
-        style={{ width: 64, background: paper.card, borderRight: `1px solid ${paper.line}` }}
+        style={{ width: 64, background: K.card, borderRight: `1px solid ${K.line}` }}
       >
         {TABS.map(tab => {
           const isActive = pathname === tab.href || pathname.startsWith(tab.href + '/')
           return (
             <Link key={tab.href} href={tab.href} title={tab.label}
               className="flex items-center justify-center w-12 h-12 rounded-2xl transition-all"
-              style={{ background: isActive ? paper.accent + '18' : 'transparent', position: 'relative' }}>
+              style={{ background: isActive ? K.sky + '18' : 'transparent', position: 'relative' }}>
               <TabIcon name={tab.icon} active={isActive}/>
               {tab.href === '/kid/chat' && <ChatUnreadBadge count={unreadCount} ariaLabel={unreadAria}/>}
             </Link>
@@ -139,7 +139,7 @@ export default function KidNav() {
         <div className="flex-1"/>
         <button onClick={handleLogout} title={t('kidNav.logout')} aria-label={t('kidNav.logout')}
           className="flex items-center justify-center w-10 h-10 rounded-2xl transition-all"
-          style={{ color: paper.accent }}>
+          style={{ color: K.sky }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
@@ -152,8 +152,8 @@ export default function KidNav() {
     <nav
       className="fixed bottom-0 left-0 right-0 z-50"
       style={{
-        background: paper.card,
-        borderTop: `1px solid ${paper.line}`,
+        background: K.card,
+        borderTop: `1px solid ${K.line}`,
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       }}
       aria-label={t('nav.navigation')}
@@ -171,8 +171,8 @@ export default function KidNav() {
                 {tab.href === '/kid/chat' && <ChatUnreadBadge count={unreadCount} ariaLabel={unreadAria}/>}
               </span>
               <span style={{
-                fontFamily: base.fontBody, fontSize: 10, fontWeight: isActive ? 700 : 500,
-                color: isActive ? paper.accent : paper.ink3, letterSpacing: 0.2,
+                fontFamily: K.fBody, fontSize: 10, fontWeight: isActive ? 700 : 500,
+                color: isActive ? K.sky : K.ink3, letterSpacing: 0.2,
               }}>{tab.label}</span>
             </Link>
           )
