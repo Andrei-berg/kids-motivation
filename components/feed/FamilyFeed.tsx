@@ -220,6 +220,7 @@ export default function FamilyFeed({ variant, hideHeader = false }: { variant: V
   }, [groups, children])
 
   const [storySeen, setStorySeen] = useState<Record<string, boolean>>({})
+  const [openStory, setOpenStory] = useState<{ child: Child; event: FeedEvent } | null>(null)
 
   useEffect(() => {
     if (!familyId) return
@@ -229,6 +230,13 @@ export default function FamilyFeed({ variant, hideHeader = false }: { variant: V
     }
     setStorySeen(next)
   }, [familyId, todaysHighlights])
+
+  function openStoryMoment(h: { child: Child; event: FeedEvent }) {
+    setOpenStory(h)
+    // D-07: seen is marked on open, not on close.
+    if (familyId) markStorySeen(familyId, h.child.id, localDateString())
+    setStorySeen(prev => ({ ...prev, [h.child.id]: true }))
+  }
 
   return (
     <div style={{ background: C.ground, minHeight: '100%', fontFamily: C.fBody }}>
@@ -269,7 +277,7 @@ export default function FamilyFeed({ variant, hideHeader = false }: { variant: V
           </div>
         )}
 
-        <StoryReel highlights={todaysHighlights} storySeen={storySeen} C={C} accentFor={accentFor} onOpen={() => {}} />
+        <StoryReel highlights={todaysHighlights} storySeen={storySeen} C={C} accentFor={accentFor} onOpen={openStoryMoment} />
 
         {loading ? (
           <div style={{ padding: '40px 0', textAlign: 'center', color: C.ink3, fontSize: 14 }}>Загрузка…</div>
@@ -321,6 +329,10 @@ export default function FamilyFeed({ variant, hideHeader = false }: { variant: V
           </div>
         )}
       </div>
+
+      {openStory && (
+        <StoryMomentModal event={openStory.event} child={openStory.child} C={C} onClose={() => setOpenStory(null)} />
+      )}
     </div>
   )
 }
@@ -492,6 +504,80 @@ function StoryBubble({
         {child.name}
       </div>
     </button>
+  )
+}
+
+// ─── Story moment modal ──────────────────────────────────────────────────────
+// Full-bleed celebratory overlay a story bubble opens into (D-07). Reuses
+// ProfileSheet's fixed-inset dialog/backdrop shape, centered instead of a
+// bottom sheet. Renders only icon/title/body enlarged — no amount, no 🪙,
+// ever (D-01); the highlight's coin figure must never be referenced here.
+
+function StoryMomentModal({
+  event, child, C, onClose,
+}: {
+  event: FeedEvent
+  child: Child
+  C: ReturnType<typeof palette>
+  onClose: () => void
+}) {
+  useEffect(() => {
+    function onKeyDown(ev: KeyboardEvent) {
+      if (ev.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onClose])
+
+  const rail = RAIL_COLOR_MAP[event.kind] ?? K.grape
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(20,20,30,0.55)', zIndex: 260,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: '100%', maxWidth: 340, borderRadius: 22, padding: '26px 22px',
+          position: 'relative', color: '#fff', textAlign: 'center',
+          background: `linear-gradient(135deg, ${rail}, ${K.berry})`,
+        }}
+      >
+        <button
+          type="button"
+          aria-label="Закрыть"
+          onClick={onClose}
+          style={{
+            position: 'absolute', top: 6, right: 6, width: 44, height: 44,
+            background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <span style={{
+            width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.2)',
+            color: '#fff', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            ×
+          </span>
+        </button>
+
+        <div style={{ fontSize: 44 }}>{event.icon || child.emoji || '⭐'}</div>
+        <div style={{ fontFamily: C.fHead, fontSize: 22, fontWeight: 700, lineHeight: 1.15, margin: '10px 0 4px' }}>
+          {event.title}
+        </div>
+        {event.body && (
+          <div style={{ fontFamily: C.fBody, fontSize: 14, fontWeight: 400, opacity: 0.92, whiteSpace: 'pre-wrap' }}>
+            {event.body}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
