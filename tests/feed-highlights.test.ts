@@ -99,3 +99,26 @@ describe('RAIL_COLOR_MAP', () => {
     expect(RAIL_COLOR_MAP.note).toBe('#E9ECF3')
   })
 })
+
+describe('FEED-04 content rule', () => {
+  // Regression guard: the key set below is the exact, exhaustive set of
+  // non-punitive kinds allowed a rail color. If a future change adds a
+  // 'penalty'/'correction'/negative-behavior-tag key to RAIL_COLOR_MAP, this
+  // assertion fails the suite instead of silently shipping a punitive card
+  // to a kid (FEED-04 / D-03 — see the header comment in FamilyFeed.tsx and
+  // the family_events.kind CHECK constraint, the real enforcement point).
+  it('RAIL_COLOR_MAP key set is exactly the 10 locked non-punitive kinds', () => {
+    const expectedKeys: FeedEventKind[] = [
+      'badge', 'boost', 'day_filled', 'level_up', 'medal',
+      'note', 'purchase', 'reading_approved', 'reward_approved', 'streak',
+    ]
+    expect(Object.keys(RAIL_COLOR_MAP).sort()).toEqual([...expectedKeys].sort())
+  })
+
+  it('RANK_ORDER has exactly 8 entries, all present in RAIL_COLOR_MAP', () => {
+    expect(RANK_ORDER.length).toBe(8)
+    for (const kind of RANK_ORDER) {
+      expect(RAIL_COLOR_MAP[kind]).toBeTruthy()
+    }
+  })
+})

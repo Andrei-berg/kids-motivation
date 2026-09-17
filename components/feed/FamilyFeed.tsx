@@ -8,6 +8,13 @@
 //   parent  → daylight theme, composer on
 //   family  → daylight theme, composer on (extended members)
 //   kid     → kid theme, composer off (read + react + comment only)
+//
+// FEED-04 / D-03 — this feed renders only positive recognition events; no
+// penalty, correction, or negative behavior-tag kind has an emitter anywhere
+// in the codebase. Enforcement lives at the family_events.kind CHECK
+// constraint in supabase/migrations/2026-09-11-family-feed.sql, not in this
+// component — any future emitter for punitive content must target the
+// private Wallet/audit trail, never family_events.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -20,6 +27,7 @@ import {
 import { postFeedNote } from '@/app/actions/post-feed-note'
 import { paper as daylightPaper, base as familyBase } from '@/lib/design/tokens'
 import { K } from '@/components/kid/design/kidTheme'
+import { RAIL_COLOR_MAP } from '@/lib/kid/feed-highlights'
 import type { FeedEvent, FeedReaction, FeedComment } from '@/lib/models/feed.types'
 import type { Child } from '@/lib/models/child.types'
 
@@ -301,11 +309,11 @@ function EventRow({
   const summary = summarizeReactions(reactions, me?.id ?? null)
   const isNote = e.kind === 'note'
   const glyph = e.icon || (isNote ? '✍️' : '•')
-  const amountColor = e.amount != null && e.amount < 0 ? C.danger : C.gold
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 16, padding: 14 }}>
-      <div style={{ display: 'flex', gap: 12 }}>
+    <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 18, overflow: 'hidden', display: 'flex' }}>
+      <div aria-hidden style={{ width: 5, flexShrink: 0, background: RAIL_COLOR_MAP[e.kind] ?? K.line }} />
+      <div style={{ display: 'flex', gap: 12, flex: 1, minWidth: 0, padding: 14 }}>
         <div style={{
           width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
@@ -322,11 +330,6 @@ function EventRow({
               {child && !isNote ? ' · ' : ''}
               {e.title}
             </div>
-            {e.amount != null && (
-              <span style={{ fontFamily: C.fNum, fontSize: 14, fontWeight: 700, color: amountColor, whiteSpace: 'nowrap' }}>
-                {e.amount > 0 ? '+' : ''}{e.amount}🪙
-              </span>
-            )}
           </div>
 
           {e.body && (
