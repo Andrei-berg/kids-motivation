@@ -132,7 +132,14 @@ See: `.planning/milestones/v5.0-ROADMAP.md`
   2. Below the story reel, events are grouped by day into cards, each with a color-coded left rail matching its event type (day completed, streak, boost, badge, medal, reading, purchase, parent note) reusing the real `CollapsibleRow` rail pattern
   3. A reward purchase card in the feed shows only the reward's name, never a coin amount or price
   4. No card in the feed ever shows a penalty, correction, or negative behavior-tag event — those stay visible only in the private Wallet/audit trail
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 09.1-01-PLAN.md — Pure highlight-ranking module (`pickHighlight`, `RANK_ORDER`, `RAIL_COLOR_MAP`) + vitest suite + story-seen localStorage helpers
+- [ ] 09.1-02-PLAN.md — `EventRow` restyled as a color-railed card; coin-amount rendering removed for every kind; FEED-04 emitter audit + regression guard
+- [ ] 09.1-03-PLAN.md — Story reel (per-child today-highlight bubbles, seen/unseen ring) + full-bleed celebratory modal with mark-seen wiring
+- [ ] 09.1-04-PLAN.md — Full gate sweep (tsc/lint/test/build + structural content gates) and operator browser verification checkpoint
+
 **UI hint**: yes
 
 ### Phase 9.2: feed-social
@@ -248,7 +255,7 @@ See: `.planning/milestones/v5.0-ROADMAP.md`
 | 5.9 rules-presets | v5.0 | 10/10 | Complete | 2026-07-23 |
 | 5.10 automation | v5.0 | 4/4 | Complete | 2026-07-22 |
 | 5.11 legacy-cleanup | v5.0 | 3/3 | Complete | 2026-07-23 |
-| 9.1 feed-recognition | v9.0 | 0/? | Not started | - |
+| 9.1 feed-recognition | v9.0 | 0/4 | Planned | - |
 | 9.2 feed-social | v9.0 | 0/? | Not started | - |
 | 9.3 dayform-default | v9.0 | 0/? | Not started | - |
 | 9.4 dayform-styles | v9.0 | 0/? | Not started | - |
