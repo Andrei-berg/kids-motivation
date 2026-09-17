@@ -23,11 +23,13 @@ import { getChildren } from '@/lib/repositories/children.repo'
 import {
   getFeed, getReactionsByFamily, summarizeReactions, addReaction, removeReaction,
   getComments, getCommentCounts, addComment, subscribeFeed,
+  getStorySeen, markStorySeen,
 } from '@/lib/repositories/feed.repo'
 import { postFeedNote } from '@/app/actions/post-feed-note'
 import { paper as daylightPaper, base as familyBase } from '@/lib/design/tokens'
 import { K } from '@/components/kid/design/kidTheme'
-import { RAIL_COLOR_MAP } from '@/lib/kid/feed-highlights'
+import { RAIL_COLOR_MAP, pickHighlight } from '@/lib/kid/feed-highlights'
+import { localDateString } from '@/utils/helpers'
 import type { FeedEvent, FeedReaction, FeedComment } from '@/lib/models/feed.types'
 import type { Child } from '@/lib/models/child.types'
 
@@ -195,6 +197,47 @@ export default function FamilyFeed({ variant, hideHeader = false }: { variant: V
     return out
   }, [events])
 
+  // NEW, additive — one highlight per child from today's already-fetched
+  // events only (reads `groups`/`events` state, issues no new query). A child
+  // with zero events today has no map entry and therefore no story bubble —
+  // absence is the empty state, never a placeholder (D-05).
+  const todaysHighlights = useMemo(() => {
+    if (groups[0]?.label !== 'Сегодня') return [] as { child: Child; event: FeedEvent }[]
+    const byChild = new Map<string, FeedEvent[]>()
+    for (const e of groups[0].items) {
+      if (!e.child_id) continue
+      const list = byChild.get(e.child_id) ?? []
+      list.push(e)
+      byChild.set(e.child_id, list)
+    }
+    const out: { child: Child; event: FeedEvent }[] = []
+    for (const [childId, evs] of Array.from(byChild.entries())) {
+      const event = pickHighlight(evs)
+      const child = childOf(childId)
+      if (event && child) out.push({ child, event })
+    }
+    return out
+  }, [groups, children])
+
+  const [storySeen, setStorySeen] = useState<Record<string, boolean>>({})
+  const [openStory, setOpenStory] = useState<{ child: Child; event: FeedEvent } | null>(null)
+
+  useEffect(() => {
+    if (!familyId) return
+    const next: Record<string, boolean> = {}
+    for (const h of todaysHighlights) {
+      next[h.child.id] = getStorySeen(familyId, h.child.id, localDateString())
+    }
+    setStorySeen(next)
+  }, [familyId, todaysHighlights])
+
+  function openStoryMoment(h: { child: Child; event: FeedEvent }) {
+    setOpenStory(h)
+    // D-07: seen is marked on open, not on close.
+    if (familyId) markStorySeen(familyId, h.child.id, localDateString())
+    setStorySeen(prev => ({ ...prev, [h.child.id]: true }))
+  }
+
   return (
     <div style={{ background: C.ground, minHeight: '100%', fontFamily: C.fBody }}>
       <div style={{ maxWidth: 600, margin: '0 auto', padding: hideHeader ? '12px 16px 48px' : '16px 16px 48px' }}>
@@ -233,6 +276,8 @@ export default function FamilyFeed({ variant, hideHeader = false }: { variant: V
             )}
           </div>
         )}
+
+        <StoryReel highlights={todaysHighlights} storySeen={storySeen} C={C} accentFor={accentFor} onOpen={openStoryMoment} />
 
         {loading ? (
           <div style={{ padding: '40px 0', textAlign: 'center', color: C.ink3, fontSize: 14 }}>Загрузка…</div>
@@ -284,6 +329,10 @@ export default function FamilyFeed({ variant, hideHeader = false }: { variant: V
           </div>
         )}
       </div>
+
+      {openStory && (
+        <StoryMomentModal event={openStory.event} child={openStory.child} C={C} onClose={() => setOpenStory(null)} />
+      )}
     </div>
   )
 }
@@ -377,6 +426,156 @@ function EventRow({
             <CommentThread eventId={e.id} familyId={familyId} me={me} C={C} onAdded={onCommentAdded} />
           )}
         </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Story reel ──────────────────────────────────────────────────────────────
+// Instagram-Stories-style bubble row, one per child with ≥1 event today,
+// showing that child's single biggest highlight (D-04). No new Supabase
+// query — reads `todaysHighlights`, which is itself derived from the feed's
+// already-fetched `events` state.
+
+function StoryReel({
+  highlights, storySeen, C, accentFor, onOpen,
+}: {
+  highlights: { child: Child; event: FeedEvent }[]
+  storySeen: Record<string, boolean>
+  C: ReturnType<typeof palette>
+  accentFor: (id: string | null) => string
+  onOpen: (h: { child: Child; event: FeedEvent }) => void
+}) {
+  if (highlights.length === 0) return null
+
+  return (
+    <div style={{ display: 'flex', gap: 14, padding: '4px 0 18px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      {highlights.map(h => (
+        <StoryBubble
+          key={h.child.id}
+          child={h.child}
+          event={h.event}
+          seen={storySeen[h.child.id] ?? false}
+          accent={accentFor(h.child.id)}
+          C={C}
+          onOpen={() => onOpen(h)}
+        />
+      ))}
+    </div>
+  )
+}
+
+function StoryBubble({
+  child, event, seen, accent, C, onOpen,
+}: {
+  child: Child
+  event: FeedEvent
+  seen: boolean
+  accent: string
+  C: ReturnType<typeof palette>
+  onOpen: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`${child.name}: ${event.title}`}
+      style={{
+        background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0,
+      }}
+    >
+      <div style={{
+        width: 62, height: 62, borderRadius: '50%', padding: 3, display: 'flex',
+        background: seen ? K.line : `linear-gradient(135deg, ${K.mango}, ${K.berry}, ${K.grape})`,
+      }}>
+        <div style={{
+          width: '100%', height: '100%', borderRadius: '50%', border: `3px solid ${C.ground}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26,
+          background: `${accent}1F`,
+        }}>
+          {child.emoji || event.icon || '⭐'}
+        </div>
+      </div>
+      <div style={{
+        fontFamily: C.fHead, fontSize: 11, fontWeight: 700, color: C.ink3, maxWidth: 68,
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+      }}>
+        {child.name}
+      </div>
+    </button>
+  )
+}
+
+// ─── Story moment modal ──────────────────────────────────────────────────────
+// Full-bleed celebratory overlay a story bubble opens into (D-07). Reuses
+// ProfileSheet's fixed-inset dialog/backdrop shape, centered instead of a
+// bottom sheet. Renders only icon/title/body enlarged — no amount, no 🪙,
+// ever (D-01); the highlight's coin figure must never be referenced here.
+
+function StoryMomentModal({
+  event, child, C, onClose,
+}: {
+  event: FeedEvent
+  child: Child
+  C: ReturnType<typeof palette>
+  onClose: () => void
+}) {
+  useEffect(() => {
+    function onKeyDown(ev: KeyboardEvent) {
+      if (ev.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onClose])
+
+  const rail = RAIL_COLOR_MAP[event.kind] ?? K.grape
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(20,20,30,0.55)', zIndex: 260,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: '100%', maxWidth: 340, borderRadius: 22, padding: '26px 22px',
+          position: 'relative', color: '#fff', textAlign: 'center',
+          background: `linear-gradient(135deg, ${rail}, ${K.berry})`,
+        }}
+      >
+        <button
+          type="button"
+          aria-label="Закрыть"
+          onClick={onClose}
+          style={{
+            position: 'absolute', top: 6, right: 6, width: 44, height: 44,
+            background: 'transparent', border: 'none', padding: 0, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <span style={{
+            width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.2)',
+            color: '#fff', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            ×
+          </span>
+        </button>
+
+        <div style={{ fontSize: 44 }}>{event.icon || child.emoji || '⭐'}</div>
+        <div style={{ fontFamily: C.fHead, fontSize: 22, fontWeight: 700, lineHeight: 1.15, margin: '10px 0 4px' }}>
+          {event.title}
+        </div>
+        {event.body && (
+          <div style={{ fontFamily: C.fBody, fontSize: 14, fontWeight: 400, opacity: 0.92, whiteSpace: 'pre-wrap' }}>
+            {event.body}
+          </div>
+        )}
       </div>
     </div>
   )
