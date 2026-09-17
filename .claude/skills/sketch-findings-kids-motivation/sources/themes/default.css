@@ -1,0 +1,72 @@
+/* Kid UI sketch theme — mirrors components/kid/design/kidTheme.ts (`K`) exactly.
+   "Progress you can see" — bright activity companion, game energy, not enterprise. */
+
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800;900&family=Nunito:wght@400;600;700;800&display=swap');
+
+:root {
+  /* Grounds */
+  --color-bg: #FFFDF7;
+  --color-surface: #FFFFFF;
+  --color-border: #E9ECF3;
+  --color-border-soft: #F2F4F9;
+
+  /* Text */
+  --color-text: #21314A;
+  --color-text-muted: #54637E;
+  --color-text-faint: #8A97AC;
+
+  /* Accents — each one carries meaning, never decoration */
+  --sky: #2F7FE4;       /* primary action, selected state */
+  --sky-deep: #1E63C4;
+  --sky-soft: #E4EFFC;
+  --grape: #7A5AF0;     /* level / XP / achievements */
+  --grape-deep: #5F3FD6;
+  --grape-soft: #ECE7FD;
+  --mint: #12B886;      /* done / earned / positive */
+  --mint-deep: #0E9E74;
+  --mint-soft: #DCF5EC;
+  --mango: #FF9F2E;     /* coins, streak heat, weekly boost */
+  --mango-deep: #E07E00;
+  --mango-soft: #FFEED8;
+  --berry: #FF6B8A;     /* celebration / highlight */
+  --berry-deep: #E84C6E;
+  --berry-soft: #FFE3EA;
+
+  /* Type */
+  --font-display: 'Rubik', system-ui, sans-serif;
+  --font-body: 'Nunito', system-ui, sans-serif;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1.0625rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2rem;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Shapes — 18px is the KM card/button radius, 999 is pill */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-full: 999px;
+
+  --shadow-card: 0 1px 4px rgba(0,0,0,0.04);
+  --shadow-card-active: 0 6px 20px rgba(47,127,228,0.12);
+  --shadow-pop: 0 10px 26px rgba(0,0,0,0.14);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+}

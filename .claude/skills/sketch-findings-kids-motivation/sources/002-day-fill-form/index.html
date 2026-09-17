@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sketch 002 — Мой день: заполнение</title>
+<link rel="stylesheet" href="../themes/default.css">
+<style>
+  body { padding-top: 52px; }
+
+  #variant-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 9998;
+    background: var(--color-surface); border-bottom: 1px solid var(--color-border);
+    padding: 8px 10px; display: flex; gap: 6px; font-family: var(--font-display);
+    overflow-x: auto;
+  }
+  .variant-tab {
+    border: none; background: var(--color-border-soft); color: var(--color-text-muted);
+    font-family: var(--font-display); font-weight: 700; font-size: 12.5px;
+    padding: 9px 14px; border-radius: var(--radius-full); cursor: pointer; white-space: nowrap;
+    transition: background .15s, color .15s;
+  }
+  .variant-tab.active { background: var(--sky); color: #fff; }
+  .variant { display: none; }
+  .variant.active { display: block; }
+
+  .stage {
+    max-width: 420px; margin: 0 auto; min-height: calc(100vh - 52px);
+    background: var(--color-bg); position: relative; padding-bottom: 100px;
+  }
+  #viewport-wrap.tablet .stage { max-width: 768px; }
+  #viewport-wrap.desktop .stage { max-width: 1100px; }
+
+  .screen-head { padding: 18px 16px 4px; }
+  .screen-title { font-family: var(--font-display); font-weight: 900; font-size: 22px; letter-spacing: -0.3px; margin: 0; }
+  .screen-sub { font-size: 13px; color: var(--color-text-muted); font-weight: 600; margin-top: 3px; }
+
+  .save-bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; max-width: 420px; margin: 0 auto;
+    background: var(--color-surface); border-top: 1px solid var(--color-border);
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    display: flex; align-items: center; gap: 12px;
+  }
+  #viewport-wrap.tablet .save-bar, #viewport-wrap.tablet .stage { max-width: 768px; }
+  #viewport-wrap.desktop .save-bar, #viewport-wrap.desktop .stage { max-width: 1100px; }
+  .save-btn {
+    flex: 1; height: 52px; border: none; border-radius: 18px; background: var(--sky); color: #fff;
+    font-family: var(--font-display); font-weight: 800; font-size: 16px; cursor: pointer;
+    box-shadow: 0 4px 0 var(--sky-deep), 0 6px 16px rgba(47,127,228,0.25);
+    transition: transform .1s, box-shadow .1s;
+  }
+  .save-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--sky-deep); }
+  .coin-total {
+    display: inline-flex; align-items: center; gap: 6px; background: var(--mango-soft);
+    border: 1.5px solid var(--mango); border-radius: var(--radius-full); padding: 8px 14px;
+    font-family: var(--font-display); font-weight: 800; font-size: 15px; color: var(--mango-deep);
+    white-space: nowrap;
+  }
+
+  .toast {
+    position: fixed; bottom: 88px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--color-text); color: #fff; padding: 10px 18px; border-radius: var(--radius-full);
+    font-family: var(--font-display); font-weight: 700; font-size: 13px; opacity: 0; pointer-events: none;
+    transition: opacity .2s, transform .2s; z-index: 10000;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .float-plus {
+    position: absolute; font-family: var(--font-display); font-weight: 900; font-size: 15px;
+    color: var(--mint); pointer-events: none; animation: floatUp .8s ease forwards;
+  }
+  @keyframes floatUp { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-26px); } }
+
+  /* ══ Variant A — Quick-tap grid + bottom sheet ═══════════════════ */
+  .tile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 14px 16px; }
+  .tile {
+    background: var(--color-surface); border: 1.5px solid var(--color-border); border-radius: var(--radius-lg);
+    padding: 14px; cursor: pointer; text-align: left; position: relative; overflow: hidden;
+    transition: border-color .15s, transform .1s;
+  }
+  .tile:active { transform: scale(0.97); }
+  .tile.done { border-color: var(--mint); background: var(--mint-soft); }
+  .tile .ic { font-size: 24px; }
+  .tile .t { font-family: var(--font-display); font-weight: 800; font-size: 14px; margin-top: 8px; }
+  .tile .s { font-size: 12px; color: var(--color-text-muted); font-weight: 700; margin-top: 3px; }
+  .tile.done .s { color: var(--mint-deep); }
+  .tile .badge {
+    position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--mint); color: #fff; display: none; align-items: center; justify-content: center; font-size: 13px;
+  }
+  .tile.done .badge { display: flex; }
+
+  .sheet-backdrop {
+    position: fixed; inset: 0; background: rgba(20,20,30,0.45); z-index: 9990; display: none;
+  }
+  .sheet-backdrop.open { display: block; }
+  .sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; max-width: 420px; margin: 0 auto; z-index: 9991;
+    background: var(--color-surface); border-radius: 22px 22px 0 0; padding: 10px 20px calc(22px + env(safe-area-inset-bottom, 0px));
+    transform: translateY(100%); transition: transform .28s cubic-bezier(.2,.9,.3,1.1);
+  }
+  .sheet.open { transform: translateY(0); }
+  .sheet-grip { width: 40px; height: 4px; border-radius: 999px; background: var(--color-border); margin: 6px auto 14px; }
+  .sheet h3 { font-family: var(--font-display); font-size: 17px; font-weight: 800; margin: 0 0 14px; }
+
+  /* ══ Variant B — Story stepper ═══════════════════════════════════ */
+  .dot-track { display: flex; gap: 6px; padding: 14px 16px 4px; }
+  .dot { flex: 1; height: 5px; border-radius: 999px; background: var(--color-border); overflow: hidden; }
+  .dot .fill { height: 100%; width: 0%; background: var(--mint); transition: width .3s; }
+  .dot.current .fill { background: var(--sky); }
+
+  .step-card {
+    margin: 20px 16px; border-radius: 24px; padding: 28px 22px; min-height: 340px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    position: relative;
+  }
+  .step-card .ic { font-size: 52px; }
+  .step-card h2 { font-family: var(--font-display); font-size: 20px; font-weight: 900; margin: 14px 0 4px; }
+  .step-card p { font-size: 13.5px; color: var(--color-text-muted); font-weight: 600; margin: 0 0 20px; }
+  .step-nav { display: flex; justify-content: space-between; padding: 0 16px; }
+  .step-nav button {
+    border: none; background: var(--color-border-soft); color: var(--color-text-muted);
+    font-family: var(--font-display); font-weight: 700; font-size: 13px; padding: 10px 16px; border-radius: var(--radius-full);
+    cursor: pointer;
+  }
+
+  .grade-row, .choice-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .grade-btn, .choice-btn {
+    border: 1.5px solid var(--color-border); background: #fff; border-radius: 14px;
+    font-family: var(--font-display); font-weight: 800; cursor: pointer; transition: all .12s;
+  }
+  .grade-btn { width: 52px; height: 52px; font-size: 20px; }
+  .grade-btn.pick-5, .grade-btn.pick-4 { }
+  .grade-btn.sel { background: var(--mint); border-color: var(--mint); color: #fff; transform: scale(1.08); }
+  .grade-btn.sel-bad { background: var(--berry); border-color: var(--berry); color: #fff; }
+  .choice-btn { padding: 12px 18px; font-size: 24px; }
+  .choice-btn.sel { background: var(--sky-soft); border-color: var(--sky); }
+
+  .toggle-big {
+    display: flex; align-items: center; gap: 12px; border: 1.5px solid var(--color-border); background: #fff;
+    border-radius: 16px; padding: 14px 18px; cursor: pointer; font-family: var(--font-display); font-weight: 800; font-size: 15px;
+  }
+  .toggle-big.sel { background: var(--mint-soft); border-color: var(--mint); color: var(--mint-deep); }
+  .switch { width: 44px; height: 26px; border-radius: 999px; background: var(--color-border); position: relative; flex-shrink: 0; transition: background .15s; }
+  .switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
+  .toggle-big.sel .switch { background: var(--mint); }
+  .toggle-big.sel .switch::after { transform: translateX(18px); }
+
+  /* ══ Variant C — Hybrid: sticky summary + inline rows ════════════ */
+  .summary-bar {
+    position: sticky; top: 52px; z-index: 30; background: var(--color-bg);
+    display: flex; align-items: center; gap: 14px; padding: 10px 16px 14px;
+  }
+  .ring { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; flex-shrink: 0; }
+  .ring .pct { font-family: var(--font-display); font-weight: 900; font-size: 13px; z-index: 1; }
+  .ring .hole { position: absolute; inset: 6px; background: var(--color-bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+  .row-list { display: flex; flex-direction: column; gap: 8px; padding: 0 16px; }
+  .quick-row {
+    display: flex; align-items: center; gap: 12px; background: var(--color-surface);
+    border: 1.5px solid var(--color-border); border-radius: 16px; padding: 12px 14px; position: relative;
+  }
+  .quick-row.done { border-color: var(--mint); }
+  .quick-row .ic {
+    width: 36px; height: 36px; border-radius: 11px; background: var(--color-border-soft);
+    display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+  }
+  .quick-row.done .ic { background: var(--mint-soft); }
+  .quick-row .lbl { flex: 1; font-family: var(--font-display); font-weight: 700; font-size: 14.5px; }
+  .quick-row .coin-tag { font-family: var(--font-num, var(--font-display)); font-size: 12px; font-weight: 800; color: var(--mango-deep); }
+
+  .mini-panel {
+    display: none; margin: 8px 0 4px; padding-top: 10px; border-top: 1px dashed var(--color-border);
+  }
+  .mini-panel.open { display: block; }
+  .quick-row-wrap { background: var(--color-surface); border: 1.5px solid var(--color-border); border-radius: 16px; padding: 12px 14px; }
+  .quick-row-wrap.done { border-color: var(--mint); }
+  .quick-row-wrap .quick-row { border: none; padding: 0; background: none; }
+
+  .section-note {
+    margin: 4px 16px 6px; font-size: 12px; color: var(--color-text-faint); font-family: var(--font-body); font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<div id="variant-nav">
+  <button class="variant-tab active" onclick="showVariant('a', event)">A: Плитки + шторка ★</button>
+  <button class="variant-tab" onclick="showVariant('b', event)">B: Сторис-степпер ★</button>
+  <button class="variant-tab" onclick="showVariant('c', event)">C: Сводка + строки ★ default</button>
+</div>
+
+<div id="viewport-wrap">
+
+<!-- ══════════════════════════ VARIANT A ══════════════════════════ -->
+<div id="variant-a" class="variant active">
+  <div class="stage" id="stageA">
+    <div class="screen-head">
+      <h1 class="screen-title">Мой день</h1>
+      <div class="screen-sub">Тапни плитку — заполни за пару секунд</div>
+    </div>
+
+    <div class="tile-grid" id="tileGridA">
+      <button class="tile" data-cat="room" onclick="openSheet('room')">
+        <span class="badge">✓</span>
+        <div class="ic">🧹</div><div class="t">Комната</div><div class="s">Не заполнено</div>
+      </button>
+      <button class="tile" data-cat="behavior" onclick="openSheet('behavior')">
+        <span class="badge">✓</span>
+        <div class="ic">😊</div><div class="t">Поведение</div><div class="s">Не заполнено</div>
+      </button>
+      <button class="tile" data-cat="grades" onclick="openSheet('grades')">
+        <span class="badge">✓</span>
+        <div class="ic">📚</div><div class="t">Оценки</div><div class="s">2 предмета</div>
+      </button>
+      <button class="tile" data-cat="sport" onclick="openSheet('sport')">
+        <span class="badge">✓</span>
+        <div class="ic">🏀</div><div class="t">Тренировка</div><div class="s">Не заполнено</div>
+      </button>
+      <button class="tile" data-cat="reading" onclick="openSheet('reading')">
+        <span class="badge">✓</span>
+        <div class="ic">📖</div><div class="t">Чтение</div><div class="s">Не заполнено</div>
+      </button>
+      <button class="tile" data-cat="mood" onclick="openSheet('mood')">
+        <span class="badge">✓</span>
+        <div class="ic">🙂</div><div class="t">Настроение</div><div class="s">Не выбрано</div>
+      </button>
+    </div>
+  </div>
+
+  <div class="save-bar">
+    <div class="coin-total"><span>🪙</span><span id="coinTotalA">0</span></div>
+    <button class="save-btn" onclick="saveDay('A')">Сохранить день</button>
+  </div>
+
+  <div class="sheet-backdrop" id="sheetBackdrop" onclick="closeSheet()"></div>
+  <div class="sheet" id="sheet">
+    <div class="sheet-grip"></div>
+    <div id="sheetContent"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ VARIANT B ══════════════════════════ -->
+<div id="variant-b" class="variant">
+  <div class="stage">
+    <div class="screen-head">
+      <h1 class="screen-title">Мой день</h1>
+      <div class="screen-sub">Шаг за шагом — заполнил, и сразу дальше</div>
+    </div>
+
+    <div class="dot-track" id="dotTrack"></div>
+
+    <div id="stepStage"></div>
+
+    <div class="step-nav">
+      <button onclick="stepMove(-1)">← Назад</button>
+      <button onclick="stepMove(1)">Пропустить →</button>
+    </div>
+  </div>
+
+  <div class="save-bar">
+    <div class="coin-total"><span>🪙</span><span id="coinTotalB">0</span></div>
+    <button class="save-btn" onclick="saveDay('B')">Сохранить день</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════ VARIANT C ══════════════════════════ -->
+<div id="variant-c" class="variant">
+  <div class="stage">
+    <div class="screen-head">
+      <h1 class="screen-title">Мой день</h1>
+      <div class="screen-sub">Бинарное — тап на строке. Остальное — раскрой и заполни.</div>
+    </div>
+
+    <div class="summary-bar">
+      <div class="ring" id="ringC" style="background: conic-gradient(var(--mint) 0deg, var(--color-border) 0deg);">
+        <div class="hole"><span class="pct" id="ringPctC">0%</span></div>
+      </div>
+      <div>
+        <div style="font-family: var(--font-display); font-weight: 900; font-size: 20px;" id="coinTotalC">0 🪙</div>
+        <div style="font-size: 12px; color: var(--color-text-muted); font-weight: 700;">заработано сегодня</div>
+      </div>
+    </div>
+
+    <div class="row-list">
+
+      <div class="quick-row" id="rowRoom" onclick="quickToggle('room', event)">
+        <div class="ic">🧹</div>
+        <div class="lbl">Комната убрана</div>
+        <div class="switch"></div>
+      </div>
+
+      <div class="quick-row" id="rowBehavior" onclick="quickToggle('behavior', event)">
+        <div class="ic">😊</div>
+        <div class="lbl">Хорошее поведение</div>
+        <div class="switch"></div>
+      </div>
+
+      <div class="quick-row-wrap" id="wrapGrades">
+        <div class="quick-row" onclick="togglePanel('panelGrades')">
+          <div class="ic">📚</div>
+          <div class="lbl">Оценки</div>
+          <div class="coin-tag" id="tagGrades">—</div>
+        </div>
+        <div class="mini-panel" id="panelGrades">
+          <div style="font-size: 12.5px; font-weight: 700; color: var(--color-text-muted); margin-bottom: 6px;">Математика</div>
+          <div class="grade-row" style="justify-content:flex-start; margin-bottom: 14px;">
+            <button class="grade-btn" onclick="pickGrade(this,'math',2)">2</button>
+            <button class="grade-btn" onclick="pickGrade(this,'math',3)">3</button>
+            <button class="grade-btn" onclick="pickGrade(this,'math',4)">4</button>
+            <button class="grade-btn" onclick="pickGrade(this,'math',5)">5</button>
+          </div>
+          <div style="font-size: 12.5px; font-weight: 700; color: var(--color-text-muted); margin-bottom: 6px;">Русский язык</div>
+          <div class="grade-row" style="justify-content:flex-start;">
+            <button class="grade-btn" onclick="pickGrade(this,'rus',2)">2</button>
+            <button class="grade-btn" onclick="pickGrade(this,'rus',3)">3</button>
+            <button class="grade-btn" onclick="pickGrade(this,'rus',4)">4</button>
+            <button class="grade-btn" onclick="pickGrade(this,'rus',5)">5</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="quick-row-wrap" id="wrapSport">
+        <div class="quick-row" onclick="togglePanel('panelSport')">
+          <div class="ic">🏀</div>
+          <div class="lbl">Тренировка</div>
+          <div class="coin-tag" id="tagSport">—</div>
+        </div>
+        <div class="mini-panel" id="panelSport">
+          <div class="toggle-big" onclick="pickSport(this)">
+            <div class="switch"></div><span>Был(а) на тренировке</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="quick-row-wrap" id="wrapReading">
+        <div class="quick-row" onclick="togglePanel('panelReading')">
+          <div class="ic">📖</div>
+          <div class="lbl">Чтение</div>
+          <div class="coin-tag" id="tagReading">—</div>
+        </div>
+        <div class="mini-panel" id="panelReading">
+          <div class="toggle-big" onclick="pickReading(this)">
+            <div class="switch"></div><span>Читал(а) сегодня</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="quick-row-wrap" id="wrapMood">
+        <div class="quick-row" onclick="togglePanel('panelMood')">
+          <div class="ic">🙂</div>
+          <div class="lbl">Настроение</div>
+          <div class="coin-tag" id="tagMood">—</div>
+        </div>
+        <div class="mini-panel" id="panelMood">
+          <div class="choice-row" style="justify-content:flex-start;">
+            <button class="choice-btn" onclick="pickMood(this,'😞')">😞</button>
+            <button class="choice-btn" onclick="pickMood(this,'😐')">😐</button>
+            <button class="choice-btn" onclick="pickMood(this,'🙂')">🙂</button>
+            <button class="choice-btn" onclick="pickMood(this,'😄')">😄</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="save-bar">
+    <div class="coin-total"><span>🪙</span><span id="coinTotalC2">0</span></div>
+    <button class="save-btn" onclick="saveDay('C')">Сохранить день</button>
+  </div>
+</div>
+
+</div><!-- /viewport-wrap -->
+
+<div class="toast" id="toast"></div>
+
+<div id="sketch-tools" style="position:fixed;bottom:12px;right:12px;z-index:9999;font-family:system-ui;font-size:12px;background:rgba(0,0,0,0.7);color:white;padding:8px 12px;border-radius:8px;opacity:0.4;transition:opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.4'">
+  <div style="display:flex; gap:8px; align-items:center;">
+    <span>Viewport:</span>
+    <button onclick="setViewport('phone')" style="cursor:pointer;">📱</button>
+    <button onclick="setViewport('tablet')" style="cursor:pointer;">📟</button>
+    <button onclick="setViewport('desktop')" style="cursor:pointer;">🖥️</button>
+  </div>
+</div>
+
+<script>
+function showVariant(id, ev) {
+  document.querySelectorAll('.variant').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.variant-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('variant-' + id).classList.add('active');
+  ev.target.classList.add('active');
+}
+function setViewport(mode) {
+  document.getElementById('viewport-wrap').className = mode === 'phone' ? '' : mode;
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.classList.remove('show'), 1500);
+}
+function floatCoin(el, amount) {
+  const rect = el.getBoundingClientRect();
+  const f = document.createElement('div');
+  f.className = 'float-plus';
+  f.textContent = (amount >= 0 ? '+' : '') + amount + ' 🪙';
+  f.style.left = (rect.left + rect.width / 2 - 20) + 'px';
+  f.style.top = (rect.top - 6) + 'px';
+  f.style.position = 'fixed';
+  document.body.appendChild(f);
+  setTimeout(() => f.remove(), 800);
+}
+
+/* ══ Variant A: sheet content per category ══ */
+const CATS_A = {
+  room:     { ic: '🧹', title: 'Комната', body: sheetToggle('room', 'Комната убрана', 20) },
+  behavior: { ic: '😊', title: 'Поведение', body: sheetToggle('behavior', 'Хорошее поведение', 15) },
+  grades:   { ic: '📚', title: 'Оценки', body: sheetGrades() },
+  sport:    { ic: '🏀', title: 'Тренировка', body: sheetToggle('sport', 'Был(а) на тренировке', 25) },
+  reading:  { ic: '📖', title: 'Чтение', body: sheetToggle('reading', 'Читал(а) сегодня', 10) },
+  mood:     { ic: '🙂', title: 'Настроение', body: sheetMood() },
+};
+function sheetToggle(cat, label, coins) {
+  return '<div class="toggle-big" id="sheetToggle_' + cat + '" onclick="sheetPickToggle(this,\'' + cat + '\',' + coins + ')">' +
+    '<div class="switch"></div><span>' + label + '</span></div>' +
+    '<div style="text-align:right; margin-top:14px;"><button class="save-btn" style="height:44px; font-size:14px;" onclick="closeSheet()">Готово</button></div>';
+}
+function sheetGrades() {
+  return '<div style="font-size: 12.5px; font-weight: 700; color: var(--color-text-muted); margin-bottom: 6px;">Математика</div>' +
+    '<div class="grade-row" style="justify-content:flex-start; margin-bottom: 14px;">' +
+    [2,3,4,5].map(g => '<button class="grade-btn" onclick="sheetGrade(this,\'math\',' + g + ')">' + g + '</button>').join('') + '</div>' +
+    '<div style="font-size: 12.5px; font-weight: 700; color: var(--color-text-muted); margin-bottom: 6px;">Русский язык</div>' +
+    '<div class="grade-row" style="justify-content:flex-start; margin-bottom: 14px;">' +
+    [2,3,4,5].map(g => '<button class="grade-btn" onclick="sheetGrade(this,\'rus\',' + g + ')">' + g + '</button>').join('') + '</div>' +
+    '<button class="save-btn" style="height:44px; font-size:14px;" onclick="closeSheet()">Готово</button>';
+}
+function sheetMood() {
+  return '<div class="choice-row" style="margin-bottom:14px;">' +
+    ['😞','😐','🙂','😄'].map(e => '<button class="choice-btn" onclick="sheetMoodPick(this)">' + e + '</button>').join('') + '</div>' +
+    '<button class="save-btn" style="height:44px; font-size:14px;" onclick="closeSheet()">Готово</button>';
+}
+
+let coinsA = 0;
+function openSheet(cat) {
+  const c = CATS_A[cat];
+  document.getElementById('sheetContent').innerHTML = '<h3>' + c.ic + ' ' + c.title + '</h3>' + c.body;
+  document.getElementById('sheet').classList.add('open');
+  document.getElementById('sheetBackdrop').classList.add('open');
+  document.getElementById('sheet').dataset.cat = cat;
+}
+function closeSheet() {
+  document.getElementById('sheet').classList.remove('open');
+  document.getElementById('sheetBackdrop').classList.remove('open');
+}
+function markTileDone(cat, statusText) {
+  const tile = document.querySelector('.tile[data-cat="' + cat + '"]');
+  tile.classList.add('done');
+  tile.querySelector('.s').textContent = statusText;
+}
+function bumpCoinsA(delta) {
+  coinsA += delta;
+  document.getElementById('coinTotalA').textContent = coinsA;
+}
+function sheetPickToggle(el, cat, coins) {
+  const on = el.classList.toggle('sel');
+  bumpCoinsA(on ? coins : -coins);
+  markTileDone(cat, on ? ('Готово ✓ +' + coins) : 'Не заполнено');
+  if (!on) document.querySelector('.tile[data-cat="' + cat + '"]').classList.remove('done');
+}
+function sheetGrade(btn, subject, grade) {
+  const row = btn.parentElement;
+  row.querySelectorAll('.grade-btn').forEach(b => b.classList.remove('sel','sel-bad'));
+  btn.classList.add(grade >= 4 ? 'sel' : 'sel-bad');
+  markTileDone('grades', '2 предмета · последняя: ' + grade);
+  bumpCoinsA(grade === 5 ? 30 : grade === 4 ? 15 : grade === 3 ? 0 : -10);
+}
+function sheetMoodPick(btn) {
+  const row = btn.parentElement;
+  row.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  markTileDone('mood', btn.textContent);
+}
+
+/* ══ Variant B: story stepper ══ */
+const STEPS = [
+  { cat: 'room', ic: '🧹', title: 'Комната', desc: 'Убрал(а) сегодня комнату?', kind: 'toggle', label: 'Да, убрано', coins: 20 },
+  { cat: 'behavior', ic: '😊', title: 'Поведение', desc: 'Как прошёл день?', kind: 'toggle', label: 'Вёл(а) себя хорошо', coins: 15 },
+  { cat: 'grades', ic: '📚', title: 'Оценки — Математика', desc: 'Какую оценку получил(а)?', kind: 'grade', coins: 0 },
+  { cat: 'sport', ic: '🏀', title: 'Тренировка', desc: 'Был(а) сегодня на тренировке?', kind: 'toggle', label: 'Да, был(а)', coins: 25 },
+  { cat: 'reading', ic: '📖', title: 'Чтение', desc: 'Читал(а) сегодня?', kind: 'toggle', label: 'Да, читал(а)', coins: 10 },
+  { cat: 'mood', ic: '🙂', title: 'Настроение', desc: 'Как настроение сегодня?', kind: 'mood', coins: 0 },
+];
+let stepIdx = 0, coinsB = 0;
+const stepDone = new Array(STEPS.length).fill(false);
+const stepBg = ['var(--mint-soft)','var(--sky-soft)','var(--grape-soft)','var(--mango-soft)','var(--berry-soft)','var(--mint-soft)'];
+
+function renderDots() {
+  const wrap = document.getElementById('dotTrack');
+  wrap.innerHTML = STEPS.map((s,i) =>
+    '<div class="dot' + (i === stepIdx ? ' current' : '') + '"><div class="fill" style="width:' + (stepDone[i] ? '100' : '0') + '%"></div></div>'
+  ).join('');
+}
+function renderStep() {
+  const s = STEPS[stepIdx];
+  let control = '';
+  if (s.kind === 'toggle') {
+    control = '<div class="toggle-big' + (stepDone[stepIdx] ? ' sel' : '') + '" onclick="stepToggle()"><div class="switch"></div><span>' + s.label + '</span></div>';
+  } else if (s.kind === 'grade') {
+    control = '<div class="grade-row">' + [2,3,4,5].map(g => '<button class="grade-btn" onclick="stepGrade(this,' + g + ')">' + g + '</button>').join('') + '</div>';
+  } else if (s.kind === 'mood') {
+    control = '<div class="choice-row">' + ['😞','😐','🙂','😄'].map(e => '<button class="choice-btn" onclick="stepMood(this)">' + e + '</button>').join('') + '</div>';
+  }
+  document.getElementById('stepStage').innerHTML =
+    '<div class="step-card" style="background:' + stepBg[stepIdx] + ';">' +
+    '<div class="ic">' + s.ic + '</div><h2>' + s.title + '</h2><p>' + s.desc + '</p>' + control + '</div>';
+  renderDots();
+  document.getElementById('coinTotalB').textContent = coinsB;
+}
+function stepMove(dir) {
+  stepIdx = Math.max(0, Math.min(STEPS.length - 1, stepIdx + dir));
+  renderStep();
+}
+function stepAdvanceAuto() {
+  showToast('Готово! ✓');
+  setTimeout(() => { if (stepIdx < STEPS.length - 1) { stepIdx++; renderStep(); } }, 450);
+}
+function stepToggle() {
+  const s = STEPS[stepIdx];
+  if (stepDone[stepIdx]) return;
+  stepDone[stepIdx] = true; coinsB += s.coins;
+  stepAdvanceAuto();
+}
+function stepGrade(btn, g) {
+  if (stepDone[stepIdx]) return;
+  stepDone[stepIdx] = true;
+  coinsB += g === 5 ? 30 : g === 4 ? 15 : g === 3 ? 0 : -10;
+  btn.parentElement.querySelectorAll('.grade-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  stepAdvanceAuto();
+}
+function stepMood(btn) {
+  if (stepDone[stepIdx]) return;
+  stepDone[stepIdx] = true;
+  btn.parentElement.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  stepAdvanceAuto();
+}
+renderStep();
+
+/* ══ Variant C: sticky summary + inline rows ══ */
+let coinsC = 0, doneC = 0;
+const TOTAL_C = 6;
+function updateSummaryC() {
+  document.getElementById('coinTotalC').textContent = coinsC + ' 🪙';
+  document.getElementById('coinTotalC2').textContent = coinsC;
+  const pct = Math.round((doneC / TOTAL_C) * 100);
+  document.getElementById('ringPctC').textContent = pct + '%';
+  document.getElementById('ringC').style.background = 'conic-gradient(var(--mint) ' + (pct * 3.6) + 'deg, var(--color-border) 0deg)';
+}
+function bumpC(delta, done) {
+  coinsC += delta;
+  if (done) doneC++;
+  updateSummaryC();
+}
+function quickToggle(cat, ev) {
+  const row = document.getElementById('row' + cat.charAt(0).toUpperCase() + cat.slice(1));
+  const on = row.classList.toggle('done');
+  const coins = cat === 'room' ? 20 : 15;
+  floatCoin(row, on ? coins : -coins);
+  bumpC(on ? coins : -coins, on);
+  if (!on) doneC = Math.max(0, doneC - (on ? 0 : 1) - 0);
+}
+function togglePanel(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+const gradesPicked = {};
+function pickGrade(btn, subject, g) {
+  const wasSet = subject in gradesPicked;
+  const row = btn.parentElement;
+  row.querySelectorAll('.grade-btn').forEach(b => b.classList.remove('sel','sel-bad'));
+  btn.classList.add(g >= 4 ? 'sel' : 'sel-bad');
+  const delta = g === 5 ? 30 : g === 4 ? 15 : g === 3 ? 0 : -10;
+  const prevDelta = gradesPicked[subject] || 0;
+  gradesPicked[subject] = delta;
+  const netDelta = delta - prevDelta;
+  coinsC += netDelta; updateSummaryC();
+  document.getElementById('tagGrades').textContent = Object.keys(gradesPicked).length + '/2 · +' + Object.values(gradesPicked).reduce((a,b)=>a+b,0);
+  const wrap = document.getElementById('wrapGrades');
+  if (Object.keys(gradesPicked).length === 2 && !wrap.classList.contains('done')) { wrap.classList.add('done'); doneC++; updateSummaryC(); }
+}
+function pickSport(el) {
+  const on = el.classList.toggle('sel');
+  el.querySelector('.switch'); // reuse styles
+  bumpC(on ? 25 : -25, on);
+  document.getElementById('tagSport').textContent = on ? '+25' : '—';
+  document.getElementById('wrapSport').classList.toggle('done', on);
+}
+function pickReading(el) {
+  const on = el.classList.toggle('sel');
+  bumpC(on ? 10 : -10, on);
+  document.getElementById('tagReading').textContent = on ? '+10' : '—';
+  document.getElementById('wrapReading').classList.toggle('done', on);
+}
+function pickMood(btn, emoji) {
+  const row = btn.parentElement;
+  const already = row.querySelector('.sel');
+  row.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  document.getElementById('tagMood').textContent = emoji;
+  if (!already) { doneC++; updateSummaryC(); }
+  document.getElementById('wrapMood').classList.add('done');
+}
+updateSummaryC();
+
+/* ══ Save ══ */
+function saveDay(variant) {
+  showToast('День сохранён ✓');
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sketch 001 — Лента</title>
+<link rel="stylesheet" href="../themes/default.css">
+<style>
+  body { padding-top: 52px; }
+
+  /* ── Variant tab bar ─────────────────────────────────────────────── */
+  #variant-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 9998;
+    background: var(--color-surface); border-bottom: 1px solid var(--color-border);
+    padding: 8px 10px; display: flex; gap: 6px; font-family: var(--font-display);
+    overflow-x: auto;
+  }
+  .variant-tab {
+    border: none; background: var(--color-border-soft); color: var(--color-text-muted);
+    font-family: var(--font-display); font-weight: 700; font-size: 12.5px;
+    padding: 9px 14px; border-radius: var(--radius-full); cursor: pointer; white-space: nowrap;
+    transition: background .15s, color .15s;
+  }
+  .variant-tab.active { background: var(--sky); color: #fff; }
+
+  .variant { display: none; }
+  .variant.active { display: block; }
+
+  .stage {
+    max-width: 420px; margin: 0 auto; min-height: calc(100vh - 52px);
+    background: var(--color-bg); position: relative;
+  }
+  #viewport-wrap.tablet .stage { max-width: 768px; }
+  #viewport-wrap.desktop .stage { max-width: 1100px; }
+
+  .screen-head {
+    padding: 18px 16px 14px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .screen-title { font-family: var(--font-display); font-weight: 900; font-size: 22px; letter-spacing: -0.3px; margin: 0; }
+  .streak-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: linear-gradient(135deg, var(--mango), var(--berry));
+    color: #fff; padding: 7px 12px 7px 8px; border-radius: var(--radius-full);
+    font-family: var(--font-display); font-weight: 800; font-size: 13px;
+    box-shadow: 0 4px 14px rgba(255,159,46,0.35);
+  }
+
+  .avatar {
+    width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+    border: 1px solid rgba(0,0,0,0.06);
+  }
+  .avatar.adam { background: var(--sky-soft); }
+  .avatar.alim { background: var(--berry-soft); }
+
+  .reaction-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .reaction-chip {
+    border: 1.5px solid var(--color-border); background: #fff; border-radius: var(--radius-full);
+    padding: 5px 10px; font-size: 13px; font-family: var(--font-display); font-weight: 700;
+    color: var(--color-text-muted); cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+    transition: transform .12s, border-color .12s, background .12s;
+  }
+  .reaction-chip:active { transform: scale(0.92); }
+  .reaction-chip.lit { border-color: var(--mango); background: var(--mango-soft); color: var(--mango-deep); }
+  .reaction-chip.pop { animation: pop .35s ease; }
+  @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.28); } 100% { transform: scale(1); } }
+
+  .tease-btn {
+    border: none; background: var(--color-border-soft); color: var(--color-text-muted);
+    font-family: var(--font-display); font-weight: 700; font-size: 12.5px;
+    padding: 6px 12px; border-radius: var(--radius-full); cursor: pointer;
+  }
+  .tease-tray {
+    display: none; gap: 6px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px;
+    border-top: 1px dashed var(--color-border);
+  }
+  .tease-tray.open { display: flex; }
+  .tease-tray button {
+    border: 1.5px solid var(--grape); background: var(--grape-soft); color: var(--grape-deep);
+    font-family: var(--font-body); font-weight: 700; font-size: 12.5px;
+    padding: 6px 11px; border-radius: var(--radius-full); cursor: pointer;
+  }
+  .tease-reply {
+    margin-top: 8px; background: var(--grape-soft); border-radius: 12px; padding: 8px 12px;
+    font-size: 13px; color: var(--grape-deep); font-weight: 700; display: flex; align-items: center; gap: 8px;
+    animation: slideIn .25s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .toast {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--color-text); color: #fff; padding: 10px 18px; border-radius: var(--radius-full);
+    font-family: var(--font-display); font-weight: 700; font-size: 13px; opacity: 0; pointer-events: none;
+    transition: opacity .2s, transform .2s; z-index: 10000;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ══ Variant A — Duolingo Path ═══════════════════════════════════ */
+  .path-day-label {
+    font-family: var(--font-display); font-weight: 800; font-size: 12px; color: var(--color-text-faint);
+    text-transform: none; letter-spacing: 0.2px; margin: 18px 16px 8px 62px;
+  }
+  .path-item { display: flex; gap: 0; padding: 0 16px; position: relative; }
+  .path-rail {
+    width: 46px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; position: relative;
+  }
+  .path-rail::before {
+    content: ''; position: absolute; top: 0; bottom: -18px; left: 50%; width: 3px;
+    background: var(--color-border); transform: translateX(-50%); z-index: 0;
+  }
+  .path-item:last-child .path-rail::before { display: none; }
+  .path-node {
+    width: 40px; height: 40px; border-radius: 50%; z-index: 1; margin-top: 14px;
+    display: flex; align-items: center; justify-content: center; font-size: 19px;
+    border: 3px solid var(--color-bg); box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+  .path-card {
+    flex: 1; background: var(--color-surface); border-radius: var(--radius-lg);
+    border: 1.5px solid var(--color-border); padding: 12px 14px; margin: 10px 0 10px 10px;
+    box-shadow: var(--shadow-card);
+  }
+  .path-card .who { font-family: var(--font-display); font-weight: 800; font-size: 13.5px; }
+  .path-card .what { font-family: var(--font-body); font-size: 13.5px; color: var(--color-text-muted); margin-top: 2px; }
+  .path-card .when { font-size: 11px; color: var(--color-text-faint); font-weight: 700; margin-top: 4px; }
+
+  /* ══ Variant B — Strava Kudos ════════════════════════════════════ */
+  .kudos-card {
+    background: var(--color-surface); border-radius: var(--radius-lg); border: 1.5px solid var(--color-border);
+    margin: 0 16px 14px; overflow: hidden; box-shadow: var(--shadow-card);
+  }
+  .kudos-head { display: flex; align-items: center; gap: 10px; padding: 14px 14px 10px; }
+  .kudos-head .meta { flex: 1; }
+  .kudos-head .name { font-family: var(--font-display); font-weight: 800; font-size: 14px; }
+  .kudos-head .time { font-size: 11.5px; color: var(--color-text-faint); font-weight: 700; }
+  .kudos-hero {
+    margin: 0 14px 12px; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 14px;
+  }
+  .kudos-hero .num { font-family: var(--font-display); font-weight: 900; font-size: 28px; line-height: 1; }
+  .kudos-hero .lab { font-family: var(--font-body); font-weight: 700; font-size: 12.5px; opacity: 0.85; }
+  .kudos-foot { padding: 0 14px 14px; }
+  .kudos-kudo-btn {
+    display: inline-flex; align-items: center; gap: 7px; border: 1.5px solid var(--color-border);
+    background: #fff; padding: 8px 14px; border-radius: var(--radius-full); cursor: pointer;
+    font-family: var(--font-display); font-weight: 800; font-size: 13px; color: var(--color-text-muted);
+    transition: transform .12s, border-color .12s, background .12s, color .12s;
+  }
+  .kudos-kudo-btn.lit { border-color: var(--berry); background: var(--berry-soft); color: var(--berry-deep); }
+  .kudos-kudo-btn:active { transform: scale(0.94); }
+
+  /* ══ Variant C — Stories + Chat feed ═════════════════════════════ */
+  .story-reel { display: flex; gap: 14px; padding: 4px 16px 18px; overflow-x: auto; }
+  .story-bubble { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; cursor: pointer; }
+  .story-ring {
+    width: 62px; height: 62px; border-radius: 50%; padding: 3px;
+    background: conic-gradient(from 180deg, var(--mango), var(--berry), var(--grape), var(--mango));
+    display: flex; align-items: center; justify-content: center;
+  }
+  .story-ring.seen { background: var(--color-border); }
+  .story-ring .avatar { width: 100%; height: 100%; font-size: 26px; border: 3px solid var(--color-bg); }
+  .story-bubble .lbl { font-size: 11px; font-weight: 800; font-family: var(--font-display); color: var(--color-text-muted); }
+
+  .chat-feed { padding: 0 14px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .chat-day-sep {
+    text-align: center; font-size: 11px; font-weight: 800; color: var(--color-text-faint);
+    font-family: var(--font-display); margin: 10px 0 2px;
+  }
+  .chat-row { display: flex; gap: 8px; align-items: flex-end; }
+  .chat-row.mine { flex-direction: row-reverse; }
+  .chat-bubble {
+    max-width: 78%; background: var(--color-surface); border: 1.5px solid var(--color-border);
+    border-radius: 16px; padding: 10px 13px; box-shadow: var(--shadow-card);
+  }
+  .chat-row.mine .chat-bubble { background: var(--sky-soft); border-color: var(--sky); border-color: transparent; }
+  .chat-bubble .who { font-family: var(--font-display); font-weight: 800; font-size: 12.5px; margin-bottom: 2px; }
+  .chat-bubble .what { font-size: 13.5px; font-weight: 600; }
+  .chat-bubble .reaction-row { margin-top: 6px; }
+
+  .story-modal {
+    position: fixed; inset: 0; background: rgba(20,20,30,0.55); z-index: 9999;
+    display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .story-modal.open { display: flex; }
+  .story-modal-card {
+    width: 100%; max-width: 340px; border-radius: 22px; padding: 26px 22px; position: relative;
+    color: #fff; text-align: center; box-shadow: var(--shadow-pop);
+    animation: slideIn .25s cubic-bezier(.2,.9,.3,1.2);
+  }
+  .story-modal-card .big { font-family: var(--font-display); font-weight: 900; font-size: 34px; margin: 10px 0 4px; }
+  .story-modal-card .cap { font-family: var(--font-body); font-weight: 700; font-size: 14px; opacity: 0.92; }
+  .story-modal-close {
+    position: absolute; top: 14px; right: 16px; background: rgba(255,255,255,0.2); border: none; color: #fff;
+    width: 30px; height: 30px; border-radius: 50%; font-size: 16px; cursor: pointer;
+  }
+
+  .section-note {
+    margin: 6px 16px 14px; font-size: 12px; color: var(--color-text-faint); font-family: var(--font-body); font-weight: 600;
+  }
+
+  /* ══ Variant D — Synthesis (stories + rail cards) ═══════════════ */
+  .synth-card {
+    display: flex; margin: 0 16px 12px; border-radius: var(--radius-lg);
+    background: var(--color-surface); border: 1.5px solid var(--color-border);
+    overflow: hidden; box-shadow: var(--shadow-card);
+  }
+  .synth-rail { width: 5px; flex-shrink: 0; }
+  .synth-body { flex: 1; padding: 12px 14px; min-width: 0; }
+  .synth-top { display: flex; align-items: center; gap: 8px; }
+  .synth-top .avatar { width: 26px; height: 26px; font-size: 13px; }
+  .synth-top .name { font-family: var(--font-display); font-weight: 800; font-size: 12.5px; }
+  .synth-top .time { font-size: 11px; color: var(--color-text-faint); font-weight: 700; margin-left: auto; }
+  .synth-hero { display: flex; align-items: center; gap: 10px; margin-top: 9px; }
+  .synth-hero .ic {
+    width: 38px; height: 38px; border-radius: 12px; flex-shrink: 0; font-size: 19px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .synth-hero .txt { min-width: 0; }
+  .synth-hero .txt .big { font-family: var(--font-display); font-weight: 900; font-size: 16.5px; line-height: 1.2; }
+  .synth-hero .txt .sub { font-size: 12px; color: var(--color-text-muted); font-weight: 600; margin-top: 1px; }
+</style>
+</head>
+<body>
+
+<div id="variant-nav">
+  <button class="variant-tab active" onclick="showVariant('a', event)">A: Путь (Duolingo)</button>
+  <button class="variant-tab" onclick="showVariant('b', event)">B: Kudos-карточки (Strava)</button>
+  <button class="variant-tab" onclick="showVariant('c', event)">C: Сторис + чат (IG + Discord)</button>
+  <button class="variant-tab" onclick="showVariant('d', event)">D: Синтез (сторис + карточки-путь) ★ Selected</button>
+</div>
+
+<div id="viewport-wrap">
+
+<!-- ══════════════════════════ VARIANT A ══════════════════════════ -->
+<div id="variant-a" class="variant active">
+  <div class="stage">
+    <div class="screen-head">
+      <h1 class="screen-title">Лента</h1>
+      <span class="streak-pill">🔥 7 дней семья</span>
+    </div>
+    <div class="section-note">Достижения всей семьи — путь, который вы проходите вместе. Штрафы и деньги сюда не попадают.</div>
+
+    <div class="path-day-label">Сегодня</div>
+
+    <div class="path-item">
+      <div class="path-rail"><div class="path-node" style="background: var(--mango-soft);">🚀</div></div>
+      <div class="path-card">
+        <div class="who">Адам получил недельный буст</div>
+        <div class="what">+420 🪙 — 4 пятёрки и стрик без пропусков</div>
+        <div class="when">сегодня, 18:40</div>
+        <div class="reaction-row">
+          <button class="reaction-chip" onclick="react(this,'🔥')">🔥 <span>3</span></button>
+          <button class="reaction-chip" onclick="react(this,'💪')">💪 <span>1</span></button>
+          <button class="tease-btn" onclick="toggleTease(this)">Подколоть</button>
+        </div>
+        <div class="tease-tray">
+          <button onclick="teaseReply(this,'Алим')">Я быстрее наберу 😏</button>
+          <button onclick="teaseReply(this,'Алим')">Красавчик 🔥</button>
+          <button onclick="teaseReply(this,'Алим')">Ну погоди 😤</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="path-item">
+      <div class="path-rail"><div class="path-node" style="background: var(--berry-soft);">🏅</div></div>
+      <div class="path-card">
+        <div class="who">Алим получил медаль от Адама</div>
+        <div class="what">«Красавчик недели» 🏅</div>
+        <div class="when">сегодня, 17:12</div>
+        <div class="reaction-row">
+          <button class="reaction-chip" onclick="react(this,'❤️')">❤️ <span>2</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="path-item">
+      <div class="path-rail"><div class="path-node" style="background: var(--mint-soft);">✅</div></div>
+      <div class="path-card">
+        <div class="who">Алим закрыл день без пропусков</div>
+        <div class="what">Все пункты выполнены</div>
+        <div class="when">сегодня, 16:05</div>
+        <div class="reaction-row">
+          <button class="reaction-chip" onclick="react(this,'👏')">👏 <span>1</span></button>
+          <button class="tease-btn" onclick="toggleTease(this)">Подколоть</button>
+        </div>
+        <div class="tease-tray">
+          <button onclick="teaseReply(this,'Адам')">Ты так не сможешь завтра 😏</button>
+          <button onclick="teaseReply(this,'Адам')">Погнали на рекорд!</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="path-day-label">Вчера</div>
+
+    <div class="path-item">
+      <div class="path-rail"><div class="path-node" style="background: var(--grape-soft);">📖</div></div>
+      <div class="path-card">
+        <div class="who">Алим дочитал «Хоббита»</div>
+        <div class="what">Чтение зачтено родителем</div>
+        <div class="when">вчера, 20:30</div>
+        <div class="reaction-row">
+          <button class="reaction-chip" onclick="react(this,'📚')">📚 <span>2</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="path-item">
+      <div class="path-rail"><div class="path-node" style="background: var(--sky-soft);">🎮</div></div>
+      <div class="path-card">
+        <div class="who">Адам взял час приставки</div>
+        <div class="what">Из магазина наград</div>
+        <div class="when">вчера, 19:00</div>
+        <div class="reaction-row">
+          <button class="reaction-chip" onclick="react(this,'🎮')">🎮 <span>1</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="path-item">
+      <div class="path-rail"><div class="path-node" style="background: var(--mango-soft);">💬</div></div>
+      <div class="path-card">
+        <div class="who">Мама</div>
+        <div class="what">«Горжусь вами обоими на этой неделе! ❤️»</div>
+        <div class="when">вчера, 21:15</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════ VARIANT B ══════════════════════════ -->
+<div id="variant-b" class="variant">
+  <div class="stage">
+    <div class="screen-head">
+      <h1 class="screen-title">Лента</h1>
+      <span class="streak-pill">🔥 7 дней семья</span>
+    </div>
+    <div class="section-note">Каждое событие — маленькая карточка достижения. Реагируй, поддерживай, подкалывай.</div>
+
+    <div class="kudos-card">
+      <div class="kudos-head">
+        <div class="avatar adam">🦁</div>
+        <div class="meta"><div class="name">Адам</div><div class="time">сегодня, 18:40</div></div>
+      </div>
+      <div class="kudos-hero" style="background: linear-gradient(135deg, var(--mango), var(--berry)); color:#fff;">
+        <div>
+          <div class="num">+420</div>
+          <div class="lab">🪙 недельный буст</div>
+        </div>
+      </div>
+      <div class="kudos-foot">
+        <div class="reaction-row" style="margin-top:0;">
+          <button class="kudos-kudo-btn" onclick="kudo(this)">🔥 Красава <span>3</span></button>
+          <button class="tease-btn" onclick="toggleTease(this)">Подколоть</button>
+        </div>
+        <div class="tease-tray">
+          <button onclick="teaseReply(this,'Алим')">Я быстрее наберу 😏</button>
+          <button onclick="teaseReply(this,'Алим')">Ну погоди 😤</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="kudos-card">
+      <div class="kudos-head">
+        <div class="avatar alim">🐯</div>
+        <div class="meta"><div class="name">Алим</div><div class="time">сегодня, 17:12</div></div>
+      </div>
+      <div class="kudos-hero" style="background: var(--berry-soft); color: var(--berry-deep);">
+        <div>
+          <div class="num">🏅</div>
+          <div class="lab">Медаль «Красавчик недели» от Адама</div>
+        </div>
+      </div>
+      <div class="kudos-foot">
+        <div class="reaction-row" style="margin-top:0;">
+          <button class="kudos-kudo-btn" onclick="kudo(this)">❤️ <span>2</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="kudos-card">
+      <div class="kudos-head">
+        <div class="avatar alim">🐯</div>
+        <div class="meta"><div class="name">Алим</div><div class="time">сегодня, 16:05</div></div>
+      </div>
+      <div class="kudos-hero" style="background: var(--mint-soft); color: var(--mint-deep);">
+        <div>
+          <div class="num">7/7</div>
+          <div class="lab">✅ день закрыт без пропусков</div>
+        </div>
+      </div>
+      <div class="kudos-foot">
+        <div class="reaction-row" style="margin-top:0;">
+          <button class="kudos-kudo-btn" onclick="kudo(this)">👏 <span>1</span></button>
+          <button class="tease-btn" onclick="toggleTease(this)">Подколоть</button>
+        </div>
+        <div class="tease-tray">
+          <button onclick="teaseReply(this,'Адам')">Погнали на рекорд!</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="kudos-card">
+      <div class="kudos-head">
+        <div class="avatar" style="background: var(--sky-soft);">👩</div>
+        <div class="meta"><div class="name">Мама</div><div class="time">вчера, 21:15</div></div>
+      </div>
+      <div class="kudos-foot" style="padding-top: 4px;">
+        <div style="font-size: 14px; font-weight: 700;">«Горжусь вами обоими на этой неделе! ❤️»</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ VARIANT C ══════════════════════════ -->
+<div id="variant-c" class="variant">
+  <div class="stage">
+    <div class="screen-head">
+      <h1 class="screen-title">Лента</h1>
+    </div>
+
+    <div class="story-reel">
+      <div class="story-bubble" onclick="openStory('adam')">
+        <div class="story-ring"><div class="avatar adam">🦁</div></div>
+        <div class="lbl">Адам</div>
+      </div>
+      <div class="story-bubble" onclick="openStory('alim')">
+        <div class="story-ring"><div class="avatar alim">🐯</div></div>
+        <div class="lbl">Алим</div>
+      </div>
+      <div class="story-bubble" onclick="openStory('week')">
+        <div class="story-ring seen"><div class="avatar" style="background: var(--grape-soft);">📊</div></div>
+        <div class="lbl">Неделя</div>
+      </div>
+    </div>
+
+    <div class="section-note">Сегодняшние яркие моменты — сверху. Полная лента — как чат семьи, снизу.</div>
+
+    <div class="chat-feed">
+      <div class="chat-day-sep">Сегодня</div>
+
+      <div class="chat-row">
+        <div class="avatar adam" style="width:30px;height:30px;font-size:15px;">🦁</div>
+        <div class="chat-bubble">
+          <div class="who">Адам</div>
+          <div class="what">🚀 Недельный буст +420 🪙 — 4 пятёрки и стрик без пропусков</div>
+          <div class="reaction-row">
+            <button class="reaction-chip lit" onclick="react(this,'🔥')">🔥 <span>3</span></button>
+            <button class="tease-btn" onclick="toggleTease(this)">Подколоть</button>
+          </div>
+          <div class="tease-tray">
+            <button onclick="teaseReply(this,'Алим')">Я быстрее наберу 😏</button>
+            <button onclick="teaseReply(this,'Алим')">Красавчик 🔥</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-row mine">
+        <div class="avatar alim" style="width:30px;height:30px;font-size:15px;">🐯</div>
+        <div class="chat-bubble">
+          <div class="who">Алим (ты)</div>
+          <div class="what">✅ День закрыт без пропусков</div>
+          <div class="reaction-row">
+            <button class="reaction-chip" onclick="react(this,'👏')">👏 <span>1</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-row">
+        <div class="avatar" style="width:30px;height:30px;font-size:15px; background: var(--sky-soft);">👩</div>
+        <div class="chat-bubble">
+          <div class="who">Мама</div>
+          <div class="what">Горжусь вами обоими на этой неделе! ❤️</div>
+        </div>
+      </div>
+
+      <div class="chat-day-sep">Вчера</div>
+
+      <div class="chat-row mine">
+        <div class="avatar alim" style="width:30px;height:30px;font-size:15px;">🐯</div>
+        <div class="chat-bubble">
+          <div class="who">Алим (ты)</div>
+          <div class="what">📖 Дочитал «Хоббита» — зачтено</div>
+          <div class="reaction-row">
+            <button class="reaction-chip" onclick="react(this,'📚')">📚 <span>2</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-row">
+        <div class="avatar adam" style="width:30px;height:30px;font-size:15px;">🦁</div>
+        <div class="chat-bubble">
+          <div class="who">Адам</div>
+          <div class="what">🎮 Взял час приставки из магазина</div>
+          <div class="reaction-row">
+            <button class="reaction-chip" onclick="react(this,'🎮')">🎮 <span>1</span></button>
+            <button class="tease-btn" onclick="toggleTease(this)">Подколоть</button>
+          </div>
+          <div class="tease-tray">
+            <button onclick="teaseReply(this,'Алим')">Не забудь про уроки 😤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ VARIANT D — SYNTHESIS ══════════════ -->
+<div id="variant-d" class="variant">
+  <div class="stage">
+    <div class="screen-head">
+      <h1 class="screen-title">Лента</h1>
+      <span class="streak-pill">🔥 7 дней семья</span>
+    </div>
+
+    <div class="story-reel">
+      <div class="story-bubble" onclick="openStory('adam')">
+        <div class="story-ring"><div class="avatar adam">🦁</div></div>
+        <div class="lbl">Адам</div>
+      </div>
+      <div class="story-bubble" onclick="openStory('alim')">
+        <div class="story-ring"><div class="avatar alim">🐯</div></div>
+        <div class="lbl">Алим</div>
+      </div>
+      <div class="story-bubble" onclick="openStory('week')">
+        <div class="story-ring seen"><div class="avatar" style="background: var(--grape-soft);">📊</div></div>
+        <div class="lbl">Неделя</div>
+      </div>
+    </div>
+
+    <div class="section-note">Яркое — в сторис сверху. Вся история — карточками снизу, цвет полосы слева = тип события.</div>
+
+    <div class="path-day-label" style="margin-left:16px;">Сегодня</div>
+
+    <div class="synth-card">
+      <div class="synth-rail" style="background: var(--mango);"></div>
+      <div class="synth-body">
+        <div class="synth-top">
+          <div class="avatar adam">🦁</div><div class="name">Адам</div><div class="time">18:40</div>
+        </div>
+        <div class="synth-hero">
+          <div class="ic" style="background: var(--mango-soft);">🚀</div>
+          <div class="txt"><div class="big">+420 🪙 недельный буст</div><div class="sub">4 пятёрки и стрик без пропусков</div></div>
+        </div>
+        <div class="reaction-row">
+          <button class="reaction-chip lit" onclick="react(this,'🔥')">🔥 <span>3</span></button>
+          <button class="tease-btn" onclick="toggleTease(this)">Подколоть</button>
+        </div>
+        <div class="tease-tray">
+          <button onclick="teaseReply(this,'Алим')">Я быстрее наберу 😏</button>
+          <button onclick="teaseReply(this,'Алим')">Красавчик 🔥</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="synth-card">
+      <div class="synth-rail" style="background: var(--berry);"></div>
+      <div class="synth-body">
+        <div class="synth-top">
+          <div class="avatar alim">🐯</div><div class="name">Алим</div><div class="time">17:12</div>
+        </div>
+        <div class="synth-hero">
+          <div class="ic" style="background: var(--berry-soft);">🏅</div>
+          <div class="txt"><div class="big">Медаль «Красавчик недели»</div><div class="sub">от Адама</div></div>
+        </div>
+        <div class="reaction-row">
+          <button class="reaction-chip" onclick="react(this,'❤️')">❤️ <span>2</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="synth-card">
+      <div class="synth-rail" style="background: var(--mint);"></div>
+      <div class="synth-body">
+        <div class="synth-top">
+          <div class="avatar alim">🐯</div><div class="name">Алим</div><div class="time">16:05</div>
+        </div>
+        <div class="synth-hero">
+          <div class="ic" style="background: var(--mint-soft);">✅</div>
+          <div class="txt"><div class="big">День закрыт без пропусков</div><div class="sub">Все пункты выполнены</div></div>
+        </div>
+        <div class="reaction-row">
+          <button class="reaction-chip" onclick="react(this,'👏')">👏 <span>1</span></button>
+          <button class="tease-btn" onclick="toggleTease(this)">Подколоть</button>
+        </div>
+        <div class="tease-tray">
+          <button onclick="teaseReply(this,'Адам')">Ты так не сможешь завтра 😏</button>
+          <button onclick="teaseReply(this,'Адам')">Погнали на рекорд!</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="synth-card">
+      <div class="synth-rail" style="background: var(--color-border);"></div>
+      <div class="synth-body">
+        <div class="synth-top">
+          <div class="avatar" style="background: var(--sky-soft);">👩</div><div class="name">Мама</div><div class="time">21:15</div>
+        </div>
+        <div style="margin-top: 9px; font-size: 13.5px; font-weight: 700;">«Горжусь вами обоими на этой неделе! ❤️»</div>
+      </div>
+    </div>
+
+    <div class="path-day-label" style="margin-left:16px;">Вчера</div>
+
+    <div class="synth-card">
+      <div class="synth-rail" style="background: var(--grape);"></div>
+      <div class="synth-body">
+        <div class="synth-top">
+          <div class="avatar alim">🐯</div><div class="name">Алим</div><div class="time">20:30</div>
+        </div>
+        <div class="synth-hero">
+          <div class="ic" style="background: var(--grape-soft);">📖</div>
+          <div class="txt"><div class="big">Дочитал «Хоббита»</div><div class="sub">Чтение зачтено родителем</div></div>
+        </div>
+        <div class="reaction-row">
+          <button class="reaction-chip" onclick="react(this,'📚')">📚 <span>2</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="synth-card">
+      <div class="synth-rail" style="background: var(--sky);"></div>
+      <div class="synth-body">
+        <div class="synth-top">
+          <div class="avatar adam">🦁</div><div class="name">Адам</div><div class="time">19:00</div>
+        </div>
+        <div class="synth-hero">
+          <div class="ic" style="background: var(--sky-soft);">🎮</div>
+          <div class="txt"><div class="big">Взял час приставки</div><div class="sub">Из магазина наград</div></div>
+        </div>
+        <div class="reaction-row">
+          <button class="reaction-chip" onclick="react(this,'🎮')">🎮 <span>1</span></button>
+          <button class="tease-btn" onclick="toggleTease(this)">Подколоть</button>
+        </div>
+        <div class="tease-tray">
+          <button onclick="teaseReply(this,'Алим')">Не забудь про уроки 😤</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="story-modal" id="story-modal" onclick="closeStory(event)">
+  <div class="story-modal-card" id="story-modal-card">
+    <button class="story-modal-close" onclick="closeStory(event)">✕</button>
+    <div id="story-modal-body"></div>
+  </div>
+</div>
+
+</div><!-- /viewport-wrap -->
+
+<div class="toast" id="toast"></div>
+
+<div id="sketch-tools" style="position:fixed;bottom:12px;right:12px;z-index:9999;font-family:system-ui;font-size:12px;background:rgba(0,0,0,0.7);color:white;padding:8px 12px;border-radius:8px;opacity:0.4;transition:opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.4'">
+  <div style="display:flex; gap:8px; align-items:center;">
+    <span>Viewport:</span>
+    <button onclick="setViewport('phone')" style="cursor:pointer;">📱</button>
+    <button onclick="setViewport('tablet')" style="cursor:pointer;">📟</button>
+    <button onclick="setViewport('desktop')" style="cursor:pointer;">🖥️</button>
+  </div>
+</div>
+
+<script>
+function showVariant(id, ev) {
+  document.querySelectorAll('.variant').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.variant-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('variant-' + id).classList.add('active');
+  ev.target.classList.add('active');
+}
+
+function setViewport(mode) {
+  const wrap = document.getElementById('viewport-wrap');
+  wrap.className = mode === 'phone' ? '' : mode;
+}
+
+function react(btn, emoji) {
+  const span = btn.querySelector('span');
+  const lit = btn.classList.toggle('lit');
+  span.textContent = parseInt(span.textContent) + (lit ? 1 : -1);
+  btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop');
+}
+
+function kudo(btn) {
+  const span = btn.querySelector('span');
+  const lit = btn.classList.toggle('lit');
+  span.textContent = parseInt(span.textContent) + (lit ? 1 : -1);
+  btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop');
+}
+
+function toggleTease(btn) {
+  const tray = btn.closest('.path-card, .kudos-foot, .chat-bubble, .synth-body').querySelector('.tease-tray');
+  tray.classList.toggle('open');
+}
+
+function teaseReply(btn, from) {
+  const tray = btn.closest('.tease-tray');
+  const text = btn.textContent;
+  const existing = tray.parentElement.querySelector('.tease-reply');
+  if (existing) existing.remove();
+  const reply = document.createElement('div');
+  reply.className = 'tease-reply';
+  reply.innerHTML = '<span>💬</span><span>' + from + ': ' + text + '</span>';
+  tray.after(reply);
+  tray.classList.remove('open');
+  showToast('Подколка отправлена 😄');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+const STORIES = {
+  adam: { bg: 'linear-gradient(135deg, var(--mango), var(--berry))', big: '+420 🪙', cap: 'Адам получил недельный буст сегодня' },
+  alim: { bg: 'linear-gradient(135deg, var(--grape), var(--sky))', big: '12 🔥', cap: 'Алим держит стрик 12 дней подряд' },
+  week: { bg: 'linear-gradient(135deg, var(--mint), var(--sky))', big: '2/2', cap: 'Оба ребёнка закрыли эту неделю без пропусков' },
+};
+
+function openStory(key) {
+  const s = STORIES[key];
+  document.getElementById('story-modal-card').style.background = s.bg;
+  document.getElementById('story-modal-body').innerHTML =
+    '<div class="big">' + s.big + '</div><div class="cap">' + s.cap + '</div>';
+  document.getElementById('story-modal').classList.add('open');
+}
+function closeStory(ev) {
+  if (ev.target.id === 'story-modal' || ev.target.closest('.story-modal-close')) {
+    document.getElementById('story-modal').classList.remove('open');
+  }
+}
+</script>
+
+</body>
+</html>

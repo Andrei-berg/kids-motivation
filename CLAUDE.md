@@ -221,3 +221,6 @@ security, coding standards, testing, deployment. Update when making architectura
 - `/gsd:plan-phase N.M` — plan next phase
 - `/gsd:execute-phase` — execute plans
 - `/gsd:progress` — check current state
+
+- **Sketch findings for kids-motivation** (design decisions, CSS patterns, visual direction for
+  the Family Feed, Day-fill form, and Weekly Boost) → `Skill("sketch-findings-kids-motivation")`
