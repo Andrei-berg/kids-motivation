@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: Kid Experience Redesign
-status: "Roadmap created — ready for `/gsd:plan-phase 9.1`"
-stopped_at: Phase 9.1 context gathered
-last_updated: "2026-09-17T18:42:26.615Z"
-last_activity: 2026-07-23
+status: executing
+stopped_at: Phase 9.1 UI-SPEC approved
+last_updated: "2026-09-17T19:43:45.158Z"
+last_activity: 2026-09-17
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 0
+  total_plans: 4
   completed_plans: 0
   percent: 0
 ---
@@ -74,7 +74,7 @@ Phase 05.5 (year-calendar): COMPLETE 2026-07-13 — 7/7 plans executed (waves 1-
 Phase 05.6 (day-blocks): discussion in progress (2026-07-14).
 Phase 05.3 (design-tokens): 05.3-03 CODE-COMPLETE — app/kid/wallet/page.tsx TxnRow and components/parent-center/screens/Dashboard.tsx ActivityRow both adopted the shared LedgerRow/Amount atoms (paper + ink themes respectively); credits/earn_coins/bonus render gold, debits/penalty render neutral/danger. Full build green (tsc/lint/test/next build, 55/55 pages). Surgical diffs confirmed via git diff per file. Consolidated checkpoint:human-verify (recolor + fonts + both pilots + unmigrated/legacy screens + gold-only-on-money rule) is queued for operator sign-off — phase 05.3 not yet marked closed pending that approval. 05.3-01 (tokens+fonts) and 05.3-02 (atoms module) done earlier.
 Phase 05.10 (automation): 4/4 plans executed 2026-07-22/23 (wave 1: 05.10-01 trust-limit engine + schema migration, 05.10-02 smart reminders cron; wave 2: 05.10-03 allowance cron, 05.10-04 parent settings UI). First verification pass found SC3 (reminders) non-functional in prod — supabase/migrations/01.3-categories-schedule.sql (categories/tasks/schedule_items/push_subscriptions) had never actually been applied to the live DB despite Phase 1.3 being marked "Complete", silently breaking every push-notification path app-wide, not just this phase. Applied the migration to prod (idempotent); this surfaced a second independent bug (day_of_week `cs` array filter used JSON syntax instead of Postgres array-literal syntax, silently swallowed since only `data` was destructured) — fixed in both app/api/cron/daily/route.ts and app/api/cron/missed-tasks/route.ts, plus added per-child try/catch isolation around getStreaksAtRisk/creditAwards. Re-verification: 12/14 truths, 0 gaps, 0 regressions — commit 2071ca6. Plan 04's Task 3 human-verify checkpoint had been explicitly bypassed (user decision) without real browser testing; wrote tests/integration/automation-settings-persistence.test.ts exercising the REAL setTrustLimitAction/setAllowanceAction server actions (not raw DB writes, unlike the pre-existing tests) to close 4/5 05.10-HUMAN-UAT.md items via automated-equivalent live-DB proof — commit 6b968d8. Item 5 (real device push receipt via VAPID) remains genuinely pending, needs the operator with a real device. Phase not yet marked complete in ROADMAP pending that final item.
-Last activity: 2026-07-23
+Last activity: 2026-09-17
 Prior GSD activity: 2026-07-22 — executed phase 05.10 (automation) waves 1-2
 ```
 
@@ -176,6 +176,19 @@ None.
   Tests: `tests/helpers.test.ts` (isValidCalendarDate), `tests/integration/award.test.ts`
   (non-skipped date-validation block).
 
+- **Phase 9.1 decision-coverage gate override (2026-09-17):** `check.decision-coverage-plan`
+  reported D-01/D-02/D-04/D-05/D-07/D-08 as uncovered when planning Phase 9.1
+  (feed-recognition). Manual grep of the 4 PLAN.md files and an independent
+  gsd-plan-checker pass both confirmed all of D-01 through D-08 are explicitly cited
+  and implemented across the plans (e.g. D-01/D-02 in `09.1-02-PLAN.md:41,120,126`,
+  D-08 in `09.1-01-PLAN.md:123,164`, D-04/D-05/D-07 throughout `09.1-03-PLAN.md`).
+  The tool's returned decision `text` fields were visibly corrupted/merged across
+  bullets, indicating a parser bug on CONTEXT.md's multi-line/nested decision bullets,
+  not a real coverage gap. Operator chose "Proceed anyway" — planning continued
+  without re-running the planner. If `/gsd:verify-work` for 9.1 re-surfaces this,
+  treat it as the same known tool false-positive, not a new gap, unless a fresh grep
+  shows an actual missing D-NN citation.
+
 - **Discovered 2026-07-07: `parent_audit_events` was never created in prod** — every
   `insertAuditEvent` (shop_approve/reject etc.) has been silently failing since 04.4.
   Fixed same day: applied `04.4-01-audit-consent.sql` + `05.4-04-withdraw-audit-actions.sql`
@@ -193,9 +206,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-09-17T18:42:26.581Z
-Stopped at: Phase 9.1 context gathered
-Resume file: .planning/phases/09.1-feed-recognition/09.1-CONTEXT.md
+Last session: 2026-09-17T19:09:40.634Z
+Stopped at: Phase 9.1 UI-SPEC approved
+Resume file: .planning/phases/09.1-feed-recognition/09.1-UI-SPEC.md
 
 ---
 
@@ -329,8 +342,8 @@ Working through the deferred backlog. Per-item, each committed + pushed separate
 
 Phase: 9.1 (not started)
 Plan: —
-Status: Roadmap created — ready for `/gsd:plan-phase 9.1`
-Last activity: 2026-09-17 — Milestone v9.0 ROADMAP.md created (6 phases, 19/19 requirements mapped)
+Status: Ready to execute
+Last activity: 2026-09-17 -- Phase 09.1 planning complete
 
 ## Operator Next Steps
 
