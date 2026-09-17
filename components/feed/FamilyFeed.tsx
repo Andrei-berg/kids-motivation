@@ -20,6 +20,7 @@ import {
 import { postFeedNote } from '@/app/actions/post-feed-note'
 import { paper as daylightPaper, base as familyBase } from '@/lib/design/tokens'
 import { K } from '@/components/kid/design/kidTheme'
+import { RAIL_COLOR_MAP } from '@/lib/kid/feed-highlights'
 import type { FeedEvent, FeedReaction, FeedComment } from '@/lib/models/feed.types'
 import type { Child } from '@/lib/models/child.types'
 
@@ -301,11 +302,11 @@ function EventRow({
   const summary = summarizeReactions(reactions, me?.id ?? null)
   const isNote = e.kind === 'note'
   const glyph = e.icon || (isNote ? '✍️' : '•')
-  const amountColor = e.amount != null && e.amount < 0 ? C.danger : C.gold
 
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 16, padding: 14 }}>
-      <div style={{ display: 'flex', gap: 12 }}>
+    <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 18, overflow: 'hidden', display: 'flex' }}>
+      <div aria-hidden style={{ width: 5, flexShrink: 0, background: RAIL_COLOR_MAP[e.kind] ?? K.line }} />
+      <div style={{ display: 'flex', gap: 12, flex: 1, minWidth: 0, padding: 14 }}>
         <div style={{
           width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
@@ -322,11 +323,6 @@ function EventRow({
               {child && !isNote ? ' · ' : ''}
               {e.title}
             </div>
-            {e.amount != null && (
-              <span style={{ fontFamily: C.fNum, fontSize: 14, fontWeight: 700, color: amountColor, whiteSpace: 'nowrap' }}>
-                {e.amount > 0 ? '+' : ''}{e.amount}🪙
-              </span>
-            )}
           </div>
 
           {e.body && (
