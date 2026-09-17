@@ -112,7 +112,7 @@ See: `.planning/milestones/v5.0-ROADMAP.md`
 
 ## Phases
 
-- [ ] **Phase 9.1: feed-recognition** — Family Feed becomes a motivational recognition stream: story reel + day-grouped event cards with color rail, no money, no penalties
+- [x] **Phase 9.1: feed-recognition** — Family Feed becomes a motivational recognition stream: story reel + day-grouped event cards with color rail, no money, no penalties (completed 2026-09-17)
 - [ ] **Phase 9.2: feed-social** — Emoji reactions, sibling "подколоть" tease replies, kid→kid medals as their own feed event
 - [ ] **Phase 9.3: dayform-default** — Per-child `fill_style` preference + sticky-summary (default) day-fill style with live coin feedback
 - [ ] **Phase 9.4: dayform-styles** — Tile-sheet (grid + bottom sheet) and story-stepper (one category at a time) day-fill styles
@@ -138,7 +138,7 @@ Plans:
 - [x] 09.1-01-PLAN.md — Pure highlight-ranking module (`pickHighlight`, `RANK_ORDER`, `RAIL_COLOR_MAP`) + vitest suite + story-seen localStorage helpers
 - [x] 09.1-02-PLAN.md — `EventRow` restyled as a color-railed card; coin-amount rendering removed for every kind; FEED-04 emitter audit + regression guard
 - [x] 09.1-03-PLAN.md — Story reel (per-child today-highlight bubbles, seen/unseen ring) + full-bleed celebratory modal with mark-seen wiring
-- [ ] 09.1-04-PLAN.md — Full gate sweep (tsc/lint/test/build + structural content gates) and operator browser verification checkpoint
+- [x] 09.1-04-PLAN.md — Full gate sweep (tsc/lint/test/build + structural content gates) and operator browser verification checkpoint
 
 **UI hint**: yes
 
@@ -255,7 +255,7 @@ Plans:
 | 5.9 rules-presets | v5.0 | 10/10 | Complete | 2026-07-23 |
 | 5.10 automation | v5.0 | 4/4 | Complete | 2026-07-22 |
 | 5.11 legacy-cleanup | v5.0 | 3/3 | Complete | 2026-07-23 |
-| 9.1 feed-recognition | v9.0 | 3/4 | In Progress|  |
+| 9.1 feed-recognition | v9.0 | 4/4 | Complete   | 2026-09-17 |
 | 9.2 feed-social | v9.0 | 0/? | Not started | - |
 | 9.3 dayform-default | v9.0 | 0/? | Not started | - |
 | 9.4 dayform-styles | v9.0 | 0/? | Not started | - |
