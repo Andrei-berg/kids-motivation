@@ -8,6 +8,13 @@
 //   parent  → daylight theme, composer on
 //   family  → daylight theme, composer on (extended members)
 //   kid     → kid theme, composer off (read + react + comment only)
+//
+// FEED-04 / D-03 — this feed renders only positive recognition events; no
+// penalty, correction, or negative behavior-tag kind has an emitter anywhere
+// in the codebase. Enforcement lives at the family_events.kind CHECK
+// constraint in supabase/migrations/2026-09-11-family-feed.sql, not in this
+// component — any future emitter for punitive content must target the
+// private Wallet/audit trail, never family_events.
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
