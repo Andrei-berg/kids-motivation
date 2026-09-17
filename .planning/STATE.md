@@ -6,7 +6,7 @@ status: planning
 last_updated: "2026-09-17T18:20:10.815Z"
 last_activity: 2026-09-17
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -15,7 +15,7 @@ progress:
 
 # STATE.md — Текущее состояние проекта
 
-> Обновляется после каждой фазы. Последнее обновление: 2026-06-15 — out-of-band security + expenses pass (см. ниже).
+> Обновляется после каждой фазы. Последнее обновление: 2026-09-17 — ROADMAP v9.0 создан (6 фаз, 9.1–9.6).
 
 ---
 
@@ -48,6 +48,21 @@ progress:
 ## Текущая позиция
 
 ```
+Milestone v9.0 Kid Experience Redesign — ROADMAP CREATED 2026-09-17, no phases started.
+6 phases derived from FEED-01..07 / DAYFORM-01..06 / BOOST-01..06 (19 requirements, 100% mapped):
+  9.1 feed-recognition   — FEED-01, FEED-02, FEED-03, FEED-04
+  9.2 feed-social        — FEED-05, FEED-06, FEED-07
+  9.3 dayform-default    — DAYFORM-01, DAYFORM-04, DAYFORM-05, DAYFORM-06
+  9.4 dayform-styles     — DAYFORM-02, DAYFORM-03
+  9.5 boost-default      — BOOST-01, BOOST-02, BOOST-03, BOOST-06
+  9.6 boost-styles       — BOOST-04, BOOST-05
+Grounded in .claude/skills/sketch-findings-kids-motivation/ (2026-09-17 sketch session).
+Numbered v9.0 (not v6.0) and phases start at 9.1 specifically to avoid colliding with the
+already-reserved-but-unbuilt v6.0/v7.0/v8.0 phase numbers (6.1-8.3) — see ROADMAP.md.
+Next step: /gsd:plan-phase 9.1
+
+---
+
 Milestone v5.0 Flexibility & Design Unification — COMPLETE (all 11 phases, 5.1-5.11)
 Phase 05.9 (rules-presets): COMPLETE 2026-07-23 — last plan 05.9-09 (Settings CoinsRulesTab: preset cards + diff-preview, 3-way grade-scale editor with data-driven rows, BehaviorTagsManager + BehaviorApprovalQueue mounted) code-complete since 2026-07-22; its checkpoint:human-verify (5 interactions: preset apply/diff/confirm, grade-scale switch, behavior tag CRUD, approval queue render) approved by operator 2026-07-23. All 10/10 plans done. Closes v5.0 — no open phases remain in the milestone.
 Phase 4.5 (desktop): COMPLETE — all 4 plans executed. 04.5-02 (Parent Center screen layouts) executed 2026-07-23: Dashboard, Analytics, ChildrenTasksShop (Children + Shop), and Settings all gained a `useDesktop` (>=1024px) 2-column/grid layout — Dashboard splits children (left) / pending+activity (right); Analytics splits bar+line charts with KPI cards widened to 4-col; Children and Shop screens grid their card/list content 2-up; Settings swaps the horizontal pill tabs for a 200px vertical nav + content column on desktop. Mobile JSX left byte-for-byte unchanged in every file (verified via isDesktop-gated branches only). tsc/build/lint all green. Commits 1a6420d, 9016b58. Closes DSK-02.
@@ -62,16 +77,16 @@ Last activity: 2026-07-23
 Prior GSD activity: 2026-07-22 — executed phase 05.10 (automation) waves 1-2
 ```
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0% (v9.0 — 0/6 phases)
 
 ---
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-26)
+See: .planning/PROJECT.md (updated 2026-09-17)
 
 **Core value:** Any family can register and use the app — children earn coins for real effort, spend them on real rewards
-**Current focus:** v5.0 complete — ready for `/gsd:complete-milestone`
+**Current focus:** v9.0 Kid Experience Redesign — ROADMAP.md created (phases 9.1-9.6), ready for `/gsd:plan-phase 9.1`
 
 ---
 
@@ -79,11 +94,12 @@ See: .planning/PROJECT.md (updated 2026-04-26)
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
-| 4.1 | pwa | PWA-01, PWA-02, PWA-03 | Not started |
-| 4.2 | ux-polish | UX-01, UX-02 | Not started |
-| 4.3 | localization | LOC-01 | Not started |
-| 4.4 | security-compliance | SEC-01, SEC-02 | Not started |
-| 4.5 | desktop | DSK-01, DSK-02, DSK-03 | Not started |
+| 9.1 | feed-recognition | FEED-01, FEED-02, FEED-03, FEED-04 | Not started |
+| 9.2 | feed-social | FEED-05, FEED-06, FEED-07 | Not started |
+| 9.3 | dayform-default | DAYFORM-01, DAYFORM-04, DAYFORM-05, DAYFORM-06 | Not started |
+| 9.4 | dayform-styles | DAYFORM-02, DAYFORM-03 | Not started |
+| 9.5 | boost-default | BOOST-01, BOOST-02, BOOST-03, BOOST-06 | Not started |
+| 9.6 | boost-styles | BOOST-04, BOOST-05 | Not started |
 
 ---
 
@@ -104,6 +120,15 @@ See: .planning/PROJECT.md (updated 2026-04-26)
 - i18n: Chose custom React context + Zustand over next-intl — zero deps, dotted-key lookup, {{var}} interpolation, browser-detect default. See 04.3-01-SUMMARY.md.
 - COPPA requires parental consent gate for children under 13; data deletion must cascade across all tables
 
+### Key architecture facts for v9.0
+
+- Design source of truth for all three phases pairs: `.claude/skills/sketch-findings-kids-motivation/` (SKILL.md + references/feed-and-recognition.md, day-fill-interaction.md, progress-and-boost.md) plus interactive HTML mockups under `.planning/sketches/.../sources/`. `/gsd:plan-phase` and `/gsd:execute-phase` should treat this skill as primary design input for v9.0 phases.
+- Reuse real components, don't reinvent: `components/kid/design/atoms.tsx` (`CollapsibleRow`, `KMButton`, `BoostMeter`, `XPBar`, `CoinPill`, `StreakFlame`, `ProgressRing`, `Confetti`) and palette `components/kid/design/kidTheme.ts` (`K`).
+- `fill_style` (tile-sheet / story-stepper / sticky-summary) and `boost_style` (segmented-bar / quest-checklist / ring-badges) are new per-child preference fields — most naturally alongside `backfill_mode` on `children`, or a small new per-child settings row. Default for `fill_style` is `sticky-summary` (DAYFORM-06); no mandated default for `boost_style`.
+- Weekly boost detail views must read real tier thresholds/coin amounts from `lib/kid/boost-rules.ts` — the sketch HTML has illustrative placeholder numbers (150/300/500, 3/5/7 grades) that must NOT be hardcoded into real components (BOOST-06).
+- Family Feed content rules (all three phases 9.1/9.2 must respect): no money amounts/coin costs ever, no penalties/corrections/negative behavior-tag events ever — those stay in the private Wallet/audit trail only.
+- Existing `components/feed/FamilyFeed.tsx` and `family_events`/reactions/comments schema (from the 2026-09-10 Family Feed work, see MEMORY.md `parent-center-light-and-family-feed`) is the starting point to extend, not replace from scratch — confirm exact current schema/component shape during 9.1 planning.
+
 ### Roadmap Evolution
 
 - 2026-07-05: Milestone **v5.0 Flexibility & Design Unification** inserted (11 phases 5.1–5.11);
@@ -113,6 +138,11 @@ See: .planning/PROJECT.md (updated 2026-04-26)
   Next up: `/gsd:plan-phase 5.1` (launch-prep).
 
 - Note: v4.0 phases 4.3 (localization, 4/6) and 4.5 (desktop, 2/4) remain open; they do not block v5.0.
+
+- 2026-09-17: Milestone **v9.0 Kid Experience Redesign** roadmapped — 6 phases (9.1–9.6),
+  numbered to start at phase 9 specifically to avoid colliding with the already-reserved-but-
+  unbuilt v6.0/v7.0/v8.0 phase numbers (6.1–8.3). 19/19 requirements (FEED-01..07,
+  DAYFORM-01..06, BOOST-01..06) mapped, no orphans. Next up: `/gsd:plan-phase 9.1`.
 
 ### Pending Todos
 
@@ -162,9 +192,9 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-07-23T18:00:00.000Z
-Stopped at: Phase 05.9 Plan 09 human-verify checkpoint approved — v5.0 milestone complete
-Resume file: none — next step is /gsd:complete-milestone
+Last session: 2026-09-17T18:20:10.815Z
+Stopped at: ROADMAP.md created for v9.0 (phases 9.1-9.6), STATE.md updated, REQUIREMENTS.md traceability filled
+Resume file: none — next step is `/gsd:plan-phase 9.1`
 
 ---
 
@@ -296,11 +326,11 @@ Working through the deferred backlog. Per-item, each committed + pushed separate
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 9.1 (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-09-17 — Milestone v9.0 started
+Status: Roadmap created — ready for `/gsd:plan-phase 9.1`
+Last activity: 2026-09-17 — Milestone v9.0 ROADMAP.md created (6 phases, 19/19 requirements mapped)
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Review `.planning/ROADMAP.md` v9.0 section, then run `/gsd:plan-phase 9.1`

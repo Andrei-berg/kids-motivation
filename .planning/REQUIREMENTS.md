@@ -85,4 +85,26 @@
 
 ## Traceability
 
-_Filled by the roadmap step._
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| FEED-01 | Phase 9.1 | Pending |
+| FEED-02 | Phase 9.1 | Pending |
+| FEED-03 | Phase 9.1 | Pending |
+| FEED-04 | Phase 9.1 | Pending |
+| FEED-05 | Phase 9.2 | Pending |
+| FEED-06 | Phase 9.2 | Pending |
+| FEED-07 | Phase 9.2 | Pending |
+| DAYFORM-01 | Phase 9.3 | Pending |
+| DAYFORM-04 | Phase 9.3 | Pending |
+| DAYFORM-05 | Phase 9.3 | Pending |
+| DAYFORM-06 | Phase 9.3 | Pending |
+| DAYFORM-02 | Phase 9.4 | Pending |
+| DAYFORM-03 | Phase 9.4 | Pending |
+| BOOST-01 | Phase 9.5 | Pending |
+| BOOST-02 | Phase 9.5 | Pending |
+| BOOST-03 | Phase 9.5 | Pending |
+| BOOST-06 | Phase 9.5 | Pending |
+| BOOST-04 | Phase 9.6 | Pending |
+| BOOST-05 | Phase 9.6 | Pending |
+
+Coverage: 19/19 v1 requirements mapped. No orphans.

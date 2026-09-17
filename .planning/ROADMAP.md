@@ -12,6 +12,7 @@
 - ✅ **v3.0 Communication** — Phases 3.1–3.3 (shipped 2026-04-26)
 - ✅ **v4.0 PWA Polish** — Phases 4.1–4.5 (shipped 2026-05-18, closed 2026-07-23)
 - ✅ **v5.0 Flexibility & Design** — Phases 5.1–5.11 (shipped 2026-07-23)
+- 🚧 **v9.0 Kid Experience Redesign** — Phases 9.1–9.6 (in progress — next up)
 - 📋 **v6.0 Monetization** — Phases 6.1–6.3 (planned)
 - 📋 **v7.0 Social** — Phases 7.1–7.3 (planned)
 - 📋 **v8.0 Native Apps** — Phases 8.1–8.3 (planned)
@@ -103,6 +104,96 @@ See: `.planning/milestones/v5.0-ROADMAP.md`
 
 ## Planned Milestones
 
+### v9.0 — Kid Experience Redesign
+
+> Grounded in `.claude/skills/sketch-findings-kids-motivation/` (2026-09-17 sketch session,
+> sketches 001-003). Numbered v9.0 (not v6.0) and phases start at 9.1 specifically to avoid
+> colliding with the already-reserved-but-unbuilt v6.0/v7.0/v8.0 phase numbers (6.1–8.3).
+
+## Phases
+
+- [ ] **Phase 9.1: feed-recognition** — Family Feed becomes a motivational recognition stream: story reel + day-grouped event cards with color rail, no money, no penalties
+- [ ] **Phase 9.2: feed-social** — Emoji reactions, sibling "подколоть" tease replies, kid→kid medals as their own feed event
+- [ ] **Phase 9.3: dayform-default** — Per-child `fill_style` preference + sticky-summary (default) day-fill style with live coin feedback
+- [ ] **Phase 9.4: dayform-styles** — Tile-sheet (grid + bottom sheet) and story-stepper (one category at a time) day-fill styles
+- [ ] **Phase 9.5: boost-default** — Per-child `boost_style` preference + segmented-bar weekly-boost detail view, reading real tier/coin rules
+- [ ] **Phase 9.6: boost-styles** — Quest-checklist and ring-badges weekly-boost detail styles
+
+---
+
+## Phase Details
+
+### Phase 9.1: feed-recognition
+**Goal**: Kid and parent see the Family Feed reframed as a motivational recognition stream — today's highlights up top, day-grouped event cards below — with no money or penalty content ever shown
+**Depends on**: Nothing (first v9.0 phase)
+**Requirements**: FEED-01, FEED-02, FEED-03, FEED-04
+**Success Criteria** (what must be TRUE):
+  1. Opening the Feed shows a story-reel bubble per child with today's single biggest highlight; tapping a bubble opens a full celebratory moment view
+  2. Below the story reel, events are grouped by day into cards, each with a color-coded left rail matching its event type (day completed, streak, boost, badge, medal, reading, purchase, parent note) reusing the real `CollapsibleRow` rail pattern
+  3. A reward purchase card in the feed shows only the reward's name, never a coin amount or price
+  4. No card in the feed ever shows a penalty, correction, or negative behavior-tag event — those stay visible only in the private Wallet/audit trail
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 9.2: feed-social
+**Goal**: Family members can recognize and playfully needle each other directly on feed events, and a kid-sent medal shows up as its own celebrated moment
+**Depends on**: Phase 9.1
+**Requirements**: FEED-05, FEED-06, FEED-07
+**Success Criteria** (what must be TRUE):
+  1. Any family member can tap a fixed emoji reaction on a feed card; it toggles on/off per user and shows a live count
+  2. A child can open the "подколоть" tray, pick a pre-written playful phrase (no freeform text field exists), and see it post as a reply bubble under the sibling's card
+  3. A medal sent kid→kid appears in the feed as its own recognized event type, not folded into a generic note
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 9.3: dayform-default
+**Goal**: Every child has a persisted, changeable day-fill style preference, and filling the day in the default sticky-summary style gives constant transparency plus live coin feedback
+**Depends on**: Nothing (independent of the Feed work in 9.1/9.2)
+**Requirements**: DAYFORM-01, DAYFORM-04, DAYFORM-05, DAYFORM-06
+**Success Criteria** (what must be TRUE):
+  1. A child's profile/settings shows a `fill_style` control (tile-sheet / story-stepper / sticky-summary) that can be changed at any time
+  2. A child with no explicit preference set fills their day in `sticky-summary` style by default
+  3. In `sticky-summary` style, a persistent completion ring + live coin total stay on screen; binary categories (room, behavior) toggle with one tap directly on the row with no sheet or accordion; multi-value categories expand a small inline panel in place
+  4. Filling any category shows a floating "+N coins" that rises and fades, and the running coin total ticks upward immediately
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 9.4: dayform-styles
+**Goal**: A child who prefers a different rhythm can switch to tile-sheet or story-stepper and get the full day-fill experience, not a partial one
+**Depends on**: Phase 9.3
+**Requirements**: DAYFORM-02, DAYFORM-03
+**Success Criteria** (what must be TRUE):
+  1. With `tile-sheet` selected, the day renders as a 2-column grid of per-category status tiles; tapping a tile opens a bottom sheet scoped to just that category, and closing it updates the tile in place with no page reflow
+  2. With `story-stepper` selected, one category fills the screen at a time behind a dot-progress track; completing a category auto-advances to the next incomplete one, and an explicit skip control lets the child jump ahead
+  3. Both styles show the same live floating coin feedback on every category filled as the sticky-summary default does
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 9.5: boost-default
+**Goal**: Every child has a persisted, changeable weekly-boost detail style preference, and tapping the inline boost meter opens a real, rule-accurate breakdown in the segmented-bar style
+**Depends on**: Nothing (independent of the Feed and Day-fill work)
+**Requirements**: BOOST-01, BOOST-02, BOOST-03, BOOST-06
+**Success Criteria** (what must be TRUE):
+  1. A child's profile/settings shows a `boost_style` control (segmented-bar / quest-checklist / ring-badges) that can be changed at any time
+  2. Tapping the existing inline `BoostMeter` on the Day hero opens a detail view rendered in the child's chosen style; the inline meter itself stays visually unchanged
+  3. With `segmented-bar` selected, the detail view shows the grade-tier progress and the consistency-bonus progress as two independent sub-bars, each with its own hint text
+  4. Every tier threshold and coin amount shown is read live from `lib/kid/boost-rules.ts` — none of the sketch's illustrative placeholder numbers appear
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 9.6: boost-styles
+**Goal**: A child who prefers a different breakdown can switch to quest-checklist or ring-badges and see the same rule-accurate boost data presented differently
+**Depends on**: Phase 9.5
+**Requirements**: BOOST-04, BOOST-05
+**Success Criteria** (what must be TRUE):
+  1. With `quest-checklist` selected, every boost condition (grade-tier thresholds, full-week completion, streak threshold) appears as its own row with its own reward amount and progress, plus one combined total at the bottom
+  2. With `ring-badges` selected, one ring shows the current total and tappable tier badges (reached / next) open a popover explaining what's needed for the next tier
+  3. Both styles read the same real thresholds/amounts from `lib/kid/boost-rules.ts` as the segmented-bar default, with no hardcoded sketch numbers
+**Plans**: TBD
+**UI hint**: yes
+
+---
+
 ### v6.0 — Monetization
 
 - [ ] **Phase 6.1: freemium-limits** — Free plan limits (2 children, 3 categories, 5 shop items), paywall
@@ -157,10 +248,16 @@ See: `.planning/milestones/v5.0-ROADMAP.md`
 | 5.9 rules-presets | v5.0 | 10/10 | Complete | 2026-07-23 |
 | 5.10 automation | v5.0 | 4/4 | Complete | 2026-07-22 |
 | 5.11 legacy-cleanup | v5.0 | 3/3 | Complete | 2026-07-23 |
+| 9.1 feed-recognition | v9.0 | 0/? | Not started | - |
+| 9.2 feed-social | v9.0 | 0/? | Not started | - |
+| 9.3 dayform-default | v9.0 | 0/? | Not started | - |
+| 9.4 dayform-styles | v9.0 | 0/? | Not started | - |
+| 9.5 boost-default | v9.0 | 0/? | Not started | - |
+| 9.6 boost-styles | v9.0 | 0/? | Not started | - |
 | 6.1–6.3 | v6.0 Monetization | 0/? | Planned | - |
 | 7.1–7.3 | v7.0 Social | 0/? | Planned | - |
 | 8.1–8.3 | v8.0 Native Apps | 0/? | Planned | - |
 
 ---
 
-*Created: 2026-03-01. Updated: 2026-07-23 — v5.0 Flexibility & Design Unification shipped (11 phases, 71 plans); v4.0 PWA Polish formally closed at the same time. Both collapsed to Completed Milestones; full phase details archived to `.planning/milestones/`. No milestone currently in progress — next up is v6.0/v7.0/v8.0 via `/gsd:new-milestone`.*
+*Created: 2026-03-01. Updated: 2026-09-17 — Milestone v9.0 Kid Experience Redesign roadmapped: 6 phases (9.1–9.6) derived from FEED-01..07/DAYFORM-01..06/BOOST-01..06, grounded in `.claude/skills/sketch-findings-kids-motivation/`; numbered v9.0 and phases start at 9.1 specifically to avoid colliding with the already-reserved v6.0/v7.0/v8.0 phase numbers (6.1–8.3). Previous update 2026-07-23 — v5.0 Flexibility & Design Unification shipped (11 phases, 71 plans); v4.0 PWA Polish formally closed at the same time.*
