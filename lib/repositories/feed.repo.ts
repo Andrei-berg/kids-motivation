@@ -158,6 +158,34 @@ export function markFeedSeen(familyId: string, atIso?: string): void {
   }
 }
 
+// ─── Story bubble seen/unseen marker (D-06) ─────────────────────────────────
+// Per-viewer, per-child, per-day, view-local only — never written to the DB.
+// Uses a key prefix deliberately distinct from the whole-feed marker above so
+// the two key namespaces can never collide. `dateStr` is always supplied by
+// the caller (plan 09.1-03 passes the family-local "today" string) — this
+// repo does not compute dates itself, so the date source stays a single
+// decision point outside this file.
+
+function storySeenKey(familyId: string, childId: string, dateStr: string) {
+  return `story_seen_${familyId}_${childId}_${dateStr}`
+}
+
+export function getStorySeen(familyId: string, childId: string, dateStr: string): boolean {
+  try {
+    return window.localStorage.getItem(storySeenKey(familyId, childId, dateStr)) !== null
+  } catch {
+    return false
+  }
+}
+
+export function markStorySeen(familyId: string, childId: string, dateStr: string): void {
+  try {
+    window.localStorage.setItem(storySeenKey(familyId, childId, dateStr), new Date().toISOString())
+  } catch {
+    /* private mode / disabled storage — the ring just won't flatten, no crash */
+  }
+}
+
 export async function getFeedUnreadCount(familyId: string, since: string | null): Promise<number> {
   let q = supabase
     .from('family_events')
