@@ -278,9 +278,31 @@ Two fully separate experiences — Parent Center (dark, control-focused) and Kid
 
 ---
 
-## Current Milestone: none — between milestones
+## Current Milestone: v9.0 Kid Experience Redesign
 
-v5.0 shipped 2026-07-23. Next milestone not yet chosen — candidates below (see ROADMAP.md v6.0/v7.0/v8.0). Run `/gsd:new-milestone` to start questioning → research → requirements → roadmap for the next one.
+**Goal:** Turn the Family Feed into the family's motivational social network and give kids a
+fast, transparent, personalized way to log their day and understand their weekly boost —
+replacing today's flat activity log, single-open-accordion fill form, and one-line boost hint.
+
+**Target features:**
+- Family Feed redesign — story reel of today's highlights + day-grouped hero-stat cards with a
+  color-coded status rail (reuses the real `CollapsibleRow` rail pattern); no money amounts, no
+  penalties/corrections/behavior-tag negatives; sibling "подколоть" (tease) reactions with
+  preset playful phrases
+- Day-fill form — 3 selectable per-child interaction styles (tile grid + bottom sheet /
+  story-stepper / sticky-summary + inline rows), persisted as a per-child preference,
+  changeable anytime in the child's profile
+- Weekly Boost detail — 3 selectable per-child breakdown styles (segmented dual bar / quest
+  checklist / ring + tier badges), opened by tapping the existing inline `BoostMeter`, which
+  itself stays visually unchanged
+
+Grounded entirely in `.claude/skills/sketch-findings-kids-motivation/` (validated design
+decisions, CSS patterns, and interactive HTML mockups from the 2026-09-17 sketch session) —
+plan-phase and execute-phase should treat that skill as the primary design source.
+
+v6.0 Monetization / v7.0 Social / v8.0 Native Apps remain future candidates, unchanged and
+unstarted (see ROADMAP.md) — this milestone was inserted ahead of them as v9.0 specifically to
+avoid renumbering already-reserved phases 6.1–8.3.
 
 ---
 
@@ -320,7 +342,12 @@ v5.0 shipped 2026-07-23. Next milestone not yet chosen — candidates below (see
 
 ### Active
 
-None yet — next milestone not chosen. Candidates carried forward from ROADMAP.md's forward-looking milestones (unvalidated, subject to a real requirements pass via `/gsd:new-milestone`):
+v9.0 Kid Experience Redesign (in progress — requirements below, roadmap next):
+- [ ] Family Feed redesign — motivational social network framing, no money/penalties, sibling tease reactions
+- [ ] Day-fill form — 3 selectable per-child interaction styles
+- [ ] Weekly Boost detail — 3 selectable per-child breakdown styles
+
+Future candidates (unvalidated, unchanged, subject to a real requirements pass via `/gsd:new-milestone` when picked up):
 - [ ] v6.0 Monetization — Free/Premium/Family Plus tiers, Stripe billing, freemium limits
 - [ ] v7.0 Social — cross-family friendships, family rating/leaderboard among friends, shared challenges, shop/category template sharing
 - [ ] v8.0 Native Apps — iOS/Android via Expo
@@ -366,9 +393,30 @@ None yet — next milestone not chosen. Candidates carried forward from ROADMAP.
 
 ---
 
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd:complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
+---
+
 *Документ создан: 2026-03-01. Обновлён: 2026-07-19 — Phase 5.7 (kid-redesign) complete: all kid screens on the unified family-bank system (paper theme, tokens/atoms, gold-on-money-only), nav consolidated 6→5 with leaderboard merged into a 3-tab Awards screen, motion discipline (stamp + count-up on server-confirmed award; confetti only on streak/level-up), chat read-marker via SECURITY DEFINER RPC (CR-01 privilege-escalation found in review and fixed); verification 3/3 passed.*
 
 *Обновлён: 2026-07-21 — Phase 5.8 (parent-redesign) complete: Parent Center's remaining Schedule/Settings screens (7 CRUD managers + ChatPanel + Btn hover) recolored onto the ink theme, Day Constructor got a schedule-link picker (D-02) and per-child overrides (D-03, both candidate layouts kept behind a toggle per operator decision), a new Year Calendar visual month grid with sick-day overlay (D-05/D-06) replaced the flat settings-only view, and Analytics gained a real week-scoped Weekly Summary card (D-08). Code review found 2 Critical + 6 Warning issues post-execution (D-02 picker initially unreachable, Weekly Summary "Tasks done" metric structurally capped) — all 9 fixed and re-verified (9/9 must-haves). Two items (picker + card) remain pending live-browser re-confirmation by the operator after next deploy — see 05.8-HUMAN-UAT.md (operator's local session hit a stale PWA service-worker cache, not a code defect). Operator flagged the overall dark "ink" theme brightness/contrast as too dark across all of Parent Center — tracked as a separate future task, not part of 5.8's scope.*
 
 ---
-*Milestone v5.0 Flexibility & Design Unification shipped 2026-07-23 (all 11 phases 5.1-5.11 complete, 71/71 plans). v4.0 PWA Polish formally closed at the same time (was code-complete since 2026-05-18 but never run through milestone close). Full requirements/decisions evolution review done as part of `/gsd:complete-milestone`. No milestone currently active — next one starts via `/gsd:new-milestone`.*
+*Milestone v5.0 Flexibility & Design Unification shipped 2026-07-23 (all 11 phases 5.1-5.11 complete, 71/71 plans). v4.0 PWA Polish formally closed at the same time (was code-complete since 2026-05-18 but never run through milestone close). Full requirements/decisions evolution review done as part of `/gsd:complete-milestone`.*
+
+*Обновлён: 2026-09-17 — Milestone v9.0 Kid Experience Redesign started via `/gsd:new-milestone`, scoped from the 2026-09-17 sketch session (`.claude/skills/sketch-findings-kids-motivation/`): Family Feed → motivational social network, selectable per-child day-fill form styles, selectable per-child weekly-boost detail styles. Numbered v9.0 (not v6.0) and phases start at 9.1 specifically to avoid colliding with the already-reserved-but-unbuilt v6.0/v7.0/v8.0 phase numbers (6.1–8.3).*

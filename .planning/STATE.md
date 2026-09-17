@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v5.0
-milestone_name: Flexibility & Design Unification
-status: Awaiting next milestone
-stopped_at: Phase 05.9 Plan 09 human-verify checkpoint approved — v5.0 milestone complete
-last_updated: "2026-07-23T17:01:46.391Z"
-last_activity: 2026-07-23
+milestone: v9.0
+milestone_name: Kid Experience Redesign
+status: planning
+last_updated: "2026-09-17T18:20:10.815Z"
+last_activity: 2026-09-17
 progress:
-  total_phases: 11
-  completed_phases: 11
-  total_plans: 71
-  completed_plans: 71
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # STATE.md — Текущее состояние проекта
@@ -297,10 +296,10 @@ Working through the deferred backlog. Per-item, each committed + pushed separate
 
 ## Current Position
 
-Phase: Milestone v5.0 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-07-23 — Milestone v5.0 completed and archived
+Status: Defining requirements
+Last activity: 2026-09-17 — Milestone v9.0 started
 
 ## Operator Next Steps
 
