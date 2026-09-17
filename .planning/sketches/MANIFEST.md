@@ -27,4 +27,4 @@ a new language from scratch.
 |---|------|----------------|--------|------|
 | 001 | family-feed | What layout/hierarchy makes the Feed feel like a *motivational* social network, not a log? | D — story reel + hero-stat rail cards | feed, layout, reactions |
 | 002 | day-fill-form | How do we make the day-fill form feel fast AND transparent instead of "hidden behind an arrow"? | All 3 kept as a selectable per-child fill style (default: C) | day, form, interaction |
-| 003 | weekly-boost | How should the weekly boost show *why* it's filling, not just that it is? | TBD | boost, progress |
+| 003 | weekly-boost | How should the weekly boost show *why* it's filling, not just that it is? | All 3 kept as a selectable per-child boost-detail style (opened by tapping the inline meter) | boost, progress |

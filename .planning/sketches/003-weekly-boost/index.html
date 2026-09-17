@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sketch 003 — Буст недели</title>
+<link rel="stylesheet" href="../themes/default.css">
+<style>
+  body { padding-top: 52px; }
+  #variant-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 9998;
+    background: var(--color-surface); border-bottom: 1px solid var(--color-border);
+    padding: 8px 10px; display: flex; gap: 6px; font-family: var(--font-display);
+    overflow-x: auto;
+  }
+  .variant-tab {
+    border: none; background: var(--color-border-soft); color: var(--color-text-muted);
+    font-family: var(--font-display); font-weight: 700; font-size: 12.5px;
+    padding: 9px 14px; border-radius: var(--radius-full); cursor: pointer; white-space: nowrap;
+    transition: background .15s, color .15s;
+  }
+  .variant-tab.active { background: var(--sky); color: #fff; }
+  .variant { display: none; }
+  .variant.active { display: block; }
+
+  .stage { max-width: 420px; margin: 0 auto; min-height: calc(100vh - 52px); background: var(--color-bg); padding-bottom: 40px; }
+  #viewport-wrap.tablet .stage { max-width: 768px; }
+  #viewport-wrap.desktop .stage { max-width: 1100px; }
+
+  .screen-head { padding: 18px 16px 4px; }
+  .screen-title { font-family: var(--font-display); font-weight: 900; font-size: 22px; letter-spacing: -0.3px; margin: 0; }
+  .screen-sub { font-size: 13px; color: var(--color-text-muted); font-weight: 600; margin-top: 3px; }
+
+  .card { margin: 14px 16px; border-radius: var(--radius-lg); background: var(--color-surface); border: 1.5px solid var(--color-border); box-shadow: var(--shadow-card); }
+
+  /* ══ Variant A — Segmented dual bar ══════════════════════════════ */
+  .boost-hero {
+    background: linear-gradient(135deg, var(--mango), var(--berry)); border-radius: 20px;
+    margin: 14px 16px; padding: 18px 18px 16px; color: #fff;
+  }
+  .boost-hero .top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .boost-hero .top .lab { font-family: var(--font-display); font-weight: 800; font-size: 14px; opacity: 0.95; }
+  .boost-hero .top .val { font-family: var(--font-display); font-weight: 900; font-size: 22px; }
+  .seg-block { margin-bottom: 12px; }
+  .seg-block:last-child { margin-bottom: 0; }
+  .seg-head { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700; margin-bottom: 5px; opacity: 0.95; }
+  .seg-track { height: 10px; background: rgba(255,255,255,0.28); border-radius: 999px; overflow: hidden; }
+  .seg-fill { height: 100%; background: #fff; border-radius: 999px; transition: width .8s cubic-bezier(.2,.9,.3,1.1); }
+  .seg-hint { font-size: 12px; font-weight: 700; opacity: 0.92; margin-top: 5px; }
+
+  /* ══ Variant B — Quest checklist ══════════════════════════════════ */
+  .quest-item { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-bottom: 1px solid var(--color-border-soft); }
+  .quest-item:last-child { border-bottom: none; }
+  .quest-check {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 900; border: 2px solid var(--color-border); color: transparent;
+  }
+  .quest-item.done .quest-check { background: var(--mint); border-color: var(--mint); color: #fff; }
+  .quest-item .txt { flex: 1; }
+  .quest-item .t1 { font-family: var(--font-display); font-weight: 700; font-size: 14px; }
+  .quest-item.done .t1 { color: var(--color-text-muted); text-decoration: line-through; text-decoration-color: var(--mint); }
+  .quest-item .t2 { font-size: 12px; color: var(--color-text-faint); font-weight: 600; margin-top: 2px; }
+  .quest-mini-track { width: 44px; height: 6px; background: var(--color-border-soft); border-radius: 999px; overflow: hidden; flex-shrink: 0; }
+  .quest-mini-fill { height: 100%; background: var(--mango); border-radius: 999px; }
+  .quest-reward { font-family: var(--font-display); font-weight: 800; font-size: 12.5px; color: var(--mango-deep); flex-shrink: 0; width: 46px; text-align: right; }
+
+  .quest-total { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 4px; }
+  .quest-total .lab { font-family: var(--font-display); font-weight: 800; font-size: 14px; }
+  .quest-total .val { font-family: var(--font-display); font-weight: 900; font-size: 20px; color: var(--mango-deep); }
+  .quest-bar-wrap { padding: 8px 16px 16px; }
+  .quest-bar { height: 10px; background: var(--color-border-soft); border-radius: 999px; overflow: hidden; }
+  .quest-bar-fill { height: 100%; background: linear-gradient(90deg, var(--mango), var(--berry)); border-radius: 999px; transition: width .8s; }
+
+  /* ══ Variant C — Ring + tier badges ══════════════════════════════ */
+  .ring-wrap { display: flex; flex-direction: column; align-items: center; padding: 22px 16px 8px; }
+  .ring-big { width: 160px; height: 160px; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; }
+  .ring-big .hole { position: absolute; inset: 14px; background: var(--color-surface); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .ring-big .hole .val { font-family: var(--font-display); font-weight: 900; font-size: 26px; color: var(--mango-deep); }
+  .ring-big .hole .lab { font-size: 11.5px; color: var(--color-text-muted); font-weight: 700; }
+
+  .tier-row { display: flex; justify-content: center; gap: 10px; padding: 16px 16px 6px; }
+  .tier-badge {
+    width: 66px; display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; position: relative;
+  }
+  .tier-badge .circ {
+    width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px;
+    border: 2.5px solid var(--color-border); background: var(--color-border-soft); transition: all .15s;
+  }
+  .tier-badge.reached .circ { border-color: var(--mango); background: var(--mango-soft); }
+  .tier-badge .lbl { font-size: 10.5px; font-weight: 800; color: var(--color-text-faint); font-family: var(--font-display); text-align: center; }
+  .tier-badge.reached .lbl { color: var(--mango-deep); }
+
+  .tier-pop {
+    position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%) scale(0.9); opacity: 0; pointer-events: none;
+    background: var(--color-text); color: #fff; padding: 8px 12px; border-radius: 10px; font-size: 11.5px; font-weight: 700;
+    white-space: nowrap; transition: opacity .15s, transform .15s; z-index: 5;
+  }
+  .tier-badge.open .tier-pop { opacity: 1; transform: translateX(-50%) scale(1); pointer-events: auto; }
+
+  .consistency-card { margin: 12px 16px 0; padding: 14px 16px; }
+  .consistency-card .head { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-display); font-weight: 800; font-size: 13.5px; margin-bottom: 8px; }
+  .week-dots { display: flex; gap: 7px; }
+  .week-dot { width: 26px; height: 26px; border-radius: 8px; background: var(--color-border-soft); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: var(--color-text-faint); }
+  .week-dot.on { background: var(--mint); color: #fff; }
+
+  .section-note { margin: 4px 16px 6px; font-size: 12px; color: var(--color-text-faint); font-family: var(--font-body); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div id="variant-nav">
+  <button class="variant-tab active" onclick="showVariant('a', event)">A: Раздельные полосы ★</button>
+  <button class="variant-tab" onclick="showVariant('b', event)">B: Квест-чеклист ★</button>
+  <button class="variant-tab" onclick="showVariant('c', event)">C: Кольцо + бейджи тиров ★</button>
+</div>
+
+<div id="viewport-wrap">
+
+<!-- ══════════════════════════ VARIANT A ══════════════════════════ -->
+<div id="variant-a" class="variant active">
+  <div class="stage">
+    <div class="screen-head">
+      <h1 class="screen-title">Буст недели</h1>
+      <div class="screen-sub">Из чего складывается — видно сразу</div>
+    </div>
+
+    <div class="boost-hero">
+      <div class="top"><span class="lab">🚀 Буст недели</span><span class="val">+380 🪙</span></div>
+
+      <div class="seg-block">
+        <div class="seg-head"><span>📚 Оценки</span><span>Тир 2 из 3</span></div>
+        <div class="seg-track"><div class="seg-fill" style="width: 66%;"></div></div>
+        <div class="seg-hint">Ещё 2 пятёрки → Тир 3 (+500 вместо +300)</div>
+      </div>
+
+      <div class="seg-block">
+        <div class="seg-head"><span>🔥 Стабильность</span><span>2 из 2 бонусов</span></div>
+        <div class="seg-track"><div class="seg-fill" style="width: 100%;"></div></div>
+        <div class="seg-hint">Неделя без пропусков + стрик — оба бонуса взяты ✓</div>
+      </div>
+    </div>
+
+    <div class="section-note">Итог = лучший тир по оценкам (не суммируется) + бонусы за стабильность.</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ VARIANT B ══════════════════════════ -->
+<div id="variant-b" class="variant">
+  <div class="stage">
+    <div class="screen-head">
+      <h1 class="screen-title">Буст недели</h1>
+      <div class="screen-sub">Как ежедневные квесты — выполнил, получил</div>
+    </div>
+
+    <div class="card">
+      <div class="quest-item done">
+        <div class="quest-check">✓</div>
+        <div class="txt"><div class="t1">3 пятёрки за неделю</div><div class="t2">Тир 1 открыт</div></div>
+        <div class="quest-reward">+150</div>
+      </div>
+      <div class="quest-item">
+        <div class="quest-check">2/5</div>
+        <div class="txt"><div class="t1">5 пятёрок за неделю</div><div class="t2">Тир 2 — ещё 3</div></div>
+        <div class="quest-mini-track"><div class="quest-mini-fill" style="width: 40%;"></div></div>
+        <div class="quest-reward">+300</div>
+      </div>
+      <div class="quest-item done">
+        <div class="quest-check">✓</div>
+        <div class="txt"><div class="t1">Неделя без пропусков</div><div class="t2">Все 7 дней заполнены</div></div>
+        <div class="quest-reward">+80</div>
+      </div>
+      <div class="quest-item done">
+        <div class="quest-check">✓</div>
+        <div class="txt"><div class="t1">Стрик держится 3+ дня</div><div class="t2">Не прерывался всю неделю</div></div>
+        <div class="quest-reward">+50</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="quest-total"><span class="lab">Всего за неделю</span><span class="val">+280 🪙</span></div>
+      <div class="quest-bar-wrap">
+        <div class="quest-bar"><div class="quest-bar-fill" style="width: 56%;"></div></div>
+        <div class="section-note" style="margin: 8px 0 0;">До максимума (+500): выполни ещё «5 пятёрок»</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════ VARIANT C ══════════════════════════ -->
+<div id="variant-c" class="variant">
+  <div class="stage">
+    <div class="screen-head">
+      <h1 class="screen-title">Буст недели</h1>
+      <div class="screen-sub">Тапни тир — узнай, что для него нужно</div>
+    </div>
+
+    <div class="ring-wrap">
+      <div class="ring-big" style="background: conic-gradient(var(--mango) 273deg, var(--color-border) 0deg);">
+        <div class="hole"><span class="val">+380</span><span class="lab">🪙 сейчас</span></div>
+      </div>
+    </div>
+
+    <div class="tier-row">
+      <div class="tier-badge reached" onclick="toggleTier(this)">
+        <div class="circ">🥉</div><div class="lbl">Тир 1</div>
+        <div class="tier-pop">3 пятёрки — есть ✓ +150</div>
+      </div>
+      <div class="tier-badge reached" onclick="toggleTier(this)">
+        <div class="circ">🥈</div><div class="lbl">Тир 2</div>
+        <div class="tier-pop">5 пятёрок — есть ✓ +300</div>
+      </div>
+      <div class="tier-badge" onclick="toggleTier(this)">
+        <div class="circ">🥇</div><div class="lbl">Тир 3</div>
+        <div class="tier-pop">7 пятёрок — ещё 2 → +500</div>
+      </div>
+    </div>
+
+    <div class="card consistency-card">
+      <div class="head"><span>🔥 Стабильность недели</span><span style="color: var(--mint-deep);">+80 🪙</span></div>
+      <div class="week-dots">
+        <div class="week-dot on">Пн</div><div class="week-dot on">Вт</div><div class="week-dot on">Ср</div>
+        <div class="week-dot on">Чт</div><div class="week-dot on">Пт</div><div class="week-dot on">Сб</div><div class="week-dot on">Вс</div>
+      </div>
+      <div class="section-note" style="margin: 8px 0 0;">Все 7 дней заполнены — бонус за стабильность получен.</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /viewport-wrap -->
+
+<div id="sketch-tools" style="position:fixed;bottom:12px;right:12px;z-index:9999;font-family:system-ui;font-size:12px;background:rgba(0,0,0,0.7);color:white;padding:8px 12px;border-radius:8px;opacity:0.4;transition:opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.4'">
+  <div style="display:flex; gap:8px; align-items:center;">
+    <span>Viewport:</span>
+    <button onclick="setViewport('phone')" style="cursor:pointer;">📱</button>
+    <button onclick="setViewport('tablet')" style="cursor:pointer;">📟</button>
+    <button onclick="setViewport('desktop')" style="cursor:pointer;">🖥️</button>
+  </div>
+</div>
+
+<script>
+function showVariant(id, ev) {
+  document.querySelectorAll('.variant').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.variant-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('variant-' + id).classList.add('active');
+  ev.target.classList.add('active');
+}
+function setViewport(mode) {
+  document.getElementById('viewport-wrap').className = mode === 'phone' ? '' : mode;
+}
+function toggleTier(el) {
+  const wasOpen = el.classList.contains('open');
+  document.querySelectorAll('.tier-badge').forEach(b => b.classList.remove('open'));
+  if (!wasOpen) el.classList.add('open');
+}
+</script>
+
+</body>
+</html>
