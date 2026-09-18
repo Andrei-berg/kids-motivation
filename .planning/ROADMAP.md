@@ -268,3 +268,38 @@ Plans:
 ---
 
 *Created: 2026-03-01. Updated: 2026-09-17 — Milestone v9.0 Kid Experience Redesign roadmapped: 6 phases (9.1–9.6) derived from FEED-01..07/DAYFORM-01..06/BOOST-01..06, grounded in `.claude/skills/sketch-findings-kids-motivation/`; numbered v9.0 and phases start at 9.1 specifically to avoid colliding with the already-reserved v6.0/v7.0/v8.0 phase numbers (6.1–8.3). Previous update 2026-07-23 — v5.0 Flexibility & Design Unification shipped (11 phases, 71 plans); v4.0 PWA Polish formally closed at the same time.*
+
+## Backlog
+
+### Phase 999.1: parent-center-signout (BACKLOG)
+
+**Goal:** [Captured for future planning]
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Notes: Parent Center (`components/parent-center/`) — the primary mobile-first hub per
+CLAUDE.md — has no sign-out control anywhere in its UI. The legacy `/parent/dashboard`
+nav (`components/parent/ParentNav.tsx`) has a `signOut` call; Parent Center never got
+one. Found during `/gsd:verify-work` for phase 09.1 while trying to switch from a
+parent session to a kid session for testing.
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.2: kid-preview-entry-point (BACKLOG)
+
+**Goal:** [Captured for future planning]
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Notes: CLAUDE.md documents "a parent may inspect `/kid/*` with `?preview=true`", and
+`middleware.ts` does honor that query param at the route-guard layer — but the actual
+kid route-group layout (`app/kid/(app)/layout.tsx`) requires a `kid_preview` cookie
+naming a specific child id, and nothing in the current UI sets that cookie. Only
+`components/kid/ParentPreviewBanner.tsx`'s "exit preview" button clears it — there is
+no "enter preview" control anywhere. The documented preview mechanism is effectively
+dead. Found during `/gsd:verify-work` for phase 09.1 while trying to switch from a
+parent session to a kid session for testing.
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
