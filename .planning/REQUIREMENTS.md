@@ -28,19 +28,19 @@
 
 ### Day-fill Form Styles (DAYFORM)
 
-- [ ] **DAYFORM-01**: Each child has a `fill_style` preference (`tile-sheet` / `story-stepper` /
+- [x] **DAYFORM-01**: Each child has a `fill_style` preference (`tile-sheet` / `story-stepper` /
   `sticky-summary`) that is settable and changeable anytime from the child's profile/settings.
 - [ ] **DAYFORM-02**: `tile-sheet` style — the whole day renders as a grid of per-category status
   tiles; tapping a tile opens a bottom sheet scoped to that category only.
 - [ ] **DAYFORM-03**: `story-stepper` style — one category fills the screen at a time with a
   dot-progress track; completing a category auto-advances to the next incomplete one, with an
   explicit skip control.
-- [ ] **DAYFORM-04**: `sticky-summary` style — a persistent completion ring + live coin total
+- [x] **DAYFORM-04**: `sticky-summary` style — a persistent completion ring + live coin total
   stays on screen; binary categories are answered with one tap directly on their row (no
   sheet/accordion); multi-value categories expand a small inline panel in place.
-- [ ] **DAYFORM-05**: All three fill styles show live coin-earning feedback (a floating amount
+- [x] **DAYFORM-05**: All three fill styles show live coin-earning feedback (a floating amount
   and a ticking running total) on every category filled.
-- [ ] **DAYFORM-06**: Default `fill_style` for a child with no explicit preference is
+- [x] **DAYFORM-06**: Default `fill_style` for a child with no explicit preference is
   `sticky-summary` (closest to current behavior).
 
 ### Weekly Boost Detail Styles (BOOST)
@@ -94,10 +94,10 @@
 | FEED-05 | Phase 9.2 | Complete |
 | FEED-06 | Phase 9.2 | Complete |
 | FEED-07 | Phase 9.2 | Complete |
-| DAYFORM-01 | Phase 9.3 | Pending |
-| DAYFORM-04 | Phase 9.3 | Pending |
-| DAYFORM-05 | Phase 9.3 | Pending |
-| DAYFORM-06 | Phase 9.3 | Pending |
+| DAYFORM-01 | Phase 9.3 | Complete |
+| DAYFORM-04 | Phase 9.3 | Complete |
+| DAYFORM-05 | Phase 9.3 | Complete |
+| DAYFORM-06 | Phase 9.3 | Complete |
 | DAYFORM-02 | Phase 9.4 | Pending |
 | DAYFORM-03 | Phase 9.4 | Pending |
 | BOOST-01 | Phase 9.5 | Pending |

@@ -114,7 +114,7 @@ See: `.planning/milestones/v5.0-ROADMAP.md`
 
 - [x] **Phase 9.1: feed-recognition** — Family Feed becomes a motivational recognition stream: story reel + day-grouped event cards with color rail, no money, no penalties (completed 2026-09-17)
 - [x] **Phase 9.2: feed-social** — Emoji reactions, sibling "подколоть" tease replies, kid→kid medals as their own feed event (completed 2026-09-19)
-- [ ] **Phase 9.3: dayform-default** — Per-child `fill_style` preference + sticky-summary (default) day-fill style with live coin feedback
+- [ ] **Phase 9.3: dayform-default** — Per-child `fill_style` preference + sticky-summary (default) day-fill style with live coin feedback (all 6 plans executed 2026-09-19, pending orchestrator phase-close)
 - [ ] **Phase 9.4: dayform-styles** — Tile-sheet (grid + bottom sheet) and story-stepper (one category at a time) day-fill styles
 - [ ] **Phase 9.5: boost-default** — Per-child `boost_style` preference + segmented-bar weekly-boost detail view, reading real tier/coin rules
 - [ ] **Phase 9.6: boost-styles** — Quest-checklist and ring-badges weekly-boost detail styles
@@ -179,7 +179,7 @@ Plans:
 - [x] 09.3-03-PLAN.md — lib/kid/day-fill-progress.ts (+ unit tests) and the StickySummaryBar / QuickRow / InlinePanelRow primitives
 - [x] 09.3-04-PLAN.md — KidDayFillForm: fillStyle prop + day-page wiring, sticky ring/total bar, D-09 applicability map, per-fill coin feedback
 - [x] 09.3-05-PLAN.md — Row-tree swap: one-tap binary rows (room/activities/custom blocks), in-place panels, always-expanded mood pop, accordion removed
-- [ ] 09.3-06-PLAN.md — Gate sweep + live-schema re-check + D-01..D-13 traceability matrix, project-docs update, operator browser verification
+- [x] 09.3-06-PLAN.md — Gate sweep + live-schema re-check + D-01..D-13 traceability matrix, project-docs update, operator browser verification
 **UI hint**: yes
 
 ### Phase 9.4: dayform-styles
@@ -274,7 +274,7 @@ Plans:
 | 5.11 legacy-cleanup | v5.0 | 3/3 | Complete | 2026-07-23 |
 | 9.1 feed-recognition | v9.0 | 4/4 | Complete   | 2026-09-17 |
 | 9.2 feed-social | v9.0 | 7/7 | Complete   | 2026-09-19 |
-| 9.3 dayform-default | v9.0 | 5/6 | In Progress|  |
+| 9.3 dayform-default | v9.0 | 6/6 | Plans complete, pending phase-close | 2026-09-19 |
 | 9.4 dayform-styles | v9.0 | 0/? | Not started | - |
 | 9.5 boost-default | v9.0 | 0/? | Not started | - |
 | 9.6 boost-styles | v9.0 | 0/? | Not started | - |
