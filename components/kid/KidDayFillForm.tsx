@@ -80,6 +80,10 @@ export interface KidDayFillFormProps {
   onSaved: (result: DaySaveResult) => void // callback after successful save — server-confirmed numbers only (D-17)
   dayBlocksEnabled: boolean    // family flag (Phase 5.6) — flag-off keeps the hardcoded sections below
   dayBlocks: DayBlock[]        // family's active block config (empty when flag-off)
+  // Per-child day-fill style from `children.fill_style` (Phase 9.3, D-02). Only
+  // `sticky-summary` is implemented in Phase 9.3; Phase 9.4 adds the other two
+  // branches here ('tile-sheet' | 'story-stepper').
+  fillStyle?: 'tile-sheet' | 'story-stepper' | 'sticky-summary'
 }
 
 // ============================================================================
@@ -109,9 +113,13 @@ export function KidDayFillForm({
   onSaved,
   dayBlocksEnabled,
   dayBlocks,
+  fillStyle,
 }: KidDayFillFormProps) {
   const t = useT()
   const MOOD_OPTIONS = MOOD_OPTIONS_STATIC.map(m => ({ ...m, label: t(m.labelKey) }))
+
+  // D-02 default: a child with no explicit fill_style resolves to sticky-summary.
+  const style = fillStyle ?? 'sticky-summary'
 
   // ── Coin animation ───────────────────────────────────────────────────────
   const { flyups, trigger: triggerCoinFlyup } = useCoinAnimation()
@@ -1227,7 +1235,7 @@ export function KidDayFillForm({
   const nothingToday = dayBlocksEnabled && visibleBlocks.length === 0
 
   return (
-    <div style={{ paddingBottom: 120, position: 'relative' }}>
+    <div data-fill-style={style} style={{ paddingBottom: 120, position: 'relative' }}>
       <CoinFlyup flyups={flyups} />
 
       {/* Live estimate strip — client preview only, never stamped (D-17). */}

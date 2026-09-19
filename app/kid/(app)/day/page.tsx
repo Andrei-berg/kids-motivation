@@ -470,6 +470,7 @@ export default function KidDayPage() {
                 onSaved={handleFillSaved}
                 dayBlocksEnabled={dayBlocksEnabled}
                 dayBlocks={dayBlocks}
+                fillStyle={child?.fill_style ?? 'sticky-summary'}
               />
             )}
           </>
