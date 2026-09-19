@@ -24,7 +24,9 @@ import {
   getFeed, getReactionsByFamily, summarizeReactions, addReaction, removeReaction,
   getComments, getCommentCounts, addComment, subscribeFeed,
   getStorySeen, markStorySeen,
+  getTeaseRepliesByFamily, addTeaseReply, isTeaseComment, teaseTextOf, hasTeased,
 } from '@/lib/repositories/feed.repo'
+import { teasePhrasesFor } from '@/lib/kid/tease-phrases'
 import { postFeedNote } from '@/app/actions/post-feed-note'
 import { paper as daylightPaper, base as familyBase } from '@/lib/design/tokens'
 import { K } from '@/components/kid/design/kidTheme'
@@ -84,11 +86,12 @@ export default function FamilyFeed({ variant, hideHeader = false }: { variant: V
   const storeFamilyId = useAppStore(s => s.familyId)
 
   const [familyId, setFamilyId] = useState<string | null>(storeFamilyId)
-  const [me, setMe] = useState<{ id: string; name: string; role: string } | null>(null)
+  const [me, setMe] = useState<{ id: string; name: string; role: string; childId: string | null } | null>(null)
   const [children, setChildren] = useState<Child[]>([])
   const [events, setEvents] = useState<FeedEvent[]>([])
   const [reactions, setReactions] = useState<Record<string, FeedReaction[]>>({})
   const [commentCounts, setCommentCounts] = useState<Record<string, number>>({})
+  const [teases, setTeases] = useState<Record<string, FeedComment[]>>({})
   const [loading, setLoading] = useState(true)
   const [hasMore, setHasMore] = useState(true)
   const [openComments, setOpenComments] = useState<string | null>(null)
@@ -105,11 +108,11 @@ export default function FamilyFeed({ variant, hideHeader = false }: { variant: V
       if (!user) return
       const { data: m } = await supabase
         .from('family_members')
-        .select('id, family_id, display_name, role')
+        .select('id, family_id, display_name, role, child_id')
         .eq('user_id', user.id)
         .maybeSingle()
       if (cancelled || !m) return
-      setMe({ id: m.id, name: m.display_name || 'Я', role: m.role })
+      setMe({ id: m.id, name: m.display_name || 'Я', role: m.role, childId: m.child_id ?? null })
       if (m.family_id) setFamilyId(m.family_id)
     }
     resolve()
@@ -125,12 +128,14 @@ export default function FamilyFeed({ variant, hideHeader = false }: { variant: V
       getFeed(familyId),
       getReactionsByFamily(familyId),
       getCommentCounts(familyId),
-    ]).then(([kids, ev, rx, cc]) => {
+      getTeaseRepliesByFamily(familyId),
+    ]).then(([kids, ev, rx, cc, tz]) => {
       if (cancelled) return
       setChildren(kids)
       setEvents(ev)
       setReactions(rx)
       setCommentCounts(cc)
+      setTeases(tz)
       setHasMore(ev.length >= 30)
       setLoading(false)
     })
@@ -142,7 +147,17 @@ export default function FamilyFeed({ variant, hideHeader = false }: { variant: V
         if (list.some(x => x.id === r.id)) return prev
         return { ...prev, [r.event_id]: [...list, r] }
       }),
-      onComment: (c) => setCommentCounts(prev => ({ ...prev, [c.event_id]: (prev[c.event_id] ?? 0) + 1 })),
+      onComment: (c) => {
+        if (isTeaseComment(c)) {
+          setTeases(prev => {
+            const list = prev[c.event_id] ?? []
+            if (list.some(x => x.id === c.id)) return prev
+            return { ...prev, [c.event_id]: [...list, c] }
+          })
+          return
+        }
+        setCommentCounts(prev => ({ ...prev, [c.event_id]: (prev[c.event_id] ?? 0) + 1 }))
+      },
     })
     return () => { cancelled = true; unsub() }
   }, [familyId])
@@ -175,6 +190,17 @@ export default function FamilyFeed({ variant, hideHeader = false }: { variant: V
     })
     if (mine) await removeReaction({ eventId, memberId: me.id, emoji })
     else await addReaction({ eventId, familyId, memberId: me.id, emoji })
+  }
+
+  async function submitTease(eventId: string, phrase: string) {
+    if (!familyId || !me) return
+    const row = await addTeaseReply({ eventId, familyId, authorMemberId: me.id, authorName: me.name, phrase })
+    if (!row) return
+    setTeases(prev => {
+      const list = prev[eventId] ?? []
+      if (list.some(x => x.id === row.id)) return prev
+      return { ...prev, [eventId]: [...list, row] }
+    })
   }
 
   async function submitNote() {
@@ -312,6 +338,8 @@ export default function FamilyFeed({ variant, hideHeader = false }: { variant: V
                     onReact={(emoji) => toggleReaction(e.id, emoji)}
                     familyId={familyId!}
                     onCommentAdded={() => setCommentCounts(prev => ({ ...prev, [e.id]: (prev[e.id] ?? 0) + 1 }))}
+                    teases={teases[e.id] ?? []}
+                    onTease={(phrase) => submitTease(e.id, phrase)}
                   />
                 ))}
               </div>
@@ -341,12 +369,13 @@ export default function FamilyFeed({ variant, hideHeader = false }: { variant: V
 
 function EventRow({
   e, C, child, accent, me, reactions, commentCount, commentsOpen, onToggleComments, onReact, familyId, onCommentAdded,
+  teases, onTease,
 }: {
   e: FeedEvent
   C: ReturnType<typeof palette>
   child: Child | null
   accent: string
-  me: { id: string; name: string; role: string } | null
+  me: { id: string; name: string; role: string; childId: string | null } | null
   reactions: FeedReaction[]
   commentCount: number
   commentsOpen: boolean
@@ -354,6 +383,8 @@ function EventRow({
   onReact: (emoji: string) => void
   familyId: string
   onCommentAdded: () => void
+  teases: FeedComment[]
+  onTease: (phrase: string) => void
 }) {
   const summary = summarizeReactions(reactions, me?.id ?? null)
   const isNote = e.kind === 'note'
@@ -596,7 +627,7 @@ function CommentThread({
 }: {
   eventId: string
   familyId: string
-  me: { id: string; name: string; role: string } | null
+  me: { id: string; name: string; role: string; childId: string | null } | null
   C: ReturnType<typeof palette>
   onAdded: () => void
 }) {
