@@ -153,9 +153,9 @@ Plans:
 **Plans**: 7 plans
 
 Plans:
-- [ ] 09.2-01-PLAN.md — Tease foundations: locked 17-phrase module by event kind + tagged-comment storage/read helpers in `feed.repo.ts`
-- [ ] 09.2-02-PLAN.md — Medal backend: sender-aware `medals` migration (applied to prod) + locked 8-phrase set + `sendKidMedal` coins-0 server action
-- [ ] 09.2-03-PLAN.md — Reactions: picker expanded to all 6 allowed emoji + chip pop animation (with reduced-motion guard) in `globals.css`
+- [x] 09.2-01-PLAN.md — Tease foundations: locked 17-phrase module by event kind + tagged-comment storage/read helpers in `feed.repo.ts`
+- [x] 09.2-02-PLAN.md — Medal backend: sender-aware `medals` migration (applied to prod) + locked 8-phrase set + `sendKidMedal` coins-0 server action
+- [x] 09.2-03-PLAN.md — Reactions: picker expanded to all 6 allowed emoji + chip pop animation (with reduced-motion guard) in `globals.css`
 - [ ] 09.2-04-PLAN.md — Live-DB integration suite for `sendKidMedal`: guards, cross-family block, zero-coin proof, both daily caps
 - [ ] 09.2-05-PLAN.md — Tease UI: `TeaseButton`/`TeaseTray`/`TeaseReply` in `FamilyFeed.tsx` with self-tease block and one-per-card state
 - [ ] 09.2-06-PLAN.md — `MedalComposer` bottom sheet (sibling picker + 8 berry phrase buttons) and the kid-only feed launcher
@@ -266,7 +266,7 @@ Plans:
 | 5.10 automation | v5.0 | 4/4 | Complete | 2026-07-22 |
 | 5.11 legacy-cleanup | v5.0 | 3/3 | Complete | 2026-07-23 |
 | 9.1 feed-recognition | v9.0 | 4/4 | Complete   | 2026-09-17 |
-| 9.2 feed-social | v9.0 | 0/7 | Planned | - |
+| 9.2 feed-social | v9.0 | 3/7 | In Progress|  |
 | 9.3 dayform-default | v9.0 | 0/? | Not started | - |
 | 9.4 dayform-styles | v9.0 | 0/? | Not started | - |
 | 9.5 boost-default | v9.0 | 0/? | Not started | - |

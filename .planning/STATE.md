@@ -4,7 +4,7 @@ milestone: v9.0
 milestone_name: — Kid Experience Redesign
 status: executing
 stopped_at: Phase 9.2 UI-SPEC approved
-last_updated: "2026-09-19T03:55:40.233Z"
+last_updated: "2026-09-19T03:58:02.021Z"
 last_activity: 2026-09-19
 progress:
   total_phases: 6
@@ -87,7 +87,7 @@ Progress: [░░░░░░░░░░] 0% (v9.0 — 0/6 phases)
 See: .planning/PROJECT.md (updated 2026-09-17)
 
 **Core value:** Any family can register and use the app — children earn coins for real effort, spend them on real rewards
-**Current focus:** Phase 09.1 — feed-recognition
+**Current focus:** Phase 09.2 — feed-social
 
 ---
 
@@ -349,10 +349,10 @@ Working through the deferred backlog. Per-item, each committed + pushed separate
 
 ## Current Position
 
-Phase: 09.1 — COMPLETE
-Plan: 1 of 4
-Status: Ready to execute
-Last activity: 2026-09-19 -- Phase 09.2 planning complete
+Phase: 09.2 (feed-social) — EXECUTING
+Plan: 1 of 7
+Status: Executing Phase 09.2
+Last activity: 2026-09-19 -- Phase 09.2 execution started
 
 ## Operator Next Steps
 
