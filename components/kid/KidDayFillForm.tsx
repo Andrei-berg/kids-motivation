@@ -36,6 +36,7 @@ import BookBlock from '@/components/kid/day-blocks/BookBlock'
 import CustomBlock from '@/components/kid/day-blocks/CustomBlock'
 import StickySummaryBar from '@/components/kid/day-fill/StickySummaryBar'
 import InlinePanelRow from '@/components/kid/day-fill/InlinePanelRow'
+import TileGrid, { type FillTile } from '@/components/kid/day-fill/TileGrid'
 import { computeFillProgress, diffSectionCoins } from '@/lib/kid/day-fill-progress'
 import { useT } from '@/lib/i18n'
 import { localDateString } from '@/utils/helpers'
@@ -524,6 +525,12 @@ export function KidDayFillForm({
   // that could hide a half-entered grade or reading note. UI-SPEC's binding
   // constraint is "in place", not "only one at a time".
   const [openPanels, setOpenPanels] = useState<Set<string>>(() => new Set())
+
+  // Tile-sheet open sheet id (Phase 9.4) — which tile's sheet, if any, is
+  // currently open. Owned here, not inside TileGrid, so reopening a sheet
+  // never resets anything and the grid itself never remounts.
+  const [openTileId, setOpenTileId] = useState<string | null>(null)
+
   function togglePanel(id: string) {
     setOpenPanels(prev => {
       const next = new Set(prev)
@@ -1230,6 +1237,38 @@ export function KidDayFillForm({
     </div>
   )
 
+  // Mood picker body (D-02/D-05) — extracted verbatim (same keys, same
+  // kid-mood-pop conditional, same isLocked guards) so sticky-summary's
+  // rendered behaviour is byte-for-byte unchanged and all three fill styles
+  // share this one picker instead of forking it.
+  const moodBody = (
+    <div style={{ display: 'flex', gap: 6, justifyContent: 'space-between' }}>
+      {MOOD_OPTIONS.map(m => {
+        const on = mood === m.key
+        return (
+          <button
+            key={`${m.key}-${moodPop.key === m.key ? moodPop.n : 0}`}
+            className={!reduced && moodPop.key === m.key ? 'kid-mood-pop' : undefined}
+            onClick={() => {
+              if (isLocked) return
+              setMood(prev => prev === m.key ? null : m.key)
+              setMoodPop(p => ({ key: m.key, n: p.n + 1 }))
+            }}
+            disabled={isLocked}
+            style={{
+              flex: 1, minHeight: 64, borderRadius: 12, cursor: isLocked ? 'not-allowed' : 'pointer',
+              background: on ? K.skySoft : K.card,
+              border: on ? `1.5px solid ${K.sky}` : `1px solid ${K.line}`,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+            }}>
+            <div style={{ fontSize: 24 }}>{m.emoji}</div>
+            <div style={{ fontFamily: K.fBody, fontSize: 10, fontWeight: 700, color: on ? K.skyDeep : K.ink3 }}>{m.label}</div>
+          </button>
+        )
+      })}
+    </div>
+  )
+
   // Per-section "has any input" — drives the mint status rail + collapsed tick.
   const done = {
     room: Object.values(roomChecked).some(Boolean),
@@ -1355,6 +1394,101 @@ export function KidDayFillForm({
     )
   }
 
+  // Tile-sheet descriptor builder (D-01/D-02/D-03) — a plain function, NOT a
+  // nested component and NOT a useMemo returning JSX, called once per render
+  // exactly like renderBuiltinBlock above. Closes over the reused body consts
+  // and the already-computed sectionCoins/done maps; introduces no new coin
+  // maths of its own (D-17 reuses sectionCoins unchanged).
+  function buildTiles(): FillTile[] {
+    const tileFor = (
+      id: string, label: string, icon: string, isDone: boolean,
+      coins: number | undefined, body: React.ReactNode,
+    ): FillTile => ({
+      id, label, icon, body,
+      done: isDone,
+      loss: typeof coins === 'number' && coins < 0,
+      coins,
+      status: isDone ? t('kidFillForm.tileDone') : t('kidFillForm.tileNotFilled'),
+    })
+
+    const tiles: FillTile[] = []
+
+    // 1. Behavior — only when this family has an active tag set.
+    if (behaviorTags.length > 0) {
+      tiles.push(tileFor('behavior', t('kidFillForm.behaviorSection'), '🌟', done.behavior, undefined, behaviorBody))
+    }
+
+    if (dayBlocksEnabled) {
+      // 2. Flag-on: mirror renderBuiltinBlock's exact gating, one tile per
+      // block — plus one tile per activity/custom-block item (D-01), not one
+      // aggregate tile. Nothing renders when nothingToday (visibleBlocks is
+      // empty in that case anyway).
+      if (!nothingToday) {
+        visibleBlocks.forEach(block => {
+          if (block.legacy_key) {
+            switch (block.legacy_key) {
+              case 'room':
+                tiles.push(tileFor('room', block.name, block.icon ?? '🏠', done.room, sectionCoins.room, roomBody))
+                break
+              case 'activity':
+                activities.forEach(act => {
+                  const isDone = checkedActivities.has(act.id)
+                  tiles.push(tileFor(`activity:${act.id}`, act.name, act.emoji ?? '⭐', isDone, isDone ? act.coins : undefined, (
+                    <ActivitiesBlock activities={[act]} checked={checkedActivities} onToggle={toggleActivity} isLocked={isLocked} />
+                  )))
+                })
+                break
+              case 'grade':
+                if (dayType === 'school' && subjects.length > 0) {
+                  tiles.push(tileFor('grade', block.name, block.icon ?? '📚', done.grade, sectionCoins.grade, gradesBody))
+                }
+                break
+              case 'exercise':
+                if (exerciseTypes.length > 0) {
+                  tiles.push(tileFor('exercise', block.name, block.icon ?? '🤸', done.exercise, undefined, exercisesBody))
+                }
+                break
+              case 'sport':
+                tiles.push(tileFor('sport', block.name, block.icon ?? '🏆', done.sport, sectionCoins.sport, sectionsBody))
+                break
+              case 'book':
+                tiles.push(tileFor('book', block.name, block.icon ?? '📖', done.book, sectionCoins.book, readingBody))
+                break
+              case 'behavior':
+              default:
+                break // already emitted in step 1 (behavior) or no kid-side widget
+            }
+          } else {
+            const isDone = !!customBlockDone[block.id]
+            tiles.push(tileFor(`custom:${block.id}`, block.name, block.icon ?? '⭐', isDone, isDone ? (block.price ?? undefined) : undefined, renderCustomBlock(block)))
+          }
+        })
+      }
+    } else {
+      // 3. Flag-off: the hardcoded pre-5.6 category list, one tile per item.
+      tiles.push(tileFor('room', t('kidFillForm.roomSection'), '🏠', done.room, sectionCoins.room, roomBody))
+      activities.forEach(act => {
+        const isDone = checkedActivities.has(act.id)
+        tiles.push(tileFor(`activity:${act.id}`, act.name, act.emoji ?? '⭐', isDone, isDone ? act.coins : undefined, (
+          <ActivitiesBlock activities={[act]} checked={checkedActivities} onToggle={toggleActivity} isLocked={isLocked} />
+        )))
+      })
+      if (dayType === 'school' && subjects.length > 0) {
+        tiles.push(tileFor('grade', t('kidFillForm.gradesSection'), '📚', done.grade, sectionCoins.grade, gradesBody))
+      }
+      if (exerciseTypes.length > 0) {
+        tiles.push(tileFor('exercise', t('kidFillForm.exercisesSection'), '🤸', done.exercise, undefined, exercisesBody))
+      }
+      tiles.push(tileFor('sport', t('kidFillForm.sectionsSection'), '🏆', done.sport, sectionCoins.sport, sectionsBody))
+      tiles.push(tileFor('book', t('kidFillForm.readingSection'), '📖', done.book, sectionCoins.book, readingBody))
+    }
+
+    // 4. Mood — always last (D-02), no coin value.
+    tiles.push(tileFor('mood', t('kidFillForm.moodSection'), '✨', done.mood, undefined, moodBody))
+
+    return tiles
+  }
+
   // ── Render ───────────────────────────────────────────────────────────────
   const nothingToday = dayBlocksEnabled && visibleBlocks.length === 0
 
@@ -1391,69 +1525,68 @@ export function KidDayFillForm({
         lockedLabel={isLocked ? t('kidFillForm.locked') : null}
       />
 
-      {/* Checklist — one collapsible row per section, collapsed by default. */}
-      <div style={{ padding: '12px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {behaviorTags.length > 0 &&
-          renderPanelRow('behavior', t('kidFillForm.behaviorSection'), '🌟', done.behavior, behaviorBody)}
-
-        {dayBlocksEnabled ? (
-          // WR-02: flag-on is AUTHORITATIVE — with zero visible blocks the legacy
-          // sections must NOT render (the server credits nothing for hidden blocks).
-          nothingToday ? (
+      {/* Checklist — sticky-summary's collapsible/inline rows, or the
+          tile-sheet grid (Phase 9.4). 'story-stepper' has no shell yet (plan
+          03) so it falls through to sticky-summary's JSX, same as any
+          unrecognized value — no child can land on an unbuilt style mid-phase
+          since fill-style.ts still rejects it server-side. */}
+      {style === 'tile-sheet' ? (
+        <TileGrid
+          tiles={buildTiles()}
+          openId={openTileId}
+          onOpen={setOpenTileId}
+          onClose={() => setOpenTileId(null)}
+          subtitle={t('kidFillForm.tileSheetSub')}
+          closeLabel={t('kidFillForm.sheetClose')}
+          doneLabel={isLocked ? null : t('kidFillForm.sheetDone')}
+          emptyState={nothingToday ? (
             <div style={{
-              background: K.card, border: `1.5px solid ${K.line}`, borderRadius: 18,
+              margin: '0 16px', background: K.card, border: `1.5px solid ${K.line}`, borderRadius: 18,
               padding: '20px 16px', textAlign: 'center',
               fontFamily: K.fBody, fontSize: 14, fontWeight: 600, color: K.ink3,
             }}>
               🌤️ {t('kidFillForm.nothingToday')}
             </div>
-          ) : (
-            visibleBlocks.map(block => block.legacy_key ? renderBuiltinBlock(block) : renderCustomBlock(block))
-          )
-        ) : (
-          <>
-            {renderGroup('room', t('kidFillForm.roomSection'), '🏠', done.room, roomBody)}
-            {activities.length > 0 &&
-              renderGroup('activity', t('kidFillForm.extraSection'), '⭐', done.activity, extraActivitiesBody)}
-            {dayType === 'school' && subjects.length > 0 &&
-              renderPanelRow('grade', t('kidFillForm.gradesSection'), '📚', done.grade, gradesBody)}
-            {exerciseTypes.length > 0 &&
-              renderPanelRow('exercise', t('kidFillForm.exercisesSection'), '🤸', done.exercise, exercisesBody)}
-            {renderPanelRow('sport', t('kidFillForm.sectionsSection'), '🏆', done.sport, sectionsBody)}
-            {renderPanelRow('book', t('kidFillForm.readingSection'), '📖', done.book, readingBody)}
-          </>
-        )}
+          ) : undefined}
+        />
+      ) : (
+        <div style={{ padding: '12px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {behaviorTags.length > 0 &&
+            renderPanelRow('behavior', t('kidFillForm.behaviorSection'), '🌟', done.behavior, behaviorBody)}
 
-        {/* Mood — always shown, not a day-blocks credit source (D-08: always-
-            expanded, no tap-to-open step, no chevron). */}
-        {renderGroup('mood', t('kidFillForm.moodSection'), '✨', done.mood, (
-          <div style={{ display: 'flex', gap: 6, justifyContent: 'space-between' }}>
-            {MOOD_OPTIONS.map(m => {
-              const on = mood === m.key
-              return (
-                <button
-                  key={`${m.key}-${moodPop.key === m.key ? moodPop.n : 0}`}
-                  className={!reduced && moodPop.key === m.key ? 'kid-mood-pop' : undefined}
-                  onClick={() => {
-                    if (isLocked) return
-                    setMood(prev => prev === m.key ? null : m.key)
-                    setMoodPop(p => ({ key: m.key, n: p.n + 1 }))
-                  }}
-                  disabled={isLocked}
-                  style={{
-                    flex: 1, minHeight: 64, borderRadius: 12, cursor: isLocked ? 'not-allowed' : 'pointer',
-                    background: on ? K.skySoft : K.card,
-                    border: on ? `1.5px solid ${K.sky}` : `1px solid ${K.line}`,
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
-                  }}>
-                  <div style={{ fontSize: 24 }}>{m.emoji}</div>
-                  <div style={{ fontFamily: K.fBody, fontSize: 10, fontWeight: 700, color: on ? K.skyDeep : K.ink3 }}>{m.label}</div>
-                </button>
-              )
-            })}
-          </div>
-        ))}
-      </div>
+          {dayBlocksEnabled ? (
+            // WR-02: flag-on is AUTHORITATIVE — with zero visible blocks the legacy
+            // sections must NOT render (the server credits nothing for hidden blocks).
+            nothingToday ? (
+              <div style={{
+                background: K.card, border: `1.5px solid ${K.line}`, borderRadius: 18,
+                padding: '20px 16px', textAlign: 'center',
+                fontFamily: K.fBody, fontSize: 14, fontWeight: 600, color: K.ink3,
+              }}>
+                🌤️ {t('kidFillForm.nothingToday')}
+              </div>
+            ) : (
+              visibleBlocks.map(block => block.legacy_key ? renderBuiltinBlock(block) : renderCustomBlock(block))
+            )
+          ) : (
+            <>
+              {renderGroup('room', t('kidFillForm.roomSection'), '🏠', done.room, roomBody)}
+              {activities.length > 0 &&
+                renderGroup('activity', t('kidFillForm.extraSection'), '⭐', done.activity, extraActivitiesBody)}
+              {dayType === 'school' && subjects.length > 0 &&
+                renderPanelRow('grade', t('kidFillForm.gradesSection'), '📚', done.grade, gradesBody)}
+              {exerciseTypes.length > 0 &&
+                renderPanelRow('exercise', t('kidFillForm.exercisesSection'), '🤸', done.exercise, exercisesBody)}
+              {renderPanelRow('sport', t('kidFillForm.sectionsSection'), '🏆', done.sport, sectionsBody)}
+              {renderPanelRow('book', t('kidFillForm.readingSection'), '📖', done.book, readingBody)}
+            </>
+          )}
+
+          {/* Mood — always shown, not a day-blocks credit source (D-08: always-
+              expanded, no tap-to-open step, no chevron). */}
+          {renderGroup('mood', t('kidFillForm.moodSection'), '✨', done.mood, moodBody)}
+        </div>
+      )}
 
       {saveError && (
         <div style={{
