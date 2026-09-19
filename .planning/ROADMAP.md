@@ -190,7 +190,13 @@ Plans:
   1. With `tile-sheet` selected, the day renders as a 2-column grid of per-category status tiles; tapping a tile opens a bottom sheet scoped to just that category, and closing it updates the tile in place with no page reflow
   2. With `story-stepper` selected, one category fills the screen at a time behind a dot-progress track; completing a category auto-advances to the next incomplete one, and an explicit skip control lets the child jump ahead
   3. Both styles show the same live floating coin feedback on every category filled as the sticky-summary default does
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 09.4-01-PLAN.md — BottomSheet / TileCard / DotTrack / StepCoinHeader primitives, reduced-motion CSS guard, 17 i18n keys
+- [ ] 09.4-02-PLAN.md — tile-sheet: TileGrid + per-item tile descriptors + render branch in KidDayFillForm
+- [ ] 09.4-03-PLAN.md — story-stepper: StoryStepper (dot track, auto-advance, skip, summary) + step descriptors + render branch
+- [ ] 09.4-04-PLAN.md — fill-style server-action guard removal + whitelist hardening (with test) and the ProfileSheet 3-way picker
+- [ ] 09.4-05-PLAN.md — Gate sweep + D-01..D-18 traceability matrix, project-docs correction, operator browser verification
 **UI hint**: yes
 
 ### Phase 9.5: boost-default
@@ -275,7 +281,7 @@ Plans:
 | 9.1 feed-recognition | v9.0 | 4/4 | Complete   | 2026-09-17 |
 | 9.2 feed-social | v9.0 | 7/7 | Complete   | 2026-09-19 |
 | 9.3 dayform-default | v9.0 | 6/6 | Complete   | 2026-09-19 |
-| 9.4 dayform-styles | v9.0 | 0/? | Not started | - |
+| 9.4 dayform-styles | v9.0 | 0/5 | Planned | - |
 | 9.5 boost-default | v9.0 | 0/? | Not started | - |
 | 9.6 boost-styles | v9.0 | 0/? | Not started | - |
 | 6.1–6.3 | v6.0 Monetization | 0/? | Planned | - |
