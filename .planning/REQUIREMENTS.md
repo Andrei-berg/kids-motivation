@@ -30,9 +30,9 @@
 
 - [x] **DAYFORM-01**: Each child has a `fill_style` preference (`tile-sheet` / `story-stepper` /
   `sticky-summary`) that is settable and changeable anytime from the child's profile/settings.
-- [ ] **DAYFORM-02**: `tile-sheet` style — the whole day renders as a grid of per-category status
+- [x] **DAYFORM-02**: `tile-sheet` style — the whole day renders as a grid of per-category status
   tiles; tapping a tile opens a bottom sheet scoped to that category only.
-- [ ] **DAYFORM-03**: `story-stepper` style — one category fills the screen at a time with a
+- [x] **DAYFORM-03**: `story-stepper` style — one category fills the screen at a time with a
   dot-progress track; completing a category auto-advances to the next incomplete one, with an
   explicit skip control.
 - [x] **DAYFORM-04**: `sticky-summary` style — a persistent completion ring + live coin total
@@ -98,8 +98,8 @@
 | DAYFORM-04 | Phase 9.3 | Complete |
 | DAYFORM-05 | Phase 9.3 | Complete |
 | DAYFORM-06 | Phase 9.3 | Complete |
-| DAYFORM-02 | Phase 9.4 | Pending |
-| DAYFORM-03 | Phase 9.4 | Pending |
+| DAYFORM-02 | Phase 9.4 | Complete |
+| DAYFORM-03 | Phase 9.4 | Complete |
 | BOOST-01 | Phase 9.5 | Pending |
 | BOOST-02 | Phase 9.5 | Pending |
 | BOOST-03 | Phase 9.5 | Pending |

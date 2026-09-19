@@ -115,7 +115,7 @@ See: `.planning/milestones/v5.0-ROADMAP.md`
 - [x] **Phase 9.1: feed-recognition** — Family Feed becomes a motivational recognition stream: story reel + day-grouped event cards with color rail, no money, no penalties (completed 2026-09-17)
 - [x] **Phase 9.2: feed-social** — Emoji reactions, sibling "подколоть" tease replies, kid→kid medals as their own feed event (completed 2026-09-19)
 - [x] **Phase 9.3: dayform-default** — Per-child `fill_style` preference + sticky-summary (default) day-fill style with live coin feedback (completed 2026-09-19)
-- [ ] **Phase 9.4: dayform-styles** — Tile-sheet (grid + bottom sheet) and story-stepper (one category at a time) day-fill styles
+- [x] **Phase 9.4: dayform-styles** — Tile-sheet (grid + bottom sheet) and story-stepper (one category at a time) day-fill styles (completed 2026-09-19)
 - [ ] **Phase 9.5: boost-default** — Per-child `boost_style` preference + segmented-bar weekly-boost detail view, reading real tier/coin rules
 - [ ] **Phase 9.6: boost-styles** — Quest-checklist and ring-badges weekly-boost detail styles
 
@@ -196,7 +196,7 @@ Plans:
 - [x] 09.4-02-PLAN.md — tile-sheet: TileGrid + per-item tile descriptors + render branch in KidDayFillForm
 - [x] 09.4-03-PLAN.md — story-stepper: StoryStepper (dot track, auto-advance, skip, summary) + step descriptors + render branch
 - [x] 09.4-04-PLAN.md — fill-style server-action guard removal + whitelist hardening (with test) and the ProfileSheet 3-way picker
-- [ ] 09.4-05-PLAN.md — Gate sweep + D-01..D-18 traceability matrix, project-docs correction, operator browser verification
+- [x] 09.4-05-PLAN.md — Gate sweep + D-01..D-18 traceability matrix, project-docs correction, operator browser verification
 **UI hint**: yes
 
 ### Phase 9.5: boost-default
@@ -281,7 +281,7 @@ Plans:
 | 9.1 feed-recognition | v9.0 | 4/4 | Complete   | 2026-09-17 |
 | 9.2 feed-social | v9.0 | 7/7 | Complete   | 2026-09-19 |
 | 9.3 dayform-default | v9.0 | 6/6 | Complete   | 2026-09-19 |
-| 9.4 dayform-styles | v9.0 | 4/5 | In Progress|  |
+| 9.4 dayform-styles | v9.0 | 5/5 | Complete   | 2026-09-19 |
 | 9.5 boost-default | v9.0 | 0/? | Not started | - |
 | 9.6 boost-styles | v9.0 | 0/? | Not started | - |
 | 6.1–6.3 | v6.0 Monetization | 0/? | Planned | - |
