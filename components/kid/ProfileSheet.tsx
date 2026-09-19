@@ -18,6 +18,7 @@ import { K } from '@/components/kid/design/kidTheme'
 import { Avatar, XPBar, BoostMeter } from '@/components/kid/design/atoms'
 import { resolveAvatar, type ChildAvatarFields } from '@/lib/kid/avatar'
 import AvatarPicker from '@/components/kid/AvatarPicker'
+import { updateChildFillStyle } from '@/app/kid/actions/fill-style'
 
 interface ProfileSheetProps {
   /** Optional seed from the header; the sheet reloads a fresh copy on open. */
@@ -41,6 +42,7 @@ export default function ProfileSheet({ child: seed, onClose }: ProfileSheetProps
   const [goalsDone, setGoalsDone] = useState(0)
   const [boost, setBoost] = useState<BoostProgress | null>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [savingFillStyle, setSavingFillStyle] = useState(false)
 
   async function load() {
     if (!activeMemberId) return
@@ -62,6 +64,19 @@ export default function ProfileSheet({ child: seed, onClose }: ProfileSheetProps
     setActiveMemberId(null)
     await supabase.auth.signOut()
     router.push('/')
+  }
+
+  async function handleFillStyleTap() {
+    if (!child?.id || savingFillStyle) return
+    setSavingFillStyle(true)
+    try {
+      await updateChildFillStyle(child.id, 'sticky-summary')
+      await load()
+    } catch (err) {
+      console.warn('updateChildFillStyle failed', err)
+    } finally {
+      setSavingFillStyle(false)
+    }
   }
 
   const xp = child?.xp ?? 0
@@ -161,6 +176,25 @@ export default function ProfileSheet({ child: seed, onClose }: ProfileSheetProps
           <StatBox value={xp.toLocaleString('ru-RU')} label={t('kidProfile.xpTotal')} />
           <StatBox value={String(goalsDone)} label={t('kidProfile.goalsDone')} />
         </div>
+
+        <button
+          type="button"
+          onClick={handleFillStyleTap}
+          disabled={savingFillStyle}
+          aria-label={t('kidProfile.fillStyleActive')}
+          style={{
+            marginTop: 12, width: '100%', minHeight: 44, borderRadius: 16, padding: '0 14px',
+            cursor: savingFillStyle ? 'default' : 'pointer', opacity: savingFillStyle ? 0.7 : 1,
+            border: `1.5px solid ${K.line}`, background: K.card,
+            display: 'flex', alignItems: 'center', gap: 8,
+            fontFamily: K.fBody, fontSize: 13, fontWeight: 700, color: K.ink,
+          }}
+        >
+          <span>{t('kidProfile.fillStyleActive')}</span>
+          {child?.fill_style === 'sticky-summary' && (
+            <span aria-hidden style={{ color: K.mint }}>✓</span>
+          )}
+        </button>
 
         <button
           type="button"

@@ -1221,6 +1221,8 @@
   },
   "kidFillForm": {
     "coinsToday": "МОНЕТ ЗА СЕГОДНЯ",
+    "stickyEarnedToday": "заработано сегодня",
+    "ringLabel": "Заполнено {{pct}}%",
     "locked": "🔒 Закрыт",
     "roomSection": "Комната",
     "moodSection": "Настроение",
@@ -1958,6 +1960,7 @@
   },
   "kidProfile": {
     "open": "Открыть профиль",
+    "fillStyleActive": "Стиль заполнения: Сводка",
     "levelLine": "Уровень {{level}}",
     "changeAvatar": "Сменить аватар",
     "streaksHeading": "Твои серии",
