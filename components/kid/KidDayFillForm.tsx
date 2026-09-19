@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
-import { useCoinAnimation, CoinFlyup } from '@/components/kid/CoinAnimation'
+import { useCoinAnimation, CoinFlyup, type FlyupAnchor } from '@/components/kid/CoinAnimation'
 import type { DayData, SubjectGrade } from '@/lib/models/child.types'
 import type { Subject, ExerciseType } from '@/lib/models/flexible.types'
 import type { ExtraActivity, Section, SectionVisit } from '@/lib/models/expense.types'
@@ -125,6 +125,20 @@ export function KidDayFillForm({
 
   // ── Coin animation ───────────────────────────────────────────────────────
   const { flyups, trigger: triggerCoinFlyup } = useCoinAnimation()
+
+  // ── Per-fill live coin feedback (Phase 9.3, D-11/D-12) ───────────────────
+  // lastAnchorRef: the tap position of the most recent in-form interaction,
+  // used to anchor the next sectionCoins-diff flyup at that row.
+  // interactedRef: interactedRef.current starts false and stays false until
+  // the child taps something inside the form — gates the diff effect below
+  // so opening an already-filled day (or the async mount pre-fill of room
+  // checks/grades/reading) never sprays flyups before the child has touched
+  // anything.
+  // prevSectionCoinsRef: the previous sectionCoins snapshot, diffed on every
+  // change to derive the per-row delta (see the effect below).
+  const lastAnchorRef = useRef<FlyupAnchor | null>(null)
+  const interactedRef = useRef(false)
+  const prevSectionCoinsRef = useRef<Record<string, number>>({})
 
   // ── State ────────────────────────────────────────────────────────────────
   const isChildFilled = existingDay?.filled_by === 'child'
@@ -444,6 +458,25 @@ export function KidDayFillForm({
     () => Object.values(sectionCoins).reduce((a, b) => a + b, 0),
     [sectionCoins],
   )
+
+  // Per-fill live coin feedback (D-12): fires an anchored flyup for every
+  // sectionCoins delta, immediately on each interaction. `sectionCoins` is
+  // the only delta source — no new coin maths here, only new trigger points
+  // into the existing useCoinAnimation mechanism. The interactedRef gate is
+  // load-bearing: without it, opening an already-filled day (or the async
+  // mount pre-fill of room checks/grades/reading) would spray flyups before
+  // the child touches anything. Behavior and mood never appear in
+  // sectionCoins (behavior_marks carry zero coins until parent approval,
+  // mood has no coin value) — the delta diff below naturally emits nothing
+  // for them, so no explicit exclusion is needed here.
+  useEffect(() => {
+    const prev = prevSectionCoinsRef.current
+    prevSectionCoinsRef.current = sectionCoins
+    if (!interactedRef.current) return
+    diffSectionCoins(prev, sectionCoins).forEach(({ delta }) => {
+      triggerCoinFlyup(delta, lastAnchorRef.current)
+    })
+  }, [sectionCoins, triggerCoinFlyup])
 
   // ── Applicability map (Phase 9.3, D-09) ───────────────────────────────────
   // The sticky-summary ring's denominator: only categories with something to
@@ -1277,7 +1310,25 @@ export function KidDayFillForm({
   const nothingToday = dayBlocksEnabled && visibleBlocks.length === 0
 
   return (
-    <div data-fill-style={style} style={{ paddingBottom: 120, position: 'relative' }}>
+    <div
+      data-fill-style={style}
+      style={{ paddingBottom: 120, position: 'relative' }}
+      onPointerDownCapture={(e) => {
+        // Single capture-phase handler covers every interaction inside the
+        // form (row toggles, grade buttons, coach stars, reading fields) —
+        // no per-handler plumbing needed. Anchors the next coin-flyup at the
+        // tapped row's position; plan 05 only has to tag its rows with the
+        // matching row-marker attribute for this to keep working.
+        interactedRef.current = true
+        const row = (e.target as HTMLElement).closest('[data-fill-row]') as HTMLElement | null
+        lastAnchorRef.current = row
+          ? (() => {
+              const rect = row.getBoundingClientRect()
+              return { left: rect.left + rect.width / 2, top: rect.top }
+            })()
+          : { left: e.clientX, top: e.clientY }
+      }}
+    >
       <CoinFlyup flyups={flyups} />
 
       {/* Sticky completion ring + live coin total (Phase 9.3, DAYFORM-04) —
