@@ -127,6 +127,36 @@ app/api/
 Server actions (`'use server'`) also use the service-role admin client:
 `app/parent/shop/actions.ts`, `app/kid/shop/actions.ts`, `app/actions/send-medal.ts`.
 
+## Kid Day-fill Render Layer
+
+The `/kid/day` screen (`app/kid/(app)/day/page.tsx`) selects its render layer from the
+child's `children.fill_style` column, passed straight through to `KidDayFillForm`'s
+`fillStyle` prop and defaulting to `'sticky-summary'` when unset:
+
+```typescript
+// app/kid/(app)/day/page.tsx
+<KidDayFillForm ... fillStyle={child?.fill_style ?? 'sticky-summary'} />
+```
+
+As of Phase 9.3 `sticky-summary` is the only implemented style (`tile-sheet` /
+`story-stepper` follow in Phase 9.4). Sticky-summary is a **render-only** layer over
+`KidDayFillForm`'s existing state, validation, save, and award logic — every
+`useState` hook and the `sectionCoins`/`coinsPreview`/`handleSubmit` pipeline are
+unchanged; only the JSX render tree was swapped. The shared building blocks live in
+`components/kid/day-fill/` (`StickySummaryBar` — the persistent completion-ring +
+live-total header, `QuickRow` — a one-tap binary row, `InlinePanelRow` — an
+independently-expandable in-place panel), with the pure completion-ring/coin-delta
+maths factored out into `lib/kid/day-fill-progress.ts` (`computeFillProgress`,
+`diffSectionCoins`), unit-tested with zero React/component imports.
+
+Live per-row coin feedback reuses the single existing `components/kid/CoinAnimation.tsx`
+mechanism (`useCoinAnimation`/`CoinFlyup`) — extended with row-anchored positioning and
+a distinct downward "loss" variant for negative deltas — rather than a parallel
+animation system. This feedback is **preview-only**: it is driven off the
+already-computed `sectionCoins` breakdown and never itself credits coins.
+`/api/wallet/award` remains the sole authoritative crediting path, called once at save
+exactly as before.
+
 ## Backward-Compat Wrappers
 Old import paths still work — files re-export from new locations:
 - `lib/api.ts` → repositories/children.repo + grades.repo + services/coins.service

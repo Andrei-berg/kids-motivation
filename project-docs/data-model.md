@@ -221,6 +221,14 @@ Tease replies (FEED-06) are ordinary `family_event_comments` rows whose `body` i
 | `weeks` | Legacy | Weekly summaries |
 | `settings` | Legacy | Global key-value settings |
 
+`children.fill_style TEXT NOT NULL DEFAULT 'sticky-summary'` — a per-child (not
+per-family) day-fill UI-style preference, CHECK-constrained by
+`children_fill_style_check` to `('tile-sheet','story-stepper','sticky-summary')`
+(migration `2026-09-19-child-fill-style.sql`). Only `sticky-summary` is implemented
+as of Phase 9.3; `tile-sheet`/`story-stepper` arrive in Phase 9.4. Written
+exclusively by the service-role server action `app/kid/actions/fill-style.ts` —
+`children` has no client UPDATE policy for it.
+
 ## RLS Pattern
 
 Policies target the **`authenticated`** role only; the `anon` role has no table
