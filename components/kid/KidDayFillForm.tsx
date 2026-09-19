@@ -27,7 +27,7 @@ import { supabase } from '@/lib/supabase'
 import { getReadingLog, saveReadingLog } from '@/lib/vacation-api'
 import { T } from '@/components/kid/design/tokens'
 import { K } from '@/components/kid/design/kidTheme'
-import { CollapsibleRow, Coin } from '@/components/kid/design/atoms'
+import { Coin } from '@/components/kid/design/atoms'
 import { Tick, StatusChip, Amount } from '@/components/design/atoms'
 import { GRADE_SCALE_VALUES, defaultGradeCoinMap } from '@/lib/presets'
 import RoomBlock from '@/components/kid/day-blocks/RoomBlock'
@@ -156,6 +156,20 @@ export function KidDayFillForm({
   const [roomChecked, setRoomChecked] = useState<Record<string, boolean>>({})
 
   const [mood, setMood] = useState<string | null>(existingDay?.mood ?? null)
+  // Mood "wow" selection pop (D-08) — a key/counter pair rather than a plain
+  // boolean so a repeat tap of the same emoji restarts the CSS animation
+  // (changing `key` remounts the span, re-triggering the keyframe) instead of
+  // silently not replaying it. Reduced-motion double-guard mirrors the Tick
+  // idiom in components/design/atoms.tsx: the CSS half already lives inside
+  // `@media (prefers-reduced-motion: no-preference)` (app/globals.css); this
+  // JS half skips applying the class at all when the user prefers less motion.
+  const [moodPop, setMoodPop] = useState<{ key: string; n: number }>({ key: '', n: 0 })
+  const [reduced, setReduced] = useState(false)
+  useEffect(() => {
+    setReduced(typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false)
+  }, [])
   const [proofFile, setProofFile] = useState<File | null>(null)
   const [proofLocalUrl, setProofLocalUrl] = useState<string | null>(null)
   const proofInputRef = useRef<HTMLInputElement>(null)
@@ -388,7 +402,7 @@ export function KidDayFillForm({
   )
 
   // ── Live coin calculation (no state — pure compute) ──────────────────────
-  // Broken out per section so each CollapsibleRow can show its own contribution;
+  // Broken out per section so each row can show its own contribution;
   // `coinsPreview` is the sum and behaves exactly as before (same inputs, same
   // total). Preview only — /api/wallet/award recomputes authoritatively.
   const sectionCoins = useMemo(() => {
@@ -1251,28 +1265,6 @@ export function KidDayFillForm({
     return isDone ? <Tick on theme="paper" size={18} /> : undefined
   }
 
-  // One CollapsibleRow per section — the checklist row, replacing BlockCard.
-  // A plain function (not a nested component) so `children` — which hold
-  // controlled inputs — never remount on a parent re-render.
-  // Only the mood row still uses this (task 3 rebuilds mood onto renderGroup
-  // and deletes this function + CollapsibleRow entirely).
-  function renderSection(id: string, title: string, icon: string, isDone: boolean, body: React.ReactNode, key?: string) {
-    return (
-      <CollapsibleRow
-        key={key ?? id}
-        title={title}
-        icon={icon}
-        done={isDone}
-        trailing={trailingFor(id, isDone)}
-        open={openPanels.has(id)}
-        onToggle={() => togglePanel(id)}
-        disabled={isLocked}
-      >
-        {body}
-      </CollapsibleRow>
-    )
-  }
-
   // In-place inline-panel row (D-06/D-07) — multi-value categories (grades,
   // exercises, sport, reading, behavior). A plain function (not a nested
   // component) so `children` — which hold controlled inputs — never remount
@@ -1432,18 +1424,28 @@ export function KidDayFillForm({
           </>
         )}
 
-        {/* Mood — always shown, not a day-blocks credit source. */}
-        {renderSection('mood', t('kidFillForm.moodSection'), '✨', done.mood, (
+        {/* Mood — always shown, not a day-blocks credit source (D-08: always-
+            expanded, no tap-to-open step, no chevron). */}
+        {renderGroup('mood', t('kidFillForm.moodSection'), '✨', done.mood, (
           <div style={{ display: 'flex', gap: 6, justifyContent: 'space-between' }}>
             {MOOD_OPTIONS.map(m => {
               const on = mood === m.key
               return (
-                <button key={m.key} onClick={() => !isLocked && setMood(prev => prev === m.key ? null : m.key)} disabled={isLocked} style={{
-                  flex: 1, minHeight: 64, borderRadius: 12, cursor: isLocked ? 'not-allowed' : 'pointer',
-                  background: on ? K.skySoft : K.card,
-                  border: on ? `1.5px solid ${K.sky}` : `1px solid ${K.line}`,
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
-                }}>
+                <button
+                  key={`${m.key}-${moodPop.key === m.key ? moodPop.n : 0}`}
+                  className={!reduced && moodPop.key === m.key ? 'kid-mood-pop' : undefined}
+                  onClick={() => {
+                    if (isLocked) return
+                    setMood(prev => prev === m.key ? null : m.key)
+                    setMoodPop(p => ({ key: m.key, n: p.n + 1 }))
+                  }}
+                  disabled={isLocked}
+                  style={{
+                    flex: 1, minHeight: 64, borderRadius: 12, cursor: isLocked ? 'not-allowed' : 'pointer',
+                    background: on ? K.skySoft : K.card,
+                    border: on ? `1.5px solid ${K.sky}` : `1px solid ${K.line}`,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+                  }}>
                   <div style={{ fontSize: 24 }}>{m.emoji}</div>
                   <div style={{ fontFamily: K.fBody, fontSize: 10, fontWeight: 700, color: on ? K.skyDeep : K.ink3 }}>{m.label}</div>
                 </button>
