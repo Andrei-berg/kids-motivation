@@ -52,6 +52,7 @@ export async function sendMedal(params: SendMedalParams): Promise<SendMedalResul
     .select('id')
     .eq('child_id', childId)
     .eq('date', today)
+    .eq('sender_role', 'parent')
     .maybeSingle()
 
   if (existing) {
@@ -61,7 +62,7 @@ export async function sendMedal(params: SendMedalParams): Promise<SendMedalResul
   // Insert medal record
   const { error: insertError } = await admin
     .from('medals')
-    .insert({ family_id: familyId, child_id: childId, date: today, message, coins, sent_by: sentBy ?? null })
+    .insert({ family_id: familyId, child_id: childId, date: today, message, coins, sent_by: sentBy ?? null, sender_role: 'parent' })
 
   if (insertError) {
     return { success: false, error: insertError.message }
