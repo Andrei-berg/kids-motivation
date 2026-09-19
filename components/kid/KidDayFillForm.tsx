@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useCoinAnimation, CoinFlyup } from '@/components/kid/CoinAnimation'
 import type { DayData, SubjectGrade } from '@/lib/models/child.types'
 import type { Subject, ExerciseType } from '@/lib/models/flexible.types'
@@ -27,13 +27,15 @@ import { supabase } from '@/lib/supabase'
 import { getReadingLog, saveReadingLog } from '@/lib/vacation-api'
 import { T } from '@/components/kid/design/tokens'
 import { K } from '@/components/kid/design/kidTheme'
-import { AnimatedNum, CollapsibleRow, Coin } from '@/components/kid/design/atoms'
+import { CollapsibleRow, Coin } from '@/components/kid/design/atoms'
 import { Tick, StatusChip, Amount } from '@/components/design/atoms'
 import { GRADE_SCALE_VALUES, defaultGradeCoinMap } from '@/lib/presets'
 import RoomBlock from '@/components/kid/day-blocks/RoomBlock'
 import ActivitiesBlock from '@/components/kid/day-blocks/ActivitiesBlock'
 import BookBlock from '@/components/kid/day-blocks/BookBlock'
 import CustomBlock from '@/components/kid/day-blocks/CustomBlock'
+import StickySummaryBar from '@/components/kid/day-fill/StickySummaryBar'
+import { computeFillProgress, diffSectionCoins } from '@/lib/kid/day-fill-progress'
 import { useT } from '@/lib/i18n'
 import { localDateString } from '@/utils/helpers'
 import { track } from '@/lib/analytics'
@@ -360,17 +362,21 @@ export function KidDayFillForm({
     load()
   }, [childId, dayType, date, dayBlocksEnabled])
 
+  // WR-02: under flag-on only count sources whose built-in block is visible
+  // today — the server's flag-on award path credits nothing for hidden
+  // blocks, so the preview must not promise those coins. Flag-off keeps the
+  // pre-5.6 behavior (every source counts). Hoisted out of sectionCoins
+  // (Phase 9.3) so the `applicable` memo below can reuse the same rule.
+  const legacyVisible = useCallback(
+    (key: string) => !dayBlocksEnabled || visibleBlocks.some(b => b.legacy_key === key),
+    [dayBlocksEnabled, visibleBlocks],
+  )
+
   // ── Live coin calculation (no state — pure compute) ──────────────────────
   // Broken out per section so each CollapsibleRow can show its own contribution;
   // `coinsPreview` is the sum and behaves exactly as before (same inputs, same
   // total). Preview only — /api/wallet/award recomputes authoritatively.
   const sectionCoins = useMemo(() => {
-    // WR-02: under flag-on only count sources whose built-in block is visible
-    // today — the server's flag-on award path credits nothing for hidden
-    // blocks, so the preview must not promise those coins. Flag-off keeps the
-    // pre-5.6 behavior (every source counts).
-    const legacyVisible = (key: string) =>
-      !dayBlocksEnabled || visibleBlocks.some(b => b.legacy_key === key)
     const out: Record<string, number> = {}
 
     // Preview only — the server recomputes from room_checks with the same
@@ -432,12 +438,38 @@ export function KidDayFillForm({
       })
     }
     return out
-  }, [roomTasks, roomChecked, checkedActivities, activities, settings, gradeCoinMap, kidGrades, sections, sectionNotes, reading, readingActive, requireReadingCheck, dayBlocksEnabled, visibleBlocks, customBlockDone])
+  }, [roomTasks, roomChecked, checkedActivities, activities, settings, gradeCoinMap, kidGrades, sections, sectionNotes, reading, readingActive, requireReadingCheck, dayBlocksEnabled, visibleBlocks, customBlockDone, legacyVisible])
 
   const coinsPreview = useMemo(
     () => Object.values(sectionCoins).reduce((a, b) => a + b, 0),
     [sectionCoins],
   )
+
+  // ── Applicability map (Phase 9.3, D-09) ───────────────────────────────────
+  // The sticky-summary ring's denominator: only categories with something to
+  // do for this child today. A category with nothing configured (no sport
+  // sections, no behavior tags, zero extra activities) is excluded entirely
+  // from BOTH the numerator and denominator — never a stuck incomplete slice.
+  const applicable = useMemo<Record<string, boolean>>(() => {
+    const out: Record<string, boolean> = {
+      mood: true,
+      behavior: behaviorTags.length > 0,
+      room: legacyVisible('room') && roomTasks.length > 0,
+      activity: legacyVisible('activity') && activities.length > 0,
+      grade: legacyVisible('grade') && dayType === 'school' && subjects.length > 0,
+      exercise: legacyVisible('exercise') && exerciseTypes.length > 0,
+      sport: legacyVisible('sport') && sections.length > 0,
+      book: legacyVisible('book'),
+    }
+    // Custom day-blocks (flag-on only): a block a parent fills is nothing for
+    // the kid to do, so it's excluded — not counted incomplete.
+    if (dayBlocksEnabled) {
+      visibleBlocks.forEach(b => {
+        if (!b.legacy_key) out[`custom:${b.id}`] = b.who_fills !== 'parent'
+      })
+    }
+    return out
+  }, [behaviorTags, roomTasks, activities, dayType, subjects, exerciseTypes, sections, dayBlocksEnabled, visibleBlocks, legacyVisible])
 
   // ── Accordion: one section open at a time (the checklist, not a form) ─────
   const [openId, setOpenId] = useState<string | null>(null)
@@ -1152,6 +1184,16 @@ export function KidDayFillForm({
     behavior: selectedTagIds.length > 0 || behaviorMarks.some(m => m.status === 'pending'),
   }
 
+  // doneAll extends `done` with one entry per visible custom block (Phase 9.3)
+  // — the sticky-summary ring's numerator source, filtered by `applicable`.
+  const doneAll: Record<string, boolean> = { ...done }
+  if (dayBlocksEnabled) {
+    visibleBlocks.forEach(b => {
+      if (!b.legacy_key) doneAll[`custom:${b.id}`] = !!customBlockDone[b.id]
+    })
+  }
+  const progress = computeFillProgress(applicable, doneAll)
+
   // Trailing slot for a collapsed row: its coin contribution, or a plain tick.
   function trailingFor(id: string, isDone: boolean) {
     const c = sectionCoins[id]
@@ -1238,27 +1280,16 @@ export function KidDayFillForm({
     <div data-fill-style={style} style={{ paddingBottom: 120, position: 'relative' }}>
       <CoinFlyup flyups={flyups} />
 
-      {/* Live estimate strip — client preview only, never stamped (D-17). */}
-      <div style={{ padding: '12px 16px 0' }}>
-        <div style={{
-          background: K.mangoSoft, border: `1.5px solid ${K.mango}55`,
-          borderRadius: 14, padding: '10px 14px',
-          display: 'flex', alignItems: 'center', gap: 8,
-        }}>
-          <span style={{ fontFamily: K.fBody, fontSize: 13, fontWeight: 700, color: K.mangoDeep, flex: 1 }}>
-            {t('kidFillForm.coinsToday')}
-          </span>
-          <span style={{ fontFamily: K.fNum, fontSize: 20, fontWeight: 800, color: K.mangoDeep, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            ≈ +<AnimatedNum value={coinsPreview} duration={500} /><Coin size={17} />
-          </span>
-          {isLocked && (
-            <span style={{
-              padding: '3px 9px', borderRadius: 999, background: '#fff',
-              color: K.ink2, fontFamily: K.fBody, fontSize: 11, fontWeight: 700,
-            }}>{t('kidFillForm.locked')}</span>
-          )}
-        </div>
-      </div>
+      {/* Sticky completion ring + live coin total (Phase 9.3, DAYFORM-04) —
+          persists on screen at all times while filling; replaces the old
+          one-shot "coins today" strip. Preview only, never stamped (D-17). */}
+      <StickySummaryBar
+        pct={progress.pct}
+        coins={coinsPreview}
+        caption={t('kidFillForm.stickyEarnedToday')}
+        ringLabel={t('kidFillForm.ringLabel', { pct: progress.pct })}
+        lockedLabel={isLocked ? t('kidFillForm.locked') : null}
+      />
 
       {/* Checklist — one collapsible row per section, collapsed by default. */}
       <div style={{ padding: '12px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
