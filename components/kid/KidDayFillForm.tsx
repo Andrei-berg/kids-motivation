@@ -37,6 +37,8 @@ import CustomBlock from '@/components/kid/day-blocks/CustomBlock'
 import StickySummaryBar from '@/components/kid/day-fill/StickySummaryBar'
 import InlinePanelRow from '@/components/kid/day-fill/InlinePanelRow'
 import TileGrid, { type FillTile } from '@/components/kid/day-fill/TileGrid'
+import StoryStepper, { type FillStep } from '@/components/kid/day-fill/StoryStepper'
+import StepCoinHeader from '@/components/kid/day-fill/StepCoinHeader'
 import { computeFillProgress, diffSectionCoins } from '@/lib/kid/day-fill-progress'
 import { useT } from '@/lib/i18n'
 import { localDateString } from '@/utils/helpers'
@@ -1489,8 +1491,181 @@ export function KidDayFillForm({
     return tiles
   }
 
+  // Story-stepper descriptor builder (D-04/D-05/D-09/D-10) — a plain
+  // function, mirroring buildTiles() above: introduces no new coin maths of
+  // its own (reads sectionCoins/done indirectly via the shared `done` map),
+  // closes over the reused body consts so their controlled inputs never
+  // remount. Grain is deliberately COARSER than buildTiles (D-04): every
+  // extra activity collapses into one Activities step, every custom block
+  // into one Custom step — auto-advancing after the first of several items
+  // would strand the rest, so only single-answer steps auto-advance; every
+  // multi-item step advances through the nav control instead (see this
+  // plan's SUMMARY for the full interpretation note).
+  function buildSteps(): FillStep[] {
+    const statusFor = (isDone: boolean) => (isDone ? t('kidFillForm.tileDone') : t('kidFillForm.tileNotFilled'))
+    // Mirrors buildTiles' label source: the visible block's own name under
+    // flag-on, the existing kidFillForm.*Section key under flag-off.
+    const labelFor = (legacyKey: string, fallbackKey: string) =>
+      dayBlocksEnabled
+        ? (visibleBlocks.find(b => b.legacy_key === legacyKey)?.name ?? t(fallbackKey))
+        : t(fallbackKey)
+
+    const steps: FillStep[] = []
+
+    // 1. Behavior — multi-select, no single-answer auto-advance.
+    if (behaviorTags.length > 0) {
+      steps.push({
+        id: 'behavior', label: t('kidFillForm.behaviorSection'), icon: '🌟',
+        status: statusFor(done.behavior), done: done.behavior, autoAdvance: false, body: behaviorBody,
+      })
+    }
+
+    // 2. Room.
+    if (applicable.room) {
+      const roomIcon = dayBlocksEnabled
+        ? (visibleBlocks.find(b => b.legacy_key === 'room')?.icon ?? '🏠')
+        : '🏠'
+      steps.push({
+        id: 'room', label: labelFor('room', 'kidFillForm.roomSection'), icon: roomIcon,
+        status: statusFor(done.room), done: done.room, autoAdvance: roomTasks.length === 1, body: roomBody,
+      })
+    }
+
+    // 3. Activities — ONE grouped step (D-04), not one per activity.
+    if (applicable.activity) {
+      steps.push({
+        id: 'activity', label: t('kidFillForm.extraSection'), icon: '⭐',
+        status: statusFor(done.activity), done: done.activity, autoAdvance: activities.length === 1, body: extraActivitiesBody,
+      })
+    }
+
+    // 4. Grades.
+    if (applicable.grade) {
+      steps.push({
+        id: 'grade', label: labelFor('grade', 'kidFillForm.gradesSection'), icon: '📚',
+        status: statusFor(done.grade), done: done.grade, autoAdvance: subjects.length === 1, body: gradesBody,
+      })
+    }
+
+    // 5. Exercises.
+    if (applicable.exercise) {
+      steps.push({
+        id: 'exercise', label: labelFor('exercise', 'kidFillForm.exercisesSection'), icon: '🤸',
+        status: statusFor(done.exercise), done: done.exercise, autoAdvance: exerciseTypes.length === 1, body: exercisesBody,
+      })
+    }
+
+    // 6. Sport.
+    if (applicable.sport) {
+      steps.push({
+        id: 'sport', label: labelFor('sport', 'kidFillForm.sectionsSection'), icon: '🏆',
+        status: statusFor(done.sport), done: done.sport, autoAdvance: sections.length === 1, body: sectionsBody,
+      })
+    }
+
+    // 7. Book — multi-field form, no single-answer auto-advance.
+    if (applicable.book) {
+      steps.push({
+        id: 'book', label: labelFor('book', 'kidFillForm.readingSection'), icon: '📖',
+        status: statusFor(done.book), done: done.book, autoAdvance: false, body: readingBody,
+      })
+    }
+
+    // 8. Custom — ONE grouped step (D-04) for every applicable custom block.
+    // No sibling of extraSection exists for a "custom items" group in the
+    // i18n files, and sticky-summary has no generic custom-group label
+    // either (each custom block there renders individually under its own
+    // name) — so per the plan's fallback chain this resolves to reusing
+    // extraSection's existing generic-collection copy for the Custom step
+    // too, the same interpretation the Activities step above uses.
+    if (dayBlocksEnabled) {
+      const customStepBlocks = visibleBlocks.filter(b => !b.legacy_key && applicable[`custom:${b.id}`])
+      if (customStepBlocks.length > 0) {
+        const allCustomDone = customStepBlocks.every(b => !!customBlockDone[b.id])
+        steps.push({
+          id: 'custom', label: t('kidFillForm.extraSection'), icon: '⭐',
+          status: statusFor(allCustomDone), done: allCustomDone, autoAdvance: customStepBlocks.length === 1,
+          body: (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {customStepBlocks.map(b => renderCustomBlock(b))}
+            </div>
+          ),
+        })
+      }
+    }
+
+    // 9. Mood — last, always applicable, single 5-option pick.
+    steps.push({
+      id: 'mood', label: t('kidFillForm.moodSection'), icon: '✨',
+      status: statusFor(done.mood), done: done.mood, autoAdvance: true, body: moodBody,
+    })
+
+    return steps
+  }
+
   // ── Render ───────────────────────────────────────────────────────────────
   const nothingToday = dayBlocksEnabled && visibleBlocks.length === 0
+
+  // Save-error banner (D-15/D-14 parity): extracted so all three fill styles
+  // share one definition — sticky-summary/tile-sheet render it inline below
+  // the checklist, story-stepper hands it to StoryStepper's `footer` prop.
+  const saveErrorBlock = saveError ? (
+    <div style={{
+      margin: '14px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+      padding: '10px 14px', borderRadius: 12,
+      background: `${K.danger}14`, border: `1.5px solid ${K.danger}40`,
+    }}>
+      <span style={{ fontFamily: K.fBody, fontSize: 13, fontWeight: 700, color: K.danger }}>
+        {t('kidDay.saveError')}
+      </span>
+      <button onClick={handleRetryAward} disabled={saving} style={{
+        flexShrink: 0, minHeight: 32, padding: '0 14px', borderRadius: 10, border: 'none',
+        cursor: saving ? 'not-allowed' : 'pointer', background: K.danger, color: '#fff',
+        fontFamily: K.fBody, fontSize: 13, fontWeight: 700, opacity: saving ? 0.7 : 1,
+      }}>
+        {t('kidDay.retryBtn')}
+      </button>
+    </div>
+  ) : null
+
+  // Pinned primary action — hovers above the bottom nav while scrolling.
+  // Extracted so all three fill styles share ONE Save component/position
+  // (D-08/D-14 parity) — sticky-summary/tile-sheet render it inline below
+  // the checklist, story-stepper hands it to StoryStepper's `footer` prop
+  // (rendered only on the summary screen, D-15).
+  const saveBlock = (
+    <div style={{
+      position: 'sticky', bottom: 76, zIndex: 20, marginTop: 18, padding: '10px 16px 0',
+    }}>
+      {isLocked ? (
+        <div style={{
+          textAlign: 'center', fontFamily: K.fBody, fontSize: 14, fontWeight: 600, color: K.ink3,
+          background: K.card, border: `1.5px solid ${K.line}`, borderRadius: 16, padding: '16px 0',
+        }}>{t('kidFillForm.dayLocked')}</div>
+      ) : (
+        <button onClick={handleSubmit} disabled={saving} style={{
+          width: '100%', minHeight: 56, borderRadius: 18, border: 'none',
+          cursor: saving ? 'not-allowed' : 'pointer', background: K.sky, color: '#fff',
+          fontFamily: K.fDisp, fontSize: 17, fontWeight: 800,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+          boxShadow: `0 6px 0 ${K.skyDeep}, 0 10px 24px ${K.skyDeep}44`,
+          opacity: saving ? 0.75 : 1,
+        }}>
+          {saving ? (
+            <>
+              <span style={{ display: 'inline-block', width: 20, height: 20, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              {t('kidFillForm.saving')}
+            </>
+          ) : (
+            t('kidFillForm.saveBtn', { coins: coinsPreview })
+          )}
+        </button>
+      )}
+      <div style={{ textAlign: 'center', fontFamily: K.fBody, fontSize: 12, fontWeight: 500, color: K.ink3, margin: '8px 0 0' }}>
+        {t('kidFillForm.trustNote')}
+      </div>
+    </div>
+  )
 
   return (
     <div
@@ -1514,22 +1689,31 @@ export function KidDayFillForm({
     >
       <CoinFlyup flyups={flyups} />
 
-      {/* Sticky completion ring + live coin total (Phase 9.3, DAYFORM-04) —
-          persists on screen at all times while filling; replaces the old
-          one-shot "coins today" strip. Preview only, never stamped (D-17). */}
-      <StickySummaryBar
-        pct={progress.pct}
-        coins={coinsPreview}
-        caption={t('kidFillForm.stickyEarnedToday')}
-        ringLabel={t('kidFillForm.ringLabel', { pct: progress.pct })}
-        lockedLabel={isLocked ? t('kidFillForm.locked') : null}
-      />
+      {/* Persistent progress header (Phase 9.3 D-08 / Phase 9.4 D-09): the
+          completion-ring StickySummaryBar for sticky-summary/tile-sheet, or
+          story-stepper's slim coin-only StepCoinHeader — the dot track below
+          already conveys completion %, so no ring is needed there. */}
+      {style === 'story-stepper' ? (
+        <StepCoinHeader
+          coins={coinsPreview}
+          caption={t('kidFillForm.stickyEarnedToday')}
+          lockedLabel={isLocked ? t('kidFillForm.locked') : null}
+        />
+      ) : (
+        <StickySummaryBar
+          pct={progress.pct}
+          coins={coinsPreview}
+          caption={t('kidFillForm.stickyEarnedToday')}
+          ringLabel={t('kidFillForm.ringLabel', { pct: progress.pct })}
+          lockedLabel={isLocked ? t('kidFillForm.locked') : null}
+        />
+      )}
 
-      {/* Checklist — sticky-summary's collapsible/inline rows, or the
-          tile-sheet grid (Phase 9.4). 'story-stepper' has no shell yet (plan
-          03) so it falls through to sticky-summary's JSX, same as any
-          unrecognized value — no child can land on an unbuilt style mid-phase
-          since fill-style.ts still rejects it server-side. */}
+      {/* Checklist — sticky-summary's collapsible/inline rows, the tile-sheet
+          grid, or the story-stepper shell (Phase 9.4). story-stepper hands
+          the save-error banner + pinned Save block to StoryStepper's
+          `footer` prop (rendered only on its summary screen, D-15) instead
+          of rendering them inline below, like the other two styles do. */}
       {style === 'tile-sheet' ? (
         <TileGrid
           tiles={buildTiles()}
@@ -1549,6 +1733,32 @@ export function KidDayFillForm({
             </div>
           ) : undefined}
         />
+      ) : style === 'story-stepper' ? (
+        <>
+          {nothingToday && (
+            <div style={{
+              margin: '16px 16px 0', background: K.card, border: `1.5px solid ${K.line}`, borderRadius: 18,
+              padding: '20px 16px', textAlign: 'center',
+              fontFamily: K.fBody, fontSize: 14, fontWeight: 600, color: K.ink3,
+            }}>
+              🌤️ {t('kidFillForm.nothingToday')}
+            </div>
+          )}
+          <StoryStepper
+            steps={buildSteps()}
+            locked={isLocked}
+            subtitle={t('kidFillForm.stepperSub')}
+            labels={{
+              skip: t('kidFillForm.stepSkip'),
+              next: t('kidFillForm.stepNext'),
+              doneToast: t('kidFillForm.stepDoneToast'),
+              summaryTitle: t('kidFillForm.stepSummaryTitle'),
+              summaryBody: t('kidFillForm.stepSummaryBody'),
+              dotLabel: (n, label) => t('kidFillForm.stepDotLabel', { n: n + 1, label }),
+            }}
+            footer={<>{saveErrorBlock}{saveBlock}</>}
+          />
+        </>
       ) : (
         <div style={{ padding: '12px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {behaviorTags.length > 0 &&
@@ -1588,57 +1798,12 @@ export function KidDayFillForm({
         </div>
       )}
 
-      {saveError && (
-        <div style={{
-          margin: '14px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
-          padding: '10px 14px', borderRadius: 12,
-          background: `${K.danger}14`, border: `1.5px solid ${K.danger}40`,
-        }}>
-          <span style={{ fontFamily: K.fBody, fontSize: 13, fontWeight: 700, color: K.danger }}>
-            {t('kidDay.saveError')}
-          </span>
-          <button onClick={handleRetryAward} disabled={saving} style={{
-            flexShrink: 0, minHeight: 32, padding: '0 14px', borderRadius: 10, border: 'none',
-            cursor: saving ? 'not-allowed' : 'pointer', background: K.danger, color: '#fff',
-            fontFamily: K.fBody, fontSize: 13, fontWeight: 700, opacity: saving ? 0.7 : 1,
-          }}>
-            {t('kidDay.retryBtn')}
-          </button>
-        </div>
+      {style !== 'story-stepper' && (
+        <>
+          {saveErrorBlock}
+          {saveBlock}
+        </>
       )}
-
-      {/* Pinned primary action — hovers above the bottom nav while scrolling. */}
-      <div style={{
-        position: 'sticky', bottom: 76, zIndex: 20, marginTop: 18, padding: '10px 16px 0',
-      }}>
-        {isLocked ? (
-          <div style={{
-            textAlign: 'center', fontFamily: K.fBody, fontSize: 14, fontWeight: 600, color: K.ink3,
-            background: K.card, border: `1.5px solid ${K.line}`, borderRadius: 16, padding: '16px 0',
-          }}>{t('kidFillForm.dayLocked')}</div>
-        ) : (
-          <button onClick={handleSubmit} disabled={saving} style={{
-            width: '100%', minHeight: 56, borderRadius: 18, border: 'none',
-            cursor: saving ? 'not-allowed' : 'pointer', background: K.sky, color: '#fff',
-            fontFamily: K.fDisp, fontSize: 17, fontWeight: 800,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            boxShadow: `0 6px 0 ${K.skyDeep}, 0 10px 24px ${K.skyDeep}44`,
-            opacity: saving ? 0.75 : 1,
-          }}>
-            {saving ? (
-              <>
-                <span style={{ display: 'inline-block', width: 20, height: 20, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                {t('kidFillForm.saving')}
-              </>
-            ) : (
-              t('kidFillForm.saveBtn', { coins: coinsPreview })
-            )}
-          </button>
-        )}
-        <div style={{ textAlign: 'center', fontFamily: K.fBody, fontSize: 12, fontWeight: 500, color: K.ink3, margin: '8px 0 0' }}>
-          {t('kidFillForm.trustNote')}
-        </div>
-      </div>
     </div>
   )
 }
