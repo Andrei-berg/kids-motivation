@@ -172,7 +172,14 @@ Plans:
   2. A child with no explicit preference set fills their day in `sticky-summary` style by default
   3. In `sticky-summary` style, a persistent completion ring + live coin total stay on screen; binary categories (room, behavior) toggle with one tap directly on the row with no sheet or accordion; multi-value categories expand a small inline panel in place
   4. Filling any category shows a floating "+N coins" that rises and fades, and the running coin total ticks upward immediately
-**Plans**: TBD
+**Plans**: 6 plans
+Plans:
+- [ ] 09.3-01-PLAN.md — children.fill_style migration (file + applied to prod), Child type, updateChildFillStyle server action, ProfileSheet pill, i18n keys
+- [ ] 09.3-02-PLAN.md — CoinAnimation loss variant + row-anchored flyups + globals.css keyframes (loss drift, mood pop, reduced-motion static)
+- [ ] 09.3-03-PLAN.md — lib/kid/day-fill-progress.ts (+ unit tests) and the StickySummaryBar / QuickRow / InlinePanelRow primitives
+- [ ] 09.3-04-PLAN.md — KidDayFillForm: fillStyle prop + day-page wiring, sticky ring/total bar, D-09 applicability map, per-fill coin feedback
+- [ ] 09.3-05-PLAN.md — Row-tree swap: one-tap binary rows (room/activities/custom blocks), in-place panels, always-expanded mood pop, accordion removed
+- [ ] 09.3-06-PLAN.md — Gate sweep + live-schema re-check + D-01..D-13 traceability matrix, project-docs update, operator browser verification
 **UI hint**: yes
 
 ### Phase 9.4: dayform-styles
