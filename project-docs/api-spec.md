@@ -36,6 +36,25 @@ Guards live in `lib/supabase/admin.ts`: `requireParent`, `requireFamilyMember`,
 `utils/helpers.localDateString(date?)` returns the calendar date in the family
 timezone (UTC+3). Use it for "today" instead of `toISOString().split('T')[0]`.
 
+### Server actions — medals (`app/actions/`)
+Two `'use server'` actions write to the `medals` table, both service-role behind an auth guard:
+
+```
+sendMedal({ childId, familyId, message, coins, sentBy })
+  # parent-only (requireParent); credits coins (0-100) via loadWallet/insertTx when coins > 0;
+  # one medal per child per day (sender_role='parent')
+
+sendKidMedal({ targetChildId, phrase }) -> { success, error? }
+  # child-only (requireFamilyMember + sibling guard: role==='child', target !== self, same family);
+  # phrase must be in MEDAL_PHRASES (lib/kid/medal-phrases.ts) — coins always 0, no freeform text;
+  # two independent daily caps: sender (1 kid-sent medal/day total) and recipient (1 kid-sent
+  # medal/day, separate from any parent-sent medal same day); emits a family_events `medal` row
+  # titled "Медаль от {имя} 🏅" with ref_id = '<childId>:<date>:kid'
+```
+
+The kid path never touches `wallet`/`wallet_transactions` — coins are always 0, so there is no
+coin credit step at all (unlike `sendMedal`'s parent path).
+
 ## lib/api.ts (children, days, grades, goals, weeks)
 
 ### Children

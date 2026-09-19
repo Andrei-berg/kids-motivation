@@ -180,6 +180,24 @@ All data is scoped to `family_id`. RLS policies ensure cross-family isolation.
 - `earned_at TIMESTAMPTZ`
 - UNIQUE(child_id, badge_key)
 
+### `medals`
+- `id UUID PRIMARY KEY`
+- `family_id UUID`
+- `child_id TEXT` — recipient
+- `date DATE`
+- `message TEXT`
+- `coins INT DEFAULT 0`
+- `sent_by TEXT` — display name shown on the card
+- `sender_role TEXT NOT NULL DEFAULT 'parent'` — `'parent' | 'child'`, CHECK `medals_sender_role_chk` (migration `2026-09-19-medal-sender.sql`)
+- `sender_member_id TEXT NULLABLE` — `family_members.id` of the sender; null for parent-sent medals
+- `created_at TIMESTAMPTZ`
+- Unique index `medals_recipient_day_role (child_id, date, sender_role)` gives each recipient one parent-sent **and** one kid-sent medal per day. Partial unique index `medals_kid_sender_day (sender_member_id, date) WHERE sender_role = 'child'` caps each child sender at one medal per day in total.
+- RLS: SELECT for family members, INSERT for parents only (`role = 'parent'`) — the kid-initiated send path (`sendKidMedal`) writes with the service-role client behind an app-level guard, and there is deliberately **no** child INSERT policy.
+
+Tease replies (FEED-06) are ordinary `family_event_comments` rows whose `body` is prefixed
+`[[tease]] ` and whose remaining text must match one of the locked phrases in
+`lib/kid/tease-phrases.ts` — no separate table exists.
+
 ## Push Notifications
 
 ### `push_subscriptions`
