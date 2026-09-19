@@ -1221,6 +1221,8 @@
   },
   "kidFillForm": {
     "coinsToday": "COINS TODAY",
+    "stickyEarnedToday": "earned today",
+    "ringLabel": "{{pct}}% complete",
     "locked": "🔒 Locked",
     "roomSection": "Room",
     "moodSection": "Mood",
@@ -1958,6 +1960,7 @@
   },
   "kidProfile": {
     "open": "Open profile",
+    "fillStyleActive": "Fill style: Summary",
     "levelLine": "Level {{level}}",
     "changeAvatar": "Change avatar",
     "streaksHeading": "Your streaks",
