@@ -1,15 +1,18 @@
 'use client'
 
-// Room checklist renderer (phase 05.7-04, D-09/D-18) — extracted from
-// KidDayFillForm's inline roomBody. Toggle callbacks are passed down from
-// the form unchanged; state changes show the Tick micro-tick (<=200ms),
-// never confetti. Photo-proof capture UI is carried over, restyled to paper.
+// Room checklist renderer (phase 05.7-04, D-09/D-18; sticky-summary rows in
+// 09.3-05) — extracted from KidDayFillForm's inline roomBody. Toggle
+// callbacks are passed down from the form unchanged. Each task is now a
+// one-tap QuickRow (D-05/D-10) instead of a 2-col button grid. Photo-proof
+// capture UI is carried over unchanged, still rendered after the task list.
+// The 60%-threshold award rule lives in sectionCoins/the award route — not
+// mirrored here.
 
 import React from 'react'
 import type { RoomTask } from '@/lib/models/room.types'
-import { Tick } from '@/components/design/atoms'
 import { base, paper } from '@/components/kid/design/kidTheme'
 import { useT } from '@/lib/i18n'
+import QuickRow from '@/components/kid/day-fill/QuickRow'
 
 interface RoomBlockProps {
   tasks: RoomTask[]
@@ -29,28 +32,19 @@ export default function RoomBlock({
   const t = useT()
   return (
     <>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {tasks.map(task => {
           const on = checked[task.id] ?? false
           return (
-            <button
-              key={task.id}
-              onClick={() => onToggle(task.id)}
-              disabled={isLocked}
-              style={{
-                minHeight: 48, padding: '0 12px', borderRadius: 12,
-                background: paper.card,
-                border: on ? `1.5px solid ${paper.accent}` : `1px solid ${paper.line}`,
-                display: 'flex', alignItems: 'center', gap: 8,
-                cursor: isLocked ? 'not-allowed' : 'pointer',
-                fontFamily: base.fontBody, fontSize: 14, fontWeight: 600, color: paper.ink,
-                textAlign: 'left',
-              }}
-            >
-              <span style={{ fontSize: 16 }} aria-hidden>{task.icon ?? '🏠'}</span>
-              <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.name}</span>
-              <Tick on={on} theme="paper"/>
-            </button>
+            <div data-fill-row key={task.id}>
+              <QuickRow
+                label={task.name}
+                icon={task.icon ?? '🏠'}
+                done={on}
+                onToggle={() => onToggle(task.id)}
+                disabled={isLocked}
+              />
+            </div>
           )
         })}
       </div>

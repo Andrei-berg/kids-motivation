@@ -1,16 +1,17 @@
 'use client'
 
-// Custom day-block renderer (phase 05.7-04, D-09/D-18) — extracted from
-// KidDayFillForm's renderCustomBlock. One toggle row per custom block with
-// a Tick micro-tick and the block's parent-configured price rendered as a
-// ledger row (LedgerRow/Amount, gold only on the coin figure). who_fills
-// 'parent' blocks stay read-only here (T-056-12 UI-level guard — the award
-// route remains the authoritative backstop).
+// Custom day-block renderer (phase 05.7-04, D-09/D-18; sticky-summary row in
+// 09.3-05) — extracted from KidDayFillForm's renderCustomBlock. One-tap
+// QuickRow (D-05) per custom block, with the block's parent-configured price
+// rendered as a coin-tag trailing element. who_fills 'parent' blocks stay
+// read-only here (T-056-12 UI-level guard — the award route remains the
+// authoritative backstop).
 
 import React from 'react'
 import type { DayBlock } from '@/lib/models/day-block.types'
-import { Tick, LedgerRow } from '@/components/design/atoms'
-import { base, paper } from '@/components/kid/design/kidTheme'
+import { Coin } from '@/components/kid/design/atoms'
+import { K } from '@/components/kid/design/kidTheme'
+import QuickRow from '@/components/kid/day-fill/QuickRow'
 
 interface CustomBlockProps {
   block: DayBlock
@@ -22,36 +23,25 @@ interface CustomBlockProps {
 export default function CustomBlock({ block, done, onToggle, isLocked }: CustomBlockProps) {
   const readOnly = block.who_fills === 'parent'
   const hasPrice = block.price != null && block.price !== 0
+  const trailing = hasPrice ? (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      fontFamily: K.fNum, fontSize: 13, fontWeight: 700,
+      color: (block.price as number) < 0 ? K.danger : K.mintDeep,
+    }}>
+      {(block.price as number) > 0 ? '+' : ''}{block.price}<Coin size={15} />
+    </span>
+  ) : undefined
   return (
-    <button
-      onClick={() => onToggle(block)}
-      disabled={isLocked || readOnly}
-      style={{
-        width: '100%', minHeight: 48, padding: '0 12px', borderRadius: 12,
-        background: paper.card,
-        border: done ? `1.5px solid ${paper.accent}` : `1px solid ${paper.line}`,
-        display: 'flex', alignItems: 'center', gap: 8,
-        cursor: (isLocked || readOnly) ? 'not-allowed' : 'pointer',
-        opacity: readOnly ? 0.6 : 1,
-        textAlign: 'left',
-      }}
-    >
-      <Tick on={done} theme="paper"/>
-      <span style={{ fontSize: 16 }} aria-hidden>{block.icon ?? '⭐'}</span>
-      {hasPrice ? (
-        <LedgerRow
-          theme="paper"
-          name={block.name}
-          amount={block.price as number}
-          tone={(block.price as number) > 0 ? 'earn' : 'penalty'}
-          style={{ flex: 1, minWidth: 0 }}
-        />
-      ) : (
-        <span style={{
-          flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          fontFamily: base.fontBody, fontSize: 14, fontWeight: 600, color: paper.ink,
-        }}>{block.name}</span>
-      )}
-    </button>
+    <div data-fill-row style={{ opacity: readOnly ? 0.6 : 1 }}>
+      <QuickRow
+        label={block.name}
+        icon={block.icon ?? '⭐'}
+        done={done}
+        onToggle={() => onToggle(block)}
+        disabled={isLocked || readOnly}
+        trailing={trailing}
+      />
+    </div>
   )
 }
