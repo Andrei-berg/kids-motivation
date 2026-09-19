@@ -1271,7 +1271,19 @@
     "moodTired": "Устал",
     "gradePill": "{{count}} оценок",
     "nothingTodaySection": "Сегодня",
-    "nothingToday": "Сегодня заполнять нечего — отдыхай!"
+    "nothingToday": "Сегодня заполнять нечего — отдыхай!",
+    "tileSheetSub": "Тапни плитку — заполни за пару секунд",
+    "tileNotFilled": "Не заполнено",
+    "tileDone": "Готово ✓",
+    "sheetDone": "Готово",
+    "sheetClose": "Закрыть",
+    "stepperSub": "Шаг за шагом — заполнил, и сразу дальше",
+    "stepSkip": "Пропустить →",
+    "stepNext": "Дальше →",
+    "stepDoneToast": "Готово! ✓",
+    "stepSummaryTitle": "Всё готово!",
+    "stepSummaryBody": "Проверь и сохрани — можно вернуться к любому шагу",
+    "stepDotLabel": "Шаг {{n}}: {{label}}"
   },
   "auditLogExtra": {
     "subtitle": "Полная прозрачность! Все операции логируются.",
@@ -1991,7 +2003,14 @@
     },
     "save": "Сохранить",
     "saving": "Сохраняем…",
-    "avatarSaveError": "Не удалось сохранить аватар"
+    "avatarSaveError": "Не удалось сохранить аватар",
+    "fillStyleHeading": "Стиль заполнения дня",
+    "fillStyleError": "Не удалось сохранить стиль",
+    "fillStyleOption": {
+      "stickySummary": "Сводка",
+      "tileSheet": "Плитки",
+      "storyStepper": "Степпер"
+    }
   },
   "kidBoost": {
     "milestone": {
