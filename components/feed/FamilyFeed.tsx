@@ -358,6 +358,12 @@ function EventRow({
   const summary = summarizeReactions(reactions, me?.id ?? null)
   const isNote = e.kind === 'note'
   const glyph = e.icon || (isNote ? '✍️' : '•')
+  const [popKey, setPopKey] = useState<Record<string, number>>({})
+
+  function reactAndPop(emoji: string) {
+    setPopKey(prev => ({ ...prev, [emoji]: (prev[emoji] ?? 0) + 1 }))
+    onReact(emoji)
+  }
 
   return (
     <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 18, overflow: 'hidden', display: 'flex' }}>
@@ -392,10 +398,12 @@ function EventRow({
             {FEED_REACTION_EMOJI.map(emoji => {
               const s = summary.find(x => x.emoji === emoji)
               const mine = s?.mine
+              const pop = popKey[emoji]
               return (
                 <button
-                  key={emoji}
-                  onClick={() => onReact(emoji)}
+                  key={pop ? `${emoji}-${pop}` : emoji}
+                  className={pop ? 'feed-reaction-pop' : undefined}
+                  onClick={() => reactAndPop(emoji)}
                   style={{
                     height: 26, padding: '0 8px', borderRadius: 999, cursor: 'pointer',
                     border: `1px solid ${mine ? C.accent : C.line}`,

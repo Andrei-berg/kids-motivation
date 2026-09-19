@@ -4479,3 +4479,23 @@ textarea::placeholder {
   position: absolute;
   inset: -6px;
 }
+
+/* Family Feed social — Phase 9.2 (FEED-05 / FEED-06) */
+@keyframes feed-reaction-pop {
+  40% { transform: scale(1.28); }
+}
+.feed-reaction-pop {
+  animation: feed-reaction-pop 0.35s ease;
+}
+
+@keyframes feed-tease-slide-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.feed-tease-reply {
+  animation: feed-tease-slide-in 0.25s cubic-bezier(.2,.9,.3,1.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-reaction-pop, .feed-tease-reply { animation: none; }
+}
