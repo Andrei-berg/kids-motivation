@@ -1972,7 +1972,6 @@
   },
   "kidProfile": {
     "open": "Открыть профиль",
-    "fillStyleActive": "Стиль заполнения: Сводка",
     "levelLine": "Уровень {{level}}",
     "changeAvatar": "Сменить аватар",
     "streaksHeading": "Твои серии",

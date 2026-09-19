@@ -1972,7 +1972,6 @@
   },
   "kidProfile": {
     "open": "Open profile",
-    "fillStyleActive": "Fill style: Summary",
     "levelLine": "Level {{level}}",
     "changeAvatar": "Change avatar",
     "streaksHeading": "Your streaks",

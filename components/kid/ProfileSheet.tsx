@@ -43,6 +43,7 @@ export default function ProfileSheet({ child: seed, onClose }: ProfileSheetProps
   const [boost, setBoost] = useState<BoostProgress | null>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [savingFillStyle, setSavingFillStyle] = useState(false)
+  const [fillStyleError, setFillStyleError] = useState(false)
 
   async function load() {
     if (!activeMemberId) return
@@ -66,14 +67,16 @@ export default function ProfileSheet({ child: seed, onClose }: ProfileSheetProps
     router.push('/')
   }
 
-  async function handleFillStyleTap() {
+  async function handleFillStyleTap(value: 'sticky-summary' | 'tile-sheet' | 'story-stepper') {
     if (!child?.id || savingFillStyle) return
+    setFillStyleError(false)
     setSavingFillStyle(true)
     try {
-      await updateChildFillStyle(child.id, 'sticky-summary')
+      await updateChildFillStyle(child.id, value)
       await load()
     } catch (err) {
       console.warn('updateChildFillStyle failed', err)
+      setFillStyleError(true)
     } finally {
       setSavingFillStyle(false)
     }
@@ -177,24 +180,46 @@ export default function ProfileSheet({ child: seed, onClose }: ProfileSheetProps
           <StatBox value={String(goalsDone)} label={t('kidProfile.goalsDone')} />
         </div>
 
-        <button
-          type="button"
-          onClick={handleFillStyleTap}
-          disabled={savingFillStyle}
-          aria-label={t('kidProfile.fillStyleActive')}
-          style={{
-            marginTop: 12, width: '100%', minHeight: 44, borderRadius: 16, padding: '0 14px',
-            cursor: savingFillStyle ? 'default' : 'pointer', opacity: savingFillStyle ? 0.7 : 1,
-            border: `1.5px solid ${K.line}`, background: K.card,
-            display: 'flex', alignItems: 'center', gap: 8,
-            fontFamily: K.fBody, fontSize: 13, fontWeight: 700, color: K.ink,
-          }}
-        >
-          <span>{t('kidProfile.fillStyleActive')}</span>
-          {child?.fill_style === 'sticky-summary' && (
-            <span aria-hidden style={{ color: K.mint }}>✓</span>
-          )}
-        </button>
+        <div style={{ fontFamily: K.fBody, fontSize: 12, fontWeight: 700, color: K.ink3, marginTop: 16, marginBottom: 8 }}>
+          {t('kidProfile.fillStyleHeading')}
+        </div>
+        <div role="radiogroup" style={{ display: 'flex', gap: 8, opacity: savingFillStyle ? 0.7 : 1 }}>
+          {([
+            ['sticky-summary', 'kidProfile.fillStyleOption.stickySummary'],
+            ['tile-sheet', 'kidProfile.fillStyleOption.tileSheet'],
+            ['story-stepper', 'kidProfile.fillStyleOption.storyStepper'],
+          ] as const).map(([value, labelKey]) => {
+            const active = child?.fill_style === value
+            return (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                disabled={savingFillStyle}
+                onClick={() => handleFillStyleTap(value)}
+                style={{
+                  flex: 1, minHeight: 44, borderRadius: 14, padding: '0 10px',
+                  cursor: savingFillStyle ? 'default' : 'pointer',
+                  background: active ? K.skySoft : K.card,
+                  border: active ? `1.5px solid ${K.sky}` : `1.5px solid ${K.line}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  fontFamily: K.fBody, fontSize: 13, fontWeight: 700, color: active ? K.skyDeep : K.ink,
+                }}
+              >
+                <span>{t(labelKey)}</span>
+                {active && (
+                  <span aria-hidden style={{ color: K.mint }}>✓</span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+        {fillStyleError && (
+          <div style={{ marginTop: 6, fontFamily: K.fBody, fontSize: 12, fontWeight: 700, color: K.danger }}>
+            {t('kidProfile.fillStyleError')}
+          </div>
+        )}
 
         <button
           type="button"
