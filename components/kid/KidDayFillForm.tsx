@@ -37,7 +37,8 @@ import CustomBlock from '@/components/kid/day-blocks/CustomBlock'
 import StickySummaryBar from '@/components/kid/day-fill/StickySummaryBar'
 import InlinePanelRow from '@/components/kid/day-fill/InlinePanelRow'
 import TileGrid, { type FillTile } from '@/components/kid/day-fill/TileGrid'
-import type { FillStep } from '@/components/kid/day-fill/StoryStepper'
+import StoryStepper, { type FillStep } from '@/components/kid/day-fill/StoryStepper'
+import StepCoinHeader from '@/components/kid/day-fill/StepCoinHeader'
 import { computeFillProgress, diffSectionCoins } from '@/lib/kid/day-fill-progress'
 import { useT } from '@/lib/i18n'
 import { localDateString } from '@/utils/helpers'
@@ -1688,22 +1689,31 @@ export function KidDayFillForm({
     >
       <CoinFlyup flyups={flyups} />
 
-      {/* Sticky completion ring + live coin total (Phase 9.3, DAYFORM-04) —
-          persists on screen at all times while filling; replaces the old
-          one-shot "coins today" strip. Preview only, never stamped (D-17). */}
-      <StickySummaryBar
-        pct={progress.pct}
-        coins={coinsPreview}
-        caption={t('kidFillForm.stickyEarnedToday')}
-        ringLabel={t('kidFillForm.ringLabel', { pct: progress.pct })}
-        lockedLabel={isLocked ? t('kidFillForm.locked') : null}
-      />
+      {/* Persistent progress header (Phase 9.3 D-08 / Phase 9.4 D-09): the
+          completion-ring StickySummaryBar for sticky-summary/tile-sheet, or
+          story-stepper's slim coin-only StepCoinHeader — the dot track below
+          already conveys completion %, so no ring is needed there. */}
+      {style === 'story-stepper' ? (
+        <StepCoinHeader
+          coins={coinsPreview}
+          caption={t('kidFillForm.stickyEarnedToday')}
+          lockedLabel={isLocked ? t('kidFillForm.locked') : null}
+        />
+      ) : (
+        <StickySummaryBar
+          pct={progress.pct}
+          coins={coinsPreview}
+          caption={t('kidFillForm.stickyEarnedToday')}
+          ringLabel={t('kidFillForm.ringLabel', { pct: progress.pct })}
+          lockedLabel={isLocked ? t('kidFillForm.locked') : null}
+        />
+      )}
 
-      {/* Checklist — sticky-summary's collapsible/inline rows, or the
-          tile-sheet grid (Phase 9.4). 'story-stepper' has no shell yet (plan
-          03) so it falls through to sticky-summary's JSX, same as any
-          unrecognized value — no child can land on an unbuilt style mid-phase
-          since fill-style.ts still rejects it server-side. */}
+      {/* Checklist — sticky-summary's collapsible/inline rows, the tile-sheet
+          grid, or the story-stepper shell (Phase 9.4). story-stepper hands
+          the save-error banner + pinned Save block to StoryStepper's
+          `footer` prop (rendered only on its summary screen, D-15) instead
+          of rendering them inline below, like the other two styles do. */}
       {style === 'tile-sheet' ? (
         <TileGrid
           tiles={buildTiles()}
@@ -1723,6 +1733,32 @@ export function KidDayFillForm({
             </div>
           ) : undefined}
         />
+      ) : style === 'story-stepper' ? (
+        <>
+          {nothingToday && (
+            <div style={{
+              margin: '16px 16px 0', background: K.card, border: `1.5px solid ${K.line}`, borderRadius: 18,
+              padding: '20px 16px', textAlign: 'center',
+              fontFamily: K.fBody, fontSize: 14, fontWeight: 600, color: K.ink3,
+            }}>
+              🌤️ {t('kidFillForm.nothingToday')}
+            </div>
+          )}
+          <StoryStepper
+            steps={buildSteps()}
+            locked={isLocked}
+            subtitle={t('kidFillForm.stepperSub')}
+            labels={{
+              skip: t('kidFillForm.stepSkip'),
+              next: t('kidFillForm.stepNext'),
+              doneToast: t('kidFillForm.stepDoneToast'),
+              summaryTitle: t('kidFillForm.stepSummaryTitle'),
+              summaryBody: t('kidFillForm.stepSummaryBody'),
+              dotLabel: (n, label) => t('kidFillForm.stepDotLabel', { n: n + 1, label }),
+            }}
+            footer={<>{saveErrorBlock}{saveBlock}</>}
+          />
+        </>
       ) : (
         <div style={{ padding: '12px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {behaviorTags.length > 0 &&
@@ -1762,8 +1798,12 @@ export function KidDayFillForm({
         </div>
       )}
 
-      {saveErrorBlock}
-      {saveBlock}
+      {style !== 'story-stepper' && (
+        <>
+          {saveErrorBlock}
+          {saveBlock}
+        </>
+      )}
     </div>
   )
 }
