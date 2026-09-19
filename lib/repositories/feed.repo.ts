@@ -6,6 +6,7 @@
 
 import { supabase } from '@/lib/supabase'
 import type { FeedEvent, FeedReaction, FeedComment, FeedReactionSummary } from '@/lib/models/feed.types'
+import { isKnownTeasePhrase } from '@/lib/kid/tease-phrases'
 
 const PAGE = 30
 
@@ -89,20 +90,21 @@ export async function getComments(eventId: string): Promise<FeedComment[]> {
     console.error('[feed.repo] getComments error:', error)
     return []
   }
-  return (data ?? []) as FeedComment[]
+  return (data ?? []).filter(c => !isTeaseComment(c as FeedComment)) as FeedComment[]
 }
 
 export async function getCommentCounts(familyId: string): Promise<Record<string, number>> {
   const { data, error } = await supabase
     .from('family_event_comments')
-    .select('event_id')
+    .select('event_id, body')
     .eq('family_id', familyId)
   if (error) {
     console.error('[feed.repo] getCommentCounts error:', error)
     return {}
   }
   const counts: Record<string, number> = {}
-  for (const row of (data ?? []) as { event_id: string }[]) {
+  for (const row of (data ?? []) as { event_id: string; body: string }[]) {
+    if (row.body.startsWith(TEASE_PREFIX) && isKnownTeasePhrase(row.body.slice(TEASE_PREFIX.length))) continue
     counts[row.event_id] = (counts[row.event_id] ?? 0) + 1
   }
   return counts
@@ -131,6 +133,77 @@ export async function addComment(params: {
     return null
   }
   return data as FeedComment
+}
+
+// ─── Tease ("Подколоть") — FEED-06, D-06/D-07 ──────────────────────────────
+// `family_event_comments` has no `metadata` column, so a tease is an ordinary
+// comment row tagged with a reserved body prefix — a storage convention
+// stripped at render time, never shown to a user. No migration, no new RLS
+// policy, no new realtime subscription.
+
+export const TEASE_PREFIX = '[[tease]] '
+
+// True only when the prefix is present AND the remaining text is one of the
+// locked tease phrases (lib/kid/tease-phrases.ts). Both conditions are
+// required: the phrase-set check is what stops a kid from hand-typing
+// `[[tease]] anything` into the ordinary comment box and having it render as
+// a grape tease bubble.
+export function isTeaseComment(c: FeedComment): boolean {
+  return c.body.startsWith(TEASE_PREFIX) && isKnownTeasePhrase(c.body.slice(TEASE_PREFIX.length))
+}
+
+export function teaseTextOf(c: FeedComment): string {
+  return isTeaseComment(c) ? c.body.slice(TEASE_PREFIX.length) : c.body
+}
+
+// Writes a tease as a tagged `family_event_comments` row. Returns `null`
+// immediately for any phrase outside the locked set — never writes
+// unvalidated text through this path. Delegates to `addComment` so the
+// RLS-bound browser client and the error logging stay a single code path.
+export async function addTeaseReply(params: {
+  eventId: string
+  familyId: string
+  authorMemberId: string
+  authorName: string
+  phrase: string
+}): Promise<FeedComment | null> {
+  if (!isKnownTeasePhrase(params.phrase)) return null
+  return addComment({
+    eventId: params.eventId,
+    familyId: params.familyId,
+    authorMemberId: params.authorMemberId,
+    authorName: params.authorName,
+    body: TEASE_PREFIX + params.phrase,
+  })
+}
+
+// Mirrors getReactionsByFamily's shape: all tease rows for a family, grouped
+// by event_id, oldest first. Rows with the prefix but an unrecognized phrase
+// (forged/stale) are skipped rather than surfaced as a tease.
+export async function getTeaseRepliesByFamily(familyId: string): Promise<Record<string, FeedComment[]>> {
+  const { data, error } = await supabase
+    .from('family_event_comments')
+    .select('*')
+    .eq('family_id', familyId)
+    .like('body', `${TEASE_PREFIX}%`)
+    .order('created_at', { ascending: true })
+  if (error) {
+    console.error('[feed.repo] getTeaseRepliesByFamily error:', error)
+    return {}
+  }
+  const grouped: Record<string, FeedComment[]> = {}
+  for (const c of (data ?? []) as FeedComment[]) {
+    if (!isTeaseComment(c)) continue
+    ;(grouped[c.event_id] ||= []).push(c)
+  }
+  return grouped
+}
+
+// D-07 one-tease-per-(person, card) check. Pure, no I/O — runs off the
+// already-loaded map, so it costs no extra query (same discipline as
+// summarizeReactions).
+export function hasTeased(rows: FeedComment[] | undefined, myMemberId: string | null): boolean {
+  return !!myMemberId && !!rows && rows.some(r => r.author_member_id === myMemberId)
 }
 
 // ─── Unread marker ───────────────────────────────────────────────────────────
