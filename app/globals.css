@@ -4409,6 +4409,52 @@ textarea::placeholder {
   100% { opacity: 0; transform: translateX(-50%) translateY(-100px) scale(0.8); }
 }
 
+/* ── Phase 09.3 / D-08 / D-11 — row-anchored + loss flyup + mood-pop ──────
+   Loss and mood-pop animations are double-guarded: keyframes only run inside
+   `@media (prefers-reduced-motion: no-preference)`, plus a post-mount JS
+   check (see components/kid/CoinAnimation.tsx / components/design/atoms.tsx
+   Tick) that applies `.static` to drop the animation property entirely.
+   Precedent: 05.3-02 Stamp double-guard. ─────────────────────────────────── */
+
+.coin-flyup-anchored {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.coin-flyup-number.loss {
+  color: #D84C5E; /* K.danger */
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .coin-flyup-number.loss {
+    animation: coin-flyup-loss 1.2s ease-out forwards;
+  }
+
+  @keyframes coin-flyup-loss {
+    0%   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+    30%  { opacity: 1; transform: translateX(-50%) translateY(18px) scale(1.15); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(60px) scale(0.85); }
+  }
+
+  .kid-mood-pop {
+    animation: kidMoodPop 0.45s cubic-bezier(.2,.9,.3,1.4);
+  }
+
+  @keyframes kidMoodPop {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.22) rotate(-4deg); box-shadow: 0 0 0 6px rgba(255,107,138,0.28); }
+    70%  { transform: scale(0.96) rotate(2deg); }
+    100% { transform: scale(1) rotate(0deg); box-shadow: none; }
+  }
+}
+
+.coin-flyup-number.static {
+  animation: none;
+  opacity: 1;
+}
+
 /* ── Badge celebration pulse ────────────────────────────────────────── */
 @keyframes badge-pulse {
   0%   { transform: scale(0.5); opacity: 0; }
