@@ -20,6 +20,9 @@ export type Child = {
   avatar_url?: string | null
   avatar_kind?: 'emoji' | 'character' | null
   avatar_config?: Record<string, unknown> | null
+  // Day-fill interaction style (see 2026-09-19-child-fill-style.sql). Self-serve,
+  // kid-controlled via ProfileSheet — not a parent policy field.
+  fill_style: 'tile-sheet' | 'story-stepper' | 'sticky-summary'
 }
 
 export type BackfillRequestStatus =
