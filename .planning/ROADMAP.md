@@ -113,7 +113,7 @@ See: `.planning/milestones/v5.0-ROADMAP.md`
 ## Phases
 
 - [x] **Phase 9.1: feed-recognition** — Family Feed becomes a motivational recognition stream: story reel + day-grouped event cards with color rail, no money, no penalties (completed 2026-09-17)
-- [ ] **Phase 9.2: feed-social** — Emoji reactions, sibling "подколоть" tease replies, kid→kid medals as their own feed event
+- [x] **Phase 9.2: feed-social** — Emoji reactions, sibling "подколоть" tease replies, kid→kid medals as their own feed event (completed 2026-09-19)
 - [ ] **Phase 9.3: dayform-default** — Per-child `fill_style` preference + sticky-summary (default) day-fill style with live coin feedback
 - [ ] **Phase 9.4: dayform-styles** — Tile-sheet (grid + bottom sheet) and story-stepper (one category at a time) day-fill styles
 - [ ] **Phase 9.5: boost-default** — Per-child `boost_style` preference + segmented-bar weekly-boost detail view, reading real tier/coin rules
@@ -159,7 +159,7 @@ Plans:
 - [x] 09.2-04-PLAN.md — Live-DB integration suite for `sendKidMedal`: guards, cross-family block, zero-coin proof, both daily caps
 - [x] 09.2-05-PLAN.md — Tease UI: `TeaseButton`/`TeaseTray`/`TeaseReply` in `FamilyFeed.tsx` with self-tease block and one-per-card state
 - [x] 09.2-06-PLAN.md — `MedalComposer` bottom sheet (sibling picker + 8 berry phrase buttons) and the kid-only feed launcher
-- [ ] 09.2-07-PLAN.md — Gate sweep + D-01..D-12 decision matrix, project-docs update, operator browser verification checkpoint
+- [x] 09.2-07-PLAN.md — Gate sweep + D-01..D-12 decision matrix, project-docs update, operator browser verification checkpoint
 
 **UI hint**: yes
 
@@ -266,7 +266,7 @@ Plans:
 | 5.10 automation | v5.0 | 4/4 | Complete | 2026-07-22 |
 | 5.11 legacy-cleanup | v5.0 | 3/3 | Complete | 2026-07-23 |
 | 9.1 feed-recognition | v9.0 | 4/4 | Complete   | 2026-09-17 |
-| 9.2 feed-social | v9.0 | 6/7 | In Progress|  |
+| 9.2 feed-social | v9.0 | 7/7 | Complete   | 2026-09-19 |
 | 9.3 dayform-default | v9.0 | 0/? | Not started | - |
 | 9.4 dayform-styles | v9.0 | 0/? | Not started | - |
 | 9.5 boost-default | v9.0 | 0/? | Not started | - |
