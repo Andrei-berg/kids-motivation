@@ -31,11 +31,11 @@ import { K } from '@/components/kid/design/kidTheme'
 import { RAIL_COLOR_MAP, pickHighlight } from '@/lib/kid/feed-highlights'
 import { localDateString } from '@/utils/helpers'
 import type { FeedEvent, FeedReaction, FeedComment } from '@/lib/models/feed.types'
+import { FEED_REACTION_EMOJI } from '@/lib/models/feed.types'
 import type { Child } from '@/lib/models/child.types'
 
 type Variant = 'parent' | 'kid' | 'family'
 
-const QUICK_EMOJI = ['❤️', '👍', '🔥', '🏆']
 const CHILD_ACCENTS = ['#6C5CE7', '#2E9E77', '#D9548A', '#3C86C6', '#B06AC6']
 
 function palette(variant: Variant) {
@@ -358,6 +358,12 @@ function EventRow({
   const summary = summarizeReactions(reactions, me?.id ?? null)
   const isNote = e.kind === 'note'
   const glyph = e.icon || (isNote ? '✍️' : '•')
+  const [popKey, setPopKey] = useState<Record<string, number>>({})
+
+  function reactAndPop(emoji: string) {
+    setPopKey(prev => ({ ...prev, [emoji]: (prev[emoji] ?? 0) + 1 }))
+    onReact(emoji)
+  }
 
   return (
     <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 18, overflow: 'hidden', display: 'flex' }}>
@@ -389,13 +395,15 @@ function EventRow({
 
           <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 11.5, color: C.ink3, marginRight: 2 }}>{relTime(e.created_at)}</span>
-            {QUICK_EMOJI.map(emoji => {
+            {FEED_REACTION_EMOJI.map(emoji => {
               const s = summary.find(x => x.emoji === emoji)
               const mine = s?.mine
+              const pop = popKey[emoji]
               return (
                 <button
-                  key={emoji}
-                  onClick={() => onReact(emoji)}
+                  key={pop ? `${emoji}-${pop}` : emoji}
+                  className={pop ? 'feed-reaction-pop' : undefined}
+                  onClick={() => reactAndPop(emoji)}
                   style={{
                     height: 26, padding: '0 8px', borderRadius: 999, cursor: 'pointer',
                     border: `1px solid ${mine ? C.accent : C.line}`,
