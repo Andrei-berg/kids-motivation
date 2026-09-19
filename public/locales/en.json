@@ -1271,7 +1271,19 @@
     "moodTired": "Tired",
     "gradePill": "{{count}} grade",
     "nothingTodaySection": "Today",
-    "nothingToday": "Nothing to fill in today — enjoy your day!"
+    "nothingToday": "Nothing to fill in today — enjoy your day!",
+    "tileSheetSub": "Tap a tile — fill it in a few seconds",
+    "tileNotFilled": "Not filled",
+    "tileDone": "Done ✓",
+    "sheetDone": "Done",
+    "sheetClose": "Close",
+    "stepperSub": "Step by step — fill it, move on",
+    "stepSkip": "Skip →",
+    "stepNext": "Next →",
+    "stepDoneToast": "Done! ✓",
+    "stepSummaryTitle": "All done!",
+    "stepSummaryBody": "Check it over and save — you can revisit any step",
+    "stepDotLabel": "Step {{n}}: {{label}}"
   },
   "auditLogExtra": {
     "subtitle": "Full transparency! All operations are logged.",
@@ -1991,7 +2003,14 @@
     },
     "save": "Save",
     "saving": "Saving…",
-    "avatarSaveError": "Could not save the avatar"
+    "avatarSaveError": "Could not save the avatar",
+    "fillStyleHeading": "Day fill style",
+    "fillStyleError": "Could not save the style",
+    "fillStyleOption": {
+      "stickySummary": "Summary",
+      "tileSheet": "Tiles",
+      "storyStepper": "Stepper"
+    }
   },
   "kidBoost": {
     "milestone": {

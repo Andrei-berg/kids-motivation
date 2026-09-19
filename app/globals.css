@@ -4372,14 +4372,34 @@ textarea::placeholder {
   box-shadow: 0 0 16px rgba(251,191,36,0.25);
 }
 
-/* Bottom sheet slide-up */
-@keyframes kid-slide-up {
-  from { transform: translateY(100%); }
-  to   { transform: translateY(0); }
-}
+/* ── Phase 09.4 / D-18 / D-12 — sheet slide-up, tile press, dot fill ──────
+   All three are reduced-motion double-guarded: the animation/transition
+   declarations live only inside `@media (prefers-reduced-motion: no-preference)`,
+   mirroring the Phase 09.3 / D-08 / D-11 idiom above. The tile and dot-fill
+   selectors below carry their layout/colour via inline styles from the
+   components, so a reduced-motion user gets the identical static appearance
+   with no transition. ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes kid-slide-up {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
 
-.kid-bottom-sheet {
-  animation: kid-slide-up 0.3s ease-out forwards;
+  .kid-bottom-sheet {
+    animation: kid-slide-up .28s cubic-bezier(.2,.9,.3,1.1) forwards;
+  }
+
+  .kid-tile {
+    transition: border-color .15s, transform .1s;
+  }
+
+  .kid-tile:active {
+    transform: scale(0.97);
+  }
+
+  .kid-dot-fill {
+    transition: width .3s, background-color .2s;
+  }
 }
 
 /* ── Coin fly-up animation ──────────────────────────────────────────── */
