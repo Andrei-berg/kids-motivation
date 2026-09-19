@@ -207,4 +207,109 @@ describe.skipIf(!hasIntegrationEnv)('sendKidMedal (live DB)', () => {
     expect(txErr).toBeNull()
     expect(txs?.length ?? 0).toBe(0)
   })
+
+  describe('guards and caps', () => {
+    it('rejects an off-list phrase (D-11) and writes nothing', async () => {
+      asSender()
+
+      const result = await sendKidMedal({ targetChildId: family.childId, phrase: 'Держи 1000 монет' })
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('Недопустимое сообщение')
+
+      const { data: medalRows } = await db.from('medals').select('id').eq('family_id', family.familyId)
+      expect(medalRows?.length ?? 0).toBe(0)
+    })
+
+    it('rejects a self-send and writes nothing', async () => {
+      asSender()
+
+      const result = await sendKidMedal({ targetChildId: senderChildId, phrase: MEDAL_PHRASES[0] })
+      expect(result.success).toBe(false)
+      expect(result.error).toBeTruthy()
+
+      const { data: medalRows } = await db.from('medals').select('id').eq('family_id', family.familyId)
+      expect(medalRows?.length ?? 0).toBe(0)
+    })
+
+    it('rejects a non-child caller (parent role) and writes nothing', async () => {
+      asSender({ role: 'parent', childId: null })
+
+      const result = await sendKidMedal({ targetChildId: family.childId, phrase: MEDAL_PHRASES[0] })
+      expect(result.success).toBe(false)
+
+      const { data: medalRows } = await db.from('medals').select('id').eq('family_id', family.familyId)
+      expect(medalRows?.length ?? 0).toBe(0)
+    })
+
+    it('rejects a cross-family target and writes no medal for the outsider child', async () => {
+      asSender()
+
+      const result = await sendKidMedal({ targetChildId: outsiderFamily.childId, phrase: MEDAL_PHRASES[0] })
+      expect(result.success).toBe(false)
+
+      const { data: medalRows } = await db
+        .from('medals')
+        .select('id')
+        .eq('child_id', outsiderFamily.childId)
+      expect(medalRows?.length ?? 0).toBe(0)
+    })
+
+    it('caps the sender per-day-total, not per-recipient (D-10)', async () => {
+      asSender()
+
+      const first = await sendKidMedal({ targetChildId: family.childId, phrase: MEDAL_PHRASES[0] })
+      expect(first.success).toBe(true)
+
+      const second = await sendKidMedal({ targetChildId: recipientB, phrase: MEDAL_PHRASES[1] })
+      expect(second.success).toBe(false)
+      expect(second.error).toBe('Ты уже отправил медаль сегодня')
+
+      const { data: bRows } = await db.from('medals').select('id').eq('child_id', recipientB)
+      expect(bRows?.length ?? 0).toBe(0)
+    })
+
+    it('caps the recipient per-sender-role — a parent medal the same day does not block a kid medal (D-09)', async () => {
+      const { error: parentMedalErr } = await db.from('medals').insert({
+        family_id: family.familyId,
+        child_id: family.childId,
+        date: today,
+        message: 'Медаль дня',
+        coins: 0,
+        sender_role: 'parent',
+      })
+      expect(parentMedalErr).toBeNull()
+
+      asSender()
+      const result = await sendKidMedal({ targetChildId: family.childId, phrase: MEDAL_PHRASES[0] })
+      expect(result.success).toBe(true)
+
+      const { data: medalRows, error: medalErr } = await db
+        .from('medals')
+        .select('id, sender_role')
+        .eq('child_id', family.childId)
+        .eq('date', today)
+      expect(medalErr).toBeNull()
+      expect(medalRows?.length).toBe(2)
+      const roles = (medalRows ?? []).map((r: { sender_role: string }) => r.sender_role).sort()
+      expect(roles).toEqual(['child', 'parent'])
+    })
+
+    it('backstops the caps at the DB level against a raced duplicate insert (23505)', async () => {
+      asSender()
+      const first = await sendKidMedal({ targetChildId: family.childId, phrase: MEDAL_PHRASES[0] })
+      expect(first.success).toBe(true)
+
+      const { error: raceErr } = await db.from('medals').insert({
+        family_id: family.familyId,
+        child_id: family.childId,
+        date: today,
+        sender_role: 'child',
+        sender_member_id: senderMemberId,
+        message: MEDAL_PHRASES[1],
+        coins: 0,
+      })
+      expect(raceErr).not.toBeNull()
+      expect(raceErr?.code).toBe('23505')
+    })
+  })
 })
