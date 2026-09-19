@@ -339,11 +339,11 @@ avoid renumbering already-reserved phases 6.1–8.3.
 - ✓ Automation: scheduled allowance, trust-limit auto-approve, schedule-driven smart reminders — v5.0
 - ✓ Unified design system (tokens, paper/ink themes) across full kid + parent redesign — v5.0
 - ✓ Legacy pages removed, globals.css purged, single consistent UI/branding — v5.0
+- ✓ Family Feed redesign — story reel + day-grouped color-railed cards, no money/penalties (Phase 9.1); fixed-emoji reactions, sibling "подколоть" tease tray, kid→kid zero-coin medal (Phase 9.2) — v9.0
 
 ### Active
 
 v9.0 Kid Experience Redesign (in progress — requirements below, roadmap next):
-- [ ] Family Feed redesign — motivational social network framing, no money/penalties, sibling tease reactions
 - [ ] Day-fill form — 3 selectable per-child interaction styles
 - [ ] Weekly Boost detail — 3 selectable per-child breakdown styles
 
@@ -420,3 +420,5 @@ This document evolves at phase transitions and milestone boundaries.
 *Milestone v5.0 Flexibility & Design Unification shipped 2026-07-23 (all 11 phases 5.1-5.11 complete, 71/71 plans). v4.0 PWA Polish formally closed at the same time (was code-complete since 2026-05-18 but never run through milestone close). Full requirements/decisions evolution review done as part of `/gsd:complete-milestone`.*
 
 *Обновлён: 2026-09-17 — Milestone v9.0 Kid Experience Redesign started via `/gsd:new-milestone`, scoped from the 2026-09-17 sketch session (`.claude/skills/sketch-findings-kids-motivation/`): Family Feed → motivational social network, selectable per-child day-fill form styles, selectable per-child weekly-boost detail styles. Numbered v9.0 (not v6.0) and phases start at 9.1 specifically to avoid colliding with the already-reserved-but-unbuilt v6.0/v7.0/v8.0 phase numbers (6.1–8.3).*
+
+*Обновлён: 2026-09-19 — Phase 9.2 (feed-social) complete: fixed 6-emoji reactions with pop animation, sibling "подколоть" tease tray (17 locked phrases, tag-on-existing-comment convention, zero migration), and kid→kid zero-coin medal (`sender_role`/`sender_member_id` migration applied to prod, `sendKidMedal` server action, daily caps). Code review found 1 pre-existing RLS gap (family_event_reactions INSERT policy, from Phase 9.1) plus 5 minor robustness warnings in the new code — none blocking, logged in 09.2-VERIFICATION.md. Operator approved the 12-step browser verification and chose to keep the existing reaction-chip accent color over the UI-SPEC's proposed "mango" variant. 7/7 plans, 3/3 must-haves verified.*
