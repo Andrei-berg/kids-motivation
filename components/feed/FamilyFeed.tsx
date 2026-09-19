@@ -31,11 +31,11 @@ import { K } from '@/components/kid/design/kidTheme'
 import { RAIL_COLOR_MAP, pickHighlight } from '@/lib/kid/feed-highlights'
 import { localDateString } from '@/utils/helpers'
 import type { FeedEvent, FeedReaction, FeedComment } from '@/lib/models/feed.types'
+import { FEED_REACTION_EMOJI } from '@/lib/models/feed.types'
 import type { Child } from '@/lib/models/child.types'
 
 type Variant = 'parent' | 'kid' | 'family'
 
-const QUICK_EMOJI = ['❤️', '👍', '🔥', '🏆']
 const CHILD_ACCENTS = ['#6C5CE7', '#2E9E77', '#D9548A', '#3C86C6', '#B06AC6']
 
 function palette(variant: Variant) {
@@ -389,7 +389,7 @@ function EventRow({
 
           <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 11.5, color: C.ink3, marginRight: 2 }}>{relTime(e.created_at)}</span>
-            {QUICK_EMOJI.map(emoji => {
+            {FEED_REACTION_EMOJI.map(emoji => {
               const s = summary.find(x => x.emoji === emoji)
               const mine = s?.mine
               return (
