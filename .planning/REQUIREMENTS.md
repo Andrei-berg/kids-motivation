@@ -20,11 +20,11 @@
   the reward name (e.g. "Адам взял час приставки", never a price/coin figure).
 - [ ] **FEED-04**: Feed never displays penalties, corrections, or negative behavior-tag events —
   those remain visible only in the private Wallet/audit trail.
-- [ ] **FEED-05**: Any family member can react to a feed event with a fixed emoji set
+- [x] **FEED-05**: Any family member can react to a feed event with a fixed emoji set
   (toggleable per user, with visible count).
-- [ ] **FEED-06**: A child can send a sibling a "подколоть" (tease) reply chosen from a fixed set
+- [x] **FEED-06**: A child can send a sibling a "подколоть" (tease) reply chosen from a fixed set
   of pre-written playful phrases (not freeform text); it posts inline under the event card.
-- [ ] **FEED-07**: A medal sent kid→kid posts to the feed as its own recognized event type.
+- [x] **FEED-07**: A medal sent kid→kid posts to the feed as its own recognized event type.
 
 ### Day-fill Form Styles (DAYFORM)
 
@@ -91,9 +91,9 @@
 | FEED-02 | Phase 9.1 | Pending |
 | FEED-03 | Phase 9.1 | Pending |
 | FEED-04 | Phase 9.1 | Pending |
-| FEED-05 | Phase 9.2 | Pending |
-| FEED-06 | Phase 9.2 | Pending |
-| FEED-07 | Phase 9.2 | Pending |
+| FEED-05 | Phase 9.2 | Complete |
+| FEED-06 | Phase 9.2 | Complete |
+| FEED-07 | Phase 9.2 | Complete |
 | DAYFORM-01 | Phase 9.3 | Pending |
 | DAYFORM-04 | Phase 9.3 | Pending |
 | DAYFORM-05 | Phase 9.3 | Pending |
