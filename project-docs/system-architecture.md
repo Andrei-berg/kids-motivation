@@ -138,21 +138,39 @@ child's `children.fill_style` column, passed straight through to `KidDayFillForm
 <KidDayFillForm ... fillStyle={child?.fill_style ?? 'sticky-summary'} />
 ```
 
-As of Phase 9.3 `sticky-summary` is the only implemented style (`tile-sheet` /
-`story-stepper` follow in Phase 9.4). Sticky-summary is a **render-only** layer over
+All three styles ship as of Phase 9.4: `sticky-summary` (Phase 9.3's default),
+`tile-sheet`, and `story-stepper`. All three are **render-only** layers over
 `KidDayFillForm`'s existing state, validation, save, and award logic — every
 `useState` hook and the `sectionCoins`/`coinsPreview`/`handleSubmit` pipeline are
-unchanged; only the JSX render tree was swapped. The shared building blocks live in
-`components/kid/day-fill/` (`StickySummaryBar` — the persistent completion-ring +
-live-total header, `QuickRow` — a one-tap binary row, `InlinePanelRow` — an
-independently-expandable in-place panel), with the pure completion-ring/coin-delta
-maths factored out into `lib/kid/day-fill-progress.ts` (`computeFillProgress`,
-`diffSectionCoins`), unit-tested with zero React/component imports.
+unchanged across all three; only the JSX render tree differs per style. The pinned
+Save button and the single `/api/wallet/award` call are shared and unchanged by
+every style.
+
+Shared building blocks live in `components/kid/day-fill/`:
+- `StickySummaryBar` — the persistent completion-ring + live-total header, reused
+  as-is by both `sticky-summary` and `tile-sheet`.
+- `QuickRow` — a one-tap binary row, `InlinePanelRow` — an independently-expandable
+  in-place panel (both `sticky-summary`-specific).
+- `TileGrid` + `TileCard` + `BottomSheet` (Phase 9.4) — the `tile-sheet` style: a
+  2-column grid whose tiles (one per category, per extra activity, and per custom
+  day-block) each open one shared bottom sheet scoped to that single category.
+- `StoryStepper` + `DotTrack` + `StepCoinHeader` (Phase 9.4) — the `story-stepper`
+  style: one category per full-screen step behind a tappable dot track, with
+  auto-advance on single-answer steps, an explicit skip control, and a final
+  summary screen that carries the shared Save button.
+
+The pure completion-ring/coin-delta maths is factored out into
+`lib/kid/day-fill-progress.ts` (`computeFillProgress`, `diffSectionCoins`),
+unit-tested with zero React/component imports, and reused unchanged by all three
+styles.
 
 Live per-row coin feedback reuses the single existing `components/kid/CoinAnimation.tsx`
 mechanism (`useCoinAnimation`/`CoinFlyup`) — extended with row-anchored positioning and
 a distinct downward "loss" variant for negative deltas — rather than a parallel
-animation system. This feedback is **preview-only**: it is driven off the
+animation system. All three styles anchor this same mechanism via one shared
+`onPointerDownCapture` handler and `data-fill-row` markers inside each style's body/
+sheet/step content, so a flyup always anchors at the actual tap point regardless of
+which style is active. This feedback is **preview-only**: it is driven off the
 already-computed `sectionCoins` breakdown and never itself credits coins.
 `/api/wallet/award` remains the sole authoritative crediting path, called once at save
 exactly as before.
