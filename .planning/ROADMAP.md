@@ -177,7 +177,7 @@ Plans:
 - [x] 09.3-01-PLAN.md — children.fill_style migration (file + applied to prod), Child type, updateChildFillStyle server action, ProfileSheet pill, i18n keys
 - [x] 09.3-02-PLAN.md — CoinAnimation loss variant + row-anchored flyups + globals.css keyframes (loss drift, mood pop, reduced-motion static)
 - [x] 09.3-03-PLAN.md — lib/kid/day-fill-progress.ts (+ unit tests) and the StickySummaryBar / QuickRow / InlinePanelRow primitives
-- [ ] 09.3-04-PLAN.md — KidDayFillForm: fillStyle prop + day-page wiring, sticky ring/total bar, D-09 applicability map, per-fill coin feedback
+- [x] 09.3-04-PLAN.md — KidDayFillForm: fillStyle prop + day-page wiring, sticky ring/total bar, D-09 applicability map, per-fill coin feedback
 - [ ] 09.3-05-PLAN.md — Row-tree swap: one-tap binary rows (room/activities/custom blocks), in-place panels, always-expanded mood pop, accordion removed
 - [ ] 09.3-06-PLAN.md — Gate sweep + live-schema re-check + D-01..D-13 traceability matrix, project-docs update, operator browser verification
 **UI hint**: yes
@@ -274,7 +274,7 @@ Plans:
 | 5.11 legacy-cleanup | v5.0 | 3/3 | Complete | 2026-07-23 |
 | 9.1 feed-recognition | v9.0 | 4/4 | Complete   | 2026-09-17 |
 | 9.2 feed-social | v9.0 | 7/7 | Complete   | 2026-09-19 |
-| 9.3 dayform-default | v9.0 | 3/6 | In Progress|  |
+| 9.3 dayform-default | v9.0 | 4/6 | In Progress|  |
 | 9.4 dayform-styles | v9.0 | 0/? | Not started | - |
 | 9.5 boost-default | v9.0 | 0/? | Not started | - |
 | 9.6 boost-styles | v9.0 | 0/? | Not started | - |
