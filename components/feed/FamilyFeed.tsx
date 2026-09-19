@@ -28,6 +28,7 @@ import {
 } from '@/lib/repositories/feed.repo'
 import { teasePhrasesFor } from '@/lib/kid/tease-phrases'
 import { postFeedNote } from '@/app/actions/post-feed-note'
+import MedalComposer from '@/components/feed/MedalComposer'
 import { paper as daylightPaper, base as familyBase } from '@/lib/design/tokens'
 import { K } from '@/components/kid/design/kidTheme'
 import { RAIL_COLOR_MAP, pickHighlight } from '@/lib/kid/feed-highlights'
@@ -97,8 +98,11 @@ export default function FamilyFeed({ variant, hideHeader = false }: { variant: V
   const [openComments, setOpenComments] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const [posting, setPosting] = useState(false)
+  const [medalOpen, setMedalOpen] = useState(false)
 
   const canPost = variant !== 'kid' && (me?.role === 'parent' || me?.role === 'extended')
+  const siblings = useMemo(() => (me?.childId ? children.filter(c => c.id !== me.childId) : []), [children, me])
+  const canSendMedal = variant === 'kid' && me?.role === 'child' && siblings.length > 0
 
   // Resolve family + current member from the session.
   useEffect(() => {
@@ -303,6 +307,21 @@ export default function FamilyFeed({ variant, hideHeader = false }: { variant: V
           </div>
         )}
 
+        {canSendMedal && (
+          <button
+            type="button"
+            onClick={() => setMedalOpen(true)}
+            style={{
+              width: '100%', height: 40, borderRadius: 999,
+              border: '1.5px solid ' + K.berry, background: K.berrySoft, color: K.berryDeep,
+              fontFamily: K.fDisp, fontSize: 14, fontWeight: 700,
+              cursor: 'pointer', marginBottom: 14,
+            }}
+          >
+            🏅 Отправить медаль
+          </button>
+        )}
+
         <StoryReel highlights={todaysHighlights} storySeen={storySeen} C={C} accentFor={accentFor} onOpen={openStoryMoment} />
 
         {loading ? (
@@ -361,6 +380,8 @@ export default function FamilyFeed({ variant, hideHeader = false }: { variant: V
       {openStory && (
         <StoryMomentModal event={openStory.event} child={openStory.child} C={C} onClose={() => setOpenStory(null)} />
       )}
+
+      {medalOpen && <MedalComposer siblings={siblings} onClose={() => setMedalOpen(false)} />}
     </div>
   )
 }
