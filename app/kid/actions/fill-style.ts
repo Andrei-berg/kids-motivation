@@ -17,13 +17,15 @@ export async function updateChildFillStyle(
   childId: string,
   style: FillStyle,
 ): Promise<{ ok: true }> {
-  if (!FILL_STYLES.includes(style)) throw new AuthError('Bad fill style', 400)
-  // D-01 (Phase 9.3 scope): only 'sticky-summary' is a real, selectable
-  // option this phase — reject the other two here too, not just hide them in
-  // the UI, so no stray client code can silently switch a child onto an
-  // unbuilt style. Remove this guard in Phase 9.4 once tile-sheet/
-  // story-stepper actually ship.
-  if (style !== 'sticky-summary') throw new AuthError('Fill style not available yet', 400)
+  // All three styles ship as of Phase 9.4 (tile-sheet — plan 02, story-stepper
+  // — plan 03), so the Phase-9.3 scope guard that used to reject everything
+  // but 'sticky-summary' here is retired. A server action's arguments arrive
+  // from the client over the wire, so the FillStyle TypeScript type is not a
+  // runtime boundary — reject anything that isn't a string as well as
+  // anything outside the whitelist, before any auth or service-role work.
+  if (typeof style !== 'string' || !(FILL_STYLES as readonly string[]).includes(style)) {
+    throw new AuthError('Bad fill style', 400)
+  }
 
   const member = await requireFamilyMember()
   const admin = createAdminClient()
