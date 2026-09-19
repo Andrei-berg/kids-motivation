@@ -36,7 +36,7 @@ import BookBlock from '@/components/kid/day-blocks/BookBlock'
 import CustomBlock from '@/components/kid/day-blocks/CustomBlock'
 import StickySummaryBar from '@/components/kid/day-fill/StickySummaryBar'
 import InlinePanelRow from '@/components/kid/day-fill/InlinePanelRow'
-import type { FillTile } from '@/components/kid/day-fill/TileGrid'
+import TileGrid, { type FillTile } from '@/components/kid/day-fill/TileGrid'
 import { computeFillProgress, diffSectionCoins } from '@/lib/kid/day-fill-progress'
 import { useT } from '@/lib/i18n'
 import { localDateString } from '@/utils/helpers'
@@ -1525,43 +1525,68 @@ export function KidDayFillForm({
         lockedLabel={isLocked ? t('kidFillForm.locked') : null}
       />
 
-      {/* Checklist — one collapsible row per section, collapsed by default. */}
-      <div style={{ padding: '12px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {behaviorTags.length > 0 &&
-          renderPanelRow('behavior', t('kidFillForm.behaviorSection'), '🌟', done.behavior, behaviorBody)}
-
-        {dayBlocksEnabled ? (
-          // WR-02: flag-on is AUTHORITATIVE — with zero visible blocks the legacy
-          // sections must NOT render (the server credits nothing for hidden blocks).
-          nothingToday ? (
+      {/* Checklist — sticky-summary's collapsible/inline rows, or the
+          tile-sheet grid (Phase 9.4). 'story-stepper' has no shell yet (plan
+          03) so it falls through to sticky-summary's JSX, same as any
+          unrecognized value — no child can land on an unbuilt style mid-phase
+          since fill-style.ts still rejects it server-side. */}
+      {style === 'tile-sheet' ? (
+        <TileGrid
+          tiles={buildTiles()}
+          openId={openTileId}
+          onOpen={setOpenTileId}
+          onClose={() => setOpenTileId(null)}
+          subtitle={t('kidFillForm.tileSheetSub')}
+          closeLabel={t('kidFillForm.sheetClose')}
+          doneLabel={isLocked ? null : t('kidFillForm.sheetDone')}
+          emptyState={nothingToday ? (
             <div style={{
-              background: K.card, border: `1.5px solid ${K.line}`, borderRadius: 18,
+              margin: '0 16px', background: K.card, border: `1.5px solid ${K.line}`, borderRadius: 18,
               padding: '20px 16px', textAlign: 'center',
               fontFamily: K.fBody, fontSize: 14, fontWeight: 600, color: K.ink3,
             }}>
               🌤️ {t('kidFillForm.nothingToday')}
             </div>
-          ) : (
-            visibleBlocks.map(block => block.legacy_key ? renderBuiltinBlock(block) : renderCustomBlock(block))
-          )
-        ) : (
-          <>
-            {renderGroup('room', t('kidFillForm.roomSection'), '🏠', done.room, roomBody)}
-            {activities.length > 0 &&
-              renderGroup('activity', t('kidFillForm.extraSection'), '⭐', done.activity, extraActivitiesBody)}
-            {dayType === 'school' && subjects.length > 0 &&
-              renderPanelRow('grade', t('kidFillForm.gradesSection'), '📚', done.grade, gradesBody)}
-            {exerciseTypes.length > 0 &&
-              renderPanelRow('exercise', t('kidFillForm.exercisesSection'), '🤸', done.exercise, exercisesBody)}
-            {renderPanelRow('sport', t('kidFillForm.sectionsSection'), '🏆', done.sport, sectionsBody)}
-            {renderPanelRow('book', t('kidFillForm.readingSection'), '📖', done.book, readingBody)}
-          </>
-        )}
+          ) : undefined}
+        />
+      ) : (
+        <div style={{ padding: '12px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {behaviorTags.length > 0 &&
+            renderPanelRow('behavior', t('kidFillForm.behaviorSection'), '🌟', done.behavior, behaviorBody)}
 
-        {/* Mood — always shown, not a day-blocks credit source (D-08: always-
-            expanded, no tap-to-open step, no chevron). */}
-        {renderGroup('mood', t('kidFillForm.moodSection'), '✨', done.mood, moodBody)}
-      </div>
+          {dayBlocksEnabled ? (
+            // WR-02: flag-on is AUTHORITATIVE — with zero visible blocks the legacy
+            // sections must NOT render (the server credits nothing for hidden blocks).
+            nothingToday ? (
+              <div style={{
+                background: K.card, border: `1.5px solid ${K.line}`, borderRadius: 18,
+                padding: '20px 16px', textAlign: 'center',
+                fontFamily: K.fBody, fontSize: 14, fontWeight: 600, color: K.ink3,
+              }}>
+                🌤️ {t('kidFillForm.nothingToday')}
+              </div>
+            ) : (
+              visibleBlocks.map(block => block.legacy_key ? renderBuiltinBlock(block) : renderCustomBlock(block))
+            )
+          ) : (
+            <>
+              {renderGroup('room', t('kidFillForm.roomSection'), '🏠', done.room, roomBody)}
+              {activities.length > 0 &&
+                renderGroup('activity', t('kidFillForm.extraSection'), '⭐', done.activity, extraActivitiesBody)}
+              {dayType === 'school' && subjects.length > 0 &&
+                renderPanelRow('grade', t('kidFillForm.gradesSection'), '📚', done.grade, gradesBody)}
+              {exerciseTypes.length > 0 &&
+                renderPanelRow('exercise', t('kidFillForm.exercisesSection'), '🤸', done.exercise, exercisesBody)}
+              {renderPanelRow('sport', t('kidFillForm.sectionsSection'), '🏆', done.sport, sectionsBody)}
+              {renderPanelRow('book', t('kidFillForm.readingSection'), '📖', done.book, readingBody)}
+            </>
+          )}
+
+          {/* Mood — always shown, not a day-blocks credit source (D-08: always-
+              expanded, no tap-to-open step, no chevron). */}
+          {renderGroup('mood', t('kidFillForm.moodSection'), '✨', done.mood, moodBody)}
+        </div>
+      )}
 
       {saveError && (
         <div style={{
