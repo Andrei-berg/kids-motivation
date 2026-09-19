@@ -150,7 +150,17 @@ Plans:
   1. Any family member can tap a fixed emoji reaction on a feed card; it toggles on/off per user and shows a live count
   2. A child can open the "подколоть" tray, pick a pre-written playful phrase (no freeform text field exists), and see it post as a reply bubble under the sibling's card
   3. A medal sent kid→kid appears in the feed as its own recognized event type, not folded into a generic note
-**Plans**: TBD
+**Plans**: 7 plans
+
+Plans:
+- [ ] 09.2-01-PLAN.md — Tease foundations: locked 17-phrase module by event kind + tagged-comment storage/read helpers in `feed.repo.ts`
+- [ ] 09.2-02-PLAN.md — Medal backend: sender-aware `medals` migration (applied to prod) + locked 8-phrase set + `sendKidMedal` coins-0 server action
+- [ ] 09.2-03-PLAN.md — Reactions: picker expanded to all 6 allowed emoji + chip pop animation (with reduced-motion guard) in `globals.css`
+- [ ] 09.2-04-PLAN.md — Live-DB integration suite for `sendKidMedal`: guards, cross-family block, zero-coin proof, both daily caps
+- [ ] 09.2-05-PLAN.md — Tease UI: `TeaseButton`/`TeaseTray`/`TeaseReply` in `FamilyFeed.tsx` with self-tease block and one-per-card state
+- [ ] 09.2-06-PLAN.md — `MedalComposer` bottom sheet (sibling picker + 8 berry phrase buttons) and the kid-only feed launcher
+- [ ] 09.2-07-PLAN.md — Gate sweep + D-01..D-12 decision matrix, project-docs update, operator browser verification checkpoint
+
 **UI hint**: yes
 
 ### Phase 9.3: dayform-default
@@ -256,7 +266,7 @@ Plans:
 | 5.10 automation | v5.0 | 4/4 | Complete | 2026-07-22 |
 | 5.11 legacy-cleanup | v5.0 | 3/3 | Complete | 2026-07-23 |
 | 9.1 feed-recognition | v9.0 | 4/4 | Complete   | 2026-09-17 |
-| 9.2 feed-social | v9.0 | 0/? | Not started | - |
+| 9.2 feed-social | v9.0 | 0/7 | Planned | - |
 | 9.3 dayform-default | v9.0 | 0/? | Not started | - |
 | 9.4 dayform-styles | v9.0 | 0/? | Not started | - |
 | 9.5 boost-default | v9.0 | 0/? | Not started | - |
