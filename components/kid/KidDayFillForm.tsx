@@ -35,6 +35,7 @@ import ActivitiesBlock from '@/components/kid/day-blocks/ActivitiesBlock'
 import BookBlock from '@/components/kid/day-blocks/BookBlock'
 import CustomBlock from '@/components/kid/day-blocks/CustomBlock'
 import StickySummaryBar from '@/components/kid/day-fill/StickySummaryBar'
+import InlinePanelRow from '@/components/kid/day-fill/InlinePanelRow'
 import { computeFillProgress, diffSectionCoins } from '@/lib/kid/day-fill-progress'
 import { useT } from '@/lib/i18n'
 import { localDateString } from '@/utils/helpers'
@@ -504,9 +505,19 @@ export function KidDayFillForm({
     return out
   }, [behaviorTags, roomTasks, activities, dayType, subjects, exerciseTypes, sections, dayBlocksEnabled, visibleBlocks, legacyVisible])
 
-  // ── Accordion: one section open at a time (the checklist, not a form) ─────
-  const [openId, setOpenId] = useState<string | null>(null)
-  const toggleSection = (id: string) => setOpenId(cur => (cur === id ? null : id))
+  // ── Inline panels: independent, in-place expand state (Phase 9.3, D-07) ───
+  // Panels are independent — opening one never auto-closes another, since
+  // that could hide a half-entered grade or reading note. UI-SPEC's binding
+  // constraint is "in place", not "only one at a time".
+  const [openPanels, setOpenPanels] = useState<Set<string>>(() => new Set())
+  function togglePanel(id: string) {
+    setOpenPanels(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   // ── Handlers ─────────────────────────────────────────────────────────────
   function toggleRoomTask(taskId: string) {
@@ -1232,7 +1243,7 @@ export function KidDayFillForm({
     const c = sectionCoins[id]
     if (c) {
       return (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontFamily: K.fNum, fontSize: 13, fontWeight: 800, color: c < 0 ? K.danger : K.mintDeep }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontFamily: K.fNum, fontSize: 13, fontWeight: 700, color: c < 0 ? K.danger : K.mintDeep }}>
           {c > 0 ? '+' : ''}{c}<Coin size={15} />
         </span>
       )
@@ -1243,6 +1254,8 @@ export function KidDayFillForm({
   // One CollapsibleRow per section — the checklist row, replacing BlockCard.
   // A plain function (not a nested component) so `children` — which hold
   // controlled inputs — never remount on a parent re-render.
+  // Only the mood row still uses this (task 3 rebuilds mood onto renderGroup
+  // and deletes this function + CollapsibleRow entirely).
   function renderSection(id: string, title: string, icon: string, isDone: boolean, body: React.ReactNode, key?: string) {
     return (
       <CollapsibleRow
@@ -1251,12 +1264,58 @@ export function KidDayFillForm({
         icon={icon}
         done={isDone}
         trailing={trailingFor(id, isDone)}
-        open={openId === id}
-        onToggle={() => toggleSection(id)}
+        open={openPanels.has(id)}
+        onToggle={() => togglePanel(id)}
         disabled={isLocked}
       >
         {body}
       </CollapsibleRow>
+    )
+  }
+
+  // In-place inline-panel row (D-06/D-07) — multi-value categories (grades,
+  // exercises, sport, reading, behavior). A plain function (not a nested
+  // component) so `children` — which hold controlled inputs — never remount
+  // on a parent re-render.
+  function renderPanelRow(id: string, title: string, icon: string, isDone: boolean, body: React.ReactNode, key?: string) {
+    return (
+      <div data-fill-row key={key ?? id}>
+        <InlinePanelRow
+          label={title}
+          icon={icon}
+          done={isDone}
+          open={openPanels.has(id)}
+          onToggle={() => togglePanel(id)}
+          trailing={trailingFor(id, isDone)}
+          disabled={isLocked}
+        >
+          {body}
+        </InlinePanelRow>
+      </div>
+    )
+  }
+
+  // Non-interactive caption + one-tap sub-rows (D-05) — room and activities
+  // are groups of independent QuickRows, never hidden under one shared panel.
+  // No button, no aria-expanded, no chevron: the caption never hides or
+  // collapses its own rows.
+  function renderGroup(id: string, title: string, icon: string, isDone: boolean, body: React.ReactNode, key?: string) {
+    return (
+      <div key={key ?? id} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span aria-hidden style={{ width: 5, alignSelf: 'stretch', background: isDone ? K.mint : K.line, borderRadius: '0 4px 4px 0', flexShrink: 0 }} />
+          <span aria-hidden style={{
+            width: 34, height: 34, borderRadius: 11, flexShrink: 0,
+            background: isDone ? K.mintSoft : K.lineSoft,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+          }}>{icon}</span>
+          <span style={{ flex: 1, minWidth: 0, fontFamily: K.fDisp, fontSize: 16, fontWeight: 700, color: K.ink }}>
+            {title}
+          </span>
+          {trailingFor(id, isDone)}
+        </div>
+        {body}
+      </div>
     )
   }
 
@@ -1267,42 +1326,40 @@ export function KidDayFillForm({
   function renderBuiltinBlock(block: DayBlock) {
     switch (block.legacy_key) {
       case 'room':
-        return renderSection('room', block.name, block.icon ?? '🏠', done.room, roomBody, block.id)
+        return renderGroup('room', block.name, block.icon ?? '🏠', done.room, roomBody, block.id)
       case 'activity':
         return activities.length > 0
-          ? renderSection('activity', block.name, block.icon ?? '⭐', done.activity, extraActivitiesBody, block.id)
+          ? renderGroup('activity', block.name, block.icon ?? '⭐', done.activity, extraActivitiesBody, block.id)
           : null
       case 'grade':
         return (dayType === 'school' && subjects.length > 0)
-          ? renderSection('grade', block.name, block.icon ?? '📚', done.grade, gradesBody, block.id)
+          ? renderPanelRow('grade', block.name, block.icon ?? '📚', done.grade, gradesBody, block.id)
           : null
       case 'exercise':
         return exerciseTypes.length > 0
-          ? renderSection('exercise', block.name, block.icon ?? '🤸', done.exercise, exercisesBody, block.id)
+          ? renderPanelRow('exercise', block.name, block.icon ?? '🤸', done.exercise, exercisesBody, block.id)
           : null
       case 'sport':
-        return renderSection('sport', block.name, block.icon ?? '🏆', done.sport, sectionsBody, block.id)
+        return renderPanelRow('sport', block.name, block.icon ?? '🏆', done.sport, sectionsBody, block.id)
       case 'book':
-        return renderSection('book', block.name, block.icon ?? '📖', done.book, readingBody, block.id)
+        return renderPanelRow('book', block.name, block.icon ?? '📖', done.book, readingBody, block.id)
       case 'behavior':
       default:
         return null
     }
   }
 
+  // CustomBlock is already a one-tap row (task 1) — no panel wrapper here.
   function renderCustomBlock(block: DayBlock) {
-    return renderSection(
-      `custom:${block.id}`,
-      block.name,
-      block.icon ?? '⭐',
-      !!customBlockDone[block.id],
-      <CustomBlock
-        block={block}
-        done={customBlockDone[block.id] ?? false}
-        onToggle={toggleCustomBlock}
-        isLocked={isLocked}
-      />,
-      block.id,
+    return (
+      <div data-fill-row key={block.id}>
+        <CustomBlock
+          block={block}
+          done={customBlockDone[block.id] ?? false}
+          onToggle={toggleCustomBlock}
+          isLocked={isLocked}
+        />
+      </div>
     )
   }
 
@@ -1345,7 +1402,7 @@ export function KidDayFillForm({
       {/* Checklist — one collapsible row per section, collapsed by default. */}
       <div style={{ padding: '12px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
         {behaviorTags.length > 0 &&
-          renderSection('behavior', t('kidFillForm.behaviorSection'), '🌟', done.behavior, behaviorBody)}
+          renderPanelRow('behavior', t('kidFillForm.behaviorSection'), '🌟', done.behavior, behaviorBody)}
 
         {dayBlocksEnabled ? (
           // WR-02: flag-on is AUTHORITATIVE — with zero visible blocks the legacy
@@ -1363,15 +1420,15 @@ export function KidDayFillForm({
           )
         ) : (
           <>
-            {renderSection('room', t('kidFillForm.roomSection'), '🏠', done.room, roomBody)}
+            {renderGroup('room', t('kidFillForm.roomSection'), '🏠', done.room, roomBody)}
             {activities.length > 0 &&
-              renderSection('activity', t('kidFillForm.extraSection'), '⭐', done.activity, extraActivitiesBody)}
+              renderGroup('activity', t('kidFillForm.extraSection'), '⭐', done.activity, extraActivitiesBody)}
             {dayType === 'school' && subjects.length > 0 &&
-              renderSection('grade', t('kidFillForm.gradesSection'), '📚', done.grade, gradesBody)}
+              renderPanelRow('grade', t('kidFillForm.gradesSection'), '📚', done.grade, gradesBody)}
             {exerciseTypes.length > 0 &&
-              renderSection('exercise', t('kidFillForm.exercisesSection'), '🤸', done.exercise, exercisesBody)}
-            {renderSection('sport', t('kidFillForm.sectionsSection'), '🏆', done.sport, sectionsBody)}
-            {renderSection('book', t('kidFillForm.readingSection'), '📖', done.book, readingBody)}
+              renderPanelRow('exercise', t('kidFillForm.exercisesSection'), '🤸', done.exercise, exercisesBody)}
+            {renderPanelRow('sport', t('kidFillForm.sectionsSection'), '🏆', done.sport, sectionsBody)}
+            {renderPanelRow('book', t('kidFillForm.readingSection'), '📖', done.book, readingBody)}
           </>
         )}
 
