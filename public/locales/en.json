@@ -2009,6 +2009,11 @@
       "stickySummary": "Summary",
       "tileSheet": "Tiles",
       "storyStepper": "Stepper"
+    },
+    "boostStyleHeading": "Weekly boost style",
+    "boostStyleError": "Couldn't save style",
+    "boostStyleOption": {
+      "segmentedBar": "Bars"
     }
   },
   "kidBoost": {
@@ -2017,6 +2022,21 @@
       "filled30": "30 days filled",
       "filled100": "100 days filled",
       "streak30": "30-day streak"
+    },
+    "detail": {
+      "openLabel": "Open weekly boost details",
+      "title": "Weekly boost",
+      "gradesLabel": "📚 Grades",
+      "consistencyLabel": "🔥 Consistency",
+      "totalLabel": "Total this week",
+      "penaltyHint": "One low grade zeroed this week's grade bonus",
+      "fullWeekDone": "7/7 days ✓",
+      "fullWeekPending": "{{filled}}/7 days",
+      "streakDone": "Streak×{{count}} ✓",
+      "streakPending": "Streak",
+      "note": "Total = best grade tier (not summed) + consistency bonuses",
+      "tierStatus": "Tier {{tier}} of {{total}}",
+      "bonusStatus": "{{earned}} of {{total}} bonuses"
     }
   },
   "feed": {
