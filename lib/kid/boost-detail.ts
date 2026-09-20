@@ -24,10 +24,36 @@ export const PENALTY_FILL_PCT = 40
  */
 const STREAK_BONUS_THRESHOLD = 2
 
+/**
+ * Mirrors consistencyBoost()'s boost_streaks_3 branch — the top streak
+ * consistency threshold, needed independently of STREAK_BONUS_THRESHOLD so
+ * the quest-checklist / ring-badges bodies (Phase 9.6) can show streak×2 and
+ * streak×3 as two separate reached-booleans instead of one collapsed chip.
+ */
+const STREAK_BONUS_TOP_THRESHOLD = 3
+
 export interface BoostWeekDetail {
   settings: BoostSettings
   grades: WeeklyGradeStats
   consistency: WeeklyConsistencyStats
+  /** Per-day filled flags for the current week, Monday first (index 0 = Monday,
+   * index 6 = Sunday). Optional so existing callers/tests keep compiling;
+   * buildBoostDetail normalises this to exactly 7 booleans either way. */
+  filledDayFlags?: boolean[]
+}
+
+/** One independent (non-collapsed) grade-tier reached state, used by the
+ * quest-checklist and ring-badges bodies (Phase 9.6) alongside the existing
+ * sequential best-tier-wins `tierReached` field the segmented-bar body uses. */
+export interface BoostGradeTier {
+  index: 1 | 2 | 3
+  coins: number
+  reached: boolean
+  threshold: number
+  unit: 'top-grades' | 'graded-days'
+  current: number
+  remaining: number
+  pct: number
 }
 
 export interface BoostDetailView {
@@ -40,6 +66,11 @@ export interface BoostDetailView {
     nextThresholdUnit: 'top-grades' | 'graded-days' | null
     topGradeCount: number
     coins: number
+    /** Independent per-tier reached state (Phase 9.6) — does NOT collapse
+     * into a single best-tier-wins value like `tierReached` above. */
+    tiers: [BoostGradeTier, BoostGradeTier, BoostGradeTier]
+    /** Lowest-index tier not yet reached, or null when all three are reached. */
+    nextTierIndex: 1 | 2 | 3 | null
   }
   consistency: {
     fullWeekDone: boolean
@@ -51,6 +82,15 @@ export interface BoostDetailView {
     bonusesEarned: 0 | 1 | 2
     bonusesTotal: 2
     coins: number
+    /** Settings-derived coin amount for a full 7-day filled week. */
+    fullWeekCoins: number
+    /** Independent streak×2 / streak×3 reached-booleans (Phase 9.6). */
+    streak2Done: boolean
+    streak3Done: boolean
+    streak2Coins: number
+    streak3Coins: number
+    /** 7-entry Monday-first per-day filled flags for the week-dot strip. */
+    filledDayFlags: boolean[]
   }
   total: number
 }
@@ -64,7 +104,7 @@ function clampPct(n: number): number {
 export function buildBoostDetail(detail: BoostWeekDetail, week: WeeklyBoostResult): BoostDetailView {
   const { settings, grades, consistency } = detail
 
-  let gradesView: BoostDetailView['grades']
+  let gradesView: Omit<BoostDetailView['grades'], 'tiers' | 'nextTierIndex'>
   if (grades.hasPenaltyGrade) {
     gradesView = {
       penalized: true,
@@ -126,6 +166,65 @@ export function buildBoostDetail(detail: BoostWeekDetail, week: WeeklyBoostResul
   const streakDone = consistency.streaksAtThreshold >= STREAK_BONUS_THRESHOLD
   const bonusesEarned = ((fullWeekDone ? 1 : 0) + (streakDone ? 1 : 0)) as 0 | 1 | 2
 
+  // ── Independent per-tier grade state (Phase 9.6) ─────────────────────────
+  // Computed independently (not as an else-if chain) so a tier badge or quest
+  // row can be checked without the sequential best-tier-wins collapse the
+  // segmented-bar body's tierReached/pct fields use above.
+  const notPenalized = !grades.hasPenaltyGrade
+  const tier1: BoostGradeTier = (() => {
+    const threshold = settings.boost_grades_t1_count
+    const current = grades.topGradeCount
+    return {
+      index: 1,
+      coins: settings.boost_grades_t1,
+      reached: notPenalized && current >= threshold,
+      threshold,
+      unit: 'top-grades',
+      current,
+      remaining: Math.max(0, threshold - current),
+      pct: clampPct((current / threshold) * 100),
+    }
+  })()
+  const tier2: BoostGradeTier = (() => {
+    const threshold = settings.boost_grades_t2_count
+    const current = grades.topGradeCount
+    return {
+      index: 2,
+      coins: settings.boost_grades_t2,
+      reached: notPenalized && current >= threshold,
+      threshold,
+      unit: 'top-grades',
+      current,
+      remaining: Math.max(0, threshold - current),
+      pct: clampPct((current / threshold) * 100),
+    }
+  })()
+  const tier3: BoostGradeTier = (() => {
+    const threshold = settings.boost_grades_perfect_days
+    const current = grades.gradedDays
+    return {
+      index: 3,
+      coins: settings.boost_grades_t3,
+      // Mirrors gradesBoost()'s exact perfect condition (boost-rules.ts) —
+      // reused, not re-invented.
+      reached: notPenalized && grades.goodGradeCount === grades.topGradeCount && current >= threshold,
+      threshold,
+      unit: 'graded-days',
+      current,
+      remaining: Math.max(0, threshold - current),
+      pct: clampPct((current / threshold) * 100),
+    }
+  })()
+  const tiers: [BoostGradeTier, BoostGradeTier, BoostGradeTier] = [tier1, tier2, tier3]
+  const nextTierIndex = (tiers.find((t) => !t.reached)?.index ?? null) as 1 | 2 | 3 | null
+
+  // ── Independent streak×2 / streak×3 state (Phase 9.6) ────────────────────
+  const streak2Done = consistency.streaksAtThreshold >= STREAK_BONUS_THRESHOLD
+  const streak3Done = consistency.streaksAtThreshold >= STREAK_BONUS_TOP_THRESHOLD
+
+  // ── Per-day filled flags for the week-dot strip (Phase 9.6) ──────────────
+  const filledDayFlags = Array.from({ length: 7 }, (_, i) => detail.filledDayFlags?.[i] === true)
+
   const consistencyView: BoostDetailView['consistency'] = {
     fullWeekDone,
     filledDays: consistency.filledDays,
@@ -136,10 +235,16 @@ export function buildBoostDetail(detail: BoostWeekDetail, week: WeeklyBoostResul
     bonusesEarned,
     bonusesTotal: 2,
     coins: week.consistency,
+    fullWeekCoins: settings.boost_full_week,
+    streak2Done,
+    streak3Done,
+    streak2Coins: settings.boost_streaks_2,
+    streak3Coins: settings.boost_streaks_3,
+    filledDayFlags,
   }
 
   return {
-    grades: gradesView,
+    grades: { ...gradesView, tiers, nextTierIndex },
     consistency: consistencyView,
     total: week.total,
   }
