@@ -183,31 +183,64 @@ unchanged) are tappable: the Day hero full version and compact version
 (`components/kid/ProfileSheet.tsx`). Tapping any of them opens the same
 `BoostDetailSheet` instance, reusing Phase 9.4's `BottomSheet` container with
 `doneLabel={null}` (explicit close only, no backdrop-tap deviation) — the same
-content-agnostic shell Phase 9.6's `quest-checklist`/`ring-badges` bodies will plug
-into via the child's persisted `boost_style` preference.
+content-agnostic shell all three `boost_style` bodies plug into via the child's
+persisted `boost_style` preference.
 
-`components/kid/boost/BoostDetailSheet.tsx` is the `segmented-bar` body: two
-independent sub-bars (grades tier progress, consistency bonus progress) plus a
-total row. Every threshold, tier count and coin amount it renders is read live from
-`lib/kid/boost-rules.ts`'s `BoostSettings` (i.e. `wallet_settings`), never a
+`components/kid/boost/BoostDetailSheet.tsx` is a style router with a complete
+3-way branch (`segmented-bar` / `quest-checklist` / `ring-badges`), each body a
+sibling module-scope render function reading from the same `buildBoostDetail`
+view model:
+
+- **`SegmentedBarBody`** (Phase 9.5) — two independent sub-bars (grades tier
+  progress, consistency bonus progress) plus a total row.
+- **`QuestChecklistBody`** (Phase 9.6, BOOST-04) — every boost condition as its
+  own independent row: 3 grade-tier rows (`v.grades.tiers[0..2]`, each
+  independently `reached` rather than the sequential best-tier-wins collapse
+  `SegmentedBarBody` uses) plus a "best tier counts, not summed" note, then 3
+  consistency rows (full-week, streak×2, streak×3, from
+  `v.consistency.fullWeekDone`/`streak2Done`/`streak3Done`), then one combined
+  total row reading the real, non-summed `v.total` (`week.total`) and a total
+  progress bar. A reached higher tier still shows lower tiers as checked
+  (done/strikethrough), matching the sketch's own superseded-still-checked
+  convention.
+- **`RingBadgesBody`** (Phase 9.6, BOOST-05) — a 160px conic-gradient ring
+  showing the same `week.total / week.max` fraction the inline `BoostMeter`
+  already displays (no blended metric), 3 tappable grade-tier badges
+  (reached / next-unreached / not-reached / penalized, from
+  `v.grades.tiers`/`v.grades.nextTierIndex`) each opening a single-open-at-a-time
+  popover (behavior-first copy, coin amount secondary) dismissed by tapping a
+  different badge, the same badge again, or a transparent backdrop scoped to the
+  sheet body (independent of `BottomSheet`'s own explicit-close rule), and a
+  7-dot week strip (`v.consistency.filledDayFlags`) plus the segmented-bar's
+  reused streak-status chip for full-week/streak consistency.
+
+Every threshold, tier count and coin amount all three bodies render is read live
+from `lib/kid/boost-rules.ts`'s `BoostSettings` (i.e. `wallet_settings`), never a
 hardcoded literal in the view — `lib/kid/boost.ts`'s `getBoostProgress()` surfaces
 the raw `BoostSettings`/`WeeklyGradeStats`/`WeeklyConsistencyStats` inputs as
 `BoostProgress.weekDetail`, and the pure `lib/kid/boost-detail.ts` module
 (`buildBoostDetail`) turns them into the view model (fractional fill percentages,
-penalty state, two independent zone booleans) with no React or Supabase import, so
-its arithmetic is unit-tested in isolation from rendering. The total row and the
+penalty state, independent per-tier grade/streak reached-booleans, and a 7-entry
+Monday-first `filledDayFlags` array) with no React or Supabase import, so its
+arithmetic is unit-tested in isolation from rendering. The total row and the
 grades hint copy are copied verbatim from `WeeklyBoostResult.total` /
 `.gradesNext` — the same numbers the inline `BoostMeter` shows — never
-recomputed. `/api/wallet/award` remains the sole authority for what actually
-credits; this view and its data layer are read-only display logic.
+recomputed. A single penalty grade zeroes the whole grades bonus for the week;
+all three bodies render this as a distinct muted-danger treatment (grade
+rows/badges), never plain "not reached." `/api/wallet/award` remains the sole
+authority for what actually credits; this view and its data layer are read-only
+display logic.
 
 The per-child `boost_style` preference (`children.boost_style`, see
 `project-docs/data-model.md`) is written by `app/kid/actions/boost-style.ts`
 (`updateChildBoostStyle`), mirroring `fill-style.ts`'s guard chain exactly:
 whitelist validation first, then `requireFamilyMember()` + `authorizeChildAction()`
-+ service-role `.update()` — no client-side write to `children` exists. The picker
-lives in `ProfileSheet` directly below the `fill_style` control; only
-`segmented-bar` is selectable until Phase 9.6 ships the other two styles.
++ service-role `.update()` — no client-side write to `children` exists. The
+picker lives in `ProfileSheet` directly below the `fill_style` control and is now
+a real 3-option `role="radio"` group (all three `boost_style` values selectable,
+no "coming soon" placeholders remain) — completed in Phase 9.6; both
+`BoostDetailSheet` mount points (`ProfileSheet`'s own, and the Day-hero's) thread
+the child's actual `boost_style` value into the sheet.
 
 ## Backward-Compat Wrappers
 Old import paths still work — files re-export from new locations:

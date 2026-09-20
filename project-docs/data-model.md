@@ -235,14 +235,16 @@ policy for it.
 per-family) weekly-boost detail-view style preference, CHECK-constrained by
 `children_boost_style_check` to `('segmented-bar','quest-checklist','ring-badges')`
 (migration `2026-09-20-child-boost-style.sql`). All three values are pre-declared
-in the CHECK so Phase 9.6 needs no second migration, but only `segmented-bar` is
-implemented and selectable as of Phase 9.5 — `quest-checklist` and `ring-badges`
-ship in Phase 9.6. It is self-serve and kid-controlled via `ProfileSheet` (unlike
-`backfill_mode`, which is a parent trust/policy field). The value is
-whitelist-validated in `app/kid/actions/boost-style.ts` (rejects any non-string or
-out-of-set value before the service-role write runs), with the CHECK constraint
-named above as the database-level backstop. Written exclusively by that
-service-role server action — `children` has no client UPDATE policy for it.
+in the CHECK so Phase 9.6 needed no second migration, and as of Phase 9.6 all
+three are implemented and selectable from the kid's own `ProfileSheet` — a real
+3-option `role="radio"` group, same shape as the `fill_style` picker above it, no
+"coming soon" placeholders remain. It is self-serve and kid-controlled via
+`ProfileSheet` (unlike `backfill_mode`, which is a parent trust/policy field). The
+value is whitelist-validated in `app/kid/actions/boost-style.ts` (rejects any
+non-string or out-of-set value before the service-role write runs), with the
+CHECK constraint named above as the database-level backstop. Written exclusively
+by that service-role server action — `children` has no client UPDATE policy for
+it.
 
 ## RLS Pattern
 
