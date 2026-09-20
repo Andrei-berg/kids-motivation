@@ -340,12 +340,12 @@ avoid renumbering already-reserved phases 6.1–8.3.
 - ✓ Unified design system (tokens, paper/ink themes) across full kid + parent redesign — v5.0
 - ✓ Legacy pages removed, globals.css purged, single consistent UI/branding — v5.0
 - ✓ Family Feed redesign — story reel + day-grouped color-railed cards, no money/penalties (Phase 9.1); fixed-emoji reactions, sibling "подколоть" tease tray, kid→kid zero-coin medal (Phase 9.2) — v9.0
+- ✓ Day-fill form — 3 selectable per-child interaction styles (`sticky-summary` default, Phase 9.3; `tile-sheet` + `story-stepper`, Phase 9.4) — v9.0
+- ✓ Weekly Boost detail — 3 selectable per-child breakdown styles (`segmented-bar` default, Phase 9.5; `quest-checklist` + `ring-badges`, Phase 9.6) — v9.0
 
 ### Active
 
-v9.0 Kid Experience Redesign (in progress — requirements below, roadmap next):
-- [ ] Day-fill form — 3 selectable per-child interaction styles (sticky-summary shipped as the persisted default in Phase 9.3; tile-sheet/story-stepper remain in Phase 9.4)
-- [ ] Weekly Boost detail — 3 selectable per-child breakdown styles
+v9.0 Kid Experience Redesign — all 6 phases (9.1–9.6) complete. No active requirements remain in this milestone; see Evolution note below.
 
 Future candidates (unvalidated, unchanged, subject to a real requirements pass via `/gsd:new-milestone` when picked up):
 - [ ] v6.0 Monetization — Free/Premium/Family Plus tiers, Stripe billing, freemium limits
@@ -420,6 +420,8 @@ This document evolves at phase transitions and milestone boundaries.
 *Milestone v5.0 Flexibility & Design Unification shipped 2026-07-23 (all 11 phases 5.1-5.11 complete, 71/71 plans). v4.0 PWA Polish formally closed at the same time (was code-complete since 2026-05-18 but never run through milestone close). Full requirements/decisions evolution review done as part of `/gsd:complete-milestone`.*
 
 *Обновлён: 2026-09-17 — Milestone v9.0 Kid Experience Redesign started via `/gsd:new-milestone`, scoped from the 2026-09-17 sketch session (`.claude/skills/sketch-findings-kids-motivation/`): Family Feed → motivational social network, selectable per-child day-fill form styles, selectable per-child weekly-boost detail styles. Numbered v9.0 (not v6.0) and phases start at 9.1 specifically to avoid colliding with the already-reserved-but-unbuilt v6.0/v7.0/v8.0 phase numbers (6.1–8.3).*
+
+*Обновлён: 2026-09-20 — Phase 9.6 (boost-styles) complete, closing Milestone v9.0 (all 6 phases 9.1–9.6, 32 plans): added the `quest-checklist` and `ring-badges` weekly-boost detail styles (BOOST-04, BOOST-05) alongside the Phase 9.5 `segmented-bar` default — all three read live thresholds/coin amounts from `lib/kid/boost-rules.ts`, no hardcoded sketch numbers. `ProfileSheet`'s `boost_style` picker is now a real 3-way selector. Verification passed 3/3 must-haves; code review found 1 non-blocking Warning (`QuestChecklistBody`'s total progress bar can hit `NaN%` if a family zeroes out all boost coin settings — `RingBadgesBody`'s identical calc is correctly guarded) plus 3 Info items, none blocking. Operator browser sign-off approved. Milestone-level `/gsd:complete-milestone` review still pending.*
 
 *Обновлён: 2026-09-19 — Phase 9.2 (feed-social) complete: fixed 6-emoji reactions with pop animation, sibling "подколоть" tease tray (17 locked phrases, tag-on-existing-comment convention, zero migration), and kid→kid zero-coin medal (`sender_role`/`sender_member_id` migration applied to prod, `sendKidMedal` server action, daily caps). Code review found 1 pre-existing RLS gap (family_event_reactions INSERT policy, from Phase 9.1) plus 5 minor robustness warnings in the new code — none blocking, logged in 09.2-VERIFICATION.md. Operator approved the 12-step browser verification and chose to keep the existing reaction-chip accent color over the UI-SPEC's proposed "mango" variant. 7/7 plans, 3/3 must-haves verified.*
 
