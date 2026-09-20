@@ -9,8 +9,9 @@
 // nextLabel are copied verbatim, never recomputed here (BOOST-06).
 //
 // SegmentedBarBody (Phase 09.5, D-02..D-08) is an unchanged, extracted body.
-// QuestChecklistBody (Phase 09.6, BOOST-04, D-00..D-05) is new this plan.
-// ring-badges lands in plan 09.6-03.
+// QuestChecklistBody (Phase 09.6, BOOST-04, D-00..D-05) was added in plan
+// 09.6-02. RingBadgesBody (Phase 09.6, BOOST-05, D-06..D-12) is new this
+// plan — the router below is now a complete 3-way branch.
 
 import React, { useEffect, useState } from 'react'
 import BottomSheet from '@/components/kid/day-fill/BottomSheet'
@@ -61,7 +62,9 @@ export default function BoostDetailSheet(props: BoostDetailSheetProps) {
     >
       {boostStyle === 'quest-checklist'
         ? <QuestChecklistBody v={v} t={t} boost={boost} />
-        : <SegmentedBarBody v={v} reduced={reduced} t={t} boost={boost} />}
+        : boostStyle === 'ring-badges'
+          ? <RingBadgesBody v={v} t={t} boost={boost} reduced={reduced} />
+          : <SegmentedBarBody v={v} reduced={reduced} t={t} boost={boost} />}
     </BottomSheet>
   )
 }
@@ -453,5 +456,202 @@ function QuestChecklistBody({ v, t, boost }: { v: BoostDetailView; t: ReturnType
         </div>
       </div>
     </>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// RingBadgesBody — Phase 09.6, BOOST-05 / D-06..D-12. A 160px degree-filled
+// ring shows the real week total/max (D-08, identical fraction to the inline
+// BoostMeter), 3 tappable grade-tier badges each open a single-open-at-a-time
+// popover (D-10/D-11), and a separate 7-dot week strip + reused streak chip
+// represent full-week/streak consistency (D-07).
+// ─────────────────────────────────────────────────────────────────────────
+function RingBadgesBody({ v, t, boost, reduced }: { v: BoostDetailView; t: ReturnType<typeof useT>; boost: BoostProgress; reduced: boolean }): JSX.Element {
+  // Single-open-at-a-time popover state (D-10) — reproduces the sketch's
+  // toggleTier() close-all-then-open-if-wasn't-open behavior for free, since
+  // openTierId can only ever hold one tier's id.
+  const [openTierId, setOpenTierId] = useState<1 | 2 | 3 | null>(null)
+  const penalized = v.grades.penalized
+  const ringPct = boost.week.max > 0 ? Math.round((boost.week.total / boost.week.max) * 360) : 0
+
+  const weekDots: { key: string; filled: boolean }[] = [
+    { key: 'mon', filled: v.consistency.filledDayFlags[0] },
+    { key: 'tue', filled: v.consistency.filledDayFlags[1] },
+    { key: 'wed', filled: v.consistency.filledDayFlags[2] },
+    { key: 'thu', filled: v.consistency.filledDayFlags[3] },
+    { key: 'fri', filled: v.consistency.filledDayFlags[4] },
+    { key: 'sat', filled: v.consistency.filledDayFlags[5] },
+    { key: 'sun', filled: v.consistency.filledDayFlags[6] },
+  ]
+
+  return (
+    <div style={{ position: 'relative' }}>
+      {/* Tap-outside-to-close backdrop (D-11) — a lightweight contextual
+          dismiss, NOT the BottomSheet's own explicit-close-only scrim; this
+          must not call onClose. Sits beneath the tier-badge row (zIndex 2)
+          so badge taps still register, but above the ring/consistency card
+          (no explicit z-index) so taps there also close an open popover. */}
+      <div
+        style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'transparent' }}
+        onClick={() => setOpenTierId(null)}
+      />
+
+      {/* Ring (D-08) */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '22px 16px 8px' }}>
+        <div style={{
+          width: 160,
+          height: 160,
+          borderRadius: '50%',
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: `conic-gradient(${K.mango} ${ringPct}deg, ${K.line} 0deg)`,
+        }}>
+          <div style={{
+            position: 'absolute', inset: 14, background: K.card, borderRadius: '50%',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <span style={{ fontFamily: K.fDisp, fontSize: 22, fontWeight: 900, color: K.mangoDeep }}>
+              +{v.total.toLocaleString('ru-RU')}
+            </span>
+            <span style={{ fontFamily: K.fBody, fontSize: 13, fontWeight: 700, color: K.ink3 }}>
+              {t('kidBoost.detail.ringNowLabel')}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Tier badge row (D-06, D-09, D-15) — tapping a badge opens/closes its
+          popover (D-10); zIndex 2 keeps taps registering over the backdrop. */}
+      <div style={{ position: 'relative', zIndex: 2, display: 'flex', justifyContent: 'center', gap: 8, padding: '16px 16px 6px' }}>
+        {v.grades.tiers.map((tier) => {
+          const isReached = !penalized && tier.reached
+          const isNext = !penalized && !tier.reached && tier.index === v.grades.nextTierIndex
+          const glyph = penalized ? '⚠' : tier.index === 1 ? '🥉' : tier.index === 2 ? '🥈' : '🥇'
+
+          const circleStyle: React.CSSProperties = {
+            width: 46, height: 46, borderRadius: '50%', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', fontSize: 20, border: '2.5px solid',
+          }
+          let labelColor: string = K.ink3
+          if (penalized) {
+            circleStyle.borderColor = K.danger
+            circleStyle.background = `${K.danger}1F`
+            labelColor = K.danger
+          } else if (isReached) {
+            circleStyle.borderColor = K.mango
+            circleStyle.background = K.mangoSoft
+            labelColor = K.mangoDeep
+          } else if (isNext) {
+            circleStyle.borderColor = K.sky
+            circleStyle.background = K.lineSoft
+            circleStyle.boxShadow = `0 0 0 3px ${K.sky}33`
+          } else {
+            circleStyle.borderColor = K.line
+            circleStyle.background = K.lineSoft
+          }
+
+          // Popover copy (D-12) — a penalized badge (checked first, applies
+          // to all 3 regardless of `tier.reached`) reuses the not-yet-reached
+          // template; there is no separate "penalized" popover variant.
+          const showReached = isReached
+          let popTitle: string
+          let popSecondary: string
+          if (showReached) {
+            popTitle = tier.index === 3
+              ? t('kidBoost.detail.ringPopPerfectReachedTitle')
+              : t('kidBoost.detail.ringPopReachedTitle', { count: tier.threshold })
+            popSecondary = t('kidBoost.detail.ringPopCoinsEarned', { coins: tier.coins })
+          } else {
+            popTitle = tier.index === 3
+              ? t('kidBoost.detail.ringPopPerfectNextTitle')
+              : t('kidBoost.detail.ringPopNextTitle', { left: tier.remaining })
+            popSecondary = t('kidBoost.detail.ringPopCoinsPending', { coins: tier.coins })
+          }
+
+          const isOpen = openTierId === tier.index
+
+          return (
+            <div key={tier.index} style={{ width: 66, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, position: 'relative' }}>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setOpenTierId(openTierId === tier.index ? null : tier.index) }}
+                style={{ ...circleStyle, cursor: 'pointer', padding: 0 }}
+                aria-label={t('kidBoost.detail.ringBadgeLabel', { tier: tier.index })}
+                aria-expanded={openTierId === tier.index}
+              >
+                <span aria-hidden>{glyph}</span>
+              </button>
+              <span style={{ fontFamily: K.fDisp, fontSize: 13, fontWeight: 800, textAlign: 'center', color: labelColor }}>
+                {t('kidBoost.detail.ringBadgeLabel', { tier: tier.index })}
+              </span>
+
+              {isOpen && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    position: 'absolute',
+                    bottom: 'calc(100% + 8px)',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: K.ink,
+                    color: '#fff',
+                    padding: '8px 12px',
+                    borderRadius: 10,
+                    fontFamily: K.fBody,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                    zIndex: 3,
+                    transition: reduced ? undefined : 'opacity .15s, transform .15s',
+                  }}
+                >
+                  <div>{popTitle}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, opacity: 0.85, marginTop: 2 }}>{popSecondary}</div>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {penalized && (
+        <div style={{ fontFamily: K.fBody, fontSize: 13, fontWeight: 700, color: K.danger, textAlign: 'center', padding: '0 16px' }}>
+          {t('kidBoost.detail.penaltyHint')}
+        </div>
+      )}
+
+      {/* Consistency card (D-07) — 7-dot week strip + reused streak chip */}
+      <div style={{ background: K.card, borderRadius: 20, padding: 16, margin: '12px 16px 0' }}>
+        <div style={{ display: 'flex', gap: 8 }} aria-label={t('kidBoost.detail.ringWeekDotsLabel')}>
+          {weekDots.map(({ key, filled }) => (
+            <div
+              key={key}
+              style={{
+                width: 26, height: 26, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: filled ? K.mint : K.lineSoft,
+                fontSize: 12, fontWeight: 700, color: filled ? '#fff' : K.ink3,
+              }}
+            >
+              {t(`kidBoost.detail.weekDay.${key}`)}
+            </div>
+          ))}
+        </div>
+
+        <div style={{
+          marginTop: 8,
+          display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 999,
+          background: v.consistency.streakDone ? K.mangoSoft : K.card,
+          border: `1.5px solid ${v.consistency.streakDone ? K.mango : K.line}`,
+          fontFamily: K.fBody, fontSize: 13, fontWeight: 700,
+          color: v.consistency.streakDone ? K.mangoDeep : K.ink2,
+        }}>
+          {v.consistency.streakDone
+            ? t('kidBoost.detail.streakDone', { count: v.consistency.streaksAtThreshold })
+            : t('kidBoost.detail.streakPending')}
+        </div>
+      </div>
+    </div>
   )
 }
