@@ -603,7 +603,7 @@ export default function KidDayPage() {
         )}
       </div>
 
-      <BoostDetailSheet open={boostDetailOpen} boost={boost} onClose={() => setBoostDetailOpen(false)} />
+      <BoostDetailSheet open={boostDetailOpen} boost={boost} onClose={() => setBoostDetailOpen(false)} boostStyle={child?.boost_style ?? 'segmented-bar'} />
     </div>
   )
 }
