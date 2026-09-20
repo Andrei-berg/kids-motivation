@@ -2009,6 +2009,11 @@
       "stickySummary": "Сводка",
       "tileSheet": "Плитки",
       "storyStepper": "Степпер"
+    },
+    "boostStyleHeading": "Стиль буста недели",
+    "boostStyleError": "Не удалось сохранить стиль",
+    "boostStyleOption": {
+      "segmentedBar": "Полосы"
     }
   },
   "kidBoost": {
@@ -2017,6 +2022,21 @@
       "filled30": "30 заполненных дней",
       "filled100": "100 заполненных дней",
       "streak30": "Серия 30 дней"
+    },
+    "detail": {
+      "openLabel": "Открыть детали буста недели",
+      "title": "Буст недели",
+      "gradesLabel": "📚 Оценки",
+      "consistencyLabel": "🔥 Стабильность",
+      "totalLabel": "Итого за неделю",
+      "penaltyHint": "Одна двойка обнулила бонус за оценки на этой неделе",
+      "fullWeekDone": "7/7 дней ✓",
+      "fullWeekPending": "{{filled}}/7 дней",
+      "streakDone": "Стрик×{{count}} ✓",
+      "streakPending": "Стрик",
+      "note": "Итог = лучший тир по оценкам (не суммируется) + бонусы за стабильность",
+      "tierStatus": "Тир {{tier}} из {{total}}",
+      "bonusStatus": "{{earned}} из {{total}} бонусов"
     }
   },
   "feed": {

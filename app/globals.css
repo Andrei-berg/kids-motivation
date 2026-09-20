@@ -4402,6 +4402,38 @@ textarea::placeholder {
   }
 }
 
+/* ── Phase 09.5 / D-06 / D-08 — boost detail sub-bars ──────────────────
+   Reduced-motion double-guarded like the block above: these three classes
+   carry only motion (transition/animation), never colour/size/layout — those
+   stay in the component's inline styles, so a reduced-motion user (for whom
+   none of these rules exist) sees the identical static appearance. ────── */
+@media (prefers-reduced-motion: no-preference) {
+  .kid-seg-fill {
+    transition: width .8s cubic-bezier(.2,.9,.3,1.1);
+  }
+
+  @keyframes kid-seg-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+    50%  { box-shadow: 0 0 10px 3px rgba(255,255,255,0.75); }
+    100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+  }
+
+  .kid-seg-pulse {
+    animation: kid-seg-pulse .9s ease-out 1;
+  }
+
+  @keyframes kid-seg-shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position:  200% center; }
+  }
+
+  .kid-seg-shimmer {
+    background-image: linear-gradient(90deg, rgba(255,255,255,0.28) 25%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.28) 75%);
+    background-size: 200% 100%;
+    animation: kid-seg-shimmer 2.4s ease-in-out infinite;
+  }
+}
+
 /* ── Coin fly-up animation ──────────────────────────────────────────── */
 .coin-flyup-container {
   position: fixed;
