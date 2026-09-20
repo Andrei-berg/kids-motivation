@@ -93,6 +93,10 @@ export async function getBoostProgress(childId: string): Promise<BoostProgress> 
 
   // ── Weekly consistency stats ────────────────────────────────────────────
   const filledThisWeek = distinctDates(weekDaysRes.data)
+  // Pure derivation from the `days` rows already fetched above (weekDaysRes) —
+  // no extra Supabase query. week.start is Monday (getWeekRange), so index 0
+  // is Monday and index 6 is Sunday.
+  const filledDayFlags = Array.from({ length: 7 }, (_, i) => filledThisWeek.has(addDays(week.start, i)))
   const streaks = streaksRes.data ?? []
   const thr: Record<string, number> = {
     room: (settingsRow?.streak_room_days as number) ?? 7,
@@ -132,7 +136,7 @@ export async function getBoostProgress(childId: string): Promise<BoostProgress> 
 
   return {
     week: weekResult,
-    weekDetail: { settings: s, grades: gradeStats, consistency: consistencyStats },
+    weekDetail: { settings: s, grades: gradeStats, consistency: consistencyStats, filledDayFlags },
     milestones,
   }
 }
