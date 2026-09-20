@@ -2013,7 +2013,9 @@
     "boostStyleHeading": "Weekly boost style",
     "boostStyleError": "Couldn't save style",
     "boostStyleOption": {
-      "segmentedBar": "Bars"
+      "segmentedBar": "Bars",
+      "questChecklist": "Quests",
+      "ringBadges": "Ring"
     }
   },
   "kidBoost": {
@@ -2036,7 +2038,35 @@
       "streakPending": "Streak",
       "note": "Total = best grade tier (not summed) + consistency bonuses",
       "tierStatus": "Tier {{tier}} of {{total}}",
-      "bonusStatus": "{{earned}} of {{total}} bonuses"
+      "bonusStatus": "{{earned}} of {{total}} bonuses",
+      "questNote": "Best grade tier and best streak level aren't summed — the total below is calculated separately",
+      "questGradeTierTitle": "{{count}} top grades this week",
+      "questGradeTierSubDone": "Tier unlocked",
+      "questGradeTierSubProgress": "{{left}} more to unlock",
+      "questGradePerfectTitle": "All top grades this week",
+      "questGradePerfectSubDone": "Perfect week!",
+      "questGradePerfectSubProgress": "Needs a clean week with no low grades",
+      "questFullWeekTitle": "No missed days this week",
+      "questStreak2Title": "Streak active in 2 categories",
+      "questStreak3Title": "Streak active in all 3 categories",
+      "ringNowLabel": "so far",
+      "ringBadgeLabel": "Tier {{tier}}",
+      "ringPopReachedTitle": "{{count}} top grades this week — earned!",
+      "ringPopCoinsEarned": "+{{coins}} 🪙",
+      "ringPopNextTitle": "{{left}} more top grades for this tier",
+      "ringPopCoinsPending": "+{{coins}} 🪙 when reached",
+      "ringPopPerfectReachedTitle": "All top grades this week — earned!",
+      "ringPopPerfectNextTitle": "Needs a clean week with no low grades",
+      "ringWeekDotsLabel": "Days filled this week",
+      "weekDay": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      }
     }
   },
   "feed": {
