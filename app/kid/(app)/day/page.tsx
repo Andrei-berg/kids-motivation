@@ -19,6 +19,7 @@ import { K } from '@/components/kid/design/kidTheme'
 import { Avatar, Coin, AnimatedNum, StreakFlame, XPBar, BoostMeter } from '@/components/kid/design/atoms'
 import { Stamp, useCountUp, LedgerRow } from '@/components/design/atoms'
 import { getBoostProgress, type BoostProgress } from '@/lib/kid/boost'
+import BoostDetailSheet from '@/components/kid/boost/BoostDetailSheet'
 import { resolveAvatar } from '@/lib/kid/avatar'
 import { levelForXp } from '@/lib/kid/level'
 import { triggerConfetti } from '@/utils/confetti'
@@ -78,6 +79,7 @@ export default function KidDayPage() {
   const [busyDate, setBusyDate] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [boost, setBoost] = useState<BoostProgress | null>(null)
+  const [boostDetailOpen, setBoostDetailOpen] = useState(false)
   const isDesktop = useDesktop()
   // Header balance count-up (05.7-11, D-17): drives ONLY the ScreenHeader
   // balance to the new server-confirmed total; never fed a client estimate.
@@ -332,7 +334,19 @@ export default function KidDayPage() {
           </div>
 
           {/* Weekly boost meter */}
-          {boost && <BoostMeter earned={boost.week.total} max={boost.week.max} label={boost.week.nextLabel}/>}
+          {boost && (
+            <button
+              type="button"
+              aria-label={t('kidBoost.detail.openLabel')}
+              onClick={() => setBoostDetailOpen(true)}
+              style={{
+                display: 'block', width: '100%', padding: 0, margin: 0, border: 'none',
+                background: 'transparent', textAlign: 'left', font: 'inherit', cursor: 'pointer',
+              }}
+            >
+              <BoostMeter earned={boost.week.total} max={boost.week.max} label={boost.week.nextLabel}/>
+            </button>
+          )}
 
           {/* Day-complete celebration (desktop only, when not in form mode) */}
           {!showForm && (
@@ -400,9 +414,19 @@ export default function KidDayPage() {
             <StreakFlame days={streakDays} label={t('common.days')}/>
           </div>
           {boost && (
-            <div style={{ padding: '10px 16px 0' }}>
-              <BoostMeter earned={boost.week.total} max={boost.week.max} label={boost.week.nextLabel} compact/>
-            </div>
+            <button
+              type="button"
+              aria-label={t('kidBoost.detail.openLabel')}
+              onClick={() => setBoostDetailOpen(true)}
+              style={{
+                display: 'block', width: '100%', padding: 0, margin: 0, border: 'none',
+                background: 'transparent', textAlign: 'left', font: 'inherit', cursor: 'pointer',
+              }}
+            >
+              <div style={{ padding: '10px 16px 0' }}>
+                <BoostMeter earned={boost.week.total} max={boost.week.max} label={boost.week.nextLabel} compact/>
+              </div>
+            </button>
           )}
           <WeekStrip {...weekStripProps}/>
         </div>
@@ -578,6 +602,8 @@ export default function KidDayPage() {
           )
         )}
       </div>
+
+      <BoostDetailSheet open={boostDetailOpen} boost={boost} onClose={() => setBoostDetailOpen(false)} />
     </div>
   )
 }
