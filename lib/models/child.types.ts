@@ -23,6 +23,9 @@ export type Child = {
   // Day-fill interaction style (see 2026-09-19-child-fill-style.sql). Self-serve,
   // kid-controlled via ProfileSheet — not a parent policy field.
   fill_style: 'tile-sheet' | 'story-stepper' | 'sticky-summary'
+  // Weekly-boost detail-view style (see 2026-09-20-child-boost-style.sql).
+  // Self-serve, kid-controlled via ProfileSheet — not a parent policy field.
+  boost_style: 'segmented-bar' | 'quest-checklist' | 'ring-badges'
 }
 
 export type BackfillRequestStatus =
