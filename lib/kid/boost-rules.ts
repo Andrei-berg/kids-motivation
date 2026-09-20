@@ -79,6 +79,10 @@ export interface WeeklyBoostResult {
   max: number
   /** kid-voice "what unlocks the next chunk" line */
   nextLabel: string
+  /** gradesBoost()'s own "what unlocks the next grade tier" string — null at the
+   * top tier. Surfaced so the boost detail view reuses this copy instead of
+   * generating a second parallel one. */
+  gradesNext: string | null
 }
 
 /**
@@ -127,7 +131,7 @@ export function computeWeeklyBoost(
   else if (c.filledDays < 7) nextLabel = 'Заполни все 7 дней недели — добавит ещё монет'
   else nextLabel = 'Буст недели на максимуме — так держать!'
 
-  return { grades: gr.coins, consistency, total, max, nextLabel }
+  return { grades: gr.coins, consistency, total, max, nextLabel, gradesNext: gr.next }
 }
 
 // ── One-time milestone tiers ───────────────────────────────────────────────
