@@ -16,9 +16,14 @@ import {
   type MilestoneStats,
   type WeeklyBoostResult,
 } from './boost-rules'
+import type { BoostWeekDetail } from './boost-detail'
 
 export interface BoostProgress {
   week: WeeklyBoostResult
+  /** Raw settings/grade/consistency inputs getBoostProgress already computes,
+   * so a detail view can render fractional per-tier progress rather than
+   * only the final coin totals. */
+  weekDetail: BoostWeekDetail
   milestones: Array<{
     key: string
     coins: number
@@ -125,5 +130,9 @@ export async function getBoostProgress(childId: string): Promise<BoostProgress> 
     }
   })
 
-  return { week: weekResult, milestones }
+  return {
+    week: weekResult,
+    weekDetail: { settings: s, grades: gradeStats, consistency: consistencyStats },
+    milestones,
+  }
 }

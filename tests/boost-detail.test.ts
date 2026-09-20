@@ -18,7 +18,7 @@ function makeConsistency(overrides: Partial<WeeklyConsistencyStats> = {}): Weekl
 }
 
 function makeWeek(overrides: Partial<WeeklyBoostResult> = {}): WeeklyBoostResult {
-  return { grades: 0, consistency: 0, total: 0, max: 950, nextLabel: '', ...overrides }
+  return { grades: 0, consistency: 0, total: 0, max: 950, nextLabel: '', gradesNext: null, ...overrides }
 }
 
 const settings: BoostSettings = { ...DEFAULT_BOOST_SETTINGS }
