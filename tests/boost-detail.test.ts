@@ -166,3 +166,165 @@ describe('buildBoostDetail — total/coins never recomputed (D-07)', () => {
     expect(view.consistency.coins).toBe(week.consistency)
   })
 })
+
+describe('buildBoostDetail — independent grade tiers (D-01, D-06, BOOST-06)', () => {
+  it('Test 13: 0 top grades, no penalty -> tiers[0] not reached, threshold/current/remaining/pct/coins all settings-derived; nextTierIndex 1', () => {
+    const view = buildBoostDetail(
+      { settings, grades: makeGrades({ topGradeCount: 0 }), consistency: makeConsistency() },
+      makeWeek(),
+    )
+    expect(view.grades.tiers[0].reached).toBe(false)
+    expect(view.grades.tiers[0].threshold).toBe(5)
+    expect(view.grades.tiers[0].current).toBe(0)
+    expect(view.grades.tiers[0].remaining).toBe(5)
+    expect(view.grades.tiers[0].pct).toBe(0)
+    expect(view.grades.tiers[0].coins).toBe(150)
+    expect(view.grades.nextTierIndex).toBe(1)
+  })
+
+  it('Test 14 (D-01, independent not collapsed): 7 top grades, no penalty -> tiers[0] reached true AND tiers[1] reached false', () => {
+    const view = buildBoostDetail(
+      { settings, grades: makeGrades({ topGradeCount: 7 }), consistency: makeConsistency() },
+      makeWeek(),
+    )
+    expect(view.grades.tiers[0].reached).toBe(true)
+    expect(view.grades.tiers[1].reached).toBe(false)
+    expect(view.grades.tiers[1].current).toBe(7)
+    expect(view.grades.tiers[1].remaining).toBe(3)
+    expect(view.grades.tiers[1].pct).toBe(70)
+    expect(view.grades.tiers[1].coins).toBe(300)
+    expect(view.grades.nextTierIndex).toBe(2)
+  })
+
+  it('Test 15: 12 top grades, goodGradeCount 12, gradedDays 5 -> all three tiers reached, nextTierIndex null, tiers[2].coins 500', () => {
+    const view = buildBoostDetail(
+      {
+        settings,
+        grades: makeGrades({ topGradeCount: 12, goodGradeCount: 12, gradedDays: 5 }),
+        consistency: makeConsistency(),
+      },
+      makeWeek(),
+    )
+    expect(view.grades.tiers.every((t) => t.reached)).toBe(true)
+    expect(view.grades.nextTierIndex).toBeNull()
+    expect(view.grades.tiers[2].coins).toBe(500)
+  })
+
+  it('Test 16: 12 top grades but goodGradeCount 14 (non-top good grades) -> tiers 0/1 reached, tier 2 (perfect) not reached', () => {
+    const view = buildBoostDetail(
+      {
+        settings,
+        grades: makeGrades({ topGradeCount: 12, goodGradeCount: 14, gradedDays: 5 }),
+        consistency: makeConsistency(),
+      },
+      makeWeek(),
+    )
+    expect(view.grades.tiers[0].reached).toBe(true)
+    expect(view.grades.tiers[1].reached).toBe(true)
+    expect(view.grades.tiers[2].reached).toBe(false)
+  })
+
+  it('Test 17 (D-03 superseded): 12 top grades leaves both lower tiers reached true while the pre-existing tierReached still reports a single best tier', () => {
+    const view = buildBoostDetail(
+      {
+        settings,
+        grades: makeGrades({ topGradeCount: 12, goodGradeCount: 12, gradedDays: 5 }),
+        consistency: makeConsistency(),
+      },
+      makeWeek(),
+    )
+    expect(view.grades.tiers[0].reached).toBe(true)
+    expect(view.grades.tiers[1].reached).toBe(true)
+    expect(view.grades.tierReached).toBe(3)
+  })
+
+  it('Test 18 (D-15): hasPenaltyGrade true with 12 top grades -> every tiers[i].reached false, grades.penalized true, grades.pct stays PENALTY_FILL_PCT', () => {
+    const view = buildBoostDetail(
+      {
+        settings,
+        grades: makeGrades({ topGradeCount: 12, goodGradeCount: 12, gradedDays: 5, hasPenaltyGrade: true }),
+        consistency: makeConsistency(),
+      },
+      makeWeek(),
+    )
+    expect(view.grades.tiers.every((t) => t.reached === false)).toBe(true)
+    expect(view.grades.penalized).toBe(true)
+    expect(view.grades.pct).toBe(PENALTY_FILL_PCT)
+  })
+
+  it('Test 19 (BOOST-06 guard): non-default settings drive thresholds/coins accordingly', () => {
+    const customSettings: BoostSettings = {
+      ...DEFAULT_BOOST_SETTINGS,
+      boost_grades_t1_count: 2,
+      boost_grades_t2_count: 4,
+      boost_grades_t3: 999,
+    }
+    const view = buildBoostDetail(
+      { settings: customSettings, grades: makeGrades({ topGradeCount: 2 }), consistency: makeConsistency() },
+      makeWeek(),
+    )
+    expect(view.grades.tiers[0].reached).toBe(true)
+    expect(view.grades.tiers[0].threshold).toBe(2)
+    expect(view.grades.tiers[1].threshold).toBe(4)
+    expect(view.grades.tiers[2].coins).toBe(999)
+  })
+})
+
+describe('buildBoostDetail — streak-tier booleans and coin amounts (D-02)', () => {
+  it('Test 20: streaksAtThreshold 0 -> streak2Done false, streak3Done false', () => {
+    const view = buildBoostDetail(
+      { settings, grades: makeGrades(), consistency: makeConsistency({ streaksAtThreshold: 0 }) },
+      makeWeek(),
+    )
+    expect(view.consistency.streak2Done).toBe(false)
+    expect(view.consistency.streak3Done).toBe(false)
+  })
+
+  it('Test 21: streaksAtThreshold 2 -> streak2Done true, streak3Done false', () => {
+    const view = buildBoostDetail(
+      { settings, grades: makeGrades(), consistency: makeConsistency({ streaksAtThreshold: 2 }) },
+      makeWeek(),
+    )
+    expect(view.consistency.streak2Done).toBe(true)
+    expect(view.consistency.streak3Done).toBe(false)
+  })
+
+  it('Test 22: streaksAtThreshold 3 -> streak2Done true, streak3Done true', () => {
+    const view = buildBoostDetail(
+      { settings, grades: makeGrades(), consistency: makeConsistency({ streaksAtThreshold: 3 }) },
+      makeWeek(),
+    )
+    expect(view.consistency.streak2Done).toBe(true)
+    expect(view.consistency.streak3Done).toBe(true)
+  })
+
+  it('Test 23: fullWeekCoins/streak2Coins/streak3Coins read from settings, not literals', () => {
+    const view = buildBoostDetail(
+      { settings, grades: makeGrades(), consistency: makeConsistency() },
+      makeWeek(),
+    )
+    expect(view.consistency.fullWeekCoins).toBe(settings.boost_full_week)
+    expect(view.consistency.streak2Coins).toBe(settings.boost_streaks_2)
+    expect(view.consistency.streak3Coins).toBe(settings.boost_streaks_3)
+  })
+})
+
+describe('buildBoostDetail — per-day filled flags (D-07)', () => {
+  it('Test 24: filledDayFlags absent from input -> consistency.filledDayFlags is 7 false entries', () => {
+    const view = buildBoostDetail(
+      { settings, grades: makeGrades(), consistency: makeConsistency() },
+      makeWeek(),
+    )
+    expect(view.consistency.filledDayFlags).toEqual([false, false, false, false, false, false, false])
+  })
+
+  it('Test 25: filledDayFlags supplied -> passed through unchanged with length 7', () => {
+    const flags = [true, true, false, false, false, false, false]
+    const view = buildBoostDetail(
+      { settings, grades: makeGrades(), consistency: makeConsistency(), filledDayFlags: flags },
+      makeWeek(),
+    )
+    expect(view.consistency.filledDayFlags).toEqual(flags)
+    expect(view.consistency.filledDayFlags.length).toBe(7)
+  })
+})

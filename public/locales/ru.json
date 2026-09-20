@@ -2013,7 +2013,9 @@
     "boostStyleHeading": "Стиль буста недели",
     "boostStyleError": "Не удалось сохранить стиль",
     "boostStyleOption": {
-      "segmentedBar": "Полосы"
+      "segmentedBar": "Полосы",
+      "questChecklist": "Квесты",
+      "ringBadges": "Кольцо"
     }
   },
   "kidBoost": {
@@ -2036,7 +2038,35 @@
       "streakPending": "Стрик",
       "note": "Итог = лучший тир по оценкам (не суммируется) + бонусы за стабильность",
       "tierStatus": "Тир {{tier}} из {{total}}",
-      "bonusStatus": "{{earned}} из {{total}} бонусов"
+      "bonusStatus": "{{earned}} из {{total}} бонусов",
+      "questNote": "Лучший тир по оценкам и лучший уровень стрика не суммируются — итог внизу посчитан отдельно",
+      "questGradeTierTitle": "{{count}} пятёрок за неделю",
+      "questGradeTierSubDone": "Тир открыт",
+      "questGradeTierSubProgress": "Ещё {{left}} до тира",
+      "questGradePerfectTitle": "Только пятёрки всю неделю",
+      "questGradePerfectSubDone": "Идеальная неделя!",
+      "questGradePerfectSubProgress": "Нужна чистая неделя без троек и хуже",
+      "questFullWeekTitle": "Неделя без пропусков",
+      "questStreak2Title": "Стрик держится в 2 категориях",
+      "questStreak3Title": "Стрик держится во всех 3 категориях",
+      "ringNowLabel": "сейчас",
+      "ringBadgeLabel": "Тир {{tier}}",
+      "ringPopReachedTitle": "{{count}} пятёрок за неделю — заработано!",
+      "ringPopCoinsEarned": "+{{coins}} 🪙",
+      "ringPopNextTitle": "Ещё {{left}} пятёрок до этого тира",
+      "ringPopCoinsPending": "+{{coins}} 🪙 при достижении",
+      "ringPopPerfectReachedTitle": "Только пятёрки всю неделю — заработано!",
+      "ringPopPerfectNextTitle": "Нужна чистая неделя без троек и хуже",
+      "ringWeekDotsLabel": "Дни недели, заполненные ребёнком",
+      "weekDay": {
+        "mon": "Пн",
+        "tue": "Вт",
+        "wed": "Ср",
+        "thu": "Чт",
+        "fri": "Пт",
+        "sat": "Сб",
+        "sun": "Вс"
+      }
     }
   },
   "feed": {
