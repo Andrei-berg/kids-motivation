@@ -225,7 +225,14 @@ Plans:
   1. With `quest-checklist` selected, every boost condition (grade-tier thresholds, full-week completion, streak threshold) appears as its own row with its own reward amount and progress, plus one combined total at the bottom
   2. With `ring-badges` selected, one ring shows the current total and tappable tier badges (reached / next) open a popover explaining what's needed for the next tier
   3. Both styles read the same real thresholds/amounts from `lib/kid/boost-rules.ts` as the segmented-bar default, with no hardcoded sketch numbers
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [ ] 09.6-01-PLAN.md — boost-detail view model extension (independent grade tiers, streak-tier booleans, per-day filled flags) + RU/EN copy
+- [ ] 09.6-02-PLAN.md — BoostDetailSheet boostStyle prop + SegmentedBarBody extraction + QuestChecklistBody (BOOST-04)
+- [ ] 09.6-03-PLAN.md — RingBadgesBody: ring, tier badges, single-open popover, week-dot strip (BOOST-05)
+- [ ] 09.6-04-PLAN.md — ProfileSheet real 3-way boost_style picker + entry-point wiring
+- [ ] 09.6-05-PLAN.md — phase close: gate sweep, traceability matrix, operator sign-off
 **UI hint**: yes
 
 ---
