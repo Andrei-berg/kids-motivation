@@ -175,6 +175,40 @@ already-computed `sectionCoins` breakdown and never itself credits coins.
 `/api/wallet/award` remains the sole authoritative crediting path, called once at save
 exactly as before.
 
+## Weekly Boost Detail View
+
+As of Phase 9.5, all three inline `BoostMeter` mounts (`components/kid/design/atoms.tsx`,
+unchanged) are tappable: the Day hero full version and compact version
+(`app/kid/(app)/day/page.tsx`), and the `ProfileSheet` version
+(`components/kid/ProfileSheet.tsx`). Tapping any of them opens the same
+`BoostDetailSheet` instance, reusing Phase 9.4's `BottomSheet` container with
+`doneLabel={null}` (explicit close only, no backdrop-tap deviation) — the same
+content-agnostic shell Phase 9.6's `quest-checklist`/`ring-badges` bodies will plug
+into via the child's persisted `boost_style` preference.
+
+`components/kid/boost/BoostDetailSheet.tsx` is the `segmented-bar` body: two
+independent sub-bars (grades tier progress, consistency bonus progress) plus a
+total row. Every threshold, tier count and coin amount it renders is read live from
+`lib/kid/boost-rules.ts`'s `BoostSettings` (i.e. `wallet_settings`), never a
+hardcoded literal in the view — `lib/kid/boost.ts`'s `getBoostProgress()` surfaces
+the raw `BoostSettings`/`WeeklyGradeStats`/`WeeklyConsistencyStats` inputs as
+`BoostProgress.weekDetail`, and the pure `lib/kid/boost-detail.ts` module
+(`buildBoostDetail`) turns them into the view model (fractional fill percentages,
+penalty state, two independent zone booleans) with no React or Supabase import, so
+its arithmetic is unit-tested in isolation from rendering. The total row and the
+grades hint copy are copied verbatim from `WeeklyBoostResult.total` /
+`.gradesNext` — the same numbers the inline `BoostMeter` shows — never
+recomputed. `/api/wallet/award` remains the sole authority for what actually
+credits; this view and its data layer are read-only display logic.
+
+The per-child `boost_style` preference (`children.boost_style`, see
+`project-docs/data-model.md`) is written by `app/kid/actions/boost-style.ts`
+(`updateChildBoostStyle`), mirroring `fill-style.ts`'s guard chain exactly:
+whitelist validation first, then `requireFamilyMember()` + `authorizeChildAction()`
++ service-role `.update()` — no client-side write to `children` exists. The picker
+lives in `ProfileSheet` directly below the `fill_style` control; only
+`segmented-bar` is selectable until Phase 9.6 ships the other two styles.
+
 ## Backward-Compat Wrappers
 Old import paths still work — files re-export from new locations:
 - `lib/api.ts` → repositories/children.repo + grades.repo + services/coins.service
