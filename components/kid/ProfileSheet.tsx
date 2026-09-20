@@ -19,6 +19,8 @@ import { Avatar, XPBar, BoostMeter } from '@/components/kid/design/atoms'
 import { resolveAvatar, type ChildAvatarFields } from '@/lib/kid/avatar'
 import AvatarPicker from '@/components/kid/AvatarPicker'
 import { updateChildFillStyle } from '@/app/kid/actions/fill-style'
+import { updateChildBoostStyle } from '@/app/kid/actions/boost-style'
+import BoostDetailSheet from '@/components/kid/boost/BoostDetailSheet'
 
 interface ProfileSheetProps {
   /** Optional seed from the header; the sheet reloads a fresh copy on open. */
@@ -44,6 +46,9 @@ export default function ProfileSheet({ child: seed, onClose }: ProfileSheetProps
   const [pickerOpen, setPickerOpen] = useState(false)
   const [savingFillStyle, setSavingFillStyle] = useState(false)
   const [fillStyleError, setFillStyleError] = useState(false)
+  const [savingBoostStyle, setSavingBoostStyle] = useState(false)
+  const [boostStyleError, setBoostStyleError] = useState(false)
+  const [boostDetailOpen, setBoostDetailOpen] = useState(false)
 
   async function load() {
     if (!activeMemberId) return
@@ -79,6 +84,21 @@ export default function ProfileSheet({ child: seed, onClose }: ProfileSheetProps
       setFillStyleError(true)
     } finally {
       setSavingFillStyle(false)
+    }
+  }
+
+  async function handleBoostStyleTap(value: 'segmented-bar') {
+    if (!child?.id || savingBoostStyle) return
+    setBoostStyleError(false)
+    setSavingBoostStyle(true)
+    try {
+      await updateChildBoostStyle(child.id, value)
+      await load()
+    } catch (err) {
+      console.warn('updateChildBoostStyle failed', err)
+      setBoostStyleError(true)
+    } finally {
+      setSavingBoostStyle(false)
     }
   }
 
@@ -141,9 +161,19 @@ export default function ProfileSheet({ child: seed, onClose }: ProfileSheetProps
         </div>
 
         {boost && (
-          <div style={{ marginTop: 14 }}>
-            <BoostMeter earned={boost.week.total} max={boost.week.max} label={boost.week.nextLabel} />
-          </div>
+          <button
+            type="button"
+            aria-label={t('kidBoost.detail.openLabel')}
+            onClick={() => setBoostDetailOpen(true)}
+            style={{
+              display: 'block', width: '100%', padding: 0, margin: 0, border: 'none',
+              background: 'transparent', textAlign: 'left', font: 'inherit', cursor: 'pointer',
+            }}
+          >
+            <div style={{ marginTop: 14 }}>
+              <BoostMeter earned={boost.week.total} max={boost.week.max} label={boost.week.nextLabel} />
+            </div>
+          </button>
         )}
 
         {/* streaks */}
@@ -221,6 +251,39 @@ export default function ProfileSheet({ child: seed, onClose }: ProfileSheetProps
           </div>
         )}
 
+        <div style={{ fontFamily: K.fBody, fontSize: 12, fontWeight: 700, color: K.ink3, marginTop: 16, marginBottom: 8 }}>
+          {t('kidProfile.boostStyleHeading')}
+        </div>
+        <div role="radiogroup" style={{ display: 'flex', gap: 8, opacity: savingBoostStyle ? 0.7 : 1 }}>
+          {(() => {
+            const boostActive = child?.boost_style === 'segmented-bar'
+            return (
+              <button
+                type="button"
+                role="radio"
+                aria-checked={boostActive}
+                disabled={savingBoostStyle}
+                onClick={() => handleBoostStyleTap('segmented-bar')}
+                style={{
+                  flex: 1, minHeight: 44, borderRadius: 14, padding: '0 10px',
+                  cursor: savingBoostStyle ? 'default' : 'pointer',
+                  background: K.skySoft, border: `1.5px solid ${K.sky}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  fontFamily: K.fBody, fontSize: 13, fontWeight: 700, color: K.skyDeep,
+                }}
+              >
+                <span>{t('kidProfile.boostStyleOption.segmentedBar')}</span>
+                <span aria-hidden style={{ color: K.mint }}>✓</span>
+              </button>
+            )
+          })()}
+        </div>
+        {boostStyleError && (
+          <div style={{ marginTop: 6, fontFamily: K.fBody, fontSize: 12, fontWeight: 700, color: K.danger }}>
+            {t('kidProfile.boostStyleError')}
+          </div>
+        )}
+
         <button
           type="button"
           onClick={handleLogout}
@@ -241,6 +304,10 @@ export default function ProfileSheet({ child: seed, onClose }: ProfileSheetProps
           onSaved={load}
         />
       )}
+
+      <div onClick={(e) => e.stopPropagation()}>
+        <BoostDetailSheet open={boostDetailOpen} boost={boost} onClose={() => setBoostDetailOpen(false)} />
+      </div>
     </div>
   )
 }
