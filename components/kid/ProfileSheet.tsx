@@ -87,7 +87,7 @@ export default function ProfileSheet({ child: seed, onClose }: ProfileSheetProps
     }
   }
 
-  async function handleBoostStyleTap(value: 'segmented-bar') {
+  async function handleBoostStyleTap(value: Child['boost_style']) {
     if (!child?.id || savingBoostStyle) return
     setBoostStyleError(false)
     setSavingBoostStyle(true)
@@ -255,28 +255,36 @@ export default function ProfileSheet({ child: seed, onClose }: ProfileSheetProps
           {t('kidProfile.boostStyleHeading')}
         </div>
         <div role="radiogroup" style={{ display: 'flex', gap: 8, opacity: savingBoostStyle ? 0.7 : 1 }}>
-          {(() => {
-            const boostActive = child?.boost_style === 'segmented-bar'
+          {([
+            ['segmented-bar', 'kidProfile.boostStyleOption.segmentedBar'],
+            ['quest-checklist', 'kidProfile.boostStyleOption.questChecklist'],
+            ['ring-badges', 'kidProfile.boostStyleOption.ringBadges'],
+          ] as const).map(([value, labelKey]) => {
+            const active = child?.boost_style === value
             return (
               <button
+                key={value}
                 type="button"
                 role="radio"
-                aria-checked={boostActive}
+                aria-checked={active}
                 disabled={savingBoostStyle}
-                onClick={() => handleBoostStyleTap('segmented-bar')}
+                onClick={() => handleBoostStyleTap(value)}
                 style={{
                   flex: 1, minHeight: 44, borderRadius: 14, padding: '0 10px',
                   cursor: savingBoostStyle ? 'default' : 'pointer',
-                  background: K.skySoft, border: `1.5px solid ${K.sky}`,
+                  background: active ? K.skySoft : K.card,
+                  border: active ? `1.5px solid ${K.sky}` : `1.5px solid ${K.line}`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  fontFamily: K.fBody, fontSize: 13, fontWeight: 700, color: K.skyDeep,
+                  fontFamily: K.fBody, fontSize: 13, fontWeight: 700, color: active ? K.skyDeep : K.ink,
                 }}
               >
-                <span>{t('kidProfile.boostStyleOption.segmentedBar')}</span>
-                <span aria-hidden style={{ color: K.mint }}>✓</span>
+                <span>{t(labelKey)}</span>
+                {active && (
+                  <span aria-hidden style={{ color: K.mint }}>✓</span>
+                )}
               </button>
             )
-          })()}
+          })}
         </div>
         {boostStyleError && (
           <div style={{ marginTop: 6, fontFamily: K.fBody, fontSize: 12, fontWeight: 700, color: K.danger }}>
@@ -306,7 +314,7 @@ export default function ProfileSheet({ child: seed, onClose }: ProfileSheetProps
       )}
 
       <div onClick={(e) => e.stopPropagation()}>
-        <BoostDetailSheet open={boostDetailOpen} boost={boost} onClose={() => setBoostDetailOpen(false)} />
+        <BoostDetailSheet open={boostDetailOpen} boost={boost} onClose={() => setBoostDetailOpen(false)} boostStyle={child?.boost_style ?? 'segmented-bar'} />
       </div>
     </div>
   )
