@@ -228,11 +228,11 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 09.6-01-PLAN.md — boost-detail view model extension (independent grade tiers, streak-tier booleans, per-day filled flags) + RU/EN copy
-- [ ] 09.6-02-PLAN.md — BoostDetailSheet boostStyle prop + SegmentedBarBody extraction + QuestChecklistBody (BOOST-04)
-- [ ] 09.6-03-PLAN.md — RingBadgesBody: ring, tier badges, single-open popover, week-dot strip (BOOST-05)
-- [ ] 09.6-04-PLAN.md — ProfileSheet real 3-way boost_style picker + entry-point wiring
-- [ ] 09.6-05-PLAN.md — phase close: gate sweep, traceability matrix, operator sign-off
+- [x] 09.6-01-PLAN.md — boost-detail view model extension (independent grade tiers, streak-tier booleans, per-day filled flags) + RU/EN copy
+- [x] 09.6-02-PLAN.md — BoostDetailSheet boostStyle prop + SegmentedBarBody extraction + QuestChecklistBody (BOOST-04)
+- [x] 09.6-03-PLAN.md — RingBadgesBody: ring, tier badges, single-open popover, week-dot strip (BOOST-05)
+- [x] 09.6-04-PLAN.md — ProfileSheet real 3-way boost_style picker + entry-point wiring
+- [x] 09.6-05-PLAN.md — phase close: gate sweep, traceability matrix, operator sign-off
 **UI hint**: yes
 
 ---

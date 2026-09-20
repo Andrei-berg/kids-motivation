@@ -52,10 +52,10 @@
   `boost_style` detail view; the inline meter itself stays visually unchanged.
 - [x] **BOOST-03**: `segmented-bar` style shows the grades-tier progress and the
   consistency-bonus progress as two independent sub-bars with their own hint text.
-- [ ] **BOOST-04**: `quest-checklist` style lists each boost condition (grade-tier thresholds,
+- [x] **BOOST-04**: `quest-checklist` style lists each boost condition (grade-tier thresholds,
   full-week completion, streak-threshold) as its own row with its own reward amount and
   progress, plus one combined total at the bottom.
-- [ ] **BOOST-05**: `ring-badges` style shows one ring for the current total plus tappable tier
+- [x] **BOOST-05**: `ring-badges` style shows one ring for the current total plus tappable tier
   badges (reached / next) that open a popover explaining what's needed for the next tier.
 - [x] **BOOST-06**: All three boost-detail styles read real tier thresholds and coin amounts from
   `lib/kid/boost-rules.ts` — no hardcoded illustrative values from the sketches. (Proven for
@@ -106,7 +106,7 @@
 | BOOST-02 | Phase 9.5 | Complete |
 | BOOST-03 | Phase 9.5 | Complete |
 | BOOST-06 | Phase 9.5 | Complete |
-| BOOST-04 | Phase 9.6 | Pending |
-| BOOST-05 | Phase 9.6 | Pending |
+| BOOST-04 | Phase 9.6 | Complete |
+| BOOST-05 | Phase 9.6 | Complete |
 
 Coverage: 19/19 v1 requirements mapped. No orphans.
