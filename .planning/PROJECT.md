@@ -209,7 +209,47 @@
 
 ---
 
-## Shipped: v5.0 — Flexibility & Design Unification (2026-07-23)
+## Shipped: v9.0 — Kid Experience Redesign (2026-09-20)
+
+The Family Feed became the family's motivational social network, and kids got a fast,
+transparent, personalized way to log their day and understand their weekly boost — replacing
+the previous flat activity log, single-open-accordion fill form, and one-line boost hint.
+
+**What shipped:**
+- Family Feed reframed as a motivational recognition stream — per-child story reel of today's
+  biggest highlight up top, day-grouped event cards below with a color-coded rail per event
+  type; reward-purchase cards show only the reward name, never a coin amount; penalties and
+  negative behavior-tag events never appear in the Feed (Wallet/audit trail only)
+- Feed social layer — fixed 6-emoji reactions with live per-user toggle counts, a sibling
+  "подколоть" (tease) tray of 17 locked playful phrases (no freeform text), kid→kid zero-coin
+  medal send as its own recognized feed event
+- Day-fill form gained 3 selectable per-child styles — `sticky-summary` (default: persistent
+  completion ring + live coin total, one-tap binary rows), `tile-sheet` (2-column status grid +
+  scoped bottom sheet), `story-stepper` (one category at a time, dot-progress, auto-advance,
+  skip) — all sharing the same live floating coin feedback and save/award pipeline
+- Weekly Boost gained a tappable detail view with 3 selectable per-child styles —
+  `segmented-bar` (two independent sub-bars), `quest-checklist` (per-condition rows + combined
+  total), `ring-badges` (ring + tappable tier badges with explainer popover) — all reading real
+  tier thresholds/coin amounts from `lib/kid/boost-rules.ts`, no hardcoded sketch numbers
+- `fill_style` and `boost_style` landed as persisted, self-serve, changeable-anytime per-child
+  preferences (`children` columns, migrations applied and re-verified live in prod) with a real
+  3-way `ProfileSheet` picker for each
+
+**Technical state as of v9.0:**
+- New columns: `children.fill_style`, `children.boost_style`; new/extended tables:
+  `family_events`/reactions/comments (tease-tagged), sender-aware `medals`
+- Every phase closed on the same discipline: automated gate sweep + live-schema re-check + full
+  decision traceability matrix + operator browser sign-off — the Phase 1.3 "ROADMAP complete ≠
+  migration ran" postmortem from v5.0 held through all 6 phases
+- Known deferred: `QuestChecklistBody`'s total progress bar can hit `NaN%` if a family zeroes
+  out every boost coin setting (non-blocking, `RingBadgesBody`'s identical calc is guarded); no
+  milestone-level `/gsd:audit-milestone` run before close (each phase already carried its own
+  full close-verification)
+
+**Archive:** `.planning/milestones/v9.0-ROADMAP.md`, `.planning/milestones/v9.0-REQUIREMENTS.md`
+
+<details>
+<summary>v5.0 — Flexibility & Design Unification (shipped 2026-07-23)</summary>
 
 Any family, not just the original Adam & Alim family, can now shape the app to its own rules — nothing that used to be a hardcoded constant still is. Design work followed: both Kid Screen and Parent Center were rebuilt on one unified token system.
 
@@ -276,33 +316,27 @@ Two fully separate experiences — Parent Center (dark, control-focused) and Kid
 
 </details>
 
+</details>
+
 ---
 
-## Current Milestone: v9.0 Kid Experience Redesign
+## Next Milestone
 
-**Goal:** Turn the Family Feed into the family's motivational social network and give kids a
-fast, transparent, personalized way to log their day and understand their weekly boost —
-replacing today's flat activity log, single-open-accordion fill form, and one-line boost hint.
+No milestone selected yet — run `/gsd:new-milestone` to scope one (fresh requirements pass:
+questioning → research → requirements → roadmap).
 
-**Target features:**
-- Family Feed redesign — story reel of today's highlights + day-grouped hero-stat cards with a
-  color-coded status rail (reuses the real `CollapsibleRow` rail pattern); no money amounts, no
-  penalties/corrections/behavior-tag negatives; sibling "подколоть" (tease) reactions with
-  preset playful phrases
-- Day-fill form — 3 selectable per-child interaction styles (tile grid + bottom sheet /
-  story-stepper / sticky-summary + inline rows), persisted as a per-child preference,
-  changeable anytime in the child's profile
-- Weekly Boost detail — 3 selectable per-child breakdown styles (segmented dual bar / quest
-  checklist / ring + tier badges), opened by tapping the existing inline `BoostMeter`, which
-  itself stays visually unchanged
-
-Grounded entirely in `.claude/skills/sketch-findings-kids-motivation/` (validated design
-decisions, CSS patterns, and interactive HTML mockups from the 2026-09-17 sketch session) —
-plan-phase and execute-phase should treat that skill as the primary design source.
-
-v6.0 Monetization / v7.0 Social / v8.0 Native Apps remain future candidates, unchanged and
-unstarted (see ROADMAP.md) — this milestone was inserted ahead of them as v9.0 specifically to
-avoid renumbering already-reserved phases 6.1–8.3.
+**Candidates on the books** (unchanged, unstarted, see ROADMAP.md):
+- v6.0 Monetization — Free/Premium/Family Plus tiers, Stripe billing, freemium limits
+- v7.0 Social — cross-family friendships, family rating/leaderboard among friends, shared
+  challenges, shop/category template sharing
+- v8.0 Native Apps — iOS/Android via Expo
+- Backlog phases (see ROADMAP.md Backlog): 999.1 parent-center-signout (Parent Center has no
+  sign-out control anywhere in its UI), 999.2 kid-preview-entry-point (the documented
+  `?preview=true` parent-preview mechanism has no UI entry point — only an exit)
+- Parent Center bug-fix backlog (out of scope for v9.0, not yet scheduled): Dashboard child-card
+  ring calculation bug, Chat loading hang on unhydrated `familyId`, fake `Math.random()`
+  Analytics chart, mock/non-functional Tasks screen, Shop money-reward creation exposure,
+  Journal/Feed consolidation
 
 ---
 
@@ -345,7 +379,7 @@ avoid renumbering already-reserved phases 6.1–8.3.
 
 ### Active
 
-v9.0 Kid Experience Redesign — all 6 phases (9.1–9.6) complete. No active requirements remain in this milestone; see Evolution note below.
+None — no milestone currently in progress. Next up via `/gsd:new-milestone`, likely drawing from:
 
 Future candidates (unvalidated, unchanged, subject to a real requirements pass via `/gsd:new-milestone` when picked up):
 - [ ] v6.0 Monetization — Free/Premium/Family Plus tiers, Stripe billing, freemium limits
@@ -426,3 +460,5 @@ This document evolves at phase transitions and milestone boundaries.
 *Обновлён: 2026-09-19 — Phase 9.2 (feed-social) complete: fixed 6-emoji reactions with pop animation, sibling "подколоть" tease tray (17 locked phrases, tag-on-existing-comment convention, zero migration), and kid→kid zero-coin medal (`sender_role`/`sender_member_id` migration applied to prod, `sendKidMedal` server action, daily caps). Code review found 1 pre-existing RLS gap (family_event_reactions INSERT policy, from Phase 9.1) plus 5 minor robustness warnings in the new code — none blocking, logged in 09.2-VERIFICATION.md. Operator approved the 12-step browser verification and chose to keep the existing reaction-chip accent color over the UI-SPEC's proposed "mango" variant. 7/7 plans, 3/3 must-haves verified.*
 
 *Обновлён: 2026-09-19 — Phase 9.3 (dayform-default) complete: per-child `fill_style` preference (`children.fill_style` column, default `sticky-summary`, migration applied and re-verified live in prod) with a self-serve server-action write path, and the sticky-summary day-fill style itself — persistent completion-ring + live-coin-total sticky bar, one-tap `QuickRow`s for room/activities/custom blocks, in-place `InlinePanelRow` panels for grades/exercises/sport/reading/behavior (independent, never auto-closed), an always-expanded mood row with a reduced-motion-aware pop animation, and per-fill anchored coin flyups with a distinct loss (downward, red) variant — the legacy single-open accordion is fully removed from this screen. Code review found 1 pre-existing blocker (`KidDayFillForm`'s `isLocked` ignoring `children.backfill_mode`, traced via git blame to Phase 5.6, not introduced here) plus 3 minor warnings — none blocking. Operator approved all 14 browser-verification steps including the four no terminal command can assert (loss feedback, no behavior flyup, mood pop, reduced motion, no-flyups-on-mount). 6/6 plans, 9/9 must-haves verified. `tile-sheet`/`story-stepper` styles remain Phase 9.4's scope.*
+
+*Обновлён: 2026-09-20 — Milestone v9.0 Kid Experience Redesign closed via `/gsd:complete-milestone` (all 6 phases 9.1–9.6, 32/32 plans, 19/19 requirements FEED-01..07/DAYFORM-01..06/BOOST-01..06 shipped). Archived to `.planning/milestones/v9.0-ROADMAP.md` + `v9.0-REQUIREMENTS.md`; `.planning/REQUIREMENTS.md` removed pending the next milestone's fresh requirements pass. Corrected a stale-checkbox gap found during close (FEED-01..04 were unchecked in the working REQUIREMENTS.md despite Phase 9.1 being operator-verified complete on 2026-09-18) and a stale progress-table gap (ROADMAP.md still showed Phases 9.5/9.6 as in-progress/not-started despite both being fully plan-complete) — both were documentation lag, not real gaps; verified against phase SUMMARY.md files before archiving. No milestone-level `/gsd:audit-milestone` was run — proceeded on the operator's explicit choice, since every phase already closed with its own gate-sweep + traceability + browser sign-off.*

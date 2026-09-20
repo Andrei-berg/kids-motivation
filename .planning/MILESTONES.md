@@ -1,5 +1,48 @@
 # Milestones
 
+## v9.0 Kid Experience Redesign (Shipped: 2026-09-20)
+
+**Phases completed:** 6 phases, 32 plans
+**Timeline:** 3 days (2026-09-17 → 2026-09-20)
+**Commits:** 209 | **Files changed:** 157 | **Code delta:** +28,619 / -388 lines
+
+**Key accomplishments:**
+
+1. Family Feed reframed as a motivational recognition stream — per-child story reel of today's
+   biggest highlight up top, day-grouped event cards below with a color-coded rail per event
+   type; reward-purchase cards show only the reward name, never a coin amount; penalties and
+   negative behavior-tag events never appear (stay in the private Wallet/audit trail only)
+2. Feed social layer — fixed 6-emoji reactions with live per-user toggle counts, a sibling
+   "подколоть" (tease) tray of 17 locked playful phrases (no freeform text), and a kid→kid
+   zero-coin medal send that posts as its own recognized feed event
+3. Day-fill form gained 3 selectable per-child interaction styles — `sticky-summary` (persistent
+   completion ring + live coin total, one-tap binary rows, default for new children),
+   `tile-sheet` (2-column status grid + scoped bottom sheet), and `story-stepper` (one category
+   at a time with dot-progress + auto-advance + skip) — all three sharing the same live floating
+   coin feedback and the same save/award pipeline underneath
+4. Weekly Boost gained a tappable detail view with 3 selectable per-child styles —
+   `segmented-bar` (two independent grade-tier/consistency sub-bars), `quest-checklist` (each
+   boost condition as its own row with its own reward + progress, one combined total), and
+   `ring-badges` (single ring + tappable tier badges with an explainer popover) — all three
+   reading real tier thresholds and coin amounts from `lib/kid/boost-rules.ts`, none of the
+   sketch's illustrative placeholder numbers
+5. `fill_style` and `boost_style` both landed as persisted, self-serve, changeable-anytime
+   per-child preferences (`children` table columns, migrations applied and re-verified live in
+   prod) with a real 3-way picker in `ProfileSheet`
+6. Every phase closed with the same discipline established in v5.0's Phase 1.3 postmortem:
+   automated gate sweep + live-schema re-check + full decision traceability matrix + operator
+   browser sign-off, never trusting a ROADMAP "Complete" marker alone
+
+**Known gaps at close:** none blocking. One non-blocking Warning from Phase 9.6 code review
+(`QuestChecklistBody`'s total progress bar can hit `NaN%` if a family zeroes out every boost coin
+setting) left open as low-priority tech debt. No milestone-level `/gsd:audit-milestone` was run
+before this close — each phase already carried its own full close-verification, so the operator
+chose to proceed without a separate milestone audit pass.
+
+**Archive:** `.planning/milestones/v9.0-ROADMAP.md`, `.planning/milestones/v9.0-REQUIREMENTS.md`
+
+---
+
 ## v5.0 Flexibility & Design Unification (Shipped: 2026-07-23)
 
 **Phases completed:** 11 phases, 71 plans, 136 tasks
