@@ -210,8 +210,8 @@ Plans:
   4. Every tier threshold and coin amount shown is read live from `lib/kid/boost-rules.ts` — none of the sketch's illustrative placeholder numbers appear
 **Plans**: 5 plans
 Plans:
-- [ ] 09.5-01-PLAN.md — boost_style migration (file + live DB) + Child type + updateChildBoostStyle server action
-- [ ] 09.5-02-PLAN.md — boost data layer: gradesNext, BoostProgress.weekDetail, pure buildBoostDetail + tests
+- [x] 09.5-01-PLAN.md — boost_style migration (file + live DB) + Child type + updateChildBoostStyle server action
+- [x] 09.5-02-PLAN.md — boost data layer: gradesNext, BoostProgress.weekDetail, pure buildBoostDetail + tests
 - [ ] 09.5-03-PLAN.md — BoostDetailSheet segmented-bar detail view + i18n keys + reduced-motion CSS
 - [ ] 09.5-04-PLAN.md — wire all 3 BoostMeter entry points + ProfileSheet boost_style picker
 - [ ] 09.5-05-PLAN.md — phase close: gate sweep, live-schema re-check, traceability matrix, operator sign-off
@@ -288,7 +288,7 @@ Plans:
 | 9.2 feed-social | v9.0 | 7/7 | Complete   | 2026-09-19 |
 | 9.3 dayform-default | v9.0 | 6/6 | Complete   | 2026-09-19 |
 | 9.4 dayform-styles | v9.0 | 5/5 | Complete   | 2026-09-19 |
-| 9.5 boost-default | v9.0 | 0/5 | Planned | - |
+| 9.5 boost-default | v9.0 | 2/5 | In Progress|  |
 | 9.6 boost-styles | v9.0 | 0/? | Not started | - |
 | 6.1–6.3 | v6.0 Monetization | 0/? | Planned | - |
 | 7.1–7.3 | v7.0 Social | 0/? | Planned | - |

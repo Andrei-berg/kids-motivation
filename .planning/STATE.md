@@ -4,7 +4,7 @@ milestone: v9.0
 milestone_name: — Kid Experience Redesign
 status: executing
 stopped_at: Phase 9.5 UI-SPEC approved
-last_updated: "2026-09-20T03:16:17.223Z"
+last_updated: "2026-09-20T03:17:49.060Z"
 last_activity: 2026-09-20
 progress:
   total_phases: 6
@@ -87,7 +87,7 @@ Progress: [██████████] 100%
 See: .planning/PROJECT.md (updated 2026-09-17)
 
 **Core value:** Any family can register and use the app — children earn coins for real effort, spend them on real rewards
-**Current focus:** Phase 09.4 — dayform-styles
+**Current focus:** Phase 09.5 — boost-default
 
 ---
 
@@ -351,10 +351,10 @@ Working through the deferred backlog. Per-item, each committed + pushed separate
 
 ## Current Position
 
-Phase: 09.4 (dayform-styles) — COMPLETE
-Plan: 5 of 5
-Status: Ready to execute
-Last activity: 2026-09-20 -- Phase 09.5 planning complete
+Phase: 09.5 (boost-default) — EXECUTING
+Plan: 1 of 5
+Status: Executing Phase 09.5
+Last activity: 2026-09-20 -- Phase 09.5 execution started
 
 ## Operator Next Steps
 
