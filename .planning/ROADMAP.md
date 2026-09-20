@@ -214,7 +214,7 @@ Plans:
 - [x] 09.5-02-PLAN.md — boost data layer: gradesNext, BoostProgress.weekDetail, pure buildBoostDetail + tests
 - [x] 09.5-03-PLAN.md — BoostDetailSheet segmented-bar detail view + i18n keys + reduced-motion CSS
 - [x] 09.5-04-PLAN.md — wire all 3 BoostMeter entry points + ProfileSheet boost_style picker
-- [ ] 09.5-05-PLAN.md — phase close: gate sweep, live-schema re-check, traceability matrix, operator sign-off
+- [x] 09.5-05-PLAN.md — phase close: gate sweep, live-schema re-check, traceability matrix, operator sign-off
 **UI hint**: yes
 
 ### Phase 9.6: boost-styles

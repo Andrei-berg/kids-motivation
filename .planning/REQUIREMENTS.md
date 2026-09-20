@@ -45,20 +45,22 @@
 
 ### Weekly Boost Detail Styles (BOOST)
 
-- [ ] **BOOST-01**: Each child has a `boost_style` preference (`segmented-bar` /
+- [x] **BOOST-01**: Each child has a `boost_style` preference (`segmented-bar` /
   `quest-checklist` / `ring-badges`) that is settable and changeable anytime from the child's
   profile/settings.
-- [ ] **BOOST-02**: Tapping the existing inline `BoostMeter` on the Day hero opens the chosen
+- [x] **BOOST-02**: Tapping the existing inline `BoostMeter` on the Day hero opens the chosen
   `boost_style` detail view; the inline meter itself stays visually unchanged.
-- [ ] **BOOST-03**: `segmented-bar` style shows the grades-tier progress and the
+- [x] **BOOST-03**: `segmented-bar` style shows the grades-tier progress and the
   consistency-bonus progress as two independent sub-bars with their own hint text.
 - [ ] **BOOST-04**: `quest-checklist` style lists each boost condition (grade-tier thresholds,
   full-week completion, streak-threshold) as its own row with its own reward amount and
   progress, plus one combined total at the bottom.
 - [ ] **BOOST-05**: `ring-badges` style shows one ring for the current total plus tappable tier
   badges (reached / next) that open a popover explaining what's needed for the next tier.
-- [ ] **BOOST-06**: All three boost-detail styles read real tier thresholds and coin amounts from
-  `lib/kid/boost-rules.ts` — no hardcoded illustrative values from the sketches.
+- [x] **BOOST-06**: All three boost-detail styles read real tier thresholds and coin amounts from
+  `lib/kid/boost-rules.ts` — no hardcoded illustrative values from the sketches. (Proven for
+  `segmented-bar` in Phase 9.5; `quest-checklist`/`ring-badges` must hold to the same rule when
+  built in Phase 9.6.)
 
 ---
 
@@ -100,10 +102,10 @@
 | DAYFORM-06 | Phase 9.3 | Complete |
 | DAYFORM-02 | Phase 9.4 | Complete |
 | DAYFORM-03 | Phase 9.4 | Complete |
-| BOOST-01 | Phase 9.5 | Pending |
-| BOOST-02 | Phase 9.5 | Pending |
-| BOOST-03 | Phase 9.5 | Pending |
-| BOOST-06 | Phase 9.5 | Pending |
+| BOOST-01 | Phase 9.5 | Complete |
+| BOOST-02 | Phase 9.5 | Complete |
+| BOOST-03 | Phase 9.5 | Complete |
+| BOOST-06 | Phase 9.5 | Complete |
 | BOOST-04 | Phase 9.6 | Pending |
 | BOOST-05 | Phase 9.6 | Pending |
 

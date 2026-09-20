@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v9.0
 milestone_name: — Kid Experience Redesign
-status: executing
-stopped_at: Phase 9.5 UI-SPEC approved
-last_updated: "2026-09-20T03:17:49.060Z"
+status: ready_to_plan
+stopped_at: Phase 09.5 complete (5/5) — ready to discuss Phase 9.6
+last_updated: 2026-09-20T03:47:32.578Z
 last_activity: 2026-09-20
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 27
-  completed_plans: 22
+  completed_plans: 84
   percent: 67
 ---
 
@@ -87,7 +87,7 @@ Progress: [██████████] 100%
 See: .planning/PROJECT.md (updated 2026-09-17)
 
 **Core value:** Any family can register and use the app — children earn coins for real effort, spend them on real rewards
-**Current focus:** Phase 09.5 — boost-default
+**Current focus:** Phase 9.6 — boost styles
 
 ---
 
@@ -351,9 +351,9 @@ Working through the deferred backlog. Per-item, each committed + pushed separate
 
 ## Current Position
 
-Phase: 09.5 (boost-default) — EXECUTING
-Plan: 1 of 5
-Status: Executing Phase 09.5
+Phase: 9.6
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-09-20 -- Phase 09.5 execution started
 
 ## Operator Next Steps
