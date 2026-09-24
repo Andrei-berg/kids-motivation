@@ -2077,5 +2077,21 @@
     "more": "Show more",
     "comment": "Comment…",
     "send": "Send"
+  },
+  "kidSpend": {
+    "openLabel": "Open what was spent on you",
+    "monthLabel": "Spent on you this month",
+    "details": "Details",
+    "title": "Spent on you",
+    "range": {
+      "week": "Week",
+      "month": "Month",
+      "all": "All time"
+    },
+    "approxNote": "Monthly clubs are spread across the days of the week",
+    "empty": "No expenses in this period yet",
+    "perMonth": "per month",
+    "since": "from",
+    "footer": "This is how the total adds up: clubs, lessons and small things. It is what your family invests in you."
   }
 }

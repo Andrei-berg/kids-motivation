@@ -20,6 +20,7 @@ import { Avatar, Coin, AnimatedNum, StreakFlame, XPBar, BoostMeter } from '@/com
 import { Stamp, useCountUp, LedgerRow } from '@/components/design/atoms'
 import { getBoostProgress, type BoostProgress } from '@/lib/kid/boost'
 import BoostDetailSheet from '@/components/kid/boost/BoostDetailSheet'
+import KidSpendBanner from '@/components/kid/spend/KidSpendBanner'
 import { resolveAvatar } from '@/lib/kid/avatar'
 import { levelForXp } from '@/lib/kid/level'
 import { triggerConfetti } from '@/utils/confetti'
@@ -348,6 +349,8 @@ export default function KidDayPage() {
             </button>
           )}
 
+          {activeMemberId && <KidSpendBanner childId={activeMemberId}/>}
+
           {/* Day-complete celebration (desktop only, when not in form mode) */}
           {!showForm && (
             <div style={{
@@ -427,6 +430,11 @@ export default function KidDayPage() {
                 <BoostMeter earned={boost.week.total} max={boost.week.max} label={boost.week.nextLabel} compact/>
               </div>
             </button>
+          )}
+          {activeMemberId && (
+            <div style={{ padding: '10px 16px 0' }}>
+              <KidSpendBanner childId={activeMemberId}/>
+            </div>
           )}
           <WeekStrip {...weekStripProps}/>
         </div>

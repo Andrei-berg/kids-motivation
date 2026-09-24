@@ -11,6 +11,7 @@ import {
 import { ensureSectionExpenses } from '@/lib/repositories/expenses.repo'
 import type { Expense, ExpenseCategory } from '@/lib/models/expense.types'
 import { localDateString } from '@/utils/helpers'
+import ChildSpendBI from './ChildSpendBI'
 
 type Kid = { id: string; name: string }
 
@@ -135,7 +136,13 @@ export default function ExpensesPanel({ lockedChildId, kids }: { lockedChildId?:
 
       {view === 'list' && (
         <>
+          {/* Per-child BI: period switch, tappable breakdown, section prices, small handouts */}
+          {childFilter !== 'all' && (
+            <ChildSpendBI childId={childFilter} name={kidName(childFilter)} onChanged={reload}/>
+          )}
+
           {/* Total + by category */}
+          {childFilter === 'all' && (
           <Card pad={14}>
             <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
               Потрачено{childFilter !== 'all' ? ` на ${kidName(childFilter)}` : ' (вся семья)'}
@@ -151,6 +158,7 @@ export default function ExpensesPanel({ lockedChildId, kids }: { lockedChildId?:
             ))}
             {byCategory.length === 0 && !loading && <div style={{ color: T.muted, fontSize: 13, padding: '6px 0' }}>Расходов пока нет</div>}
           </Card>
+          )}
 
           <Btn variant="primary" size="md" icon="plus" full onClick={openAdd} disabled={activeCategories.length === 0}>
             {activeCategories.length === 0 ? 'Сначала добавьте категорию' : 'Добавить расход'}

@@ -13,6 +13,7 @@ import { useFamilyMembers } from '@/lib/hooks/useFamilyMembers'
 import { useT } from '@/lib/i18n'
 import { localDateString } from '@/utils/helpers'
 import { T } from '@/components/parent-center/tokens'
+import { changeSectionPrice } from '@/lib/spend/client'
 
 const DAYS = [
   { key: 'mon' }, { key: 'tue' }, { key: 'wed' }, { key: 'thu' },
@@ -117,15 +118,22 @@ export default function SectionsManager() {
     setSaving(true); setError('')
     try {
       if (editingId) {
+        // A changed price goes through the price route so this month's expense
+        // row and the price history follow it (plain updateSection leaves the
+        // already-saved month at the old amount).
+        const prevCost = Number(sections.find(x => x.id === editingId)?.cost ?? 0)
+        const nextCost = form.cost ? Number(form.cost) : 0
+        const priceChanged = nextCost > 0 && nextCost !== prevCost
         await updateSection(editingId, {
           name: form.name.trim(),
           trainer: form.trainer.trim() || undefined,
           address: form.address.trim() || undefined,
-          cost: form.cost ? Number(form.cost) : undefined,
+          cost: priceChanged ? undefined : (form.cost ? Number(form.cost) : undefined),
           startDate: form.startDate || null,
           endDate: form.endDate || null,
           scheduleDays: form.scheduleDays,
         })
+        if (priceChanged) await changeSectionPrice(editingId, nextCost)
       } else {
         await addSection({
           childId,
