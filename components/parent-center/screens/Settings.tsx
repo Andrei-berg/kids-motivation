@@ -23,6 +23,7 @@ import BehaviorApprovalQueue from '@/components/parent-center/screens/BehaviorAp
 import BackfillRequestQueue from '@/components/parent-center/screens/BackfillRequestQueue'
 import PeriodsManager from '@/components/settings/PeriodsManager'
 import SectionsManager from '@/components/settings/SectionsManager'
+import TvPairCard from './TvPairCard'
 import SubjectsManager from '@/components/settings/SubjectsManager'
 import ActivitiesManager from '@/components/settings/ActivitiesManager'
 import RoomTasksManager from '@/components/settings/RoomTasksManager'
@@ -179,6 +180,7 @@ function FamilyTab({ allChildren, notify, familyId, onAddChild }: { allChildren:
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <LanguageCard />
       <FeedSettingsCard notify={notify} />
+      <TvPairCard notify={notify} />
 
       <Card pad={16}>
         <div style={{ fontSize: 12, color: T.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>

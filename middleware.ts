@@ -25,6 +25,10 @@ export async function middleware(request: NextRequest) {
   // bypass the redirect below would turn it into a 307 → /.
   if (pathname === '/api/kid/login') return NextResponse.next()
 
+  // TV board: unauthenticated by definition. /api/tv/pair + /api/tv/data authenticate
+  // with the device secret themselves; /api/tv/claim and /devices use the parent cookie session.
+  if (pathname === '/tv' || pathname === '/api/tv/pair' || pathname === '/api/tv/data') return NextResponse.next()
+
   const { supabaseResponse, user, supabase } = await updateSession(request)
 
   // Classify the path
