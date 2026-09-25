@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { loadFamilyStats } from '@/lib/stats/family-stats'
+import { loadTvExtras } from '@/lib/stats/tv-extras'
 import { deviceFromSecret } from '../_lib'
 
 export const dynamic = 'force-dynamic'
@@ -12,5 +13,7 @@ export async function GET(req: Request) {
   }
   await r.admin.from('tv_devices').update({ last_seen_at: new Date().toISOString() }).eq('id', r.device.id)
   const stats = await loadFamilyStats(r.admin, r.device.family_id, 28, { feed: 10 })
-  return NextResponse.json(stats, { headers: { 'Cache-Control': 'no-store' } })
+  const today = stats.children[0]?.days.at(-1)?.date ?? new Date().toISOString().slice(0, 10)
+  const tv = await loadTvExtras(r.admin, r.device.family_id, stats.children.map(c => c.childId), today).catch(() => null)
+  return NextResponse.json({ ...stats, tv }, { headers: { 'Cache-Control': 'no-store' } })
 }

@@ -233,7 +233,10 @@ export async function POST(req: NextRequest) {
     // Streak counts are recomputed server-side (admin client) inside this
     // guarded route — the client no longer triggers this separately (D-12.2).
     // The bonus below reflects these freshly computed counts.
-    const streakEvents = await updateStreaks(admin, childId, date)
+    // Back-filled (non-today) days never move streaks — the kid is warned in the UI.
+    const streakEvents = date === localDateString()
+      ? await updateStreaks(admin, childId, date)
+      : { broken: [], records: [] }
 
     // D-07/D-09/T-056-10: the flag is read server-side from families — the
     // request body cannot influence which branch runs.

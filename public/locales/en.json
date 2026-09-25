@@ -1192,7 +1192,7 @@
     "moodNote": "Great job filling in the day!",
     "noData": "No data",
     "levelWord": "Level",
-    "backfillBanner": "Filling {{date}} (past day)",
+    "backfillBanner": "Filling {{date}} (past day). Grades and coins are saved, but your streak will not grow or reset.",
     "backToToday": "← Today",
     "sentForReview": "Saved and sent to your parent for review. Coins arrive once it's approved.",
     "requestSent": "Request sent to your parent.",

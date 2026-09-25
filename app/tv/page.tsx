@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { ChildStats, FamilyStats, DayStat } from '@/lib/stats/family-stats'
+import type { TvExtras, TvTraining } from '@/lib/stats/tv-extras'
 
 const C = {
   bg: '#14112A', panel: '#1E1A3B', line: 'rgba(246,241,231,0.10)',
@@ -25,12 +26,12 @@ const dow = (date: string) => DOW[(new Date(date + 'T00:00:00Z').getUTCDay() + 6
 const fmt = (n: number) => n.toLocaleString('ru-RU')
 const dayAvg = (d: DayStat) => d.grades.length ? d.grades.reduce((a, b) => a + b, 0) / d.grades.length : null
 
-type Phase = { k: 'boot' } | { k: 'pair'; code: string } | { k: 'board'; data: FamilyStats } | { k: 'offline'; data: FamilyStats | null }
+type Phase = { k: 'boot' } | { k: 'pair'; code: string } | { k: 'board'; data: TvData } | { k: 'offline'; data: TvData | null }
 
 export default function TvPage() {
   const [phase, setPhase] = useState<Phase>({ k: 'boot' })
   const secret = useRef<string | null>(null)
-  const last = useRef<FamilyStats | null>(null)
+  const last = useRef<TvData | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -107,14 +108,18 @@ function Pairing({ code }: { code: string }) {
   )
 }
 
-function Board({ data, stale }: { data: FamilyStats; stale?: boolean }) {
+type TvData = FamilyStats & { tv?: TvExtras | null }
+const rub = (n: number) => `${Math.round(n).toLocaleString('ru-RU')} ₽`
+const g1 = (n: number) => n.toFixed(1).replace('.', ',')
+
+function Board({ data, stale }: { data: TvData; stale?: boolean }) {
   const kids = data.children
   const [now, setNow] = useState(() => new Date())
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 30_000); return () => clearInterval(t) }, [])
 
   if (!kids.length) return <Center text="Добавьте детей в Parent Center, и здесь появится табло" />
   return (
-    <div style={{ height: '100%', display: 'grid', gridTemplateRows: 'auto 1fr auto', padding: '3.5vh 3.5vw', gap: '2.5vh' }}>
+    <div style={{ height: '100%', display: 'grid', gridTemplateRows: 'auto 1fr auto auto', padding: '3vh 3vw', gap: '2vh' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
         <div style={{ fontFamily: DISPLAY, fontSize: '2.2vw', fontWeight: 600 }}>
           {now.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -123,15 +128,23 @@ function Board({ data, stale }: { data: FamilyStats; stale?: boolean }) {
           {stale ? 'Нет связи, показаны последние данные' : now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
         </div>
       </header>
-      <main style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(kids.length, 4)}, 1fr)`, gap: '1.6vw', minHeight: 0 }}>
-        {kids.slice(0, 4).map((k, i) => <Lane key={k.childId} k={k} accent={ACCENTS[i % ACCENTS.length]} />)}
+      <main style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(kids.length, 4)}, 1fr)`, gap: '1.4vw', minHeight: 0 }}>
+        {kids.slice(0, 4).map((k, i) => (
+          <Lane key={k.childId} k={k} accent={ACCENTS[i % ACCENTS.length]}
+            trainings={(data.tv?.trainings ?? []).filter(t => t.childId === k.childId)} />
+        ))}
       </main>
+      <SpendBand data={data} />
       <Ticker data={data} />
     </div>
   )
 }
 
-function Lane({ k, accent }: { k: ChildStats; accent: string }) {
+// A week average under 4 turns the lane's frame and the grade itself coral, and the
+// "подтянуть" list says which subjects to work on. Above 4 it says keep going.
+const LOW = 4
+
+function Lane({ k, accent, trainings }: { k: ChildStats; accent: string; trainings: TvTraining[] }) {
   const week = k.days.slice(-7)
   const prev = k.days.slice(-14, -7)
   const weekGrades = week.flatMap(d => d.grades)
@@ -139,60 +152,118 @@ function Lane({ k, accent }: { k: ChildStats; accent: string }) {
   const coins = week.reduce((a, d) => a + d.coinsIn, 0)
   const prevCoins = prev.reduce((a, d) => a + d.coinsIn, 0)
   const trend = k.weeks.filter(w => w.avg !== null).slice(-5)
-  const today = week[week.length - 1]?.date
+  const today = week[week.length - 1]
+  const low = weekAvg !== null && weekAvg < LOW
+  const weak = k.subjects.filter(s => s.avg < LOW).sort((a, b) => a.avg - b.avg).slice(0, 3)
+  const doneToday = today?.filled
 
   return (
-    <section style={{ background: C.panel, borderRadius: '1.6vw', padding: '2.2vh 1.8vw', display: 'flex', flexDirection: 'column', gap: '2.2vh', minWidth: 0, borderTop: `0.5vh solid ${accent}` }}>
+    <section style={{
+      background: C.panel, borderRadius: '1.6vw', padding: '2vh 1.6vw', display: 'flex', flexDirection: 'column', gap: '1.8vh', minWidth: 0,
+      borderTop: `0.5vh solid ${accent}`, boxShadow: low ? `inset 0 0 0 0.25vw ${C.bad}66` : 'none',
+    }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1vw' }}>
-        <div style={{ width: '4.2vw', height: '4.2vw', borderRadius: '50%', background: accent + '33', display: 'grid', placeItems: 'center', fontSize: '2.4vw', overflow: 'hidden', flex: 'none' }}>
+        <div style={{ width: '4vw', height: '4vw', borderRadius: '50%', background: accent + '33', display: 'grid', placeItems: 'center', fontSize: '2.3vw', overflow: 'hidden', flex: 'none' }}>
           {k.avatarUrl ? <img src={k.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : k.emoji}
         </div>
-        <div style={{ fontFamily: DISPLAY, fontSize: '2.6vw', fontWeight: 700, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{k.name}</div>
+        <div style={{ fontFamily: DISPLAY, fontSize: '2.6vw', fontWeight: 700, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{k.name}</div>
+        <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: '1.9vw', color: k.streak.current ? C.gold : C.faint }}>
+          {k.streak.current ? `🔥 ${k.streak.current}` : '–'}
+        </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '1vw' }}>
+      {/* Coins first: the number they actually play for */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '1vw' }}>
+          <span style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: '6vw', lineHeight: 1, color: C.gold }}>{fmt(k.balance)}</span>
+          <span style={{ fontSize: '1.6vw', color: C.dim }}>монет</span>
+        </div>
+        <div style={{ fontSize: '1.5vw', marginTop: '0.4vh', color: coins >= prevCoins ? C.good : C.dim }}>
+          +{fmt(coins)} за неделю{prevCoins ? <span style={{ color: C.faint }}>, неделей раньше +{fmt(prevCoins)}</span> : null}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1.2vw' }}>
         <div>
-          <div style={{ fontSize: '1.4vw', color: C.dim }}>Средняя оценка за неделю</div>
-          <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: '7vw', lineHeight: 1, color: gradeColor(weekAvg), marginTop: '0.6vh' }}>
-            {weekAvg === null ? '–' : weekAvg.toFixed(1).replace('.', ',')}
+          <div style={{ fontSize: '1.2vw', color: C.dim }}>Средняя оценка за неделю</div>
+          <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: '4vw', lineHeight: 1.05, color: gradeColor(weekAvg) }}>
+            {weekAvg === null ? '–' : g1(weekAvg)}
           </div>
         </div>
         <Spark pts={trend.map(w => w.avg as number)} color={gradeColor(weekAvg)} />
+        {low && <div style={{ marginLeft: 'auto', background: C.bad, color: '#14112A', fontWeight: 800, fontSize: '1.3vw', padding: '0.6vh 0.9vw', borderRadius: 99 }}>ниже 4</div>}
       </div>
 
-      <div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.5vw' }}>
-          {week.map(d => <DayCell key={d.date} d={d} isToday={d.date === today} />)}
-        </div>
-        <div style={{ fontSize: '1.15vw', color: C.dim, marginTop: '1vh', display: 'flex', gap: '1.2vw' }}>
-          <Key c={C.good} t="всё сделано" /><Key c={C.ok} t="частично" /><Key c={C.faint} t="не заполнен" />
-        </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.4vw' }}>
+        {week.map(d => <DayCell key={d.date} d={d} isToday={d.date === today?.date} />)}
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '1.1vh' }}>
-        {k.subjects.slice(0, 5).map(s => (
-          <div key={s.subject} style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: '0.8vw', fontSize: '1.55vw' }}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5vw' }}>
+      {/* Today */}
+      <div style={{ borderTop: `1px solid ${C.line}`, paddingTop: '1.4vh', fontSize: '1.45vw', display: 'flex', flexDirection: 'column', gap: '0.7vh' }}>
+        <div style={{ display: 'flex', gap: '1.2vw', color: C.dim }}>
+          <span style={{ color: doneToday ? C.good : C.gold }}>{doneToday ? '✓ день заполнен' : '○ день ещё не заполнен'}</span>
+          {doneToday && <span style={{ color: today.roomOk ? C.good : C.faint }}>{today.roomOk ? '✓ комната' : '– комната'}</span>}
+        </div>
+        {trainings.length
+          ? trainings.map((t, i) => (
+              <div key={i} style={{ display: 'flex', gap: '0.9vw', alignItems: 'baseline' }}>
+                <span style={{ fontFamily: DISPLAY, fontWeight: 700, color: accent, minWidth: '4.6vw' }}>{t.start ?? 'сегодня'}</span>
+                <span style={{ color: C.ink, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</span>
+              </div>
+            ))
+          : <div style={{ color: C.faint }}>Сегодня без тренировок</div>}
+      </div>
+
+      {/* Where to catch up */}
+      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', borderTop: `1px solid ${C.line}`, paddingTop: '1.4vh' }}>
+        {weak.length ? (
+          <>
+            <div style={{ fontSize: '1.25vw', color: C.bad, marginBottom: '0.8vh' }}>Подтянуть до 4</div>
+            {weak.map(s => (
+              <div key={s.subject} style={{ display: 'flex', justifyContent: 'space-between', gap: '1vw', fontSize: '1.6vw', marginBottom: '0.5vh' }}>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.subject}</span>
-                <span style={{ color: C.dim, flex: 'none' }}>{s.trend === null || Math.abs(s.trend) < 0.2 ? '' : s.trend > 0 ? '↑' : '↓'}</span>
+                <span style={{ flex: 'none', fontFamily: DISPLAY, fontWeight: 700, color: C.bad }}>
+                  {g1(s.avg)}{s.trend !== null && Math.abs(s.trend) >= 0.2 ? (s.trend > 0 ? ' ↑' : ' ↓') : ''}
+                </span>
               </div>
-              <div style={{ height: '0.7vh', background: C.line, borderRadius: 99, marginTop: '0.4vh' }}>
-                <div style={{ width: `${(s.avg / 5) * 100}%`, height: '100%', background: gradeColor(s.avg), borderRadius: 99 }} />
-              </div>
-            </div>
-            <span style={{ fontFamily: DISPLAY, fontWeight: 700, color: gradeColor(s.avg), width: '3.2vw', textAlign: 'right' }}>{s.avg.toFixed(1).replace('.', ',')}</span>
-          </div>
-        ))}
-        {!k.subjects.length && <div style={{ color: C.faint, fontSize: '1.5vw' }}>Оценок за 4 недели пока нет</div>}
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${C.line}`, paddingTop: '1.6vh', fontSize: '1.5vw' }}>
-        <Stat big={k.streak.current ? `🔥 ${k.streak.current}` : '–'} label="дней подряд" />
-        <Stat big={`+${fmt(coins)}`} label={prevCoins ? `за неделю, была ${fmt(prevCoins)}` : 'монет за неделю'} tone={coins >= prevCoins ? C.good : C.dim} />
-        <Stat big={fmt(k.balance)} label="на счёте" tone={C.gold} />
+            ))}
+          </>
+        ) : k.subjects.length ? (
+          <div style={{ fontSize: '1.5vw', color: C.good }}>Все предметы не ниже 4. Так держать</div>
+        ) : (
+          <div style={{ fontSize: '1.4vw', color: C.faint }}>Оценок за 4 недели пока нет</div>
+        )}
       </div>
     </section>
+  )
+}
+
+// What the family put into each child this month; rubles are blue-grey, never
+// gold, so money and coins can't be mistaken for each other on the wall.
+function SpendBand({ data }: { data: TvData }) {
+  const rows = (data.tv?.spend ?? []).filter(s => s.total > 0)
+  if (!rows.length) return null
+  const shades = ['#6DB6F5', '#8FA8E8', '#5FA0C8', '#7A8FB8']
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(rows.length, 4)}, 1fr)`, gap: '1.4vw' }}>
+      {rows.slice(0, 4).map(s => {
+        const name = data.children.find(c => c.childId === s.childId)?.name ?? ''
+        return (
+          <div key={s.childId} style={{ background: C.panel, borderRadius: '1.1vw', padding: '1.2vh 1.4vw' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1vw' }}>
+              <span style={{ fontSize: '1.35vw', color: C.dim }}>На {name} в этом месяце</span>
+              <span style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: '2.2vw', color: '#6DB6F5' }}>{rub(s.total)}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 3, height: '1vh', margin: '0.8vh 0', borderRadius: 99, overflow: 'hidden', background: C.line }}>
+              {s.categories.map((c, i) => <div key={c.key} style={{ flex: `${Math.max(c.amount, 1)} 1 0`, background: shades[i % shades.length] }} />)}
+            </div>
+            <div style={{ display: 'flex', gap: '1.2vw', fontSize: '1.15vw', color: C.dim, whiteSpace: 'nowrap', overflow: 'hidden' }}>
+              {s.categories.slice(0, 3).map(c => <span key={c.key}>{c.icon ?? ''} {c.name} {rub(c.amount)}</span>)}
+            </div>
+          </div>
+        )
+      })}
+    </div>
   )
 }
 
@@ -239,7 +310,7 @@ function Spark({ pts, color }: { pts: number[]; color: string }) {
 }
 
 // One line at a time, crossfading — calm enough to leave on all evening.
-function Ticker({ data }: { data: FamilyStats }) {
+function Ticker({ data }: { data: TvData }) {
   const items = data.feed.filter(f => f.title)
   const [i, setI] = useState(0)
   useEffect(() => { if (items.length < 2) return; const t = setInterval(() => setI(x => x + 1), 7000); return () => clearInterval(t) }, [items.length])

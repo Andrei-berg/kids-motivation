@@ -30,3 +30,15 @@ export const addHandout = (childId: string, amount: number, title?: string) =>
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ childId, amount, title }),
   })
+
+export const previewPayout = (childId: string, rubles: number) =>
+  call<{ coins: number; rate: number; balance: number }>('/api/wallet/payout', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ childId, rubles, preview: true }),
+  })
+
+export const sendPayout = (childId: string, rubles: number) =>
+  call<{ coins: number; balance: number }>('/api/wallet/payout', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ childId, rubles }),
+  })

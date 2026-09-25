@@ -10,7 +10,7 @@ import { T } from '../tokens'
 import { Card, Btn, Field } from '../ui'
 import { SpendBar } from '@/components/spend/SpendBar'
 import { deleteExpense } from '@/lib/expenses-api'
-import { fetchChildSpend, changeSectionPrice, addHandout, type ChildSpendData } from '@/lib/spend/client'
+import { fetchChildSpend, changeSectionPrice, addHandout, previewPayout, sendPayout, type ChildSpendData } from '@/lib/spend/client'
 import { buildSpend, describePriceChanges, priceFor, fmtRub, type SpendRange } from '@/lib/spend/summary'
 import { localDateString } from '@/utils/helpers'
 
@@ -35,6 +35,9 @@ export default function ChildSpendBI({ childId, name, onChanged }: { childId: st
   const [busy, setBusy] = useState(false)
   const [custom, setCustom] = useState('')
   const [lastHandout, setLastHandout] = useState<{ id: string; amount: number } | null>(null)
+  const [payRub, setPayRub] = useState('')
+  const [payCoins, setPayCoins] = useState<{ coins: number; balance: number } | null>(null)
+  const [payDone, setPayDone] = useState<string | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const [price, setPrice] = useState('')
   const [from, setFrom] = useState<'now' | 'next'>('now')
@@ -53,6 +56,30 @@ export default function ChildSpendBI({ childId, name, onChanged }: { childId: st
   const paidSections = (data?.sections ?? []).filter(s => s.is_active && Number(s.cost) > 0)
 
   async function refresh() { await load(); onChanged?.() }
+
+  // Live preview of how many coins a transfer will take (server-side rate).
+  useEffect(() => {
+    const rub = Number(payRub)
+    setPayDone(null)
+    if (!(rub > 0)) { setPayCoins(null); return }
+    let alive = true
+    const t = setTimeout(() => {
+      previewPayout(childId, rub).then(r => alive && setPayCoins(r)).catch(() => alive && setPayCoins(null))
+    }, 250)
+    return () => { alive = false; clearTimeout(t) }
+  }, [payRub, childId])
+
+  async function payout() {
+    const rub = Number(payRub)
+    if (!(rub > 0) || busy) return
+    setBusy(true); setErr(null)
+    try {
+      const r = await sendPayout(childId, rub)
+      setPayRub(''); setPayCoins(null); setPayDone(`Списано ${r.coins} монет за ${fmtRub(rub)}. Осталось ${r.balance}`)
+      onChanged?.()
+    } catch (e: any) { setErr(e?.message === 'Insufficient coins' ? 'У ребёнка не хватает монет' : (e?.message ?? 'Не удалось списать')) }
+    finally { setBusy(false) }
+  }
 
   async function handout(amount: number) {
     if (!(amount > 0) || busy) return
@@ -134,6 +161,28 @@ export default function ChildSpendBI({ childId, name, onChanged }: { childId: st
             )}
           </>
         )}
+      </Card>
+
+      {/* Money handed over → coins taken off */}
+      <Card pad={14}>
+        <div style={{ fontSize: 13, color: T.text, fontWeight: 700 }}>Перевёл {name} деньги — списать монеты</div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginTop: 10 }}>
+          <div style={{ flex: 1 }}>
+            <Field label="Сумма перевода" value={payRub} onChange={v => setPayRub(v.replace(/[^\d]/g, ''))} suffix="₽" mono />
+          </div>
+          <Btn variant="primary" size="md" onClick={payout}
+            disabled={busy || !payCoins || payCoins.coins > payCoins.balance}>
+            {payCoins ? `Списать ${payCoins.coins} монет` : 'Списать'}
+          </Btn>
+        </div>
+        {payCoins && (
+          <div style={{ fontSize: 13, marginTop: 8, color: payCoins.coins > payCoins.balance ? T.danger ?? '#C0392B' : T.muted }}>
+            {payCoins.coins > payCoins.balance
+              ? `Не хватает монет: на счёте ${payCoins.balance}, нужно ${payCoins.coins}`
+              : `Останется ${payCoins.balance - payCoins.coins} монет`}
+          </div>
+        )}
+        {payDone && <div style={{ fontSize: 13, marginTop: 8, color: T.success }}>{payDone}</div>}
       </Card>
 
       {/* Small handouts */}
