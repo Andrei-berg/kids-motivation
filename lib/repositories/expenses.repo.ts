@@ -301,6 +301,49 @@ export async function getSectionsForChildExpenses(childId: string): Promise<Arra
   return data || []
 }
 
+// Two sections "would double-bill" (sectionMonthlyFees in lib/spend/summary.ts
+// sums every is_active section's monthly fee) if they're the same child + same
+// name and their [start, end) windows overlap — regardless of is_active, since
+// the archive flow (handleArchive in SectionsManager.tsx) sets an end_date but
+// deliberately leaves is_active true. Found via a real incident: a duplicate
+// "Вольная борьба" row (same trainer/address/cost, backdated start_date)
+// double-charged a family for two months before anyone noticed. See
+// vpn-required-fonts-bug-sept-2026 in memory for the incident writeup.
+export const normalizeSectionName = (name: string) => name.trim().toLowerCase()
+
+export function dateRangesOverlap(
+  aStart: string | null, aEnd: string | null, bStart: string | null, bEnd: string | null,
+): boolean {
+  const aS = aStart ?? '0000-01-01'
+  const aE = aEnd ?? '9999-12-31'
+  const bS = bStart ?? '0000-01-01'
+  const bE = bEnd ?? '9999-12-31'
+  return aS <= bE && bS <= aE
+}
+
+async function assertNoOverlappingSection(
+  childId: string, name: string, startDate: string | null, endDate: string | null, excludeId?: string,
+): Promise<void> {
+  const { data, error } = await supabase
+    .from('sections')
+    .select('id, name, trainer, start_date, end_date')
+    .eq('child_id', childId)
+  if (error) throw error
+
+  const target = normalizeSectionName(name)
+  const clash = (data || []).find(s =>
+    s.id !== excludeId &&
+    normalizeSectionName(s.name) === target &&
+    dateRangesOverlap(s.start_date, s.end_date, startDate, endDate),
+  )
+  if (clash) {
+    throw new Error(
+      `У ребёнка уже есть секция «${clash.name}»${clash.trainer ? ` (тренер ${clash.trainer})` : ''} на эти даты. ` +
+      `Отредактируйте её вместо создания новой — иначе плата за неё посчитается дважды.`,
+    )
+  }
+}
+
 export async function addSection(section: {
   childId: string
   familyId?: string
@@ -313,6 +356,8 @@ export async function addSection(section: {
   endDate?: string
   scheduleDays?: string[]
 }): Promise<Section> {
+  await assertNoOverlappingSection(section.childId, section.name, section.startDate || null, section.endDate || null)
+
   const { data, error } = await supabase
     .from('sections')
     .insert({
@@ -349,6 +394,25 @@ export async function updateSection(
     scheduleDays: string[]
   }>
 ): Promise<void> {
+  // Only re-check when something that affects the overlap window actually
+  // changed — merge onto the current row so e.g. renaming alone still checks
+  // against its existing dates.
+  if (updates.name !== undefined || updates.startDate !== undefined || updates.endDate !== undefined) {
+    const { data: current, error: curErr } = await supabase
+      .from('sections')
+      .select('child_id, name, start_date, end_date')
+      .eq('id', sectionId)
+      .single()
+    if (curErr) throw curErr
+    await assertNoOverlappingSection(
+      current.child_id,
+      updates.name ?? current.name,
+      updates.startDate !== undefined ? updates.startDate : current.start_date,
+      updates.endDate !== undefined ? updates.endDate : current.end_date,
+      sectionId,
+    )
+  }
+
   const updateData: any = {}
 
   if (updates.name !== undefined) updateData.name = updates.name

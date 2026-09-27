@@ -68,6 +68,7 @@ export default function SectionsManager() {
     try {
       const data = await getAllSections(childId)
       setSections(data)
+      setError('')
     } catch (e: any) {
       setError(e.message)
     } finally {
@@ -245,8 +246,14 @@ export default function SectionsManager() {
       </div>
 
       {error && (
-        <div style={{ padding: '10px 12px', background: T.dangerSoft, border: `1px solid ${T.danger}55`, borderRadius: '8px', color: T.danger, fontSize: '13px', marginBottom: '12px' }}>
-          {error}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: T.dangerSoft, border: `1px solid ${T.danger}55`, borderRadius: '8px', color: T.danger, fontSize: '13px', marginBottom: '12px' }}>
+          <span style={{ flex: 1 }}>{error}</span>
+          <button
+            onClick={loadSections}
+            style={{ padding: '6px 12px', fontSize: '12px', fontWeight: 800, borderRadius: '8px', border: `1px solid ${T.danger}55`, cursor: 'pointer', background: 'transparent', color: T.danger, flexShrink: 0 }}
+          >
+            {t('common.retry')}
+          </button>
         </div>
       )}
 

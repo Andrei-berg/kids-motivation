@@ -3,10 +3,18 @@
 // Registered by components/PushInit.tsx on every page load.
 // DO NOT import from node_modules here — service workers run in a separate context.
 
-const CACHE_NAME = 'familycoins-v1'
+// Bump this version string whenever a route is retired/renamed or an API
+// response shape changes — the `activate` handler below deletes every cache
+// that isn't CACHE_NAME, so a bump is what actually clears a client's stale
+// pages. Found via a real incident: a family kept seeing a legacy /expenses
+// page (retired weeks earlier, server-redirects to /parent-center now) with
+// an old JS bundle throwing JSON parse errors against the current API shape —
+// this cache had just never been invalidated. See
+// vpn-required-fonts-bug-sept-2026 in memory.
+const CACHE_NAME = 'familycoins-v2'
 const STATIC_ASSETS = [
   '/',
-  '/dashboard',
+  '/parent-center',
   '/kid',
   '/kid/day',
   '/kid/wallet',
@@ -14,6 +22,23 @@ const STATIC_ASSETS = [
   '/icon-192x192.png',
   '/icon-512x512.png',
 ]
+
+// Network-first page fetches wait at most this long before falling back to
+// cache — without a cap, a request into a blocked/throttled network (e.g. a
+// VPN hiccup) can hang far longer than a user will wait, reading as "always
+// loading" when a fast fallback to cache (or the offline page) would serve
+// them something immediately.
+const NETWORK_TIMEOUT_MS = 5000
+
+function fetchWithTimeout(request) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('network-timeout')), NETWORK_TIMEOUT_MS)
+    fetch(request).then(
+      function (res) { clearTimeout(timer); resolve(res) },
+      function (err) { clearTimeout(timer); reject(err) },
+    )
+  })
+}
 
 self.addEventListener('push', function (event) {
   if (!event.data) return
@@ -31,7 +56,7 @@ self.addEventListener('push', function (event) {
     badge: '/icon-192x192.png',
     vibrate: [100, 50, 100],
     data: {
-      url: data.url || '/dashboard',
+      url: data.url || '/parent-center',
     },
     requireInteraction: false,
   }
@@ -43,7 +68,7 @@ self.addEventListener('push', function (event) {
 
 self.addEventListener('notificationclick', function (event) {
   event.notification.close()
-  const url = event.notification.data?.url || '/dashboard'
+  const url = event.notification.data?.url || '/parent-center'
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
       // If app is open, focus it
@@ -120,9 +145,9 @@ self.addEventListener('fetch', function (event) {
     return
   }
 
-  // Page routes: network-first, cache fallback
+  // Page routes: network-first (capped), cache fallback
   event.respondWith(
-    fetch(event.request)
+    fetchWithTimeout(event.request)
       .then(function (response) {
         if (response.ok) {
           var clone = response.clone()

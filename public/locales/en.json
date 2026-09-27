@@ -28,7 +28,8 @@
     "or": "or",
     "saveError": "Couldn't save — check your connection and try again.",
     "quarter": "Quarter",
-    "switchLanguage": "Switch language"
+    "switchLanguage": "Switch language",
+    "retry": "Retry"
   },
   "auth": {
     "loading": "Loading...",

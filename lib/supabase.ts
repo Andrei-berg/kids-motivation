@@ -1,4 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr'
+import { withRetryFetch } from './net/retryFetch'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -16,5 +17,5 @@ const proxyFetch = (url: RequestInfo | URL, init?: RequestInit): Promise<Respons
 // Browser client with cookie-based session — works with RLS policies.
 // Used by lib/repositories/, lib/services/, lib/vacation-api.ts, etc.
 export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey, {
-  global: { fetch: proxyFetch },
+  global: { fetch: withRetryFetch(proxyFetch) },
 })
