@@ -1,6 +1,6 @@
 import './globals.css'
 import type { Metadata, Viewport } from 'next'
-import { Bitter, Golos_Text, JetBrains_Mono, Rubik, Nunito } from 'next/font/google'
+import { Bitter, Golos_Text, JetBrains_Mono, Rubik, Nunito, Inter } from 'next/font/google'
 import { PushInit } from '@/components/PushInit'
 import { InstallPrompt } from '@/components/InstallPrompt'
 import { OfflineBanner } from '@/components/OfflineBanner'
@@ -64,13 +64,25 @@ const nunito = Nunito({
   variable: '--font-kid-body',
 })
 
+// Legacy pages (app/globals.css `body` rule) used a runtime
+// `@import url('https://fonts.googleapis.com/...Inter...')` — a render-blocking
+// cross-origin request that hangs when fonts.googleapis.com is blocked/throttled
+// (e.g. without a VPN from Russia). Self-hosting it via next/font removes that
+// dependency entirely while keeping the same font.
+const inter = Inter({
+  weight: ['400', '500', '600', '700', '800'],
+  subsets: ['latin', 'cyrillic'],
+  display: 'swap',
+  variable: '--font-legacy-body',
+})
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${bitter.variable} ${golosText.variable} ${jetBrainsMono.variable} ${kidDisplay.variable} ${nunito.variable}`}>
+    <html lang="en" className={`${bitter.variable} ${golosText.variable} ${jetBrainsMono.variable} ${kidDisplay.variable} ${nunito.variable} ${inter.variable}`}>
       <body>
         <LanguageProvider>
           <AnalyticsProvider />

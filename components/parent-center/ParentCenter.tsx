@@ -422,7 +422,6 @@ export default function ParentCenter() {
         background: T.bg0, fontFamily: T.fBody, color: T.text, overflow: 'hidden',
       }}>
         <style dangerouslySetInnerHTML={{__html: `
-          @import url('https://fonts.googleapis.com/css2?family=Bitter:wght@500;600;700&family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
           * { box-sizing: border-box; }
           ::-webkit-scrollbar { width: 4px; height: 4px; }
           ::-webkit-scrollbar-track { background: transparent; }
@@ -588,7 +587,6 @@ export default function ParentCenter() {
       maxWidth: 480, margin: '0 auto',
     }}>
       <style dangerouslySetInnerHTML={{__html: `
-        @import url('https://fonts.googleapis.com/css2?family=Bitter:wght@500;600;700&family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 0; height: 0; }
         @keyframes spin { to { transform: rotate(360deg); } }
