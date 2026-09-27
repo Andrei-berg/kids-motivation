@@ -28,7 +28,7 @@ export default function FamilyPage() {
         {t('family.subtitle')}
       </p>
       <button
-        onClick={() => router.push('/dashboard')}
+        onClick={() => router.push('/parent-center')}
         style={{
           marginTop: '8px',
           padding: '10px 20px',

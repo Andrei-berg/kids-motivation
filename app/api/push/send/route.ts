@@ -23,7 +23,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const { memberId, title, body: notifBody, url = '/dashboard' } = body
+  const { memberId, title, body: notifBody, url = '/parent-center' } = body
   if (!memberId || !title || !notifBody) {
     return NextResponse.json(
       { error: 'memberId, title, and body are required' },

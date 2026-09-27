@@ -104,9 +104,10 @@ All pages are `'use client'`.
   analytics, settings, shop/reward management). `/parent/dashboard` is the desktop view;
   several `/parent/*` paths redirect into `/parent-center`.
 - `/family/*` — shared, any authenticated member.
-- **Legacy single-family pages still present:** `/dashboard`, `/wallet`, `/analytics`,
+- **Retired legacy single-family pages:** `/dashboard`, `/wallet`, `/analytics`,
   `/wallboard`, `/expenses`, `/settings`, `/streaks`, `/records`, `/audit`, `/coach-rating`.
-  Prefer the kid/parent-center equivalents for new work.
+  Their `page.tsx` files are gone (phase 05.11) — `next.config.js` `redirects()` sends all
+  ten straight to `/parent-center`. Use the kid/parent-center equivalents for new work.
 
 ### lib/ — domain split
 
