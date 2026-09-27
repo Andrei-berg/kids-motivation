@@ -355,6 +355,7 @@ export async function addSection(section: {
   startDate?: string
   endDate?: string
   scheduleDays?: string[]
+  scheduleTime?: string | null
 }): Promise<Section> {
   await assertNoOverlappingSection(section.childId, section.name, section.startDate || null, section.endDate || null)
 
@@ -372,6 +373,7 @@ export async function addSection(section: {
       start_date: section.startDate || null,
       end_date: section.endDate || null,
       schedule_days: section.scheduleDays || [],
+      schedule_time: section.scheduleTime || null,
     })
     .select()
     .single()
@@ -392,6 +394,7 @@ export async function updateSection(
     startDate: string | null
     endDate: string | null
     scheduleDays: string[]
+    scheduleTime: string | null
   }>
 ): Promise<void> {
   // Only re-check when something that affects the overlap window actually
@@ -424,6 +427,7 @@ export async function updateSection(
   if (updates.startDate !== undefined) updateData.start_date = updates.startDate
   if (updates.endDate !== undefined) updateData.end_date = updates.endDate
   if (updates.scheduleDays !== undefined) updateData.schedule_days = updates.scheduleDays
+  if (updates.scheduleTime !== undefined) updateData.schedule_time = updates.scheduleTime
 
   const { error } = await supabase
     .from('sections')

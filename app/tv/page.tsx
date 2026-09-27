@@ -7,7 +7,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { ChildStats, FamilyStats, DayStat } from '@/lib/stats/family-stats'
-import type { TvExtras, TvTraining } from '@/lib/stats/tv-extras'
+import type { TvExtras, TvTraining, TvBoost } from '@/lib/stats/tv-extras'
 
 const C = {
   bg: '#14112A', panel: '#1E1A3B', line: 'rgba(246,241,231,0.10)',
@@ -131,7 +131,8 @@ function Board({ data, stale }: { data: TvData; stale?: boolean }) {
       <main style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(kids.length, 4)}, 1fr)`, gap: '1.4vw', minHeight: 0 }}>
         {kids.slice(0, 4).map((k, i) => (
           <Lane key={k.childId} k={k} accent={ACCENTS[i % ACCENTS.length]}
-            trainings={(data.tv?.trainings ?? []).filter(t => t.childId === k.childId)} />
+            trainings={(data.tv?.trainings ?? []).filter(t => t.childId === k.childId)}
+            boost={data.tv?.boost.find(b => b.childId === k.childId) ?? null} />
         ))}
       </main>
       <SpendBand data={data} />
@@ -144,7 +145,30 @@ function Board({ data, stale }: { data: TvData; stale?: boolean }) {
 // "подтянуть" list says which subjects to work on. Above 4 it says keep going.
 const LOW = 4
 
-function Lane({ k, accent, trainings }: { k: ChildStats; accent: string; trainings: TvTraining[] }) {
+// This week's boost progress toward the max weekly bonus — same numbers as
+// the kid's own boost meter (lib/kid/boost.ts / lib/kid/boost-rules.ts).
+function BoostBar({ boost, accent }: { boost: TvBoost; accent: string }) {
+  const pct = boost.max > 0 ? Math.min(100, Math.round((boost.total / boost.max) * 100)) : 0
+  const atMax = boost.total >= boost.max && boost.max > 0
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '1.25vw', color: C.dim }}>
+        <span>🚀 Буст недели</span>
+        <span style={{ fontFamily: DISPLAY, fontWeight: 700, color: atMax ? C.good : accent }}>
+          {fmt(boost.total)}{boost.max ? ` / ${fmt(boost.max)}` : ''}
+        </span>
+      </div>
+      <div style={{ height: '0.8vh', borderRadius: 99, background: C.line, overflow: 'hidden', marginTop: '0.5vh' }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: atMax ? C.good : accent, borderRadius: 99 }} />
+      </div>
+      <div style={{ fontSize: '1.1vw', color: C.faint, marginTop: '0.4vh', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {boost.nextLabel}
+      </div>
+    </div>
+  )
+}
+
+function Lane({ k, accent, trainings, boost }: { k: ChildStats; accent: string; trainings: TvTraining[]; boost: TvBoost | null }) {
   const week = k.days.slice(-7)
   const prev = k.days.slice(-14, -7)
   const weekGrades = week.flatMap(d => d.grades)
@@ -182,6 +206,8 @@ function Lane({ k, accent, trainings }: { k: ChildStats; accent: string; trainin
           +{fmt(coins)} за неделю{prevCoins ? <span style={{ color: C.faint }}>, неделей раньше +{fmt(prevCoins)}</span> : null}
         </div>
       </div>
+
+      {boost && <BoostBar boost={boost} accent={accent} />}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.2vw' }}>
         <div>
@@ -309,16 +335,32 @@ function Spark({ pts, color }: { pts: number[]; color: string }) {
   )
 }
 
+// Family-facing highlights only — login/recovery events are admin plumbing,
+// not something to celebrate on the living-room TV.
+const TICKER_HIDDEN_KINDS = new Set(['child_login_email_invite', 'child_login_reset'])
+// Fallback icon when family-events didn't set one, keyed by kind.
+const TICKER_ICON: Record<string, string> = { badge: '🏅', boost: '🚀', medal: '🎖️', streak: '🔥', day_filled: '✅', note: '📝' }
+const TICKER_CELEBRATE = new Set(['badge', 'boost', 'medal', 'streak'])
+
 // One line at a time, crossfading — calm enough to leave on all evening.
+// Celebratory kinds (badge/boost/medal/streak — the "приколы") get the gold
+// treatment and a slightly bigger beat so they read as wins, not just log lines.
 function Ticker({ data }: { data: TvData }) {
-  const items = data.feed.filter(f => f.title)
+  const items = data.feed.filter(f => f.title && !TICKER_HIDDEN_KINDS.has(f.kind))
   const [i, setI] = useState(0)
   useEffect(() => { if (items.length < 2) return; const t = setInterval(() => setI(x => x + 1), 7000); return () => clearInterval(t) }, [items.length])
   const e = items[i % Math.max(items.length, 1)]
   const who = e?.childId ? data.children.find(c => c.childId === e.childId)?.name : null
+  const celebrate = e ? TICKER_CELEBRATE.has(e.kind) : false
   return (
-    <footer key={e?.id} style={{ minHeight: '4vh', fontSize: '1.7vw', color: C.dim, display: 'flex', gap: '0.8vw', alignItems: 'center', animation: 'tvfade .8s ease both' }}>
-      {e ? <><span>{e.icon ?? '•'}</span><span style={{ color: C.ink }}>{who ? `${who}: ` : ''}{e.title}</span>{e.amount ? <span style={{ color: e.amount > 0 ? C.good : C.bad }}>{e.amount > 0 ? '+' : ''}{e.amount}</span> : null}</> : <span>Событий пока нет</span>}
+    <footer key={e?.id} style={{ minHeight: '4vh', fontSize: celebrate ? '1.9vw' : '1.7vw', color: celebrate ? C.gold : C.dim, display: 'flex', gap: '0.8vw', alignItems: 'center', animation: 'tvfade .8s ease both' }}>
+      {e
+        ? <>
+            <span>{e.icon ?? TICKER_ICON[e.kind] ?? '•'}</span>
+            <span style={{ color: celebrate ? C.gold : C.ink, fontWeight: celebrate ? 700 : 400 }}>{who ? `${who}: ` : ''}{e.title}</span>
+            {e.amount ? <span style={{ color: e.amount > 0 ? C.good : C.bad }}>{e.amount > 0 ? '+' : ''}{e.amount}</span> : null}
+          </>
+        : <span>Событий пока нет</span>}
       <style>{`@keyframes tvfade{from{opacity:0}to{opacity:1}}@media (prefers-reduced-motion:reduce){footer{animation:none!important}}`}</style>
     </footer>
   )

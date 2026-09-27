@@ -755,6 +755,7 @@
       "addressLocation": "Address / location",
       "locationPlaceholder": "Location",
       "scheduleDays": "Schedule days (optional)",
+      "scheduleTime": "Class time (optional)",
       "archive": "Archive",
       "day": {
         "mon": "Mon",

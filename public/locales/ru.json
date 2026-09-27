@@ -755,6 +755,7 @@
       "addressLocation": "Адрес / место",
       "locationPlaceholder": "Место",
       "scheduleDays": "Дни занятий (необязательно)",
+      "scheduleTime": "Время занятия (необязательно)",
       "archive": "В архив",
       "day": {
         "mon": "Пн",

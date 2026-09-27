@@ -40,6 +40,9 @@ export interface Section {
   start_date: string | null
   end_date: string | null
   schedule_days: string[]
+  /** Optional "HH:MM:SS" (or null) — same time every scheduled day. Powers the
+   * TV board's "today's trainings" widget (lib/stats/tv-extras.ts). */
+  schedule_time: string | null
   created_at: string
 }
 

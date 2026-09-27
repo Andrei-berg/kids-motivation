@@ -28,6 +28,7 @@ interface SectionForm {
   startDate: string
   endDate: string
   scheduleDays: string[]
+  scheduleTime: string
 }
 
 const EMPTY_FORM: SectionForm = {
@@ -38,6 +39,7 @@ const EMPTY_FORM: SectionForm = {
   startDate: '',
   endDate: '',
   scheduleDays: [],
+  scheduleTime: '',
 }
 
 export default function SectionsManager() {
@@ -99,6 +101,7 @@ export default function SectionsManager() {
       startDate: s.start_date || '',
       endDate: s.end_date || '',
       scheduleDays: s.schedule_days || [],
+      scheduleTime: s.schedule_time ? s.schedule_time.slice(0, 5) : '',
     })
     setEditingId(s.id)
     setShowForm(true)
@@ -133,6 +136,7 @@ export default function SectionsManager() {
           startDate: form.startDate || null,
           endDate: form.endDate || null,
           scheduleDays: form.scheduleDays,
+          scheduleTime: form.scheduleTime || null,
         })
         if (priceChanged) await changeSectionPrice(editingId, nextCost)
       } else {
@@ -146,6 +150,7 @@ export default function SectionsManager() {
           startDate: form.startDate || undefined,
           endDate: form.endDate || undefined,
           scheduleDays: form.scheduleDays,
+          scheduleTime: form.scheduleTime || null,
         })
       }
       setShowForm(false)
@@ -317,6 +322,15 @@ export default function SectionsManager() {
             </div>
           </div>
 
+          <div style={{ marginBottom: '14px' }}>
+            <div className="premium-label">{t('settings.sectionsManager.scheduleTime')}</div>
+            <input
+              className="premium-input" type="time" value={form.scheduleTime}
+              onChange={e => setForm(p => ({ ...p, scheduleTime: e.target.value }))}
+              style={{ maxWidth: '140px' }}
+            />
+          </div>
+
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
               onClick={handleSave}
@@ -372,6 +386,7 @@ export default function SectionsManager() {
                     {s.schedule_days && s.schedule_days.length > 0 && (
                       <span style={{ fontSize: '11px', fontWeight: 700, color: T.textDim, background: T.card, border: `1px solid ${T.cardBorder}`, padding: '2px 7px', borderRadius: '6px' }}>
                         {s.schedule_days.map(d => DAYS.some(x => x.key === d) ? t(`settings.sectionsManager.day.${d}`) : null).filter(Boolean).join(', ')}
+                        {s.schedule_time ? ` · ${s.schedule_time.slice(0, 5)}` : ''}
                       </span>
                     )}
                     {s.cost && (

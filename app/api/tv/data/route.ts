@@ -12,7 +12,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'not_paired' }, { status: 401 })
   }
   await r.admin.from('tv_devices').update({ last_seen_at: new Date().toISOString() }).eq('id', r.device.id)
-  const stats = await loadFamilyStats(r.admin, r.device.family_id, 28, { feed: 10 })
+  const stats = await loadFamilyStats(r.admin, r.device.family_id, 28, { feed: 16 })
   const today = stats.children[0]?.days.at(-1)?.date ?? new Date().toISOString().slice(0, 10)
   const tv = await loadTvExtras(r.admin, r.device.family_id, stats.children.map(c => c.childId), today).catch(() => null)
   return NextResponse.json({ ...stats, tv }, { headers: { 'Cache-Control': 'no-store' } })
